@@ -7,7 +7,7 @@
 <meta content="TB Toolkit provides free tools, data, and resources for Total Battle players." name="description"/>
 <meta content="#050b14" name="theme-color"/>
 <title>TB Toolkit | Free Tools for Total Battle Players</title>
-<link href="css/styles.css?v=24" rel="stylesheet"/>
+<link href="css/styles.css?v=25" rel="stylesheet"/>
 <script defer="" src="js/site.js"></script>
 </head>
 <body>
@@ -26,21 +26,22 @@
 </div>
 </header>
 <main>
-<section class="home-hero war-council-hero" aria-labelledby="hero-title">
-<div class="war-council-desktop" aria-hidden="true">
-  <img src="assets/images/hero-war-council.webp" alt=""/>
-</div>
-<div class="war-council-mobile">
-  <div class="war-council-mobile-art" aria-hidden="true">
-    <img src="assets/images/hero-war-council-mobile.webp" alt=""/>
+<section class="home-hero war-council-hero interactive-war-council" aria-labelledby="hero-title">
+  <div class="war-council-art" aria-hidden="true">
+    <picture>
+      <source media="(max-width: 760px)" srcset="assets/images/hero-war-council-mobile.webp"/>
+      <img src="assets/images/hero-war-council.webp" alt=""/>
+    </picture>
   </div>
-  <div class="container war-council-mobile-copy">
-    <h1 id="hero-title">TB Toolkit</h1>
-    <p class="hero-tagline">Because guessing is expensive.</p>
-    <p class="hero-description">Free tools, data, and resources for Total Battle players.</p>
-    <a class="hero-cta" href="stacking.html">Explore Tools <span aria-hidden="true">→</span></a>
+  <div class="war-council-mask" aria-hidden="true"></div>
+  <div class="container war-council-copy">
+    <div class="war-council-copy-inner">
+      <h1 id="hero-title">TB Toolkit</h1>
+      <p class="hero-tagline">Because guessing is expensive.</p>
+      <p class="hero-description">Free tools, data, and resources for Total Battle players.</p>
+      <a class="hero-cta" href="stacking.html">Explore Tools <span aria-hidden="true">→</span></a>
+    </div>
   </div>
-</div>
 </section>
 <section aria-label="Featured tools" class="home-tools" id="tools">
 <div class="container feature-grid">
