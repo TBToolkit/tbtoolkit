@@ -533,3 +533,19 @@ button { font: inherit; }
     justify-content: center;
   }
 }
+
+
+/* v14: keep the mobile menu icon visible on every page */
+.menu-toggle span,
+.menu-toggle:hover span,
+.menu-toggle:focus span,
+.menu-toggle[aria-expanded="true"] span{
+  background:#ffffff!important;
+  border-color:#ffffff!important;
+  opacity:1!important;
+}
+@media(max-width:920px){
+  .menu-toggle span{
+    background:#ffffff!important;
+  }
+}

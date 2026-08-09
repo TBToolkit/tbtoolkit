@@ -267,3 +267,40 @@
   .chart-tooltip{grid-template-columns:52px minmax(0,1fr);min-width:190px;max-width:235px}
   .chart-tooltip img{width:52px;height:52px}
 }
+
+
+/* v14 tabbed work area */
+.category-tabs{
+  scrollbar-width:thin;
+  overscroll-behavior-x:contain;
+}
+.category-tab{
+  flex:0 0 auto;
+}
+.selection-content[hidden],
+.tab-view-panel[hidden]{
+  display:none!important;
+}
+.selection-panel{
+  overflow:hidden;
+}
+.result-unit strong{
+  color:#f2b544;
+  font-weight:950;
+}
+.result-unit span{
+  color:#ffd177;
+  font-weight:750;
+}
+@media(max-width:760px){
+  .category-tabs{
+    overflow-x:auto;
+    justify-content:flex-start;
+    -webkit-overflow-scrolling:touch;
+  }
+  .category-tab{
+    min-width:max-content;
+    padding-left:15px;
+    padding-right:15px;
+  }
+}
