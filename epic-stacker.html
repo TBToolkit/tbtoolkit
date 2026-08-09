@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
   <title>Epic Stacker | TB Toolkit</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/epic-stacker.css?v=13">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/epic-stacker.css?v=14">
   <script src="js/site.js" defer></script>
-  <script type="module" src="js/epic-stacker.js?v=13"></script>
+  <script type="module" src="js/epic-stacker.js?v=14"></script>
 </head>
 <body class="epic-page">
 <header class="site-header">
@@ -114,8 +114,7 @@
                 </div>
                 <input class="separation-slider" id="rankSeparation" type="range" min="0" max="1" step="0.01" value="0.40">
                 <div class="slider-scale" aria-hidden="true"><span>0%</span><span>0.50%</span><span>1.00%</span></div>
-                <p class="setting-note">BIFF STACK v2.2 uses 0.40% between adjacent PvE ranks.</p>
-                <button class="slider-reset" type="button" id="resetRankSeparation">↺ Reset to Default (0.40%)</button>
+                <button class="slider-reset" type="button" id="resetRankSeparation">↺ Reset to Default</button>
               </div>
             </details>
           </div>
@@ -146,19 +145,23 @@
         <div id="validationBox" class="validation-box"></div>
 
         <section class="selection-panel">
-          <div class="category-tabs" role="tablist" aria-label="Unit categories">
-            <button class="category-tab active" type="button" data-category="troop">Troops <span class="tab-count" id="troopCount">0</span></button>
-            <button class="category-tab" type="button" data-category="monster">Monsters <span class="tab-count" id="monsterCount">0</span></button>
-            <button class="category-tab" type="button" data-category="mercenary">Mercs <span class="tab-count" id="mercenaryCount">0</span></button>
+          <div class="category-tabs" role="tablist" aria-label="Epic Stacker views">
+            <button class="category-tab active" type="button" data-view="troop" aria-selected="true">Troops <span class="tab-count" id="troopCount">0</span></button>
+            <button class="category-tab" type="button" data-view="monster" aria-selected="false">Monsters <span class="tab-count" id="monsterCount">0</span></button>
+            <button class="category-tab" type="button" data-view="mercenary" aria-selected="false">Mercs <span class="tab-count" id="mercenaryCount">0</span></button>
+            <button class="category-tab" type="button" data-view="results" aria-selected="false">Results</button>
+            <button class="category-tab" type="button" data-view="visual" aria-selected="false">Visual</button>
           </div>
-          <div class="category-toolbar">
-            <p>Each unit is selected individually. Within a level, units are shown from highest Strength/EA to lowest.</p>
-            <button type="button" id="clearCategory" class="toolbar-button">Clear Category</button>
+          <div class="selection-content" id="selectionContent">
+            <div class="category-toolbar" id="categoryToolbar">
+              <p>Each unit is selected individually. Within a level, units are shown from highest Strength/EA to lowest.</p>
+              <button type="button" id="clearCategory" class="toolbar-button">Clear Category</button>
+            </div>
+            <div class="level-selection-list" id="unitSelectGrid" aria-live="polite"></div>
           </div>
-          <div class="level-selection-list" id="unitSelectGrid" aria-live="polite"></div>
         </section>
 
-        <section class="result-panel">
+        <section class="result-panel tab-view-panel" id="resultsView" hidden>
           <div class="result-head">
             <h2>Final Army</h2>
             <span class="result-status" id="resultStatus">Enter your values and select units.</span>
@@ -170,7 +173,7 @@
             <section class="result-group"><h3>Troops</h3><div class="result-list" id="troopResults"></div></section>
           </div>
         </section>
-        <section class="layer-chart-panel" id="layerChartPanel">
+        <section class="layer-chart-panel tab-view-panel" id="layerChartPanel" hidden>
           <div class="layer-chart-head">
             <div>
               <div class="section-number">5 · Layer Health &amp; Dying Order</div>
