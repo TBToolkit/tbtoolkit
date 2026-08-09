@@ -243,3 +243,81 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     },
   };
 }
+
+
+function customScore(unit) { return pveScore(unit, false); }
+
+function customInternalRank(unit, allUnits) {
+  const score = customScore(unit);
+  let lower = 0;
+  for (const other of allUnits) {
+    if (other.level === unit.level && customScore(other) < score) lower++;
+  }
+  return 1 + lower;
+}
+
+export function calculateCustomCategory({
+  category, units, selectedIds, inputs, order,
+  roundingTable = [
+    {capacity:1,roundTo:1},{capacity:2,roundTo:1},{capacity:5,roundTo:1},
+    {capacity:10,roundTo:1},{capacity:20,roundTo:1},{capacity:1000,roundTo:1}
+  ]
+}) {
+  const config = CATEGORY_CONFIG[category];
+  if (!config) throw new Error(`Unknown category: ${category}`);
+  const selected = selectedUnits(units, selectedIds, null);
+  if (!selected.length) return {category,selectedCount:0,maxHealthEach:0,sumD:0,totalCapacity:0,capacityPercent:0,results:[]};
+
+  const orderMap = new Map((order || []).map((level,index)=>[level,index]));
+  for (const unit of selected) if (!orderMap.has(unit.level)) throw new Error(`Add ${unit.level} to the ${category} die order.`);
+
+  const maxHealthEach = Math.max(...selected.map(u=>u.healthEach));
+  const capacityLimit = inputs[config.capacityInput];
+  const fill = inputs[config.fillInput];
+  const separation = inputs.layerSeparation;
+
+  const interim = selected.map(unit=>{
+    const orderIndex = orderMap.get(unit.level);
+    const layerModifier = 1.1 - orderIndex * separation;
+    const rank = customInternalRank(unit, units);
+    const typeModifier = separation - rank * separation / 5;
+    const adj = speciesAdjustment(unit.species, inputs.healthInputs);
+    const modifier = layerModifier + typeModifier + adj;
+    const capEach = unit[config.capacityEach];
+    const C = modifier * maxHealthEach / unit.healthEach;
+    const D = C * capEach;
+    return {unit,rank,layerModifier,typeModifier,speciesAdjustment:adj,modifier,C,D,capEach};
+  });
+
+  const sumD = interim.reduce((s,r)=>s+r.D,0);
+  const results = interim.map(row=>{
+    const rawQty = (row.D/sumD) * (capacityLimit/row.capEach) * fill;
+    const roundTo = roundingMultiple(row.capEach, roundingTable);
+    const qty = mroundPositive(rawQty, roundTo);
+    const totalCapacity = row.capEach * qty;
+    return {
+      id:row.unit.id,category,displayOrder:row.unit.displayOrder,selectionKey:row.unit.selectionKey,
+      level:row.unit.level,type:row.unit.type,name:row.unit.name,icon:row.unit.icon,
+      qty,rawQty,roundTo,rank:row.rank,layerModifier:row.layerModifier,typeModifier:row.typeModifier,
+      speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
+      squadHealth:(qty*row.unit.healthEach)/(1+row.speciesAdjustment),
+      squadStrength:row.unit.strengthEach*qty,totalCapacity,
+      nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.unit.healthEach
+    };
+  });
+
+  const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
+  return {
+    category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
+    totalCapacity,capacityPercent:capacityLimit?totalCapacity/capacityLimit:0,
+    results:[...results].sort((a,b)=>a.displayOrder-b.displayOrder)
+  };
+}
+
+export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs,roundingTable}) {
+  const troop=calculateCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,roundingTable});
+  const monster=calculateCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,roundingTable});
+  const mercenary=calculateCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,roundingTable});
+  return {inputs:structuredClone(inputs),orders:structuredClone(orders),categories:{troop,monster,mercenary},
+    totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
+}
