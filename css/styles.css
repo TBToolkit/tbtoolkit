@@ -769,3 +769,129 @@ button:focus-visible{
     gap:10px 16px;
   }
 }
+
+
+/* ==========================================================================
+   v23 WAR COUNCIL HOMEPAGE
+   ========================================================================== */
+
+/* Canonical logo refinement inspired by the approved War Council artwork. */
+.brand-mark{
+  color:#f5f6f7!important;
+  font-style:italic;
+  letter-spacing:-.045em;
+}
+.brand-mark>span{
+  color:#f5f6f7!important;
+}
+.brand-mark::before,
+.brand-mark::after,
+.brand-mark i{
+  background:var(--orange)!important;
+}
+
+/* Desktop: preserve the approved artwork exactly, with no extra text overlay. */
+.war-council-hero{
+  position:relative;
+  overflow:hidden;
+  background:#02070d;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.war-council-desktop{
+  display:block;
+  width:100%;
+  max-width:1680px;
+  margin:0 auto;
+}
+.war-council-desktop img{
+  display:block;
+  width:100%;
+  height:auto;
+}
+.war-council-mobile{
+  display:none;
+}
+
+/* Make the transition from the cinematic hero into the existing cards deliberate. */
+.war-council-hero + .home-sections,
+.war-council-hero + section{
+  border-top:0;
+}
+
+@media(max-width:760px){
+  /*
+    The complete desktop artwork contains embedded copy that becomes too small on
+    a phone. Use a character-focused crop plus real HTML copy for legibility.
+  */
+  .war-council-desktop{display:none}
+  .war-council-mobile{
+    display:block;
+    position:relative;
+    min-height:610px;
+    background:#02070d;
+  }
+  .war-council-mobile-art{
+    position:absolute;
+    inset:0 0 auto 0;
+    height:390px;
+    overflow:hidden;
+  }
+  .war-council-mobile-art::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(to bottom,rgba(2,7,13,.02) 48%,rgba(2,7,13,.88) 86%,#02070d 100%),
+      linear-gradient(to right,rgba(2,7,13,.12),transparent 45%);
+  }
+  .war-council-mobile-art img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    object-position:52% center;
+  }
+  .war-council-mobile-copy{
+    position:relative;
+    z-index:2;
+    padding-top:340px;
+    padding-bottom:34px;
+  }
+  .war-council-mobile-copy h1{
+    margin:0;
+    color:#f5f6f7;
+    font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+    font-size:3rem;
+    line-height:.94;
+    letter-spacing:-.035em;
+    text-transform:uppercase;
+  }
+  .war-council-mobile-copy .hero-tagline{
+    margin:13px 0 0;
+    color:var(--orange-bright);
+    font-size:1.25rem;
+    line-height:1.1;
+    font-weight:900;
+    text-transform:uppercase;
+  }
+  .war-council-mobile-copy .hero-description{
+    margin:16px 0 0;
+    max-width:330px;
+    color:#d1d7df;
+    font-size:1rem;
+    line-height:1.5;
+  }
+  .war-council-mobile-copy .hero-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    min-height:46px;
+    margin-top:20px;
+    padding:0 18px;
+    border:1px solid var(--orange);
+    border-radius:7px;
+    color:#0b0d10;
+    background:linear-gradient(#ffb330,#ef8a00);
+    font-weight:900;
+    text-transform:uppercase;
+  }
+}
