@@ -48,27 +48,39 @@
           <div class="epic-panel-body limit-list">
             <div class="limit-row">
               <div class="limit-name">Leadership</div>
-              <label class="field-label" for="leadership">Maximum</label>
-              <input class="epic-input formatted-number" id="leadership" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="leadership">Maximum</label>
+                <input class="epic-input formatted-number" id="leadership" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
               <label class="auto-fill-toggle"><input id="autoLeadership" type="checkbox" checked><span>Max Fill</span></label>
-              <label class="field-label" for="leadershipFill">Fill</label>
-              <div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="leadershipFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
             </div>
             <div class="limit-row">
               <div class="limit-name">Authority</div>
-              <label class="field-label" for="authority">Maximum</label>
-              <input class="epic-input formatted-number" id="authority" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="authority">Maximum</label>
+                <input class="epic-input formatted-number" id="authority" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
               <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox" checked><span>Max Fill</span></label>
-              <label class="field-label" for="authorityFill">Fill</label>
-              <div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="authorityFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
             </div>
             <div class="limit-row">
               <div class="limit-name">Dominance</div>
-              <label class="field-label" for="dominance">Maximum</label>
-              <input class="epic-input formatted-number" id="dominance" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="dominance">Maximum</label>
+                <input class="epic-input formatted-number" id="dominance" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
               <label class="auto-fill-toggle"><input id="autoDominance" type="checkbox" checked><span>Max Fill</span></label>
-              <label class="field-label" for="dominanceFill">Fill</label>
-              <div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="dominanceFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
             </div>
             <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
           </div>
@@ -78,11 +90,17 @@
           <h2 class="epic-panel-title">2 · Health Inputs</h2>
           <div class="epic-panel-body">
             <div class="health-grid">
-              <label>Monster<input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" placeholder="Health"></label>
-              <label>Human<input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" type="text" placeholder="Health"></label>
-              <label>Epic Hunter<input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" placeholder="Health"></label>
+              <label>Monster Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
+              <label>Human Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
+              <label>Epic Hunter Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
             </div>
-            <p class="setting-note">Enter the same Health values used by BIFF STACK. Human is the reference used to normalize species health.</p>
+            <p class="setting-note health-help">Use a recent battle report against the same Epic. Under <strong>Health</strong>, open one Monster unit, one Human unit, and one Epic Hunter unit. Enter the <strong>Health %</strong> shown in each unit's Stats.</p>
             <div class="checkbox-row">
               <input id="arachne" type="checkbox">
               <label for="arachne">Fighting Arachne Swarm</label>
