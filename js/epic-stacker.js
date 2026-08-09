@@ -22,7 +22,7 @@ const state={
   }
 };
 
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','rankSeparation','rankSeparationValue','resetRankSeparation','resetCalculator','unitSelectGrid','clearCategory','troopCount','monsterCount','mercenaryCount','validationBox','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','rankSeparation','rankSeparationValue','resetRankSeparation','resetCalculator','unitSelectGrid','clearCategory','troopCount','monsterCount','mercenaryCount','validationBox','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -63,10 +63,199 @@ function findMaxSafeFill(category,inputs){const meta=CAPACITY_META[category],lim
 function resolveAutoFills(inputs){for(const [cat,meta] of Object.entries(CAPACITY_META)){if(state.inputs[meta.auto]){resolvedFills[cat]=findMaxSafeFill(cat,inputs);inputs[meta.fill]=resolvedFills[cat];els[meta.fill].value=(resolvedFills[cat]*100).toFixed(resolvedFills[cat]===1?2:4).replace(/0+$/,'').replace(/\.$/,'');}else resolvedFills[cat]=inputs[meta.fill];}return inputs;}
 function validate(){const errors=[],hasAny=Object.values(state.selectedIds).some(a=>a.length);if(!hasAny)return errors;const inp=baseEngineInputs();if(!(inp.healthInputs.MONSTER>0))errors.push('Enter Monster Health.');if(!(inp.healthInputs.HUMAN>0))errors.push('Enter Human Health.');if(!(inp.healthInputs.EPIC_HUNTER>0))errors.push('Enter Epic Hunter Health.');if(state.selectedIds.troop.length&&!(inp.leadership>0))errors.push('Enter Leadership for selected Troops.');if(state.selectedIds.monster.length&&!(inp.dominance>0))errors.push('Enter Dominance for selected Monsters.');if(state.selectedIds.mercenary.length&&!(inp.authority>0))errors.push('Enter Authority for selected Mercenaries.');for(const [cat,meta] of Object.entries(CAPACITY_META)){if(!state.inputs[meta.auto]){const v=parseNumber(state.inputs[meta.fill]);if(v<0||v>100)errors.push(`${meta.fill.replace('Fill','')} fill must be between 0% and 100%.`);}}if(parseNumber(state.inputs.rankSeparation)<0||parseNumber(state.inputs.rankSeparation)>1)errors.push('Layer separation must be between 0% and 1%.');return errors;}
 function showValidation(errors){if(!errors.length){els.validationBox.classList.remove('show');els.validationBox.innerHTML='';return;}els.validationBox.innerHTML=`<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;els.validationBox.classList.add('show');}
-function clearResults(message='Enter your values and select units.'){els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.textContent=message;for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);}
+function clearResults(message='Enter your values and select units.'){els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.textContent=message;for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
 function renderResultRows(category,rows){const target=els[`${category}Results`];target.innerHTML='';if(!rows.length){target.innerHTML='<div class="result-empty" style="padding:16px">None selected.</div>';return;}for(const row of rows){const div=document.createElement('div');div.className='result-row';const colors=outputRowColors(category,row);div.style.setProperty('--row-color',colors.rowColor);div.style.setProperty('--row-accent',colors.accent);div.innerHTML=`<img src="${escapeHtml(row.icon)}" alt=""><div class="result-unit"><strong>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</strong><span>${escapeHtml(row.name)}</span></div><div class="result-qty">${formatInteger(row.qty)}<small>Qty</small></div>`;iconFallback(div.querySelector('img'));target.appendChild(div);}}
+
+const CHART_SERIES={
+  troop:{label:'Troops',color:'#e9edf2'},
+  monster:{label:'Monsters',color:'#4e91e6'},
+  mercenary:{label:'Mercs',color:'#d34c3f'}
+};
+
+function compactHealth(value){
+  const n=Number(value)||0;
+  if(n>=1e9)return`${(n/1e9).toFixed(n>=1e10?1:2)}B`;
+  if(n>=1e6)return`${(n/1e6).toFixed(n>=1e8?1:2)}M`;
+  if(n>=1e3)return`${(n/1e3).toFixed(n>=1e5?0:1)}K`;
+  return Math.round(n).toLocaleString('en-US');
+}
+
+function chartUnitLabel(category,row){
+  if(category==='mercenary')return row.level;
+  return row.level;
+}
+
+function overlapStatus(upperRows,lowerRows){
+  if(!upperRows.length||!lowerRows.length)return{kind:'neutral',text:'Not enough data'};
+  const upperMin=Math.min(...upperRows.map(r=>r.squadHealth));
+  const lowerMax=Math.max(...lowerRows.map(r=>r.squadHealth));
+  const margin=upperMin-lowerMax;
+  if(margin>0)return{kind:'separated',text:`Separated · ${compactHealth(margin)} gap`};
+  return{kind:'overlap',text:`Overlap · ${compactHealth(Math.abs(margin))}`};
+}
+
+function renderOverlapSummary(result){
+  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
+  if(!chips?.length)return;
+  const troop=result?.categories?.troop?.results??[];
+  const monster=result?.categories?.monster?.results??[];
+  const merc=result?.categories?.mercenary?.results??[];
+  const statuses=[overlapStatus(troop,monster),overlapStatus(monster,merc)];
+  chips.forEach((chip,i)=>{
+    chip.classList.remove('neutral','separated','overlap');
+    chip.classList.add(statuses[i].kind);
+    chip.querySelector('strong').textContent=statuses[i].text;
+  });
+}
+
+function clearLayerChart(){
+  if(els.layerHealthChart)els.layerHealthChart.innerHTML='';
+  if(els.layerChartScroll)els.layerChartScroll.hidden=true;
+  if(els.layerChartEmpty)els.layerChartEmpty.hidden=false;
+  if(els.layerChartTooltip)els.layerChartTooltip.hidden=true;
+  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
+  chips?.forEach(chip=>{
+    chip.classList.remove('separated','overlap');
+    chip.classList.add('neutral');
+    chip.querySelector('strong').textContent='—';
+  });
+}
+
+function svgEl(name,attrs={}){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',name);
+  for(const [key,val] of Object.entries(attrs))el.setAttribute(key,String(val));
+  return el;
+}
+
+function renderLayerHealthChart(result){
+  const source={
+    troop:[...(result?.categories?.troop?.results??[])],
+    monster:[...(result?.categories?.monster?.results??[])],
+    mercenary:[...(result?.categories?.mercenary?.results??[])]
+  };
+  const all=[...source.troop,...source.monster,...source.mercenary];
+  if(!all.length){clearLayerChart();return;}
+
+  for(const key of Object.keys(source)){
+    source[key].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
+  }
+
+  renderOverlapSummary(result);
+  els.layerChartEmpty.hidden=true;
+  els.layerChartScroll.hidden=false;
+
+  const svg=els.layerHealthChart;
+  svg.innerHTML='';
+  const width=Math.max(760,Math.min(1220,680+Math.max(source.troop.length,source.monster.length,source.mercenary.length)*22));
+  const height=430;
+  const margin={top:34,right:35,bottom:48,left:78};
+  const plotW=width-margin.left-margin.right;
+  const plotH=height-margin.top-margin.bottom;
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+  svg.setAttribute('preserveAspectRatio','none');
+
+  const vals=all.map(r=>r.squadHealth).filter(Number.isFinite);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  const span=Math.max(max-min,Math.abs(max)*.02,1);
+  min=Math.max(0,min-span*.14);
+  max=max+span*.14;
+
+  const y=v=>margin.top+(max-v)/(max-min)*plotH;
+  const x=(i,count)=>{
+    if(count<=1)return margin.left+plotW*.5;
+    return margin.left+(i/(count-1))*plotW;
+  };
+
+  // Highlight actual overlap health bands, without judging them.
+  const bands=[];
+  const t=source.troop,m=source.monster,q=source.mercenary;
+  if(t.length&&m.length){
+    const low=Math.max(Math.min(...t.map(r=>r.squadHealth)),Math.min(...m.map(r=>r.squadHealth)));
+    const high=Math.min(Math.max(...t.map(r=>r.squadHealth)),Math.max(...m.map(r=>r.squadHealth)));
+    if(high>=low)bands.push({low,high});
+  }
+  if(m.length&&q.length){
+    const low=Math.max(Math.min(...m.map(r=>r.squadHealth)),Math.min(...q.map(r=>r.squadHealth)));
+    const high=Math.min(Math.max(...m.map(r=>r.squadHealth)),Math.max(...q.map(r=>r.squadHealth)));
+    if(high>=low)bands.push({low,high});
+  }
+  for(const band of bands){
+    const y1=y(band.high),y2=y(band.low);
+    svg.appendChild(svgEl('rect',{x:margin.left,y:y1,width:plotW,height:Math.max(2,y2-y1),class:'chart-overlap-band'}));
+    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y1,y2:y1,class:'chart-overlap-edge'}));
+    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y2,y2:y2,class:'chart-overlap-edge'}));
+  }
+
+  // Y grid / labels.
+  const ticks=6;
+  for(let i=0;i<ticks;i++){
+    const value=max-(i/(ticks-1))*(max-min);
+    const yy=y(value);
+    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:yy,y2:yy,class:'chart-grid-line'}));
+    const label=svgEl('text',{x:margin.left-10,y:yy+4,'text-anchor':'end',class:'chart-axis-label'});
+    label.textContent=compactHealth(value);
+    svg.appendChild(label);
+  }
+  const yTitle=svgEl('text',{x:15,y:height/2,transform:`rotate(-90 15 ${height/2})`,'text-anchor':'middle',class:'chart-y-title'});
+  yTitle.textContent='Squad Health';
+  svg.appendChild(yTitle);
+
+  // Direction labels.
+  const first=svgEl('text',{x:margin.left,y:height-15,class:'chart-axis-label'});
+  first.textContent='Higher health / dies earlier';
+  svg.appendChild(first);
+  const last=svgEl('text',{x:margin.left+plotW,y:height-15,'text-anchor':'end',class:'chart-axis-label'});
+  last.textContent='Lower health / dies later';
+  svg.appendChild(last);
+
+  for(const [category,rows] of Object.entries(source)){
+    if(!rows.length)continue;
+    const meta=CHART_SERIES[category];
+    const points=rows.map((row,i)=>({row,x:x(i,rows.length),y:y(row.squadHealth)}));
+    const path=svgEl('polyline',{
+      points:points.map(p=>`${p.x},${p.y}`).join(' '),
+      class:'chart-series-line',
+      stroke:meta.color
+    });
+    svg.appendChild(path);
+
+    points.forEach((p,i)=>{
+      const g=svgEl('g');
+      const c=svgEl('circle',{cx:p.x,cy:p.y,r:5.3,fill:meta.color,class:'chart-point',tabindex:'0'});
+      const label=svgEl('text',{
+        x:p.x,
+        y:p.y+(category==='mercenary'?18:-11),
+        fill:meta.color,
+        class:'chart-point-label'
+      });
+      label.textContent=chartUnitLabel(category,p.row);
+      g.appendChild(c);
+      g.appendChild(label);
+      svg.appendChild(g);
+
+      const showTip=(evt)=>{
+        const tip=els.layerChartTooltip;
+        tip.innerHTML=`<strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Approx. position in ${meta.label}: ${i+1} of ${rows.length}</span>`;
+        tip.hidden=false;
+        const wrap=svg.parentElement.getBoundingClientRect();
+        const rect=evt.currentTarget.getBoundingClientRect();
+        let left=rect.left-wrap.left+12;
+        let top=rect.top-wrap.top-10;
+        if(left+235>wrap.width)left=Math.max(5,rect.left-wrap.left-230);
+        tip.style.left=`${left}px`;
+        tip.style.top=`${Math.max(5,top)}px`;
+      };
+      const hideTip=()=>{els.layerChartTooltip.hidden=true;};
+      c.addEventListener('mouseenter',showTip);
+      c.addEventListener('mouseleave',hideTip);
+      c.addEventListener('focus',showTip);
+      c.addEventListener('blur',hideTip);
+      c.addEventListener('click',showTip);
+    });
+  }
+}
 function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(state.inputs.leadership)],['authority',result?.totals.authority,parseNumber(state.inputs.authority)],['dominance',result?.totals.dominance,parseNumber(state.inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
-function recalculate(){readInputs();const any=Object.values(state.selectedIds).some(a=>a.length);if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}const errors=validate();showValidation(errors);if(errors.length){clearResults('Complete the required inputs.');return;}try{const inputs=resolveAutoFills(baseEngineInputs());const result=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:state.selectedIds,inputs});renderResultRows('mercenary',result.categories.mercenary.results);renderResultRows('monster',result.categories.monster.results);renderResultRows('troop',result.categories.troop.results);updateCapacity(result);const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;els.resultEmpty.hidden=true;els.resultGroups.hidden=false;}catch(error){console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');}}
+function recalculate(){readInputs();const any=Object.values(state.selectedIds).some(a=>a.length);if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}const errors=validate();showValidation(errors);if(errors.length){clearResults('Complete the required inputs.');return;}try{const inputs=resolveAutoFills(baseEngineInputs());const result=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:state.selectedIds,inputs});renderResultRows('mercenary',result.categories.mercenary.results);renderResultRows('monster',result.categories.monster.results);renderResultRows('troop',result.categories.troop.results);updateCapacity(result);renderLayerHealthChart(result);const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;els.resultEmpty.hidden=true;els.resultGroups.hidden=false;}catch(error){console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');}}
 function resetCalculator(){if(!confirm('Reset all Epic Stacker inputs and selections on this device?'))return;localStorage.removeItem(STORAGE_KEY);state.selectedIds={troop:[],monster:[],mercenary:[]};Object.assign(state.inputs,{leadership:'',leadershipFill:'99.99',autoLeadership:true,authority:'',authorityFill:'99.99',autoAuthority:false,dominance:'',dominanceFill:'99.99',autoDominance:true,monsterHealth:'',humanHealth:'',epicHunterHealth:'',arachne:false,rankSeparation:'0.40'});applyStateToInputs();updateCounts();renderSelectionGrid();clearResults();}
 function wireEvents(){document.querySelectorAll('.category-tab').forEach(b=>b.addEventListener('click',()=>setCategory(b.dataset.category)));els.clearCategory.addEventListener('click',clearCurrent);els.resetCalculator.addEventListener('click',resetCalculator);for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].addEventListener('focus',()=>{els[id].value=String(parseNumber(els[id].value)||'');});els[id].addEventListener('blur',()=>formatFieldInteger(els[id]));els[id].addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill'])els[id].addEventListener('input',recalculate);els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});els.resetRankSeparation.addEventListener('click',()=>{els.rankSeparation.value='0.40';state.inputs.rankSeparation='0.40';updateRankSeparationDisplay();saveState();recalculate();});for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});els.arachne.addEventListener('change',recalculate);}
 async function init(){cacheElements();loadSavedState();applyStateToInputs();wireEvents();try{await loadData();migrateLegacySelections();updateCounts();renderSelectionGrid();recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
