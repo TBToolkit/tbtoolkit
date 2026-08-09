@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
+  <title>Epic Stacker | TB Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/epic-stacker.css">
+  <script src="js/site.js" defer></script>
+  <script type="module" src="js/epic-stacker.js"></script>
+</head>
+<body class="epic-page">
+<header class="site-header">
+  <div class="container header-row">
+    <a class="brand" href="index.html">
+      <span class="brand-mark"><span>TB</span> TOOLKIT<i></i></span>
+      <span class="brand-sub">Tools for Total Battle players</span>
+    </a>
+    <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-menu-toggle><span></span><span></span><span></span></button>
+    <nav class="nav" data-nav>
+      <a href="index.html">Home</a>
+      <a href="stacking.html" aria-current="page">Stacking Calculators</a>
+      <a href="chests.html">Chest Data</a>
+      <a href="calendar.html">Event Calendar</a>
+      <a href="research.html">Research</a>
+      <a href="resources.html">Resources</a>
+      <a href="about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main class="epic-shell">
+  <div class="container">
+    <div class="epic-heading">
+      <div>
+        <div class="breadcrumb">Home / Stacking Calculators / Epic Stacker</div>
+        <h1>Epic Stacker</h1>
+        <p>Select the units you want to send. The calculator automatically preserves the units with the highest PvE strength bonus by giving lower-value layers slightly more squad health.</p>
+      </div>
+      <div class="beta-badge">Native Beta</div>
+    </div>
+
+    <div class="epic-grid">
+      <aside class="epic-sidebar">
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">1 · Army Limits</h2>
+          <div class="epic-panel-body">
+            <div class="input-grid">
+              <div class="input-pair"><label for="leadership">Leadership</label><input class="epic-input" id="leadership" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
+              <div class="input-pair"><label for="leadershipFill">% Full</label><input class="epic-input" id="leadershipFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
+
+              <div class="input-pair"><label for="authority">Authority</label><input class="epic-input" id="authority" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
+              <div class="input-pair"><label for="authorityFill">% Full</label><input class="epic-input" id="authorityFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
+
+              <div class="input-pair"><label for="dominance">Dominance</label><input class="epic-input" id="dominance" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
+              <div class="input-pair"><label for="dominanceFill">% Full</label><input class="epic-input" id="dominanceFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">2 · Health Inputs</h2>
+          <div class="epic-panel-body">
+            <div class="health-grid">
+              <label>Monster<input class="epic-input" id="monsterHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
+              <label>Human<input class="epic-input" id="humanHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
+              <label>Epic Hunter<input class="epic-input" id="epicHunterHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
+            </div>
+            <p class="setting-note">Use the same Health values you enter in BIFF STACK. Human is the reference value used to normalize species health.</p>
+            <div class="checkbox-row">
+              <input id="arachne" type="checkbox">
+              <label for="arachne">Fighting Arachne Swarm</label>
+            </div>
+            <details class="advanced">
+              <summary>Advanced settings</summary>
+              <div class="advanced-row">
+                <label for="rankSeparation">Layer separation (%)</label>
+                <input class="epic-input" id="rankSeparation" inputmode="decimal" type="number" min="0" step=".01" value=".40">
+                <p class="setting-note">Current BIFF STACK v2.2 setting: 0.40% between adjacent PvE ranks.</p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">Capacity Check</h2>
+          <div class="epic-panel-body">
+            <div class="capacity-grid">
+              <div class="capacity-row"><span class="capacity-label">Leadership</span><div class="capacity-bar" id="leadershipBar"><i></i></div><span class="capacity-value" id="leadershipActual">—</span></div>
+              <div class="capacity-row"><span class="capacity-label">Authority</span><div class="capacity-bar" id="authorityBar"><i></i></div><span class="capacity-value" id="authorityActual">—</span></div>
+              <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">Calculator</h2>
+          <div class="epic-panel-body">
+            <div class="epic-actions">
+              <button class="epic-action primary" type="button" id="recalculate">Recalculate</button>
+              <button class="epic-action danger" type="button" id="resetCalculator">Reset</button>
+            </div>
+            <p class="setting-note">Inputs and selections are saved on this device automatically.</p>
+          </div>
+        </section>
+      </aside>
+
+      <div class="calculator-main">
+        <div id="validationBox" class="validation-box"></div>
+
+        <section class="selection-panel">
+          <div class="category-tabs" role="tablist" aria-label="Unit categories">
+            <button class="category-tab active" type="button" data-category="troop">Troops <span class="tab-count" id="troopCount">0</span></button>
+            <button class="category-tab" type="button" data-category="monster">Monsters <span class="tab-count" id="monsterCount">0</span></button>
+            <button class="category-tab" type="button" data-category="mercenary">Mercs <span class="tab-count" id="mercenaryCount">0</span></button>
+          </div>
+          <div class="category-toolbar">
+            <p>Select the units available in your army. Some checkboxes intentionally select more than one unit, matching the Excel calculator.</p>
+            <div class="toolbar-actions">
+              <button type="button" id="selectAll">Select All</button>
+              <button type="button" id="clearCategory">Clear</button>
+            </div>
+          </div>
+          <div class="unit-select-grid" id="unitSelectGrid" aria-live="polite"></div>
+        </section>
+
+        <section class="result-panel">
+          <div class="result-head">
+            <h2>Final Army</h2>
+            <span class="result-status" id="resultStatus">Enter your values and select units.</span>
+          </div>
+          <div id="resultEmpty" class="result-empty">Your calculated unit quantities will appear here in the same order used by the Total Battle mobile app.</div>
+          <div class="result-groups" id="resultGroups" hidden>
+            <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
+            <section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
+            <section class="result-group"><h3>Troops</h3><div class="result-list" id="troopResults"></div></section>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-row">
+    <div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
+    <div class="footer-links"><a href="stacking.html">Stacking Calculators</a><a href="about.html">About</a></div>
+  </div>
+</footer>
+</body>
+</html>
