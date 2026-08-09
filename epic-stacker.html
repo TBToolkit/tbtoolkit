@@ -6,9 +6,9 @@
   <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
   <title>Epic Stacker | TB Toolkit</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/epic-stacker.css?v=12">
+  <link rel="stylesheet" href="css/epic-stacker.css?v=13">
   <script src="js/site.js" defer></script>
-  <script type="module" src="js/epic-stacker.js?v=12"></script>
+  <script type="module" src="js/epic-stacker.js?v=13"></script>
 </head>
 <body class="epic-page">
 <header class="site-header">
@@ -190,17 +190,17 @@
             Select units and complete the required inputs to view layer-health separation.
           </div>
 
+          <div class="chart-legend" aria-label="Chart legend">
+            <span><i class="legend-line troop"></i>Troops</span>
+            <span><i class="legend-line monster"></i>Monsters</span>
+            <span><i class="legend-line mercenary"></i>Mercs</span>
+          </div>
+
           <div class="layer-chart-scroll" id="layerChartScroll" hidden>
             <div class="layer-chart-wrap">
               <svg id="layerHealthChart" class="layer-health-chart" role="img" aria-label="Squad health by army type and approximate dying order"></svg>
               <div class="chart-tooltip" id="layerChartTooltip" hidden></div>
             </div>
-          </div>
-
-          <div class="chart-legend" aria-label="Chart legend">
-            <span><i class="legend-line troop"></i>Troops</span>
-            <span><i class="legend-line monster"></i>Monsters</span>
-            <span><i class="legend-line mercenary"></i>Mercs</span>
           </div>
         </section>
       </div>
