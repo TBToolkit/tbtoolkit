@@ -322,3 +322,44 @@
 .order-empty{padding:15px 10px;color:#7f90a0;text-align:center;font-size:.7rem}.custom-only-tab[hidden]{display:none!important}
 @media(max-width:900px){.order-columns{grid-template-columns:1fr}}
 @media(max-width:520px){.mode-switch{display:grid;grid-template-columns:1fr 1fr;width:100%}.mode-button{padding:0 8px;font-size:.72rem}}
+
+
+/* v20 refinements */
+
+/* Match Health input numerals to Army Limit input numerals */
+.health-percent-field .epic-input{
+  font-size:1rem!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+}
+
+/* Colored custom-order rows use the same visual language as Results */
+.order-item{
+  background:
+    linear-gradient(90deg,
+      var(--order-row-color,#10202c) 0%,
+      var(--order-row-color,#10202c) 42%,
+      #081b29 100%);
+  box-shadow:inset 4px 0 0 var(--order-accent,#415467);
+  transition:transform .13s ease, box-shadow .13s ease, opacity .13s ease, background .13s ease;
+}
+.order-item.dragging{
+  opacity:.72;
+  box-shadow:
+    inset 4px 0 0 var(--order-accent,#415467),
+    0 8px 22px rgba(0,0,0,.28);
+  transform:scale(1.015);
+  z-index:5;
+}
+.order-item.drag-over{
+  transform:translateY(4px);
+}
+.order-list.drag-active .order-item:not(.dragging){
+  transition:transform .12s ease;
+}
+.drag-handle{
+  cursor:grab;
+}
+.order-item.dragging .drag-handle{
+  cursor:grabbing;
+}
