@@ -20,6 +20,7 @@ const CATEGORY_ICONS={
   'Logistics':'logistics'
 };
 const categoryIcon=category=>`assets/images/research/${CATEGORY_ICONS[category]||'archeology'}.webp`;
+const subgroupIcon=research=>`assets/images/research/subgroups/${research.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}.webp`;
 const pointIcon=currency=>currency==='Conquest Points'
   ?'assets/images/research/conquest-points.webp'
   :'assets/images/research/valor-points.webp';
@@ -51,6 +52,8 @@ function apply(){
     if(q&&!`${r.research} ${r.category}`.toLowerCase().includes(q))return false;
     if(cat&&r.category!==cat)return false;
     if(cur&&r.currency!==cur)return false;
+    const typ=$('typeFilter').value;
+    if(typ&&r.researchType!==typ)return false;
     if(lv==='1'&&r.levelCount!==1)return false;
     if(lv==='multi'&&r.levelCount<=1)return false;
     return true;
@@ -76,7 +79,7 @@ function render(){
       const count=filtered.filter(x=>x.category===r.category).length;
       html+=`<div class="research-category-heading">
         <img class="research-category-heading-icon" src="${categoryIcon(r.category)}" alt="" aria-hidden="true">
-        <div><h2>${esc(r.category)}</h2><span>${count} item${count===1?'':'s'}</span></div>
+        <div><h2>${esc(r.category)}</h2><span><b class="research-type-tag ${r.researchType.toLowerCase()}">${esc(r.researchType)}</b> · ${count} item${count===1?'':'s'}</span></div>
       </div>`;
       lastCat=r.category;
     }
@@ -84,7 +87,7 @@ function render(){
     const levels=r.levelCosts.map((cost,i)=>`<div class="level-cost ${cost==null?'empty':''}"><span class="level">Level ${i+1}</span><span class="cost">${cost==null?'—':fmt(cost)}</span></div>`).join('');
     html+=`<details class="research-item">
       <summary>
-        <img class="research-item-icon" src="${categoryIcon(r.category)}" alt="" aria-hidden="true">
+        <img class="research-item-icon" src="${subgroupIcon(r.research)}" onerror="this.onerror=null;this.src='${categoryIcon(r.category)}'" alt="" aria-hidden="true">
         <div class="research-name">
           <strong>${esc(r.research)}</strong>
           <span>${r.levelCount===1?'Unlock / single level':`${r.levelCount} research levels`}</span>
@@ -107,11 +110,11 @@ function render(){
   $('researchLoadMore').textContent=`Show more (${Math.min(PAGE_SIZE,filtered.length-shown).toLocaleString('en-US')})`;
 }
 function reset(){
-  $('researchSearch').value='';$('categoryFilter').value='';$('currencyFilter').value='';$('levelFilter').value='';$('researchSort').value='source';apply();
+  $('researchSearch').value='';$('typeFilter').value='';$('categoryFilter').value='';$('currencyFilter').value='';$('levelFilter').value='';$('researchSort').value='source';apply();
 }
 async function init(){
   try{
-    const res=await fetch('data/research-data.json?v=26',{cache:'no-store'});
+    const res=await fetch('data/research-data.json?v=28',{cache:'no-store'});
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const payload=await res.json();data=payload.records||[];
     populateCategories();apply();
@@ -121,7 +124,7 @@ async function init(){
   }
 }
 $('researchSearch').addEventListener('input',apply);
-['categoryFilter','currencyFilter','levelFilter','researchSort'].forEach(id=>$(id).addEventListener('change',apply));
+['typeFilter','categoryFilter','currencyFilter','levelFilter','researchSort'].forEach(id=>$(id).addEventListener('change',apply));
 $('clearResearchSearch').addEventListener('click',()=>{$('researchSearch').value='';apply();$('researchSearch').focus();});
 $('resetResearchFilters').addEventListener('click',reset);
 $('researchLoadMore').addEventListener('click',()=>{shown+=PAGE_SIZE;render();});
