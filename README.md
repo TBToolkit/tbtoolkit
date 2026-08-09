@@ -15,3 +15,8 @@ Changes in v4:
 ## v6 update
 - Removed the Biff quote/image panel from the homepage.
 - Rebalanced the lower homepage section into two columns.
+
+
+## v7 changes
+- Removed the language selector from the header.
+- Rebuilt the mobile hero so artwork and text are separate stacked sections, preventing text overlays.

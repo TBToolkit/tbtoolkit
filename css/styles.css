@@ -454,3 +454,82 @@ button { font: inherit; }
   .calendar-open-button { width:100%; min-height:48px; }
   .calendar-frame { min-height: 420px; }
 }
+
+
+/* v7 mobile cleanup: no overlapping hero text, no language selector */
+.language-button { display: none !important; }
+
+@media (max-width: 920px) {
+  .redesigned-hero {
+    min-height: 0;
+    overflow: hidden;
+    background: #030912;
+  }
+  .redesigned-hero .hero-art {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: clamp(300px, 55vw, 430px);
+    overflow: hidden;
+  }
+  .redesigned-hero .hero-art img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 58% center;
+  }
+  .redesigned-hero .hero-vignette {
+    display: none;
+  }
+  .redesigned-hero .hero-layout {
+    min-height: 0;
+    display: block;
+  }
+  .redesigned-hero .hero-message {
+    width: 100%;
+    max-width: none;
+    padding: 28px 0 34px;
+    background: #030912;
+  }
+  .redesigned-hero .hero-message h1 {
+    font-size: clamp(3rem, 10vw, 4.4rem);
+  }
+  .redesigned-hero .hero-tagline {
+    font-size: clamp(1.9rem, 7vw, 2.8rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .header-row { min-height: 60px; }
+  .menu-toggle { margin-left: auto; }
+  .nav { top: 60px; left: 12px; right: 12px; }
+  .redesigned-hero .hero-art {
+    height: 270px;
+  }
+  .redesigned-hero .hero-art img {
+    object-position: 62% center;
+  }
+  .redesigned-hero .hero-message {
+    padding: 24px 0 28px;
+  }
+  .redesigned-hero .hero-message h1 {
+    font-size: clamp(2.75rem, 15vw, 4rem);
+    line-height: .92;
+  }
+  .redesigned-hero .hero-tagline {
+    margin-top: 14px;
+    font-size: clamp(1.7rem, 9vw, 2.45rem);
+    line-height: 1;
+  }
+  .redesigned-hero .hero-rule { margin: 18px 0; }
+  .redesigned-hero .hero-description {
+    font-size: 1rem;
+    margin-bottom: 18px;
+  }
+  .redesigned-hero .cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
