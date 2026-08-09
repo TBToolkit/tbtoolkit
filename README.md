@@ -10,3 +10,8 @@ Changes in v4:
 - Added the BIFF STACK v2.2 OneDrive link.
 - Embedded the Total Battle Google event calendar.
 - Retained the Research spreadsheet link and mobile-responsive layout.
+
+
+## v6 update
+- Removed the Biff quote/image panel from the homepage.
+- Rebalanced the lower homepage section into two columns.
