@@ -944,3 +944,175 @@ button:focus-visible{
 @media(max-width:520px){
   .brand-wordmark{width:150px}
 }
+
+
+/* ==========================================================================
+   v25 HOMEPAGE — REAL INTERACTIVE HERO CONTROLS
+   The approved image stays intact on the right. The baked-in pseudo-controls
+   on the left are fully masked and replaced by real HTML content.
+   ========================================================================== */
+
+.interactive-war-council{
+  position:relative;
+  min-height:clamp(540px,54vw,835px);
+  overflow:hidden;
+  background:#02070d;
+  isolation:isolate;
+}
+.interactive-war-council .war-council-art{
+  position:absolute;
+  inset:0;
+  z-index:0;
+}
+.interactive-war-council .war-council-art picture,
+.interactive-war-council .war-council-art img{
+  display:block;
+  width:100%;
+  height:100%;
+}
+.interactive-war-council .war-council-art img{
+  object-fit:cover;
+  object-position:center center;
+  opacity:1!important;
+  filter:none!important;
+}
+
+/* Opaque enough to completely hide the text/icons/button baked into the artwork,
+   fading away before it reaches Hercules. */
+.interactive-war-council .war-council-mask{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,
+      #02070d 0%,
+      #02070d 24%,
+      rgba(2,7,13,.98) 29%,
+      rgba(2,7,13,.84) 34%,
+      rgba(2,7,13,.35) 40%,
+      rgba(2,7,13,0) 48%);
+}
+.interactive-war-council .war-council-copy{
+  position:relative;
+  z-index:2;
+  min-height:inherit;
+  display:flex;
+  align-items:center;
+}
+.war-council-copy-inner{
+  width:min(430px,34vw);
+  padding:36px 0 44px;
+}
+.war-council-copy h1{
+  margin:0;
+  color:#f5f6f7;
+  font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+  font-size:clamp(3.2rem,5.1vw,5.7rem);
+  line-height:.9;
+  letter-spacing:-.035em;
+  text-transform:uppercase;
+}
+.war-council-copy .hero-tagline{
+  margin:20px 0 0;
+  color:var(--orange-bright);
+  font-size:clamp(1.1rem,1.5vw,1.45rem);
+  line-height:1.15;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.war-council-copy .hero-description{
+  max-width:360px;
+  margin:20px 0 0;
+  color:#d4dbe3;
+  font-size:clamp(.95rem,1.15vw,1.1rem);
+  line-height:1.55;
+}
+.war-council-copy .hero-cta{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  min-height:50px;
+  margin-top:25px;
+  padding:0 22px;
+  border:1px solid #f39a17;
+  border-radius:7px;
+  background:linear-gradient(#ffb330,#ef8a00);
+  color:#0b0d10;
+  font-weight:950;
+  text-transform:uppercase;
+  box-shadow:0 9px 26px rgba(0,0,0,.28);
+  transition:transform .15s ease,filter .15s ease;
+}
+.war-council-copy .hero-cta:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.06);
+}
+
+/* Retire the old v23 desktop/mobile hero wrappers if cached styles remain. */
+.interactive-war-council .war-council-desktop,
+.interactive-war-council .war-council-mobile{
+  display:none!important;
+}
+
+@media(max-width:900px){
+  .interactive-war-council{
+    min-height:610px;
+  }
+  .interactive-war-council .war-council-art img{
+    object-position:57% center;
+  }
+  .interactive-war-council .war-council-mask{
+    background:
+      linear-gradient(to bottom,
+        rgba(2,7,13,.02) 0%,
+        rgba(2,7,13,.08) 42%,
+        rgba(2,7,13,.88) 66%,
+        #02070d 78%,
+        #02070d 100%);
+  }
+  .interactive-war-council .war-council-copy{
+    align-items:flex-end;
+  }
+  .war-council-copy-inner{
+    width:100%;
+    padding:0 0 34px;
+  }
+  .war-council-copy h1{
+    font-size:3rem;
+  }
+  .war-council-copy .hero-tagline{
+    margin-top:12px;
+    font-size:1.18rem;
+  }
+  .war-council-copy .hero-description{
+    margin-top:14px;
+    max-width:340px;
+    font-size:.98rem;
+  }
+  .war-council-copy .hero-cta{
+    margin-top:18px;
+  }
+}
+
+@media(max-width:520px){
+  .interactive-war-council{
+    min-height:590px;
+  }
+  .interactive-war-council .war-council-art{
+    height:390px;
+  }
+  .interactive-war-council .war-council-art img{
+    object-position:53% center;
+  }
+  .interactive-war-council .war-council-mask{
+    background:
+      linear-gradient(to bottom,
+        rgba(2,7,13,0) 0%,
+        rgba(2,7,13,.08) 39%,
+        rgba(2,7,13,.91) 61%,
+        #02070d 70%,
+        #02070d 100%);
+  }
+}
