@@ -146,7 +146,7 @@ function renderLayerHealthChart(result){
 
   const svg=els.layerHealthChart;
   svg.innerHTML='';
-  const width=Math.max(760,Math.min(1220,680+Math.max(source.troop.length,source.monster.length,source.mercenary.length)*22));
+  const width=900;
   const height=430;
   const margin={top:34,right:35,bottom:48,left:78};
   const plotW=width-margin.left-margin.right;
@@ -155,10 +155,9 @@ function renderLayerHealthChart(result){
   svg.setAttribute('preserveAspectRatio','none');
 
   const vals=all.map(r=>r.squadHealth).filter(Number.isFinite);
-  let min=Math.min(...vals),max=Math.max(...vals);
-  const span=Math.max(max-min,Math.abs(max)*.02,1);
-  min=Math.max(0,min-span*.14);
-  max=max+span*.14;
+  let min=0,max=Math.max(...vals);
+  const span=Math.max(max,1);
+  max=max+span*.08;
 
   const y=v=>margin.top+(max-v)/(max-min)*plotH;
   const x=(i,count)=>{
@@ -202,10 +201,10 @@ function renderLayerHealthChart(result){
 
   // Direction labels.
   const first=svgEl('text',{x:margin.left,y:height-15,class:'chart-axis-label'});
-  first.textContent='Higher health / dies earlier';
+  first.textContent='Higher squad health';
   svg.appendChild(first);
   const last=svgEl('text',{x:margin.left+plotW,y:height-15,'text-anchor':'end',class:'chart-axis-label'});
-  last.textContent='Lower health / dies later';
+  last.textContent='Lower squad health';
   svg.appendChild(last);
 
   for(const [category,rows] of Object.entries(source)){
@@ -235,7 +234,8 @@ function renderLayerHealthChart(result){
 
       const showTip=(evt)=>{
         const tip=els.layerChartTooltip;
-        tip.innerHTML=`<strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Approx. position in ${meta.label}: ${i+1} of ${rows.length}</span>`;
+        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Position in ${meta.label}: ${i+1} of ${rows.length}</span></div>`;
+        iconFallback(tip.querySelector('img'));
         tip.hidden=false;
         const wrap=svg.parentElement.getBoundingClientRect();
         const rect=evt.currentTarget.getBoundingClientRect();
