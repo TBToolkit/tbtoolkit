@@ -587,3 +587,34 @@ button { font: inherit; }
     height:3px!important;
   }
 }
+
+
+/* v16: standardize hamburger spacing to match Home / Stacking / Event Calendar */
+@media(max-width:920px){
+  .menu-toggle{
+    display:flex!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    padding:8px 10px!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    font-size:0!important;
+    line-height:0!important;
+  }
+  .menu-toggle span{
+    display:block!important;
+    width:24px!important;
+    height:3px!important;
+    min-height:3px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:#fff!important;
+    opacity:1!important;
+    flex:0 0 3px!important;
+  }
+}
