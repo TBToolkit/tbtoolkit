@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TB Toolkit provides free tools and resources for Total Battle players.">
+  <meta name="description" content="TB Toolkit provides free tools, data, and resources for Total Battle players.">
+  <meta name="theme-color" content="#050b14">
   <title>TB Toolkit | Free Tools for Total Battle Players</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/site.js" defer></script>
@@ -12,10 +13,14 @@
   <header class="site-header">
     <div class="container header-row">
       <a class="brand" href="index.html" aria-label="TB Toolkit home">
-        <span class="brand-mark">TB TOOLKIT</span>
+        <span class="brand-mark"><span>TB</span> TOOLKIT<i></i></span>
         <span class="brand-sub">Tools for Total Battle players</span>
       </a>
-      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-menu-toggle>☰</button>
+
+      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-menu-toggle>
+        <span></span><span></span><span></span>
+      </button>
+
       <nav class="nav" aria-label="Main navigation" data-nav>
         <a href="index.html" aria-current="page">Home</a>
         <a href="stacking.html">Stacking Calculators</a>
@@ -25,96 +30,140 @@
         <a href="resources.html">Resources</a>
         <a href="about.html">About</a>
       </nav>
+
+      <button class="language-button" type="button" aria-label="Language selector" title="More languages coming later">◎ <span>EN</span>⌄</button>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero-art" aria-hidden="true"></div>
-      <div class="container hero-grid">
-        <div>
-          <div class="eyebrow">Free community tools</div>
-          <h1><span>Back</span> to the Toolkit</h1>
-          <p class="hero-copy">TB Toolkit provides practical calculators, reference data, and planning resources for Total Battle players. The tools are free to use and built to make the game easier to plan.</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="stacking.html">Open Stacking Calculators →</a>
-            <a class="button button-secondary" href="#tools">Browse Tools</a>
-          </div>
+    <section class="home-hero">
+      <div class="hero-backdrop" aria-hidden="true"></div>
+      <div class="container hero-layout">
+        <div class="hero-message">
+          <h1>TB TOOLKIT</h1>
+          <p class="hero-tagline">Because guessing<br>is expensive.</p>
+          <div class="hero-rule"></div>
+          <p class="hero-description">Free tools, data, and resources<br>for Total Battle players.</p>
+          <a class="cta cta-primary" href="#tools"><span class="cta-icon">⚔</span>Explore Tools <span aria-hidden="true">→</span></a>
         </div>
-        <div aria-hidden="true"></div>
       </div>
     </section>
 
-    <section class="section" id="tools">
-      <div class="container">
-        <div class="section-heading">
+    <section class="home-tools" id="tools" aria-label="Featured tools">
+      <div class="container feature-grid">
+        <a class="feature-card feature-orange" href="stacking.html">
+          <div class="feature-icon">⚔</div>
+          <div class="feature-copy">
+            <h2>Stacking<br>Calculators</h2>
+            <p>Build optimized armies. Epic Optimizer, Custom Stacker, and more.</p>
+            <span class="feature-link">Open Calculators →</span>
+          </div>
+        </a>
+
+        <a class="feature-card feature-green" href="chests.html">
+          <div class="feature-icon">▣</div>
+          <div class="feature-copy">
+            <h2>Chest Data</h2>
+            <p>Chest values, points, requirements, and related reference data.</p>
+            <span class="feature-link">View Chest Data →</span>
+          </div>
+        </a>
+
+        <a class="feature-card feature-blue" href="calendar.html">
+          <div class="feature-icon calendar-icon">▦</div>
+          <div class="feature-copy">
+            <h2>Event<br>Calendar</h2>
+            <p>See upcoming Total Battle events and plan ahead.</p>
+            <span class="feature-link">View Calendar →</span>
+          </div>
+        </a>
+
+        <a class="feature-card feature-purple" href="research.html">
+          <div class="feature-icon">⚗</div>
+          <div class="feature-copy">
+            <h2>Research</h2>
+            <p>Technology research requirements and progression data.</p>
+            <span class="feature-link">View Research →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="home-secondary">
+      <div class="container secondary-grid">
+        <article class="biff-quote panel">
+          <img src="assets/images/biff-1980s.jpg" alt="1980s Biff Tannen">
+          <div class="quote-mark" aria-hidden="true">“</div>
+          <blockquote>
+            <p>Don't select all like a butthead,<br>use a stacking calculator.</p>
+            <cite>— Biff Tannen</cite>
+          </blockquote>
+        </article>
+
+        <article class="mission panel">
+          <div class="mission-icon" aria-hidden="true">B</div>
           <div>
-            <div class="eyebrow">Start here</div>
-            <h2>Useful tools for everyday play</h2>
-            <p>Use the calculators and reference pages directly, or open the current spreadsheets while the web tools are being built.</p>
+            <h2>Built by Biff. Made for everyone.</h2>
+            <p>TB Toolkit is a free collection of tools and data created by a Total Battle player for the Total Battle community.</p>
+            <div class="mission-points">
+              <span>✓ No subscriptions.</span>
+              <span>✓ No premium tools.</span>
+              <span>✓ No paywalls.</span>
+            </div>
+            <em>Just useful stuff to help you win.</em>
           </div>
-        </div>
+        </article>
 
-        <div class="tool-grid">
-          <article class="card tool-card" style="--accent: var(--orange)">
-            <div class="tool-icon">⚔</div>
-            <div class="kicker">Army planning</div>
-            <h3>Stacking Calculators</h3>
-            <p>Build army stacks for Epic battles or create custom die orders for other battle types.</p>
-            <a class="button button-ghost" href="stacking.html">Open calculators</a>
-          </article>
-
-          <article class="card tool-card" style="--accent: var(--blue)">
-            <div class="tool-icon">📦</div>
-            <div class="kicker">Reference data</div>
-            <h3>Chest Data</h3>
-            <p>Open chest values, point information, and related reference data in one place.</p>
-            <a class="button button-ghost" href="chests.html">Open chest data</a>
-          </article>
-
-          <article class="card tool-card" style="--accent: var(--green)">
-            <div class="tool-icon">📅</div>
-            <div class="kicker">Planning</div>
-            <h3>Event Calendar</h3>
-            <p>Check upcoming events and use the schedule to plan resources and activity.</p>
-            <a class="button button-ghost" href="calendar.html">Open calendar</a>
-          </article>
-
-          <article class="card tool-card" style="--accent: var(--purple)">
-            <div class="tool-icon">🔬</div>
-            <div class="kicker">Technology</div>
-            <h3>Research</h3>
-            <p>Find technology research requirements and open the current research spreadsheet.</p>
-            <a class="button button-ghost" href="research.html">Open research</a>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section about-strip">
-      <div class="container about-grid">
-        <div>
-          <div class="eyebrow">About the project</div>
-          <h2>Built by a player, for players</h2>
-          <p>TB Toolkit is a free community project created by Biff. The goal is simple: provide useful tools and clear information that help players spend less time on repetitive calculations and more time enjoying the game.</p>
-          <a class="button button-secondary" href="about.html">About TB Toolkit</a>
-        </div>
-        <div class="values">
-          <div class="value"><strong>Free</strong><span>No paywalls</span></div>
-          <div class="value"><strong>Practical</strong><span>Built around real game use</span></div>
-          <div class="value"><strong>Open</strong><span>Data exports planned</span></div>
-        </div>
+        <a class="data-panel panel" href="resources.html">
+          <div class="data-icon" aria-hidden="true">⇩</div>
+          <div>
+            <h2>Data for everyone</h2>
+            <p>Want to build your own tools? Check out data exports and open resources.</p>
+            <span>Go to Resources →</span>
+          </div>
+        </a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-row">
-      <div>© <span data-year></span> TB Toolkit · Unofficial player-created site · Not affiliated with Scorewarrior.</div>
-      <div class="footer-links">
-        <a href="resources.html">Resources</a>
-        <a href="about.html">About</a>
+  <footer class="site-footer home-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand-block">
+        <a class="brand footer-brand" href="index.html"><span class="brand-mark"><span>TB</span> TOOLKIT<i></i></span></a>
+        <span class="brand-sub footer-sub">Tools for Total Battle players</span>
+        <div class="social-row" aria-label="Social links coming later"><span>◉</span><span>▶</span><span>✉</span></div>
       </div>
+
+      <div class="footer-column">
+        <h3>Quick Links</h3>
+        <a href="stacking.html">Stacking Calculators</a>
+        <a href="chests.html">Chest Data</a>
+        <a href="calendar.html">Event Calendar</a>
+        <a href="research.html">Research</a>
+        <a href="resources.html">Resources</a>
+      </div>
+
+      <div class="footer-column">
+        <h3>Popular Resources</h3>
+        <a href="stacking.html">BIFF STACK Excel</a>
+        <a href="stacking.html">Custom Stacker Excel</a>
+        <a href="research.html">Research Spreadsheet</a>
+        <span>Total Battle Wiki</span>
+        <span>Official Total Battle Site</span>
+      </div>
+
+      <div class="footer-column">
+        <h3>Legal</h3>
+        <a href="about.html">About TB Toolkit</a>
+        <a href="about.html">About Biff</a>
+        <span>Privacy Policy</span>
+        <span>Terms of Use</span>
+        <span>Disclaimer</span>
+      </div>
+    </div>
+    <div class="container legal-line">
+      <span>© <span data-year></span> TB Toolkit. All rights reserved.</span>
+      <span>TB Toolkit is an unofficial player-created site and is not affiliated with Scorewarrior or Total Battle.</span>
     </div>
   </footer>
 </body>
