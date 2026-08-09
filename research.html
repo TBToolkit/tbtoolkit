@@ -1,23 +1,116 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="Technology research requirements for Total Battle players." name="description"/><title>Research | TB Toolkit</title><link href="css/styles.css?v=25" rel="stylesheet"/><script defer="" src="js/site.js"></script></head><body>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Search Total Battle technology research costs by category, level, Valor Points, and Conquest Points." name="description"/>
+<title>Research | TB Toolkit</title>
+<link href="css/styles.css?v=26" rel="stylesheet"/>
+<link href="css/research.css?v=26" rel="stylesheet"/>
+<script defer src="js/site.js"></script>
+<script defer src="js/research.js?v=26"></script>
+</head>
+<body>
 <header class="site-header">
 <div class="container header-row">
 <a class="brand" href="index.html" aria-label="TB Toolkit home">
 <img class="brand-wordmark" src="assets/images/tbtoolkit-wordmark.webp" alt="TB Toolkit"/>
 <span class="brand-sub">Tools for Total Battle players</span>
 </a>
-<button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle="" type="button">
+<button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle type="button">
 <span></span><span></span><span></span>
 </button>
-<nav aria-label="Main navigation" class="nav" data-nav="">
-<a href="index.html">Home</a><a href="stacking.html">Stacking Calculators</a><a href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a aria-current="page" href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
+<nav aria-label="Main navigation" class="nav" data-nav>
+<a href="index.html">Home</a>
+<a href="stacking.html">Stacking Calculators</a>
+<a href="chests.html">Chest Data</a>
+<a href="calendar.html">Event Calendar</a>
+<a aria-current="page" href="research.html">Research</a>
+<a href="resources.html">Resources</a>
+<a href="about.html">About</a>
 </nav>
 </div>
 </header>
-<main><section class="page-hero"><div class="container"><div class="breadcrumb">Home / Research</div><h1 class="page-title">Research</h1><p class="page-intro">Find technology research requirements and planning data.</p></div></section><section class="section"><div class="container"><div class="card content-card"><div class="eyebrow">Current resource</div><h2>Technology Research Requirements</h2><p>The current research data is maintained in a Google spreadsheet. Open the spreadsheet to view technology requirements while the web version is being developed.</p><a class="button button-primary" href="https://docs.google.com/spreadsheets/d/1MB2XknUEpbw1PZyu4ai0pX7S04KmBzeSth4SCtkymCc/edit?gid=1233188869#gid=1233188869" rel="noopener noreferrer" target="_blank">Open research spreadsheet ↗</a></div></div></section></main>
+
+<main>
+<section class="page-hero research-hero">
+<div class="container">
+<div class="breadcrumb">Home / Research</div>
+<h1 class="page-title">Technology Research</h1>
+<p class="page-intro">Search Academy research costs across every technology category.</p>
+</div>
+</section>
+
+<section class="section research-section">
+<div class="container">
+<div class="research-toolbar card">
+  <div class="research-search-wrap">
+    <label for="researchSearch">Search research</label>
+    <div class="research-search-box">
+      <span aria-hidden="true">⌕</span>
+      <input id="researchSearch" type="search" autocomplete="off" placeholder="Search technology name or category…"/>
+      <button id="clearResearchSearch" type="button" aria-label="Clear search" hidden>×</button>
+    </div>
+  </div>
+
+  <div class="research-filters">
+    <label>Category
+      <select id="categoryFilter"><option value="">All categories</option></select>
+    </label>
+    <label>Point type
+      <select id="currencyFilter">
+        <option value="">All point types</option>
+        <option value="Valor Points">Valor Points</option>
+        <option value="Conquest Points">Conquest Points</option>
+      </select>
+    </label>
+    <label>Research levels
+      <select id="levelFilter">
+        <option value="">All</option>
+        <option value="1">Unlock / single level</option>
+        <option value="multi">Multiple levels</option>
+      </select>
+    </label>
+    <label>Sort
+      <select id="researchSort">
+        <option value="source">Game / source order</option>
+        <option value="name">Name A–Z</option>
+        <option value="totalAsc">Total cost: low to high</option>
+        <option value="totalDesc">Total cost: high to low</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="research-summary">
+  <div><strong id="visibleResearchCount">0</strong><span>research items</span></div>
+  <div><strong id="visibleCategoryCount">0</strong><span>categories shown</span></div>
+  <p><span class="point-dot valor"></span>Valor Points <span class="point-dot conquest"></span>Conquest Points</p>
+</div>
+
+<div id="researchEmpty" class="research-empty card" hidden>
+  <h2>No research found</h2>
+  <p>Try a different search term or clear one of the filters.</p>
+  <button class="button button-primary" id="resetResearchFilters" type="button">Clear filters</button>
+</div>
+
+<div id="researchResults" class="research-results" aria-live="polite"></div>
+
+<div class="research-load-more-wrap" id="researchLoadMoreWrap" hidden>
+  <button class="button research-load-more" id="researchLoadMore" type="button">Show more</button>
+</div>
+
+<div class="research-note card">
+  <strong>Point types</strong>
+  <p>Specialists I, Specialists II, Army Modernization, and Monster Boost use <b>Conquest Points</b>. All other categories use Valor Points.</p>
+</div>
+</div>
+</section>
+</main>
+
 <footer class="site-footer">
 <div class="container footer-row">
-<div>© <span data-year=""></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
+<div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
 <nav aria-label="Footer navigation" class="footer-links">
 <a href="stacking.html">Stacking Calculators</a>
 <a href="chests.html">Chest Data</a>
@@ -27,4 +120,6 @@
 <a href="about.html">About</a>
 </nav>
 </div>
-</footer></body></html>
+</footer>
+</body>
+</html>
