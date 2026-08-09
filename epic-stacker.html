@@ -6,9 +6,9 @@
   <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
   <title>Epic Stacker | TB Toolkit</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/epic-stacker.css?v=9">
+  <link rel="stylesheet" href="css/epic-stacker.css?v=11">
   <script src="js/site.js" defer></script>
-  <script type="module" src="js/epic-stacker.js?v=9"></script>
+  <script type="module" src="js/epic-stacker.js?v=11"></script>
 </head>
 <body class="epic-page">
 <header class="site-header">
@@ -64,7 +64,7 @@
                 <label class="field-label" for="authority">Maximum</label>
                 <input class="epic-input formatted-number" id="authority" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
               </div>
-              <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox" checked><span>Max Fill</span></label>
+              <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"><span>Max Fill</span></label>
               <div class="limit-control limit-fill">
                 <label class="field-label" for="authorityFill">Fill</label>
                 <div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
@@ -100,17 +100,22 @@
                 <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
               </label>
             </div>
-            <p class="setting-note health-help">Use a recent battle report against the same Epic. Under <strong>Health</strong>, open one Monster unit, one Human unit, and one Epic Hunter unit. Enter the <strong>Health %</strong> shown in each unit's Stats.</p>
+            <p class="setting-note health-help">Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit. Enter the <strong>Health %</strong> shown in each unit's Stats.</p>
             <div class="checkbox-row">
               <input id="arachne" type="checkbox">
               <label for="arachne">Fighting Arachne Swarm</label>
             </div>
             <details class="advanced">
               <summary>Advanced settings</summary>
-              <div class="advanced-row">
-                <label for="rankSeparation">Layer separation</label>
-                <div class="percent-field"><input class="epic-input" id="rankSeparation" inputmode="decimal" type="text" value="0.40"><span>%</span></div>
+              <div class="advanced-row layer-separation-control">
+                <div class="slider-heading">
+                  <label for="rankSeparation">Layer separation</label>
+                  <output id="rankSeparationValue" for="rankSeparation">0.40%</output>
+                </div>
+                <input class="separation-slider" id="rankSeparation" type="range" min="0" max="1" step="0.01" value="0.40">
+                <div class="slider-scale" aria-hidden="true"><span>0%</span><span>0.50%</span><span>1.00%</span></div>
                 <p class="setting-note">BIFF STACK v2.2 uses 0.40% between adjacent PvE ranks.</p>
+                <button class="slider-reset" type="button" id="resetRankSeparation">↺ Reset to Default (0.40%)</button>
               </div>
             </details>
           </div>
