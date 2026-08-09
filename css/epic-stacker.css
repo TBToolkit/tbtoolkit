@@ -363,3 +363,21 @@
 .order-item.dragging .drag-handle{
   cursor:grabbing;
 }
+
+
+/* v21 final polish */
+
+/* The tooltip uses the HTML hidden attribute; explicitly honor it even though
+   the tooltip is otherwise display:grid. */
+.chart-tooltip[hidden]{
+  display:none!important;
+}
+
+/* Match the Health % symbol to the value typography. */
+.health-percent-field>span{
+  font-size:1rem!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+  color:#fff!important;
+  font-variant-numeric:tabular-nums;
+}
