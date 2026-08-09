@@ -181,3 +181,17 @@
     max-width:100px;
   }
 }
+
+
+/* v28 — larger filter text, Unlock/Boost classification, subgroup artwork */
+.research-filters{grid-template-columns:1.05fr 1.2fr 1fr 1fr 1fr}
+.research-filters select{font-size:1rem;font-weight:700;line-height:1.2}
+.research-filters select option{font-size:1rem}
+.research-search-wrap>label,.research-filters label{font-size:.76rem}
+.research-type-tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.61rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}
+.research-type-tag.unlock{color:#9ecaff;background:#0b2942;border:1px solid #2f6faa}
+.research-type-tag.boost{color:#ffc967;background:#2b1e08;border:1px solid #805a18}
+.research-item-icon{object-fit:cover;object-position:center}
+@media(max-width:980px){.research-filters{grid-template-columns:1fr 1fr 1fr}}
+@media(max-width:700px){.research-filters{grid-template-columns:1fr 1fr}.research-filters select{font-size:1.05rem}}
+@media(max-width:520px){.research-filters{grid-template-columns:1fr}.research-filters select{height:48px;font-size:1.08rem}}
