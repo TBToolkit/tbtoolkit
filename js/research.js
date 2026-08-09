@@ -3,6 +3,27 @@ const PAGE_SIZE=80;
 let data=[],filtered=[],shown=PAGE_SIZE;
 const $=id=>document.getElementById(id);
 
+const CATEGORY_ICONS={
+  'Guardsmen I':'guardsmen-i',
+  'Specialists I':'specialists-i',
+  'Engineer Corps I':'engineer-corps-i',
+  'Monsters I':'monsters-i',
+  'Archeology':'archeology',
+  'Blacksmithing':'blacksmithing',
+  'Guardsmen II':'guardsmen-ii',
+  'Specialists II':'specialists-ii',
+  'Engineer Corps II':'engineer-corps-ii',
+  'Monsters II':'monsters-ii',
+  'Army Modernization':'army-modernization',
+  'Economy':'economy',
+  'Monster Boost':'monster-boost',
+  'Logistics':'logistics'
+};
+const categoryIcon=category=>`assets/images/research/${CATEGORY_ICONS[category]||'archeology'}.webp`;
+const pointIcon=currency=>currency==='Conquest Points'
+  ?'assets/images/research/conquest-points.webp'
+  :'assets/images/research/valor-points.webp';
+
 const fmt=n=>{
   if(n==null)return '—';
   return Number(n).toLocaleString('en-US');
@@ -53,15 +74,25 @@ function render(){
   for(const r of rows){
     if(r.category!==lastCat){
       const count=filtered.filter(x=>x.category===r.category).length;
-      html+=`<div class="research-category-heading"><h2>${esc(r.category)}</h2><span>${count} item${count===1?'':'s'}</span></div>`;
+      html+=`<div class="research-category-heading">
+        <img class="research-category-heading-icon" src="${categoryIcon(r.category)}" alt="" aria-hidden="true">
+        <div><h2>${esc(r.category)}</h2><span>${count} item${count===1?'':'s'}</span></div>
+      </div>`;
       lastCat=r.category;
     }
     const badge=r.currency==='Conquest Points'?'conquest':'valor';
     const levels=r.levelCosts.map((cost,i)=>`<div class="level-cost ${cost==null?'empty':''}"><span class="level">Level ${i+1}</span><span class="cost">${cost==null?'—':fmt(cost)}</span></div>`).join('');
     html+=`<details class="research-item">
       <summary>
-        <div class="research-name"><strong>${esc(r.research)}</strong><span>${r.levelCount===1?'Unlock / single level':`${r.levelCount} research levels`}</span></div>
-        <span class="point-badge ${badge}">${esc(r.currency)}</span>
+        <img class="research-item-icon" src="${categoryIcon(r.category)}" alt="" aria-hidden="true">
+        <div class="research-name">
+          <strong>${esc(r.research)}</strong>
+          <span>${r.levelCount===1?'Unlock / single level':`${r.levelCount} research levels`}</span>
+        </div>
+        <span class="point-badge ${badge}">
+          <img src="${pointIcon(r.currency)}" alt="" aria-hidden="true">
+          <span>${esc(r.currency)}</span>
+        </span>
         <div class="research-total"><strong>${compact(r.totalCost)}</strong><span>Total ${esc(r.currency)}</span></div>
         <span class="research-chevron">›</span>
       </summary>
