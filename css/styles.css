@@ -895,3 +895,52 @@ button:focus-visible{
     text-transform:uppercase;
   }
 }
+
+
+/* ==========================================================================
+   v24 HERO VISIBILITY + CANONICAL ARTWORK WORDMARK
+   ========================================================================== */
+
+.brand-wordmark{
+  display:block;
+  width:166px;
+  height:auto;
+  object-fit:contain;
+  object-position:left center;
+}
+.brand-sub{
+  margin-top:4px;
+}
+
+/* Remove legacy overlays that were darkening the left side of the approved hero art. */
+.home-hero.war-council-hero::before,
+.home-hero.war-council-hero::after,
+.war-council-desktop::before,
+.war-council-desktop::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
+.home-hero.war-council-hero,
+.war-council-desktop,
+.war-council-desktop img{
+  opacity:1!important;
+  filter:none!important;
+  mix-blend-mode:normal!important;
+}
+.war-council-desktop img{
+  position:relative!important;
+  z-index:2!important;
+}
+
+/* Neutralize old hero shading layers inherited from previous homepage versions. */
+.home-hero.war-council-hero{
+  background:#02070d!important;
+}
+.home-hero.war-council-hero > .war-council-desktop{
+  isolation:isolate;
+}
+
+@media(max-width:520px){
+  .brand-wordmark{width:150px}
+}
