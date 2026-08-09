@@ -220,3 +220,50 @@
   .overlap-summary{grid-template-columns:1fr}
   .layer-health-chart{height:400px}
 }
+
+
+/* v13 chart refinements */
+.chart-legend{
+  justify-content:center;
+  padding:12px 15px 5px;
+}
+.layer-chart-scroll{
+  overflow-x:hidden;
+  padding:10px 13px 7px;
+}
+.layer-chart-wrap{
+  min-width:0;
+  width:100%;
+}
+.layer-health-chart{
+  width:100%;
+  height:auto;
+  aspect-ratio:16/9;
+  min-height:320px;
+}
+.chart-tooltip{
+  display:grid;
+  grid-template-columns:58px minmax(0,1fr);
+  gap:9px;
+  align-items:start;
+  min-width:210px;
+  max-width:270px;
+}
+.chart-tooltip img{
+  width:58px;
+  height:58px;
+  object-fit:cover;
+  border-radius:6px;
+  border:1px solid #4b6274;
+  background:#02080d;
+}
+.chart-tooltip .tooltip-copy{min-width:0}
+.chart-tooltip .tooltip-copy strong{font-size:.74rem}
+.chart-tooltip .tooltip-copy span{font-size:.66rem}
+@media(max-width:760px){
+  .chart-legend{gap:13px;padding-top:11px}
+  .layer-chart-scroll{padding-left:8px;padding-right:8px}
+  .layer-health-chart{min-height:300px;aspect-ratio:1.25/1}
+  .chart-tooltip{grid-template-columns:52px minmax(0,1fr);min-width:190px;max-width:235px}
+  .chart-tooltip img{width:52px;height:52px}
+}
