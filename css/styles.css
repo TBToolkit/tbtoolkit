@@ -417,3 +417,40 @@ button { font: inherit; }
   .calendar-shell { padding:5px; }
   .calendar-frame { height:560px; }
 }
+
+/* v5 hero: clean artwork only; no navigation or UI baked into the image */
+.redesigned-hero { min-height: 470px; }
+.redesigned-hero .hero-layout { min-height: 470px; }
+.redesigned-hero .hero-message { padding-top: 34px; padding-bottom: 40px; }
+.redesigned-hero .hero-art {
+  width: 68%;
+  height: 100%;
+  top: 0;
+  right: 0;
+}
+.redesigned-hero .hero-art img {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  object-fit: cover;
+  object-position: 52% center;
+  filter: saturate(.98) contrast(1.02);
+}
+.redesigned-hero .hero-vignette {
+  background: linear-gradient(90deg,#030912 0%,rgba(3,9,18,.96) 28%,rgba(3,9,18,.72) 39%,rgba(3,9,18,.18) 55%,rgba(3,9,18,0) 73%);
+}
+.calendar-actions { display:flex; justify-content:flex-end; margin-top:16px; }
+.calendar-open-button { display:inline-flex; align-items:center; justify-content:center; }
+@media (max-width: 920px) {
+  .redesigned-hero { min-height: 560px; }
+  .redesigned-hero .hero-layout { min-height: 560px; }
+  .redesigned-hero .hero-art { width: 100%; height: 56%; }
+  .redesigned-hero .hero-art img { object-position: 48% center; }
+  .redesigned-hero .hero-vignette { background:linear-gradient(180deg,rgba(3,9,18,.06) 0%,rgba(3,9,18,.20) 34%,rgba(3,9,18,.88) 58%,#030912 76%); }
+}
+@media (max-width: 600px) {
+  .calendar-actions { justify-content:stretch; }
+  .calendar-open-button { width:100%; min-height:48px; }
+  .calendar-frame { min-height: 420px; }
+}
