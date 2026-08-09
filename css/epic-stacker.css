@@ -69,3 +69,154 @@
 
 /* v11 does not display internal ranking diagnostics to players */
 .result-debug{display:none!important}
+
+
+/* v12 Layer Health & Dying Order */
+.layer-chart-panel{
+  border:1px solid var(--epic-line);
+  border-radius:12px;
+  background:linear-gradient(145deg,var(--epic-panel-2),var(--epic-panel));
+  overflow:hidden;
+}
+.layer-chart-head{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+  padding:15px 17px 13px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.section-number{
+  font-size:.92rem;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#fff;
+}
+.layer-chart-head p{
+  margin:6px 0 0;
+  color:#93a1af;
+  font-size:.74rem;
+  line-height:1.45;
+  max-width:760px;
+}
+.die-direction{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#cbd5df;
+  font-size:.68rem;
+  text-transform:uppercase;
+  font-weight:900;
+  white-space:nowrap;
+  padding-top:2px;
+}
+.die-direction b{color:var(--epic-orange);font-size:1rem}
+
+.overlap-summary{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  padding:12px 13px 0;
+}
+.overlap-chip{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  min-height:40px;
+  padding:8px 11px;
+  border-radius:8px;
+  border:1px solid #30475a;
+  background:#071724;
+  font-size:.72rem;
+}
+.overlap-chip span{color:#aab7c4}
+.overlap-chip strong{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.overlap-chip.separated{border-color:#3f6c4f;background:rgba(30,92,54,.13)}
+.overlap-chip.separated strong{color:#79d695}
+.overlap-chip.overlap{border-color:#7a6334;background:rgba(136,91,22,.13)}
+.overlap-chip.overlap strong{color:#ffc35f}
+.overlap-chip.neutral strong{color:#7f8e9c}
+
+.layer-chart-empty{
+  margin:13px;
+  padding:28px 16px;
+  text-align:center;
+  color:#8494a3;
+  border:1px dashed #2a4052;
+  border-radius:9px;
+  font-size:.76rem;
+}
+.layer-chart-scroll{
+  overflow-x:auto;
+  padding:12px 13px 5px;
+  -webkit-overflow-scrolling:touch;
+}
+.layer-chart-wrap{
+  position:relative;
+  min-width:760px;
+  border:1px solid #293e50;
+  border-radius:9px;
+  overflow:hidden;
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
+    #04111b;
+  background-size:100% 40px,80px 100%,auto;
+}
+.layer-health-chart{
+  display:block;
+  width:100%;
+  height:430px;
+  overflow:visible;
+}
+.chart-tooltip{
+  position:absolute;
+  z-index:4;
+  pointer-events:none;
+  min-width:170px;
+  max-width:235px;
+  padding:9px 10px;
+  border:1px solid #53697c;
+  border-radius:7px;
+  background:rgba(2,10,17,.96);
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  color:#fff;
+  font-size:.69rem;
+  line-height:1.45;
+}
+.chart-tooltip strong{display:block;color:#fff;margin-bottom:3px}
+.chart-tooltip span{display:block;color:#aebac6}
+
+.chart-legend{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  align-items:center;
+  padding:8px 15px 14px;
+  color:#a9b5c0;
+  font-size:.7rem;
+  font-weight:800;
+}
+.chart-legend span{display:flex;align-items:center;gap:7px}
+.legend-line{width:23px;height:3px;border-radius:999px;display:inline-block}
+.legend-line.troop{background:#e8edf2}
+.legend-line.monster{background:#4e91e6}
+.legend-line.mercenary{background:#d34c3f}
+
+.chart-axis-label{fill:#8292a1;font-size:11px;font-weight:700}
+.chart-grid-line{stroke:rgba(180,195,208,.16);stroke-width:1}
+.chart-series-line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chart-point{stroke:#02080d;stroke-width:2;cursor:pointer}
+.chart-point-label{font-size:10px;font-weight:900;text-anchor:middle}
+.chart-overlap-band{fill:rgba(255,168,52,.075)}
+.chart-overlap-edge{stroke:rgba(255,188,83,.42);stroke-width:1;stroke-dasharray:5 5}
+.chart-y-title{fill:#98a8b7;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+
+@media(max-width:760px){
+  .layer-chart-head{flex-direction:column}
+  .die-direction{width:100%;justify-content:flex-start}
+  .overlap-summary{grid-template-columns:1fr}
+  .layer-health-chart{height:400px}
+}
