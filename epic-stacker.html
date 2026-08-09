@@ -6,9 +6,9 @@
   <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
   <title>Epic Stacker | TB Toolkit</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/epic-stacker.css">
+  <link rel="stylesheet" href="css/epic-stacker.css?v=9">
   <script src="js/site.js" defer></script>
-  <script type="module" src="js/epic-stacker.js"></script>
+  <script type="module" src="js/epic-stacker.js?v=9"></script>
 </head>
 <body class="epic-page">
 <header class="site-header">
@@ -31,12 +31,12 @@
 </header>
 
 <main class="epic-shell">
-  <div class="container">
+  <div class="container wide-container">
     <div class="epic-heading">
       <div>
         <div class="breadcrumb">Home / Stacking Calculators / Epic Stacker</div>
         <h1>Epic Stacker</h1>
-        <p>Select the units you want to send. The calculator automatically preserves the units with the highest PvE strength bonus by giving lower-value layers slightly more squad health.</p>
+        <p>Select the units you have available. The calculator updates automatically and preserves stronger PvE layers by controlling squad health.</p>
       </div>
       <div class="beta-badge">Native Beta</div>
     </div>
@@ -45,17 +45,32 @@
       <aside class="epic-sidebar">
         <section class="epic-panel">
           <h2 class="epic-panel-title">1 · Army Limits</h2>
-          <div class="epic-panel-body">
-            <div class="input-grid">
-              <div class="input-pair"><label for="leadership">Leadership</label><input class="epic-input" id="leadership" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
-              <div class="input-pair"><label for="leadershipFill">% Full</label><input class="epic-input" id="leadershipFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
-
-              <div class="input-pair"><label for="authority">Authority</label><input class="epic-input" id="authority" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
-              <div class="input-pair"><label for="authorityFill">% Full</label><input class="epic-input" id="authorityFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
-
-              <div class="input-pair"><label for="dominance">Dominance</label><input class="epic-input" id="dominance" inputmode="numeric" type="number" min="0" step="1" placeholder="Enter value"></div>
-              <div class="input-pair"><label for="dominanceFill">% Full</label><input class="epic-input" id="dominanceFill" inputmode="decimal" type="number" min="0" max="100" step=".01" value="99.99"></div>
+          <div class="epic-panel-body limit-list">
+            <div class="limit-row">
+              <div class="limit-name">Leadership</div>
+              <label class="field-label" for="leadership">Maximum</label>
+              <input class="epic-input formatted-number" id="leadership" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <label class="auto-fill-toggle"><input id="autoLeadership" type="checkbox" checked><span>Max Fill</span></label>
+              <label class="field-label" for="leadershipFill">Fill</label>
+              <div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
             </div>
+            <div class="limit-row">
+              <div class="limit-name">Authority</div>
+              <label class="field-label" for="authority">Maximum</label>
+              <input class="epic-input formatted-number" id="authority" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox" checked><span>Max Fill</span></label>
+              <label class="field-label" for="authorityFill">Fill</label>
+              <div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+            </div>
+            <div class="limit-row">
+              <div class="limit-name">Dominance</div>
+              <label class="field-label" for="dominance">Maximum</label>
+              <input class="epic-input formatted-number" id="dominance" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              <label class="auto-fill-toggle"><input id="autoDominance" type="checkbox" checked><span>Max Fill</span></label>
+              <label class="field-label" for="dominanceFill">Fill</label>
+              <div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+            </div>
+            <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
           </div>
         </section>
 
@@ -63,11 +78,11 @@
           <h2 class="epic-panel-title">2 · Health Inputs</h2>
           <div class="epic-panel-body">
             <div class="health-grid">
-              <label>Monster<input class="epic-input" id="monsterHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
-              <label>Human<input class="epic-input" id="humanHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
-              <label>Epic Hunter<input class="epic-input" id="epicHunterHealth" inputmode="decimal" type="number" min=".001" step=".01" placeholder="Health"></label>
+              <label>Monster<input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" placeholder="Health"></label>
+              <label>Human<input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" type="text" placeholder="Health"></label>
+              <label>Epic Hunter<input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" placeholder="Health"></label>
             </div>
-            <p class="setting-note">Use the same Health values you enter in BIFF STACK. Human is the reference value used to normalize species health.</p>
+            <p class="setting-note">Enter the same Health values used by BIFF STACK. Human is the reference used to normalize species health.</p>
             <div class="checkbox-row">
               <input id="arachne" type="checkbox">
               <label for="arachne">Fighting Arachne Swarm</label>
@@ -75,9 +90,9 @@
             <details class="advanced">
               <summary>Advanced settings</summary>
               <div class="advanced-row">
-                <label for="rankSeparation">Layer separation (%)</label>
-                <input class="epic-input" id="rankSeparation" inputmode="decimal" type="number" min="0" step=".01" value=".40">
-                <p class="setting-note">Current BIFF STACK v2.2 setting: 0.40% between adjacent PvE ranks.</p>
+                <label for="rankSeparation">Layer separation</label>
+                <div class="percent-field"><input class="epic-input" id="rankSeparation" inputmode="decimal" type="text" value="0.40"><span>%</span></div>
+                <p class="setting-note">BIFF STACK v2.2 uses 0.40% between adjacent PvE ranks.</p>
               </div>
             </details>
           </div>
@@ -97,10 +112,8 @@
         <section class="epic-panel">
           <h2 class="epic-panel-title">Calculator</h2>
           <div class="epic-panel-body">
-            <div class="epic-actions">
-              <button class="epic-action primary" type="button" id="recalculate">Recalculate</button>
-              <button class="epic-action danger" type="button" id="resetCalculator">Reset</button>
-            </div>
+            <div class="auto-update-note"><span class="live-dot"></span>Updates automatically</div>
+            <button class="epic-action danger" type="button" id="resetCalculator">Reset Calculator</button>
             <p class="setting-note">Inputs and selections are saved on this device automatically.</p>
           </div>
         </section>
@@ -116,13 +129,10 @@
             <button class="category-tab" type="button" data-category="mercenary">Mercs <span class="tab-count" id="mercenaryCount">0</span></button>
           </div>
           <div class="category-toolbar">
-            <p>Select the units available in your army. Some checkboxes intentionally select more than one unit, matching the Excel calculator.</p>
-            <div class="toolbar-actions">
-              <button type="button" id="selectAll">Select All</button>
-              <button type="button" id="clearCategory">Clear</button>
-            </div>
+            <p>Each unit is selected individually. Within a level, units are shown from highest Strength/EA to lowest.</p>
+            <button type="button" id="clearCategory" class="toolbar-button">Clear Category</button>
           </div>
-          <div class="unit-select-grid" id="unitSelectGrid" aria-live="polite"></div>
+          <div class="level-selection-list" id="unitSelectGrid" aria-live="polite"></div>
         </section>
 
         <section class="result-panel">
@@ -130,7 +140,7 @@
             <h2>Final Army</h2>
             <span class="result-status" id="resultStatus">Enter your values and select units.</span>
           </div>
-          <div id="resultEmpty" class="result-empty">Your calculated unit quantities will appear here in the same order used by the Total Battle mobile app.</div>
+          <div id="resultEmpty" class="result-empty">Calculated quantities will appear here in the same order used by the Total Battle mobile app.</div>
           <div class="result-groups" id="resultGroups" hidden>
             <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
             <section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
