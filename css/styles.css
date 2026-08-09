@@ -303,3 +303,27 @@ button { font: inherit; }
   .resource-item { grid-template-columns: 1fr; }
   .resource-item .button { width: 100%; }
 }
+
+/* Approved homepage artwork */
+.approved-hero {
+  min-height: 0;
+  background: #030a12;
+  overflow: hidden;
+}
+.approved-hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+}
+@media (max-width: 920px) {
+  .approved-hero { min-height: 0; }
+  .approved-hero-image { width: 100%; height: auto; }
+}
+@media (max-width: 600px) {
+  .approved-hero { min-height: 0; }
+  .approved-hero-image {
+    width: 100%;
+    height: auto;
+  }
+}
