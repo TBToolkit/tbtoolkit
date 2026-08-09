@@ -304,3 +304,21 @@
     padding-right:15px;
   }
 }
+
+.mode-switch{display:inline-flex;margin:12px 0 5px;padding:3px;border:1px solid #354b5e;border-radius:9px;background:#020b13}
+.mode-button{min-height:39px;border:0;border-radius:6px;background:transparent;color:#94a4b3;padding:0 16px;cursor:pointer;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+.mode-button.active{color:#140b00;background:linear-gradient(#ffb22d,#ef8b00)}
+.mode-description{margin-top:7px!important}
+.order-view{padding:14px}
+.order-intro h2{margin:0;font-size:1rem;text-transform:uppercase}.order-intro p{margin:5px 0 13px;color:#91a0af;font-size:.74rem}
+.order-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.order-group{border:1px solid #2b4153;border-radius:9px;background:#051520;overflow:hidden}.order-group h3{margin:0;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.07);font-size:.8rem;text-transform:uppercase}
+.order-direction{display:flex;justify-content:space-between;padding:7px 11px;color:#7f90a0;font-size:.6rem;text-transform:uppercase;font-weight:850}
+.order-list{display:grid;gap:6px;padding:8px}
+.order-item{display:grid;grid-template-columns:30px minmax(0,1fr) 34px 34px;gap:6px;align-items:center;min-height:48px;padding:6px 7px;border:1px solid #344a5d;border-radius:7px;background:#081b29;user-select:none}
+.order-item.dragging{opacity:.45}.drag-handle{font-size:1.15rem;color:#8092a3;cursor:grab;text-align:center}
+.order-copy strong{display:block;color:#fff;font-size:.78rem}.order-copy span{display:block;color:#8b9aa9;font-size:.6rem;margin-top:2px}
+.order-move{width:32px;height:32px;border:1px solid #3d5365;border-radius:6px;background:#06121d;color:#dbe3ea;cursor:pointer;font-weight:950}
+.order-empty{padding:15px 10px;color:#7f90a0;text-align:center;font-size:.7rem}.custom-only-tab[hidden]{display:none!important}
+@media(max-width:900px){.order-columns{grid-template-columns:1fr}}
+@media(max-width:520px){.mode-switch{display:grid;grid-template-columns:1fr 1fr;width:100%}.mode-button{padding:0 8px;font-size:.72rem}}
