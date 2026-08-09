@@ -1,4 +1,4 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=19';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=20';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -19,6 +19,26 @@ function tierNumber(level){const m=String(level||'').match(/\d+/);return m?Numbe
 const MERC_SUBTYPE_LIGHTEN={MNST:0,COM:.06,SPCL:.12,GRD:.18,EMH:.24,EX:.30,ARNE:.36,ENG:.42};
 function mercSubtype(level){const parts=String(level||'').toUpperCase().split('-');return parts.length>1?parts.slice(1).join('-'):'';}
 function outputRowColors(category,row){const tier=tierNumber(row.level);let base=TIER_COLORS[tier]||'#34495a';if(category==='troop'){const meta=units.troop.find(u=>u.id===row.id),cls=String(meta?.class||'').toUpperCase(),lighten=cls==='SPECIALIST'?.16:cls==='ENGINEER'?.30:0;base=mixHex(base,'#ffffff',lighten);}else if(category==='mercenary'){const subtype=mercSubtype(row.level),lighten=MERC_SUBTYPE_LIGHTEN[subtype]??0;base=mixHex(base,'#ffffff',lighten);}const rowColor=mixHex(base,'#061725',.42),accent=mixHex(base,'#ffffff',.22);return{rowColor,accent};}
+
+function orderRowColors(category,level){
+  const tier=tierNumber(level);
+  let base=TIER_COLORS[tier]||'#34495a';
+
+  if(category==='troop'){
+    const prefix=String(level||'').toUpperCase().charAt(0);
+    const lighten=prefix==='S'?.16:prefix==='E'?.30:0;
+    base=mixHex(base,'#ffffff',lighten);
+  }else if(category==='mercenary'){
+    const subtype=mercSubtype(level);
+    const lighten=MERC_SUBTYPE_LIGHTEN[subtype]??0;
+    base=mixHex(base,'#ffffff',lighten);
+  }
+
+  return {
+    rowColor:mixHex(base,'#061725',.42),
+    accent:mixHex(base,'#ffffff',.22)
+  };
+}
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 function iconFallback(img){img.onerror=()=>{if(img.dataset.fallback)return;img.dataset.fallback='1';img.src='assets/unit-icons/missing-icon.svg';img.classList.add('missing-icon');};}
 
@@ -41,7 +61,92 @@ function selectedLevels(category){const ids=new Set(selectedIdsFor(category)),le
 function syncCustomOrders(){const c=state.modes.custom;for(const category of ['troop','monster','mercenary']){const sel=selectedLevels(category),set=new Set(sel),next=(c.orders[category]||[]).filter(l=>set.has(l));for(const l of sel)if(!next.includes(l))next.push(l);c.orders[category]=next;}}
 function moveOrderItem(category,index,delta){const a=state.modes.custom.orders[category],j=index+delta;if(j<0||j>=a.length)return;[a[index],a[j]]=[a[j],a[index]];saveState();renderOrderView();recalculate();}
 function reorderByDrop(category,from,to){const a=state.modes.custom.orders[category];if(from===to||from<0||to<0)return;const[item]=a.splice(from,1);a.splice(to,0,item);saveState();renderOrderView();recalculate();}
-function renderOrderView(){syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'};for(const category of ['troop','monster','mercenary']){const target=els[ids[category]],order=state.modes.custom.orders[category],selected=new Set(state.modes.custom.selectedIds[category]);target.innerHTML='';if(!order.length){target.innerHTML='<div class="order-empty">Select units to create an order.</div>';continue;}order.forEach((level,index)=>{const count=units[category].filter(u=>u.level===level&&selected.has(u.id)).length,row=document.createElement('div');row.className='order-item';row.draggable=true;row.innerHTML=`<div class="drag-handle">☰</div><div class="order-copy"><strong>${escapeHtml(level)}</strong><span>${count} selected unit${count===1?'':'s'}</span></div><button class="order-move" type="button">↑</button><button class="order-move" type="button">↓</button>`;const btn=row.querySelectorAll('button');btn[0].addEventListener('click',()=>moveOrderItem(category,index,-1));btn[1].addEventListener('click',()=>moveOrderItem(category,index,1));row.addEventListener('dragstart',e=>{row.classList.add('dragging');e.dataTransfer.setData('text/plain',String(index));});row.addEventListener('dragend',()=>row.classList.remove('dragging'));row.addEventListener('dragover',e=>e.preventDefault());row.addEventListener('drop',e=>{e.preventDefault();reorderByDrop(category,Number(e.dataTransfer.getData('text/plain')),index);});target.appendChild(row);});}}
+function commitOrderFromDom(category,target){
+  const levels=[...target.querySelectorAll('.order-item')].map(el=>el.dataset.level);
+  state.modes.custom.orders[category]=levels;
+  saveState();
+  recalculate();
+}
+
+function renderOrderView(){
+  syncCustomOrders();
+  const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'};
+
+  for(const category of ['troop','monster','mercenary']){
+    const target=els[ids[category]];
+    const order=state.modes.custom.orders[category];
+    const selected=new Set(state.modes.custom.selectedIds[category]);
+    target.innerHTML='';
+
+    if(!order.length){
+      target.innerHTML='<div class="order-empty">Select units to create an order.</div>';
+      continue;
+    }
+
+    order.forEach((level,index)=>{
+      const count=units[category].filter(u=>u.level===level&&selected.has(u.id)).length;
+      const row=document.createElement('div');
+      row.className='order-item';
+      row.draggable=true;
+      row.dataset.level=level;
+
+      const colors=orderRowColors(category,level);
+      row.style.setProperty('--order-row-color',colors.rowColor);
+      row.style.setProperty('--order-accent',colors.accent);
+
+      row.innerHTML=`<div class="drag-handle" title="Drag to reorder">☰</div>
+        <div class="order-copy"><strong>${escapeHtml(level)}</strong><span>${count} selected unit${count===1?'':'s'}</span></div>
+        <button class="order-move" type="button" aria-label="Move ${escapeHtml(level)} up">↑</button>
+        <button class="order-move" type="button" aria-label="Move ${escapeHtml(level)} down">↓</button>`;
+
+      const btn=row.querySelectorAll('button');
+      btn[0].addEventListener('click',()=>moveOrderItem(category,index,-1));
+      btn[1].addEventListener('click',()=>moveOrderItem(category,index,1));
+
+      row.addEventListener('dragstart',e=>{
+        row.classList.add('dragging');
+        target.classList.add('drag-active');
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain',level);
+      });
+
+      row.addEventListener('dragend',()=>{
+        row.classList.remove('dragging');
+        target.classList.remove('drag-active');
+        target.querySelectorAll('.order-item').forEach(el=>el.classList.remove('drag-over'));
+        commitOrderFromDom(category,target);
+      });
+
+      target.appendChild(row);
+    });
+
+    target.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const dragging=target.querySelector('.order-item.dragging');
+      if(!dragging)return;
+
+      const siblings=[...target.querySelectorAll('.order-item:not(.dragging)')];
+      siblings.forEach(el=>el.classList.remove('drag-over'));
+
+      let insertBefore=null;
+      for(const sibling of siblings){
+        const rect=sibling.getBoundingClientRect();
+        const midpoint=rect.top+rect.height/2;
+        if(e.clientY<midpoint){
+          insertBefore=sibling;
+          sibling.classList.add('drag-over');
+          break;
+        }
+      }
+
+      if(insertBefore){
+        if(dragging.nextSibling!==insertBefore)target.insertBefore(dragging,insertBefore);
+      }else{
+        target.appendChild(dragging);
+      }
+    });
+  }
+}
 function updateCounts(){for(const c of ['troop','monster','mercenary'])els[`${c}Count`].textContent=modeState().selectedIds[c].length;}
 function renderSelectionGrid(){const selected=selectedSet(activeCategory);els.unitSelectGrid.innerHTML='';for(const group of getLevelRows(activeCategory)){const wrap=document.createElement('section');wrap.className='unit-level-row';const allSelected=group.rows.length&&group.rows.every(u=>selected.has(u.id));const someSelected=group.rows.some(u=>selected.has(u.id));const side=document.createElement('label');side.className='level-selector';side.innerHTML=`<input type="checkbox" ${allSelected?'checked':''}><div><strong>${escapeHtml(group.level)}</strong><span>Select all</span></div>`;const cb=side.querySelector('input');cb.indeterminate=!allSelected&&someSelected;cb.addEventListener('change',()=>toggleLevel(group.rows,cb.checked));wrap.appendChild(side);const cards=document.createElement('div');cards.className='level-cards';for(const unit of group.rows){const label=document.createElement('label');const isSelected=selected.has(unit.id);label.className=`unit-option${isSelected?' selected':''}`;label.innerHTML=`<input type="checkbox" ${isSelected?'checked':''}><img src="${escapeHtml(unit.icon)}" alt=""><div class="unit-copy"><div class="unit-type">${escapeHtml(unit.type)}</div><div class="unit-name" title="${escapeHtml(unit.name)}">${escapeHtml(unit.name)}</div><div class="unit-strength">Strength/EA ${formatInteger(unit.strengthEach)}</div></div>`;iconFallback(label.querySelector('img'));label.querySelector('input').addEventListener('change',e=>toggleUnit(unit.id,e.target.checked));cards.appendChild(label);}wrap.appendChild(cards);els.unitSelectGrid.appendChild(wrap);}}
 function toggleUnit(id,checked){const set=selectedSet(activeCategory);checked?set.add(id):set.delete(id);modeState().selectedIds[activeCategory]=[...set];syncCustomOrders();saveState();updateCounts();renderSelectionGrid();if(activeMode==='custom'&&activeView==='order')renderOrderView();recalculate();}
@@ -238,13 +343,29 @@ function renderLayerHealthChart(result){
         tip.style.left=`${left}px`;
         tip.style.top=`${Math.max(5,top)}px`;
       };
-      const hideTip=()=>{els.layerChartTooltip.hidden=true;};
+      let tipTimer=null;
+      const hideTip=()=>{
+        if(tipTimer){clearTimeout(tipTimer);tipTimer=null;}
+        els.layerChartTooltip.hidden=true;
+      };
       c.addEventListener('mouseenter',showTip);
       c.addEventListener('mouseleave',hideTip);
       c.addEventListener('focus',showTip);
       c.addEventListener('blur',hideTip);
-      c.addEventListener('click',showTip);
+
+      if(window.matchMedia('(hover: none), (pointer: coarse)').matches){
+        c.addEventListener('click',evt=>{
+          showTip(evt);
+          if(tipTimer)clearTimeout(tipTimer);
+          tipTimer=setTimeout(hideTip,2500);
+        });
+      }
     });
+  }
+  const wrap=svg.parentElement;
+  if(!wrap.dataset.tooltipLeaveBound){
+    wrap.addEventListener('mouseleave',()=>{els.layerChartTooltip.hidden=true;});
+    wrap.dataset.tooltipLeaveBound='1';
   }
 }
 function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(modeState().inputs.leadership)],['authority',result?.totals.authority,parseNumber(modeState().inputs.authority)],['dominance',result?.totals.dominance,parseNumber(modeState().inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
