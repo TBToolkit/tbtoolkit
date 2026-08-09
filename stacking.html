@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Army stacking calculators for Total Battle players.">
-  <title>Stacking Calculators | TB Toolkit</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <meta name="description" content="Native Epic army stacking calculator for Total Battle players.">
+  <title>Stacking Calculator | TB Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/epic-stacker.css?v=17">
   <script src="js/site.js" defer></script>
+  <script type="module" src="js/epic-stacker.js?v=17"></script>
 </head>
-<body>
+<body class="epic-page">
 <header class="site-header">
   <div class="container header-row">
     <a class="brand" href="index.html">
@@ -27,39 +29,209 @@
     </nav>
   </div>
 </header>
-<main>
-  <section class="page-hero">
-    <div class="container">
-      <div class="breadcrumb">Home / Stacking Calculators</div>
-      <h1 class="page-title">Stacking Calculators</h1>
-      <p class="page-intro">Build an optimized army stack for Epic battles, or use the Excel workbook for custom battle setups.</p>
-    </div>
-  </section>
 
-  <section class="section">
-    <div class="container content-grid">
-      <article class="card content-card">
-        <div class="eyebrow">Native web calculator · Beta</div>
-        <h2>Epic Stacker</h2>
-        <p>Select the units you have available. TB Toolkit ranks the selected units by PvE strength bonus and calculates the quantities automatically.</p>
-        <p><a class="button button-primary" href="epic-stacker.html">Launch Epic Stacker →</a></p>
-        <div class="notice">Beta: the calculation engine has been validated against BIFF STACK v2.2. Please compare your first few stacks with the Excel workbook while we finish field testing.</div>
-      </article>
-
-      <article class="card content-card">
-        <div class="eyebrow">Excel workbook</div>
-        <h2>BIFF STACK v2.2</h2>
-        <p>The workbook includes the Epic Stacker and the Custom Stacker with user-controlled layer die order.</p>
-        <p><a class="button button-secondary" href="https://1drv.ms/x/c/713A7B5809289611/IQBLKywaZn1BQZ7q8AHsmHSaAQvG8sBcMJIoDrEYjtif7lg?e=ec8mXx" target="_blank" rel="noopener noreferrer">Open BIFF STACK v2.2 ↗</a></p>
-        <p class="small-note">The native Custom Stacker will be added after the Epic Stacker is fully validated.</p>
-      </article>
+<main class="epic-shell">
+  <div class="container wide-container">
+    <div class="epic-heading">
+      <div>
+        <div class="breadcrumb">Home / Stacking Calculator</div>
+        <h1>Stacking Calculator</h1>
+        <div class="mode-switch" role="group" aria-label="Calculator mode">
+          <button class="mode-button active" type="button" data-mode="epic" aria-pressed="true">Epic Stacker</button>
+          <button class="mode-button" type="button" data-mode="custom" aria-pressed="false">Custom Stacker</button>
+        </div>
+        <p class="mode-description" id="modeDescription">Automatically orders selected squads for Epic battles.</p>
+      </div>
+      
     </div>
-  </section>
+
+    <div class="epic-grid">
+      <aside class="epic-sidebar">
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">1 · Army Limits</h2>
+          <div class="epic-panel-body limit-list">
+            <div class="limit-row">
+              <div class="limit-name">Leadership</div>
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="leadership">Maximum</label>
+                <input class="epic-input formatted-number" id="leadership" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
+              <label class="auto-fill-toggle"><input id="autoLeadership" type="checkbox" checked><span>Max Fill</span></label>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="leadershipFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
+            </div>
+            <div class="limit-row">
+              <div class="limit-name">Authority</div>
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="authority">Maximum</label>
+                <input class="epic-input formatted-number" id="authority" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
+              <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"><span>Max Fill</span></label>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="authorityFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
+            </div>
+            <div class="limit-row">
+              <div class="limit-name">Dominance</div>
+              <div class="limit-control limit-maximum">
+                <label class="field-label" for="dominance">Maximum</label>
+                <input class="epic-input formatted-number" id="dominance" inputmode="numeric" type="text" placeholder="Enter value" autocomplete="off">
+              </div>
+              <label class="auto-fill-toggle"><input id="autoDominance" type="checkbox" checked><span>Max Fill</span></label>
+              <div class="limit-control limit-fill">
+                <label class="field-label" for="dominanceFill">Fill</label>
+                <div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"><span>%</span></div>
+              </div>
+            </div>
+            <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">2 · Health Inputs</h2>
+          <div class="epic-panel-body">
+            <div class="health-grid">
+              <label>Monster Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
+              <label>Human Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
+              <label>Epic Hunter Health
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" placeholder="Health"><span>%</span></div>
+              </label>
+            </div>
+            <p class="setting-note health-help">Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit. Enter the <strong>Health %</strong> shown in each unit's Stats.</p>
+            <div class="checkbox-row" id="arachneRow">
+              <input id="arachne" type="checkbox">
+              <label for="arachne">Fighting Arachne Swarm</label>
+            </div>
+            <details class="advanced">
+              <summary>Advanced settings</summary>
+              <div class="advanced-row layer-separation-control">
+                <div class="slider-heading">
+                  <label for="rankSeparation" id="separationLabel">Squad Separation</label>
+                  <output id="rankSeparationValue" for="rankSeparation">0.40%</output>
+                </div>
+                <input class="separation-slider" id="rankSeparation" type="range" min="0" max="1" step="0.01" value="0.40">
+                <div class="slider-scale" aria-hidden="true"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div>
+                <button class="slider-reset" type="button" id="resetRankSeparation">↺ Reset to Default</button>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">Capacity Check</h2>
+          <div class="epic-panel-body">
+            <div class="capacity-grid">
+              <div class="capacity-row"><span class="capacity-label">Leadership</span><div class="capacity-bar" id="leadershipBar"><i></i></div><span class="capacity-value" id="leadershipActual">—</span></div>
+              <div class="capacity-row"><span class="capacity-label">Authority</span><div class="capacity-bar" id="authorityBar"><i></i></div><span class="capacity-value" id="authorityActual">—</span></div>
+              <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="epic-panel">
+          <h2 class="epic-panel-title">Calculator</h2>
+          <div class="epic-panel-body">
+            <div class="auto-update-note"><span class="live-dot"></span>Updates automatically</div>
+            <button class="epic-action danger" type="button" id="resetCalculator">Reset Calculator</button>
+            <p class="setting-note">Inputs and selections are saved on this device automatically.</p>
+          </div>
+        </section>
+      </aside>
+
+      <div class="calculator-main">
+        <div id="validationBox" class="validation-box"></div>
+
+        <section class="selection-panel">
+          <div class="category-tabs" role="tablist" aria-label="Epic Stacker views">
+            <button class="category-tab active" type="button" data-view="troop" aria-selected="true">Troops <span class="tab-count" id="troopCount">0</span></button>
+            <button class="category-tab" type="button" data-view="monster" aria-selected="false">Monsters <span class="tab-count" id="monsterCount">0</span></button>
+            <button class="category-tab" type="button" data-view="mercenary" aria-selected="false">Mercs <span class="tab-count" id="mercenaryCount">0</span></button>
+            <button class="category-tab custom-only-tab" id="orderTab" type="button" data-view="order" aria-selected="false" hidden>Order</button>
+            <button class="category-tab" type="button" data-view="results" aria-selected="false">Results</button>
+            <button class="category-tab" type="button" data-view="visual" aria-selected="false">Visual</button>
+          </div>
+          <div class="selection-content" id="selectionContent">
+            <div class="category-toolbar" id="categoryToolbar">
+              <p>Each unit is selected individually. Within a level, units are shown from highest Strength/EA to lowest.</p>
+              <button type="button" id="clearCategory" class="toolbar-button">Clear Category</button>
+            </div>
+            <div class="level-selection-list" id="unitSelectGrid" aria-live="polite"></div>
+          </div>
+
+          <div class="order-view" id="orderView" hidden>
+            <div class="order-intro">
+              <h2>Custom Die Order</h2>
+              <p>Drag selected levels into the order you want them to die. On a phone, use the arrow buttons if dragging is inconvenient.</p>
+            </div>
+            <div class="order-columns">
+              <section class="order-group"><h3>Troops</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="troopOrderList"></div></section>
+              <section class="order-group"><h3>Monsters</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="monsterOrderList"></div></section>
+              <section class="order-group"><h3>Mercs</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="mercenaryOrderList"></div></section>
+            </div>
+          </div>
+        </section>
+
+        <section class="result-panel tab-view-panel" id="resultsView" hidden>
+          <div class="result-head">
+            <h2>Final Army</h2>
+            <span class="result-status" id="resultStatus">Enter your values and select units.</span>
+          </div>
+          <div id="resultEmpty" class="result-empty">Calculated quantities will appear here in the same order used by the Total Battle mobile app.</div>
+          <div class="result-groups" id="resultGroups" hidden>
+            <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
+            <section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
+            <section class="result-group"><h3>Troops</h3><div class="result-list" id="troopResults"></div></section>
+          </div>
+        </section>
+        <section class="layer-chart-panel tab-view-panel" id="layerChartPanel" hidden>
+          <div class="layer-chart-head">
+            <div>
+              <div class="section-number">5 · Layer Health &amp; Dying Order</div>
+              <p>Each line shows calculated squad health from highest to lowest within that army type. Overlap is shown for reference only.</p>
+            </div>
+            <div class="die-direction" aria-label="Dying order direction">
+              <span>Dies First</span><b>→</b><span>Dies Last</span>
+            </div>
+          </div>
+
+          <div class="overlap-summary" id="overlapSummary">
+            <div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div>
+            <div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div>
+          </div>
+
+          <div class="layer-chart-empty" id="layerChartEmpty">
+            Select units and complete the required inputs to view layer-health separation.
+          </div>
+
+          <div class="chart-legend" aria-label="Chart legend">
+            <span><i class="legend-line troop"></i>Troops</span>
+            <span><i class="legend-line monster"></i>Monsters</span>
+            <span><i class="legend-line mercenary"></i>Mercs</span>
+          </div>
+
+          <div class="layer-chart-scroll" id="layerChartScroll" hidden>
+            <div class="layer-chart-wrap">
+              <svg id="layerHealthChart" class="layer-health-chart" role="img" aria-label="Squad health by army type and approximate dying order"></svg>
+              <div class="chart-tooltip" id="layerChartTooltip" hidden></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 </main>
+
 <footer class="site-footer">
   <div class="container footer-row">
     <div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
-    <div class="footer-links"><a href="resources.html">Resources</a><a href="about.html">About</a></div>
+    <div class="footer-links"><a href="stacking.html">Stacking Calculators</a><a href="about.html">About</a></div>
   </div>
 </footer>
 </body>
