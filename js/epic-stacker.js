@@ -1,406 +1,65 @@
+import { calculateEpicStack, calculateCategory } from './epic-engine.mjs';
 
-import { calculateEpicStack } from './epic-engine.mjs';
-
-const STORAGE_KEY = 'tbtoolkit.epicStacker.v1';
-const DATA_URLS = {
-  troop: 'data/troops.json',
-  monster: 'data/monsters.json',
-  mercenary: 'data/mercenaries.json',
+const STORAGE_KEY='tbtoolkit.epicStacker.v2';
+const LEGACY_STORAGE_KEY='tbtoolkit.epicStacker.v1';
+const DATA_URLS={troop:'data/troops.json',monster:'data/monsters.json',mercenary:'data/mercenaries.json'};
+const CAPACITY_META={
+  troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},
+  mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},
+  monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'},
+};
+const units={troop:[],monster:[],mercenary:[]};
+const els={};
+let activeCategory='troop';
+let resolvedFills={troop:1,monster:1,mercenary:1};
+const state={
+  selectedIds:{troop:[],monster:[],mercenary:[]},
+  inputs:{
+    leadership:'',leadershipFill:'99.99',autoLeadership:true,
+    authority:'',authorityFill:'99.99',autoAuthority:true,
+    dominance:'',dominanceFill:'99.99',autoDominance:true,
+    monsterHealth:'',humanHealth:'',epicHunterHealth:'',arachne:false,rankSeparation:'0.40'
+  }
 };
 
-const els = {};
-const units = { troop: [], monster: [], mercenary: [] };
-const groups = { troop: [], monster: [], mercenary: [] };
-let activeCategory = 'troop';
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','rankSeparation','resetCalculator','unitSelectGrid','clearCategory','troopCount','monsterCount','mercenaryCount','validationBox','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual'].forEach(id=>els[id]=document.getElementById(id));}
+function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
+function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
+function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
+function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
+function iconFallback(img){img.onerror=()=>{if(img.dataset.fallback)return;img.dataset.fallback='1';img.src='assets/unit-icons/missing-icon.svg';img.classList.add('missing-icon');};}
 
-const state = {
-  selectedKeys: { troop: [], monster: [], mercenary: [] },
-  inputs: {
-    leadership: '',
-    leadershipFill: 99.99,
-    authority: '',
-    authorityFill: 99.99,
-    dominance: '',
-    dominanceFill: 99.99,
-    monsterHealth: '',
-    humanHealth: '',
-    epicHunterHealth: '',
-    arachne: false,
-    rankSeparation: 0.40,
-  },
-};
+async function loadData(){const entries=await Promise.all(Object.entries(DATA_URLS).map(async([k,url])=>{const r=await fetch(url,{cache:'no-cache'});if(!r.ok)throw new Error(`Could not load ${url}`);return[k,await r.json()];}));entries.forEach(([k,v])=>units[k]=v);}
+function loadSavedState(){try{let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(!saved){const legacy=JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY)||'null');if(legacy)saved={inputs:legacy.inputs||{},legacySelectedKeys:legacy.selectedKeys||{}};}if(!saved)return;Object.assign(state.inputs,saved.inputs||{});for(const c of Object.keys(state.selectedIds)){if(Array.isArray(saved.selectedIds?.[c]))state.selectedIds[c]=saved.selectedIds[c];}state.legacySelectedKeys=saved.legacySelectedKeys;}catch(_){}}
+function migrateLegacySelections(){if(!state.legacySelectedKeys)return;for(const c of Object.keys(state.selectedIds)){if(state.selectedIds[c].length)continue;const keys=new Set(state.legacySelectedKeys[c]||[]);state.selectedIds[c]=units[c].filter(u=>keys.has(u.selectionKey)).map(u=>u.id);}delete state.legacySelectedKeys;saveState();}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({selectedIds:state.selectedIds,inputs:state.inputs}));}
+function applyStateToInputs(){for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].value=state.inputs[id]||'';formatFieldInteger(els[id]);}for(const id of ['leadershipFill','authorityFill','dominanceFill','rankSeparation'])els[id].value=state.inputs[id]??'';for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].checked=!!state.inputs[id];els.arachne.checked=!!state.inputs.arachne;updateFillFieldStates();}
+function readInputs(){for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth'])state.inputs[id]=String(parseNumber(els[id].value)||'');for(const id of ['rankSeparation'])state.inputs[id]=String(parseNumber(els[id].value));for(const id of ['autoLeadership','autoAuthority','autoDominance'])state.inputs[id]=els[id].checked;for(const [cat,meta] of Object.entries(CAPACITY_META)){if(!state.inputs[meta.auto])state.inputs[meta.fill]=String(parseNumber(els[meta.fill].value));}state.inputs.arachne=els.arachne.checked;saveState();}
+function updateFillFieldStates(){for(const [cat,meta] of Object.entries(CAPACITY_META)){const auto=!!state.inputs[meta.auto];els[meta.fill].disabled=auto;if(!auto)els[meta.fill].value=state.inputs[meta.fill]??'99.99';}}
 
-function n(value) {
-  const x = Number(value);
-  return Number.isFinite(x) ? x : 0;
-}
+function troopLevelCompare(a,b){const ma=/^([GSE])(\d+)$/.exec(a),mb=/^([GSE])(\d+)$/.exec(b);if(!ma||!mb)return a.localeCompare(b);const tier=Number(mb[2])-Number(ma[2]);if(tier)return tier;return({G:0,S:1,E:2}[ma[1]]??9)-({G:0,S:1,E:2}[mb[1]]??9);}
+function monsterLevelCompare(a,b){return parseInt(b.slice(1))-parseInt(a.slice(1));}
+function mercLevelCompare(a,b){const [na,ca]=a.split('-'),[nb,cb]=b.split('-');const tierOrder=[2,7,6,5];const ia=tierOrder.indexOf(Number(na)),ib=tierOrder.indexOf(Number(nb));if(ia!==ib)return (ia<0?99:ia)-(ib<0?99:ib);const classOrder=['COM','MNST','SPCL','GRD','EMH','EX','ARNE','ENG'];return classOrder.indexOf(ca)-classOrder.indexOf(cb);}
+function getLevelRows(category){const map=new Map();for(const u of units[category]){if(!map.has(u.level))map.set(u.level,[]);map.get(u.level).push(u);}let levels=[...map.keys()];levels.sort(category==='troop'?troopLevelCompare:category==='monster'?monsterLevelCompare:mercLevelCompare);return levels.map(level=>({level,rows:map.get(level).sort((a,b)=>b.strengthEach-a.strengthEach||a.name.localeCompare(b.name))}));}
+function selectedSet(category){return new Set(state.selectedIds[category]);}
+function updateCounts(){for(const c of ['troop','monster','mercenary'])els[`${c}Count`].textContent=state.selectedIds[c].length;}
+function renderSelectionGrid(){const selected=selectedSet(activeCategory);els.unitSelectGrid.innerHTML='';for(const group of getLevelRows(activeCategory)){const wrap=document.createElement('section');wrap.className='unit-level-row';const allSelected=group.rows.length&&group.rows.every(u=>selected.has(u.id));const someSelected=group.rows.some(u=>selected.has(u.id));const side=document.createElement('label');side.className='level-selector';side.innerHTML=`<input type="checkbox" ${allSelected?'checked':''}><div><strong>${escapeHtml(group.level)}</strong><span>Select all</span></div>`;const cb=side.querySelector('input');cb.indeterminate=!allSelected&&someSelected;cb.addEventListener('change',()=>toggleLevel(group.rows,cb.checked));wrap.appendChild(side);const cards=document.createElement('div');cards.className='level-cards';for(const unit of group.rows){const label=document.createElement('label');const isSelected=selected.has(unit.id);label.className=`unit-option${isSelected?' selected':''}`;label.innerHTML=`<input type="checkbox" ${isSelected?'checked':''}><img src="${escapeHtml(unit.icon)}" alt=""><div class="unit-copy"><div class="unit-type">${escapeHtml(unit.type)}</div><div class="unit-name" title="${escapeHtml(unit.name)}">${escapeHtml(unit.name)}</div><div class="unit-strength">Strength/EA ${formatInteger(unit.strengthEach)}</div></div>`;iconFallback(label.querySelector('img'));label.querySelector('input').addEventListener('change',e=>toggleUnit(unit.id,e.target.checked));cards.appendChild(label);}wrap.appendChild(cards);els.unitSelectGrid.appendChild(wrap);}}
+function toggleUnit(id,checked){const set=selectedSet(activeCategory);checked?set.add(id):set.delete(id);state.selectedIds[activeCategory]=[...set];saveState();updateCounts();renderSelectionGrid();recalculate();}
+function toggleLevel(rows,checked){const set=selectedSet(activeCategory);for(const u of rows)checked?set.add(u.id):set.delete(u.id);state.selectedIds[activeCategory]=[...set];saveState();updateCounts();renderSelectionGrid();recalculate();}
+function clearCurrent(){state.selectedIds[activeCategory]=[];saveState();updateCounts();renderSelectionGrid();recalculate();}
+function setCategory(category){activeCategory=category;document.querySelectorAll('.category-tab').forEach(b=>b.classList.toggle('active',b.dataset.category===category));renderSelectionGrid();}
 
-function integerFormat(value) {
-  return Math.round(n(value)).toLocaleString('en-US');
-}
-
-function percentFormat(value, digits = 1) {
-  if (!Number.isFinite(value)) return '—';
-  return `${(value * 100).toFixed(digits)}%`;
-}
-
-function cacheElements() {
-  [
-    'leadership','leadershipFill','authority','authorityFill','dominance','dominanceFill',
-    'monsterHealth','humanHealth','epicHunterHealth','arachne','rankSeparation',
-    'recalculate','resetCalculator','unitSelectGrid','selectAll','clearCategory',
-    'troopCount','monsterCount','mercenaryCount','validationBox','resultStatus',
-    'resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults',
-    'leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual'
-  ].forEach(id => els[id] = document.getElementById(id));
-}
-
-async function loadData() {
-  const entries = await Promise.all(
-    Object.entries(DATA_URLS).map(async ([key, url]) => {
-      const response = await fetch(url, { cache: 'no-cache' });
-      if (!response.ok) throw new Error(`Could not load ${url}`);
-      return [key, await response.json()];
-    })
-  );
-  entries.forEach(([key, value]) => units[key] = value);
-  for (const category of Object.keys(groups)) groups[category] = buildGroups(units[category]);
-}
-
-function buildGroups(rows) {
-  const map = new Map();
-  for (const row of rows) {
-    if (!map.has(row.selectionKey)) {
-      map.set(row.selectionKey, {
-        key: row.selectionKey,
-        displayOrder: row.displayOrder,
-        level: row.level,
-        type: row.type,
-        rows: [],
-      });
-    }
-    const g = map.get(row.selectionKey);
-    g.rows.push(row);
-    g.displayOrder = Math.min(g.displayOrder, row.displayOrder);
-  }
-  return [...map.values()].sort((a,b) => a.displayOrder - b.displayOrder);
-}
-
-function loadSavedState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (!saved) return;
-    if (saved.selectedKeys) {
-      for (const category of Object.keys(state.selectedKeys)) {
-        if (Array.isArray(saved.selectedKeys[category])) state.selectedKeys[category] = saved.selectedKeys[category];
-      }
-    }
-    if (saved.inputs) Object.assign(state.inputs, saved.inputs);
-  } catch (_) {}
-}
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function applyStateToInputs() {
-  for (const id of ['leadership','leadershipFill','authority','authorityFill','dominance','dominanceFill','monsterHealth','humanHealth','epicHunterHealth','rankSeparation']) {
-    els[id].value = state.inputs[id];
-  }
-  els.arachne.checked = !!state.inputs.arachne;
-}
-
-function readInputs() {
-  for (const id of ['leadership','leadershipFill','authority','authorityFill','dominance','dominanceFill','monsterHealth','humanHealth','epicHunterHealth','rankSeparation']) {
-    state.inputs[id] = els[id].value;
-  }
-  state.inputs.arachne = els.arachne.checked;
-  saveState();
-}
-
-function updateCounts() {
-  els.troopCount.textContent = state.selectedKeys.troop.length;
-  els.monsterCount.textContent = state.selectedKeys.monster.length;
-  els.mercenaryCount.textContent = state.selectedKeys.mercenary.length;
-}
-
-function renderSelectionGrid() {
-  const selected = new Set(state.selectedKeys[activeCategory]);
-  els.unitSelectGrid.innerHTML = '';
-
-  for (const group of groups[activeCategory]) {
-    const isSelected = selected.has(group.key);
-    const label = document.createElement('label');
-    label.className = `unit-option${isSelected ? ' selected' : ''}`;
-    label.dataset.key = group.key;
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = isSelected;
-    checkbox.setAttribute('aria-label', `Select ${group.level} ${group.type}`);
-    checkbox.addEventListener('change', () => toggleSelection(activeCategory, group.key, checkbox.checked));
-    label.appendChild(checkbox);
-
-    const iconWrap = document.createElement('div');
-    if (group.rows.length > 1) {
-      iconWrap.className = 'multi-icons';
-      group.rows.slice(0,3).forEach(row => {
-        const img = document.createElement('img');
-        img.src = row.icon;
-        img.alt = '';
-        img.loading = 'lazy';
-        iconWrap.appendChild(img);
-      });
-    } else {
-      const img = document.createElement('img');
-      img.src = group.rows[0].icon;
-      img.alt = '';
-      img.loading = 'lazy';
-      iconWrap.appendChild(img);
-    }
-    label.appendChild(iconWrap);
-
-    const copy = document.createElement('div');
-    copy.className = 'unit-copy';
-    const names = group.rows.map(r => r.name).join(' + ');
-    copy.innerHTML = `
-      <div class="unit-level">${escapeHtml(group.level)}</div>
-      <div class="unit-type">${escapeHtml(group.type)}</div>
-      <div class="unit-name" title="${escapeHtml(names)}">${escapeHtml(names)}</div>
-      ${group.rows.length > 1 ? `<div class="unit-count-note">${group.rows.length} units selected together</div>` : ''}
-    `;
-    label.appendChild(copy);
-    els.unitSelectGrid.appendChild(label);
-  }
-}
-
-function toggleSelection(category, key, checked) {
-  const set = new Set(state.selectedKeys[category]);
-  checked ? set.add(key) : set.delete(key);
-  state.selectedKeys[category] = [...set];
-  saveState();
-  updateCounts();
-  renderSelectionGrid();
-  recalculate();
-}
-
-function setCategory(category) {
-  activeCategory = category;
-  document.querySelectorAll('.category-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.category === category));
-  renderSelectionGrid();
-}
-
-function selectAllCurrent() {
-  state.selectedKeys[activeCategory] = groups[activeCategory].map(g => g.key);
-  saveState();
-  updateCounts();
-  renderSelectionGrid();
-  recalculate();
-}
-
-function clearCurrent() {
-  state.selectedKeys[activeCategory] = [];
-  saveState();
-  updateCounts();
-  renderSelectionGrid();
-  recalculate();
-}
-
-function resetCalculator() {
-  if (!confirm('Reset all Epic Stacker inputs and selections on this device?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  state.selectedKeys = { troop: [], monster: [], mercenary: [] };
-  Object.assign(state.inputs, {
-    leadership: '', leadershipFill: 99.99,
-    authority: '', authorityFill: 99.99,
-    dominance: '', dominanceFill: 99.99,
-    monsterHealth: '', humanHealth: '', epicHunterHealth: '',
-    arachne: false, rankSeparation: 0.40,
-  });
-  applyStateToInputs();
-  updateCounts();
-  renderSelectionGrid();
-  clearResults();
-}
-
-function engineInputs() {
-  return {
-    leadership: n(state.inputs.leadership),
-    leadershipFill: n(state.inputs.leadershipFill) / 100,
-    authority: n(state.inputs.authority),
-    authorityFill: n(state.inputs.authorityFill) / 100,
-    dominance: n(state.inputs.dominance),
-    dominanceFill: n(state.inputs.dominanceFill) / 100,
-    arachne: !!state.inputs.arachne,
-    healthInputs: {
-      MONSTER: n(state.inputs.monsterHealth),
-      HUMAN: n(state.inputs.humanHealth),
-      EPIC_HUNTER: n(state.inputs.epicHunterHealth),
-    },
-    rankSeparation: n(state.inputs.rankSeparation) / 100,
-  };
-}
-
-function validate() {
-  const errors = [];
-  const hasAny = Object.values(state.selectedKeys).some(arr => arr.length);
-  if (!hasAny) return errors;
-
-  const inp = engineInputs();
-  if (!(inp.healthInputs.MONSTER > 0)) errors.push('Enter Monster Health.');
-  if (!(inp.healthInputs.HUMAN > 0)) errors.push('Enter Human Health.');
-  if (!(inp.healthInputs.EPIC_HUNTER > 0)) errors.push('Enter Epic Hunter Health.');
-
-  if (state.selectedKeys.troop.length && !(inp.leadership > 0)) errors.push('Enter Leadership for selected Troops.');
-  if (state.selectedKeys.monster.length && !(inp.dominance > 0)) errors.push('Enter Dominance for selected Monsters.');
-  if (state.selectedKeys.mercenary.length && !(inp.authority > 0)) errors.push('Enter Authority for selected Mercenaries.');
-
-  for (const [label, v] of [['Leadership % Full', inp.leadershipFill],['Authority % Full', inp.authorityFill],['Dominance % Full', inp.dominanceFill]]) {
-    if (v < 0 || v > 1) errors.push(`${label} must be between 0 and 100.`);
-  }
-  if (inp.rankSeparation < 0) errors.push('Layer separation cannot be negative.');
-  return errors;
-}
-
-function showValidation(errors) {
-  if (!errors.length) {
-    els.validationBox.classList.remove('show');
-    els.validationBox.innerHTML = '';
-    return;
-  }
-  els.validationBox.innerHTML = `<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;
-  els.validationBox.classList.add('show');
-}
-
-function clearResults(message = 'Enter your values and select units.') {
-  els.resultEmpty.hidden = false;
-  els.resultGroups.hidden = true;
-  els.resultStatus.textContent = message;
-  for (const id of ['troopResults','monsterResults','mercenaryResults']) els[id].innerHTML = '';
-  updateCapacity(null);
-}
-
-function renderResultRows(category, rows) {
-  const target = els[`${category}Results`];
-  target.innerHTML = '';
-  if (!rows.length) {
-    target.innerHTML = '<div class="result-empty" style="padding:16px">None selected.</div>';
-    return;
-  }
-  rows.forEach(row => {
-    const div = document.createElement('div');
-    div.className = 'result-row';
-    div.innerHTML = `
-      <img src="${row.icon}" alt="" loading="lazy">
-      <div class="result-unit">
-        <strong>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</strong>
-        <span>${escapeHtml(row.name)}</span>
-        <span class="result-debug">PvE ${Math.round(row.pve * 100)}% · Rank ${row.rank}</span>
-      </div>
-      <div class="result-qty">${integerFormat(row.qty)}<small>Qty</small></div>
-    `;
-    target.appendChild(div);
-  });
-}
-
-function updateCapacity(result) {
-  const configs = [
-    ['leadership', result?.totals.leadership, n(state.inputs.leadership)],
-    ['authority', result?.totals.authority, n(state.inputs.authority)],
-    ['dominance', result?.totals.dominance, n(state.inputs.dominance)],
-  ];
-  for (const [name, actual, limit] of configs) {
-    const bar = els[`${name}Bar`];
-    const fill = bar.querySelector('i');
-    const pct = limit > 0 && Number.isFinite(actual) ? actual / limit : 0;
-    fill.style.width = `${Math.min(Math.max(pct * 100, 0), 100)}%`;
-    bar.classList.toggle('over', pct > 1);
-    els[`${name}Actual`].textContent = actual == null ? '—' : `${integerFormat(actual)} / ${limit ? integerFormat(limit) : '—'}`;
-  }
-}
-
-function recalculate() {
-  readInputs();
-  const anySelected = Object.values(state.selectedKeys).some(arr => arr.length);
-  if (!anySelected) {
-    showValidation([]);
-    clearResults('Select units to build your stack.');
-    return;
-  }
-
-  const errors = validate();
-  showValidation(errors);
-  if (errors.length) {
-    clearResults('Complete the required inputs.');
-    return;
-  }
-
-  try {
-    const result = calculateEpicStack({
-      troops: units.troop,
-      monsters: units.monster,
-      mercenaries: units.mercenary,
-      selectedKeys: state.selectedKeys,
-      inputs: engineInputs(),
-    });
-
-    renderResultRows('mercenary', result.categories.mercenary.results);
-    renderResultRows('monster', result.categories.monster.results);
-    renderResultRows('troop', result.categories.troop.results);
-    updateCapacity(result);
-
-    const rowCount = result.categories.troop.results.length + result.categories.monster.results.length + result.categories.mercenary.results.length;
-    els.resultStatus.textContent = `${rowCount} calculated unit layer${rowCount === 1 ? '' : 's'} · mobile entry order`;
-    els.resultEmpty.hidden = true;
-    els.resultGroups.hidden = false;
-  } catch (error) {
-    console.error(error);
-    showValidation([error.message || 'The calculator could not complete the stack.']);
-    clearResults('Calculation error.');
-  }
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'",'&#039;');
-}
-
-function wireEvents() {
-  document.querySelectorAll('.category-tab').forEach(btn => btn.addEventListener('click', () => setCategory(btn.dataset.category)));
-  els.selectAll.addEventListener('click', selectAllCurrent);
-  els.clearCategory.addEventListener('click', clearCurrent);
-  els.recalculate.addEventListener('click', recalculate);
-  els.resetCalculator.addEventListener('click', resetCalculator);
-
-  for (const id of ['leadership','leadershipFill','authority','authorityFill','dominance','dominanceFill','monsterHealth','humanHealth','epicHunterHealth','rankSeparation']) {
-    els[id].addEventListener('input', () => {
-      readInputs();
-      recalculate();
-    });
-  }
-  els.arachne.addEventListener('change', () => {
-    readInputs();
-    recalculate();
-  });
-}
-
-async function init() {
-  cacheElements();
-  loadSavedState();
-  applyStateToInputs();
-  wireEvents();
-  try {
-    await loadData();
-    updateCounts();
-    renderSelectionGrid();
-    recalculate();
-  } catch (error) {
-    console.error(error);
-    showValidation(['The unit database could not be loaded. Refresh the page and try again.']);
-  }
-}
+function baseEngineInputs(){return{leadership:parseNumber(state.inputs.leadership),leadershipFill:parseNumber(state.inputs.leadershipFill)/100,authority:parseNumber(state.inputs.authority),authorityFill:parseNumber(state.inputs.authorityFill)/100,dominance:parseNumber(state.inputs.dominance),dominanceFill:parseNumber(state.inputs.dominanceFill)/100,arachne:!!state.inputs.arachne,healthInputs:{MONSTER:parseNumber(state.inputs.monsterHealth),HUMAN:parseNumber(state.inputs.humanHealth),EPIC_HUNTER:parseNumber(state.inputs.epicHunterHealth)},rankSeparation:parseNumber(state.inputs.rankSeparation)/100};}
+function categoryProbe(category,fill,inputs){const meta=CAPACITY_META[category];const probeInputs={...inputs,[meta.fill]:fill};return calculateCategory({category,units:units[category],selectedIds:state.selectedIds[category],inputs:probeInputs});}
+function findMaxSafeFill(category,inputs){const meta=CAPACITY_META[category],limit=inputs[meta.limit];if(!state.selectedIds[category].length||!(limit>0))return 1;const full=categoryProbe(category,1,inputs);if(full.totalCapacity<=limit)return 1;let low=0,high=1;for(let i=0;i<55;i++){const mid=(low+high)/2;const r=categoryProbe(category,mid,inputs);if(r.totalCapacity<=limit)low=mid;else high=mid;}return low;}
+function resolveAutoFills(inputs){for(const [cat,meta] of Object.entries(CAPACITY_META)){if(state.inputs[meta.auto]){resolvedFills[cat]=findMaxSafeFill(cat,inputs);inputs[meta.fill]=resolvedFills[cat];els[meta.fill].value=(resolvedFills[cat]*100).toFixed(resolvedFills[cat]===1?2:4).replace(/0+$/,'').replace(/\.$/,'');}else resolvedFills[cat]=inputs[meta.fill];}return inputs;}
+function validate(){const errors=[],hasAny=Object.values(state.selectedIds).some(a=>a.length);if(!hasAny)return errors;const inp=baseEngineInputs();if(!(inp.healthInputs.MONSTER>0))errors.push('Enter Monster Health.');if(!(inp.healthInputs.HUMAN>0))errors.push('Enter Human Health.');if(!(inp.healthInputs.EPIC_HUNTER>0))errors.push('Enter Epic Hunter Health.');if(state.selectedIds.troop.length&&!(inp.leadership>0))errors.push('Enter Leadership for selected Troops.');if(state.selectedIds.monster.length&&!(inp.dominance>0))errors.push('Enter Dominance for selected Monsters.');if(state.selectedIds.mercenary.length&&!(inp.authority>0))errors.push('Enter Authority for selected Mercenaries.');for(const [cat,meta] of Object.entries(CAPACITY_META)){if(!state.inputs[meta.auto]){const v=parseNumber(state.inputs[meta.fill]);if(v<0||v>100)errors.push(`${meta.fill.replace('Fill','')} fill must be between 0% and 100%.`);}}if(parseNumber(state.inputs.rankSeparation)<0)errors.push('Layer separation cannot be negative.');return errors;}
+function showValidation(errors){if(!errors.length){els.validationBox.classList.remove('show');els.validationBox.innerHTML='';return;}els.validationBox.innerHTML=`<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;els.validationBox.classList.add('show');}
+function clearResults(message='Enter your values and select units.'){els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.textContent=message;for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);}
+function renderResultRows(category,rows){const target=els[`${category}Results`];target.innerHTML='';if(!rows.length){target.innerHTML='<div class="result-empty" style="padding:16px">None selected.</div>';return;}for(const row of rows){const div=document.createElement('div');div.className='result-row';div.innerHTML=`<img src="${escapeHtml(row.icon)}" alt=""><div class="result-unit"><strong>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</strong><span>${escapeHtml(row.name)}</span><span class="result-debug">PvE ${(row.pve*100).toLocaleString('en-US',{maximumFractionDigits:2})}% · Rank ${row.rank}</span></div><div class="result-qty">${formatInteger(row.qty)}<small>Qty</small></div>`;iconFallback(div.querySelector('img'));target.appendChild(div);}}
+function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(state.inputs.leadership)],['authority',result?.totals.authority,parseNumber(state.inputs.authority)],['dominance',result?.totals.dominance,parseNumber(state.inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
+function recalculate(){readInputs();const any=Object.values(state.selectedIds).some(a=>a.length);if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}const errors=validate();showValidation(errors);if(errors.length){clearResults('Complete the required inputs.');return;}try{const inputs=resolveAutoFills(baseEngineInputs());const result=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:state.selectedIds,inputs});renderResultRows('mercenary',result.categories.mercenary.results);renderResultRows('monster',result.categories.monster.results);renderResultRows('troop',result.categories.troop.results);updateCapacity(result);const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;els.resultEmpty.hidden=true;els.resultGroups.hidden=false;}catch(error){console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');}}
+function resetCalculator(){if(!confirm('Reset all Epic Stacker inputs and selections on this device?'))return;localStorage.removeItem(STORAGE_KEY);state.selectedIds={troop:[],monster:[],mercenary:[]};Object.assign(state.inputs,{leadership:'',leadershipFill:'99.99',autoLeadership:true,authority:'',authorityFill:'99.99',autoAuthority:true,dominance:'',dominanceFill:'99.99',autoDominance:true,monsterHealth:'',humanHealth:'',epicHunterHealth:'',arachne:false,rankSeparation:'0.40'});applyStateToInputs();updateCounts();renderSelectionGrid();clearResults();}
+function wireEvents(){document.querySelectorAll('.category-tab').forEach(b=>b.addEventListener('click',()=>setCategory(b.dataset.category)));els.clearCategory.addEventListener('click',clearCurrent);els.resetCalculator.addEventListener('click',resetCalculator);for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].addEventListener('focus',()=>{els[id].value=String(parseNumber(els[id].value)||'');});els[id].addEventListener('blur',()=>formatFieldInteger(els[id]));els[id].addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill','rankSeparation'])els[id].addEventListener('input',recalculate);for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});els.arachne.addEventListener('change',recalculate);}
+async function init(){cacheElements();loadSavedState();applyStateToInputs();wireEvents();try{await loadData();migrateLegacySelections();updateCounts();renderSelectionGrid();recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
 init();

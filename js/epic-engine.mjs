@@ -75,9 +75,13 @@ export function pveScore(unit, arachne = false) {
   return score;
 }
 
-function selectedUnits(units, selectedKeys) {
-  const selected = new Set(selectedKeys ?? []);
-  return units.filter((u) => selected.has(u.selectionKey));
+function selectedUnits(units, selectedIds, selectedKeys) {
+  // Native web UI selects individual unit records by stable ID. selectedKeys remains
+  // supported for BIFF STACK v2.2 parity tests and migration from the first beta.
+  const ids = new Set(selectedIds ?? []);
+  if (ids.size) return units.filter((u) => ids.has(u.id));
+  const keys = new Set(selectedKeys ?? []);
+  return units.filter((u) => keys.has(u.selectionKey));
 }
 
 function rankSelected(units, arachne) {
@@ -106,6 +110,7 @@ export function calculateCategory({
   category,
   units,
   selectedKeys,
+  selectedIds,
   inputs,
   roundingTable = [
     { capacity: 1, roundTo: 1 },
@@ -119,7 +124,7 @@ export function calculateCategory({
   const config = CATEGORY_CONFIG[category];
   if (!config) throw new Error(`Unknown category: ${category}`);
 
-  const selected = selectedUnits(units, selectedKeys);
+  const selected = selectedUnits(units, selectedIds, selectedKeys);
   if (selected.length === 0) {
     return {
       category,
@@ -202,11 +207,12 @@ export function calculateCategory({
   };
 }
 
-export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys, inputs, roundingTable }) {
+export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys = {}, selectedIds = {}, inputs, roundingTable }) {
   const troop = calculateCategory({
     category: 'troop',
     units: troops,
     selectedKeys: selectedKeys.troop,
+    selectedIds: selectedIds.troop,
     inputs,
     roundingTable,
   });
@@ -214,6 +220,7 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     category: 'monster',
     units: monsters,
     selectedKeys: selectedKeys.monster,
+    selectedIds: selectedIds.monster,
     inputs,
     roundingTable,
   });
@@ -221,6 +228,7 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     category: 'mercenary',
     units: mercenaries,
     selectedKeys: selectedKeys.mercenary,
+    selectedIds: selectedIds.mercenary,
     inputs,
     roundingTable,
   });
