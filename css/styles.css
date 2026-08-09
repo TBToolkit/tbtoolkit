@@ -549,3 +549,41 @@ button { font: inherit; }
     background:#ffffff!important;
   }
 }
+
+
+/* v15: standardized mobile hamburger icon on all site pages */
+.menu-toggle{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  padding:9px!important;
+  display:none;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  color:#fff!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+.menu-toggle span{
+  display:block!important;
+  width:24px!important;
+  height:3px!important;
+  min-height:3px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  opacity:1!important;
+}
+@media(max-width:920px){
+  .menu-toggle{display:flex!important}
+  .menu-toggle span,
+  .menu-toggle:hover span,
+  .menu-toggle:focus span,
+  .menu-toggle[aria-expanded="true"] span{
+    background:#fff!important;
+    width:24px!important;
+    height:3px!important;
+  }
+}
