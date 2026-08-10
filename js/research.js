@@ -114,7 +114,7 @@ function reset(){
 }
 async function init(){
   try{
-    const res=await fetch('data/research-data.json?v=28',{cache:'no-store'});
+    const res=await fetch('data/research-data.json?v=29',{cache:'no-store'});
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const payload=await res.json();data=payload.records||[];
     populateCategories();apply();
