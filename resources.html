@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="Useful Total Battle resources and TB Toolkit data downloads." name="description"/><title>Resources | TB Toolkit</title><link href="css/styles.css?v=32" rel="stylesheet"/><script defer="" src="js/site.js"></script></head><body>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="Useful Total Battle resources and TB Toolkit data downloads." name="description"/><title>Resources | TB Toolkit</title><link href="css/styles.css?v=38" rel="stylesheet"/><link href="css/resources.css?v=38" rel="stylesheet"/><script defer="" src="js/site.js"></script><script defer="" src="js/resources.js?v=38"></script></head><body>
 <header class="site-header">
 <div class="container header-row">
 <a class="brand" href="index.html" aria-label="TB Toolkit home">
@@ -14,11 +14,64 @@
 </nav>
 </div>
 </header>
-<main><section class="page-hero"><div class="container"><div class="breadcrumb">Home / Resources</div><h1 class="page-title">Resources</h1><p class="page-intro">Useful links, downloads, and open data for players who want to build their own tools.</p></div></section><section class="section"><div class="container resource-list">
-<div class="resource-item"><div><h3>TB Toolkit Data</h3><p>Downloadable CSV, Excel, and JSON data exports are planned for a future release.</p></div><span class="button button-ghost button-disabled">Coming later</span></div>
+<main><section class="page-hero"><div class="container"><div class="breadcrumb">Home / Resources</div><h1 class="page-title">Resources</h1><p class="page-intro">Useful links, downloads, and open data for players who want to build their own tools.</p></div></section><section class="section">
+<div class="container resource-page">
+
+<section class="resource-data-card card" aria-labelledby="data-export-title">
+<div class="resource-data-intro">
+<div>
+<span class="resource-kicker">Open Data</span>
+<h2 id="data-export-title">TB Toolkit Data</h2>
+<p>Export the structured data used by TB Toolkit for your own spreadsheets, analysis, clan tools, or custom projects. Choose the dataset and file format you want.</p>
+</div>
+<div class="resource-data-badge">CSV · JSON · EXCEL</div>
+</div>
+
+<div class="data-export-controls">
+<label>
+<span>Dataset</span>
+<select id="dataExportDataset">
+<option value="all">All TB Toolkit Data</option>
+<option value="research">Research</option>
+<option value="chests">Chest Data</option>
+<option value="troops">Troops</option>
+<option value="monsters">Monsters</option>
+<option value="mercenaries">Mercenaries</option>
+</select>
+</label>
+
+<label>
+<span>Format</span>
+<select id="dataExportFormat">
+<option value="xlsx">Excel (.xlsx)</option>
+<option value="csv">CSV (.csv)</option>
+<option value="json">JSON (.json)</option>
+</select>
+</label>
+
+<button class="button button-primary data-download-button" id="dataExportDownload" type="button">
+Download Data
+</button>
+</div>
+
+<div class="data-export-summary" id="dataExportSummary">
+<strong>All TB Toolkit Data</strong>
+<span>Downloads the complete public dataset.</span>
+</div>
+
+<div class="data-export-notes">
+<p><strong>Excel</strong> is best for browsing and analysis. <strong>CSV</strong> is broadly compatible with spreadsheets and databases. <strong>JSON</strong> preserves the native structured data for programming and web projects.</p>
+<p>When <strong>All TB Toolkit Data</strong> is selected, CSV downloads as a ZIP containing one CSV file per dataset; Excel uses one worksheet per dataset.</p>
+</div>
+</section>
+
+<div class="resource-list secondary-resources">
 <div class="resource-item"><div><h3>Player Resources</h3><p>Useful community links and reference material will be collected here.</p></div><span class="button button-ghost button-disabled">Links coming soon</span></div>
 <div class="resource-item"><div><h3>Excel Downloads</h3><p>Current spreadsheet tools will be available here after the public download links are prepared.</p></div><span class="button button-ghost button-disabled">Downloads coming soon</span></div>
-</div></section></main>
+</div>
+
+</div>
+</section></main>
 <footer class="site-footer">
 <div class="container footer-row">
 <div>© <span data-year=""></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
