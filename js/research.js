@@ -84,7 +84,7 @@ function render(){
       lastCat=r.category;
     }
     const badge=r.currency==='Conquest Points'?'conquest':'valor';
-    const levels=r.levelCosts.map((cost,i)=>`<div class="level-cost ${cost==null?'empty':''}"><span class="level">Level ${i+1}</span><span class="cost">${cost==null?'—':fmt(cost)}</span></div>`).join('');
+    const levels=r.levelCosts.map((cost,i)=>`<div class="level-cost ${cost==null?'empty':''}"><span class="level">Level ${i+1}</span><span class="cost">${cost==null?'—':compact(cost)}</span></div>`).join('');
     html+=`<details class="research-item">
       <summary>
         <img class="research-item-icon" src="${subgroupIcon(r.research)}" onerror="this.onerror=null;this.src='${categoryIcon(r.category)}'" alt="" aria-hidden="true">
