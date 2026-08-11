@@ -43,3 +43,165 @@
   .chest-table{font-size:.7rem}
   .chest-table th,.chest-table td{padding:9px 10px}
 }
+
+
+/* v33 Chest Data refinements */
+
+.filter-label{
+  display:block;
+  color:#c1cad3;
+  font-size:.78rem;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+}
+.reward-filter-control{
+  position:relative;
+}
+.reward-filter-button{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+  height:46px;
+  margin-top:6px;
+  padding:0 11px;
+  border:1px solid #405267;
+  border-radius:7px;
+  background:#07121d;
+  color:#e8edf1;
+  font:inherit;
+  font-size:.96rem;
+  cursor:pointer;
+}
+.reward-filter-button:hover,
+.reward-filter-button[aria-expanded="true"]{
+  border-color:var(--orange);
+}
+.reward-filter-caret{
+  color:#8796a4;
+}
+.reward-filter-menu{
+  position:absolute;
+  z-index:50;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  max-height:360px;
+  overflow:auto;
+  padding:9px;
+  border:1px solid #405267;
+  border-radius:8px;
+  background:#06111b;
+  box-shadow:0 16px 32px rgba(0,0,0,.4);
+}
+.reward-filter-actions{
+  display:flex;
+  gap:7px;
+  padding:0 0 8px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.reward-filter-actions button{
+  flex:1;
+  min-height:32px;
+  border:1px solid #354a5d;
+  border-radius:6px;
+  background:#0c1925;
+  color:#c7d0d8;
+  font-size:.68rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.reward-filter-options{
+  display:grid;
+  gap:4px;
+  padding-top:7px;
+}
+.reward-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:4px 6px;
+  border-radius:5px;
+  color:#d8dfe5;
+  font-size:.76rem;
+  cursor:pointer;
+}
+.reward-option:hover{
+  background:#0d1c29;
+}
+.reward-option input{
+  width:17px;
+  height:17px;
+  accent-color:var(--orange);
+}
+
+/* Let headers wrap instead of being clipped. */
+.chest-table th{
+  white-space:normal!important;
+  line-height:1.15;
+  min-width:92px;
+  max-width:130px;
+  word-break:normal;
+  overflow-wrap:anywhere;
+  vertical-align:bottom;
+}
+.chest-table th:first-child{
+  min-width:92px;
+  width:92px;
+}
+.chest-table th:nth-child(2){
+  min-width:190px;
+  width:190px;
+  max-width:240px;
+}
+.chest-table td:first-child,
+.chest-table td:nth-child(2){
+  white-space:nowrap;
+}
+
+/* Fix sticky positions so there is no visual gap between Type and Chest. */
+.chest-table th:first-child,
+.chest-table td:first-child{
+  left:0!important;
+}
+.chest-table th:nth-child(2),
+.chest-table td:nth-child(2){
+  left:92px!important;
+}
+.chest-table th:first-child,
+.chest-table td:first-child,
+.chest-table th:nth-child(2),
+.chest-table td:nth-child(2){
+  box-shadow:none!important;
+}
+
+/* More room for table headers on small screens too. */
+@media(max-width:760px){
+  .reward-filter-button{
+    height:50px;
+    font-size:1rem;
+  }
+  .reward-filter-menu{
+    position:fixed;
+    left:14px;
+    right:14px;
+    top:120px;
+    max-height:65vh;
+  }
+  .chest-table th{
+    min-width:98px;
+    max-width:118px;
+    font-size:.62rem;
+  }
+  .chest-table th:nth-child(2){
+    min-width:175px;
+    width:175px;
+  }
+  .chest-table th:nth-child(2),
+  .chest-table td:nth-child(2){
+    left:92px!important;
+  }
+}
