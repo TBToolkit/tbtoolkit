@@ -1,0 +1,44 @@
+{
+  "research": {
+    "label": "Research",
+    "records": 418,
+    "csv": "downloads/data/research.csv",
+    "json": "downloads/data/research.json",
+    "xlsx": "downloads/data/research.xlsx"
+  },
+  "chests": {
+    "label": "Chest Data",
+    "records": 46,
+    "csv": "downloads/data/chests.csv",
+    "json": "downloads/data/chests.json",
+    "xlsx": "downloads/data/chests.xlsx"
+  },
+  "troops": {
+    "label": "Troops",
+    "records": 65,
+    "csv": "downloads/data/troops.csv",
+    "json": "downloads/data/troops.json",
+    "xlsx": "downloads/data/troops.xlsx"
+  },
+  "monsters": {
+    "label": "Monsters",
+    "records": 28,
+    "csv": "downloads/data/monsters.csv",
+    "json": "downloads/data/monsters.json",
+    "xlsx": "downloads/data/monsters.xlsx"
+  },
+  "mercenaries": {
+    "label": "Mercenaries",
+    "records": 74,
+    "csv": "downloads/data/mercenaries.csv",
+    "json": "downloads/data/mercenaries.json",
+    "xlsx": "downloads/data/mercenaries.xlsx"
+  },
+  "all": {
+    "label": "All TB Toolkit Data",
+    "records": 631,
+    "csv": "downloads/data/all-data-csv.zip",
+    "json": "downloads/data/all-data.json",
+    "xlsx": "downloads/data/all-data.xlsx"
+  }
+}

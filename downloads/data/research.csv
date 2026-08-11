@@ -1,0 +1,419 @@
+﻿id,category,sourceSheet,research,currency,levelCount,highestLevel,levelCosts,totalCost,sourceOrder,sourceRow,dataFlags,researchType
+r1,Guardsmen I,Guardsmen I,Archers I,Valor Points,1,1,"[300,null,null,null,null,null,null,null,null,null]",300,1,2,[],Unlock
+r2,Guardsmen I,Guardsmen I,Spearmen I,Valor Points,1,1,"[300,null,null,null,null,null,null,null,null,null]",300,2,3,[],Unlock
+r3,Guardsmen I,Guardsmen I,Riders I,Valor Points,1,1,"[300,null,null,null,null,null,null,null,null,null]",300,3,4,[],Unlock
+r4,Guardsmen I,Guardsmen I,Guardsmen Training Cost I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,4,6,[],Unlock
+r5,Guardsmen I,Guardsmen I,Guardsmen Carrying Capacity I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,5,8,[],Unlock
+r6,Guardsmen I,Guardsmen I,Archers II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,6,10,[],Unlock
+r7,Guardsmen I,Guardsmen I,Spearmen II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,7,11,[],Unlock
+r8,Guardsmen I,Guardsmen I,Riders II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,8,12,[],Unlock
+r9,Guardsmen I,Guardsmen I,Guardsmen Training Cost II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,9,14,[],Unlock
+r10,Guardsmen I,Guardsmen I,Captain Bernard,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,10,16,[],Unlock
+r11,Guardsmen I,Guardsmen I,Guardsmen's March Speed I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,11,18,[],Unlock
+r12,Guardsmen I,Guardsmen I,Captain Lucius,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,12,20,[],Unlock
+r13,Guardsmen I,Guardsmen I,Archers III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,13,22,[],Unlock
+r14,Guardsmen I,Guardsmen I,Spearmen III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,14,23,[],Unlock
+r15,Guardsmen I,Guardsmen I,Riders III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,15,24,[],Unlock
+r16,Guardsmen I,Guardsmen I,Guardsmen's March Speed II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,16,26,[],Unlock
+r17,Guardsmen I,Guardsmen I,Captain Doria,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,17,28,[],Unlock
+r18,Guardsmen I,Guardsmen I,Guardsmen's Carrying Capacity II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,18,30,[],Unlock
+r19,Guardsmen I,Guardsmen I,Archers IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,19,32,[],Unlock
+r20,Guardsmen I,Guardsmen I,Spearmen IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,20,33,[],Unlock
+r21,Guardsmen I,Guardsmen I,Riders IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,21,34,[],Unlock
+r22,Guardsmen I,Guardsmen I,Guardsmen's training cost III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,22,36,[],Unlock
+r23,Guardsmen I,Guardsmen I,Guardsmen's March speed III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,23,38,[],Unlock
+r24,Guardsmen I,Guardsmen I,Guardsmen Carrying Capacity III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,24,40,[],Unlock
+r25,Guardsmen I,Guardsmen I,Archers V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,25,42,[],Unlock
+r26,Guardsmen I,Guardsmen I,Spearmen V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,26,43,[],Unlock
+r27,Guardsmen I,Guardsmen I,Riders V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,27,44,[],Unlock
+r28,Guardsmen I,Guardsmen I,Battle Griffin V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,28,46,[],Unlock
+r29,Guardsmen I,Guardsmen I,Guardsmen's Training Cost IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,29,48,[],Unlock
+r30,Guardsmen I,Guardsmen I,Captain Brunhild,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,30,50,[],Unlock
+r31,Guardsmen I,Guardsmen I,Guardsmen's March Speed IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,31,52,[],Unlock
+r32,Guardsmen I,Guardsmen I,Guardsmen's Carrying Capacity IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,32,54,[],Unlock
+r33,Guardsmen I,Guardsmen I,Heavy Arbalester VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,33,56,[],Unlock
+r34,Guardsmen I,Guardsmen I,Heavy Halberdier VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,34,57,[],Unlock
+r35,Guardsmen I,Guardsmen I,Mounted Knight VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,35,58,[],Unlock
+r36,Guardsmen I,Guardsmen I,Battle Griffin VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,36,60,[],Unlock
+r37,Guardsmen I,Guardsmen I,Guardsmen's Training Cost V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,37,62,[],Unlock
+r38,Guardsmen I,Guardsmen I,Guardsmen's March Speed V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,38,64,[],Unlock
+r39,Guardsmen I,Guardsmen I,Guardsmen's Carrying Capacity V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,39,66,[],Unlock
+r40,Guardsmen I,Guardsmen I,Heavy Arbalester VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,40,68,[],Unlock
+r41,Guardsmen I,Guardsmen I,Heavy Halberdier VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,41,69,[],Unlock
+r42,Guardsmen I,Guardsmen I,Mounted Knight VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,42,70,[],Unlock
+r43,Guardsmen I,Guardsmen I,Battle Griffin VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,43,72,[],Unlock
+r44,Specialists I,Specialists I,Swordsmen I,Conquest Points,1,1,"[150,null,null,null,null,null,null,null,null,null]",150,44,3,[],Unlock
+r45,Specialists I,Specialists I,Spies I,Conquest Points,1,1,"[150,null,null,null,null,null,null,null,null,null]",150,45,4,[],Unlock
+r46,Specialists I,Specialists I,Specialists' Training Cost I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,46,6,[],Unlock
+r47,Specialists I,Specialists I,Specialists' Carrying Capacity I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,47,8,[],Unlock
+r48,Specialists I,Specialists I,Swordsmen II,Conquest Points,1,1,"[120000,null,null,null,null,null,null,null,null,null]",120000,48,10,[],Unlock
+r49,Specialists I,Specialists I,Spies II,Conquest Points,1,1,"[120000,null,null,null,null,null,null,null,null,null]",120000,49,11,[],Unlock
+r50,Specialists I,Specialists I,Specialists Training Cost II,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,50,13,[],Unlock
+r51,Specialists I,Specialists I,Captain Ye Ho-Sung,Conquest Points,1,1,"[120000,null,null,null,null,null,null,null,null,null]",120000,51,15,[],Unlock
+r52,Specialists I,Specialists I,Specialists' March Speed I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,52,17,[],Unlock
+r53,Specialists I,Specialists I,Swordsmen III,Conquest Points,1,1,"[2500000,null,null,null,null,null,null,null,null,null]",2500000,53,19,[],Unlock
+r54,Specialists I,Specialists I,Spies III,Conquest Points,1,1,"[2500000,null,null,null,null,null,null,null,null,null]",2500000,54,20,[],Unlock
+r55,Specialists I,Specialists I,Specialists' March Speed II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,55,22,[],Unlock
+r56,Specialists I,Specialists I,Captain Dustan,Conquest Points,1,1,"[22000000,null,null,null,null,null,null,null,null,null]",22000000,56,24,[],Unlock
+r57,Specialists I,Specialists I,Specialists' Carrying Capacity II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,57,26,[],Unlock
+r58,Specialists I,Specialists I,Swordsmen IV,Conquest Points,1,1,"[22000000,null,null,null,null,null,null,null,null,null]",22000000,58,28,[],Unlock
+r59,Specialists I,Specialists I,Spies IV,Conquest Points,1,1,"[22000000,null,null,null,null,null,null,null,null,null]",22000000,59,29,[],Unlock
+r60,Specialists I,Specialists I,Specialists' Training Cost III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,60,31,[],Unlock
+r61,Specialists I,Specialists I,Specialists' Carrying Capacity III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,61,33,[],Unlock
+r62,Specialists I,Specialists I,Specialists' March Speed III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,62,35,[],Unlock
+r63,Specialists I,Specialists I,Spies V,Conquest Points,1,1,"[300000000,null,null,null,null,null,null,null,null,null]",300000000,63,37,[],Unlock
+r64,Specialists I,Specialists I,Vultures V,Conquest Points,1,1,"[300000000,null,null,null,null,null,null,null,null,null]",300000000,64,38,[],Unlock
+r65,Specialists I,Specialists I,Swordsmen V,Conquest Points,1,1,"[300000000,null,null,null,null,null,null,null,null,null]",300000000,65,39,[],Unlock
+r66,Specialists I,Specialists I,Deadshots V,Conquest Points,1,1,"[300000000,null,null,null,null,null,null,null,null,null]",300000000,66,40,[],Unlock
+r67,Specialists I,Specialists I,Lion Riders V,Conquest Points,1,1,"[300000000,null,null,null,null,null,null,null,null,null]",300000000,67,41,[],Unlock
+r68,Specialists I,Specialists I,Specialists' Training Cost IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,68,43,[],Unlock
+r69,Specialists I,Specialists I,Specialists' Carrying Capacity IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,69,45,[],Unlock
+r70,Specialists I,Specialists I,Specialists' March Speed IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,70,47,[],Unlock
+r71,Specialists I,Specialists I,Swift Jaeger VI,Conquest Points,1,1,"[3000000000,null,null,null,null,null,null,null,null,null]",3000000000,71,49,[],Unlock
+r72,Specialists I,Specialists I,Vultures VI,Conquest Points,1,1,"[3000000000,null,null,null,null,null,null,null,null,null]",3000000000,72,50,[],Unlock
+r73,Specialists I,Specialists I,Deadshots VI,Conquest Points,1,1,"[3000000000,null,null,null,null,null,null,null,null,null]",3000000000,73,51,[],Unlock
+r74,Specialists I,Specialists I,Heavy Knight VI,Conquest Points,1,1,"[3000000000,null,null,null,null,null,null,null,null,null]",3000000000,74,52,[],Unlock
+r75,Specialists I,Specialists I,Lion Riders VI,Conquest Points,1,1,"[3000000000,null,null,null,null,null,null,null,null,null]",3000000000,75,53,[],Unlock
+r76,Specialists I,Specialists I,Specialists Training Cost V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,76,55,[],Unlock
+r77,Specialists I,Specialists I,Specialists' Carrying Capacity V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,77,57,[],Unlock
+r78,Specialists I,Specialists I,Specialists' March Speed V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,78,59,[],Unlock
+r79,Specialists I,Specialists I,Swift Jaeger VII,Conquest Points,1,1,"[30000000000,null,null,null,null,null,null,null,null,null]",30000000000,79,61,[],Unlock
+r80,Specialists I,Specialists I,Vultures VII,Conquest Points,1,1,"[30000000000,null,null,null,null,null,null,null,null,null]",30000000000,80,62,[],Unlock
+r81,Specialists I,Specialists I,Heavy Knight VII,Conquest Points,1,1,"[30000000000,null,null,null,null,null,null,null,null,null]",30000000000,81,63,[],Unlock
+r82,Specialists I,Specialists I,Deadshots VII,Conquest Points,1,1,"[30000000000,null,null,null,null,null,null,null,null,null]",30000000000,82,64,[],Unlock
+r83,Specialists I,Specialists I,Lion Riders VII,Conquest Points,1,1,"[30000000000,null,null,null,null,null,null,null,null,null]",30000000000,83,65,[],Unlock
+r84,Engineer Corps I,Engineer Corps I,City Walls I,Valor Points,1,1,"[300,null,null,null,null,null,null,null,null,null]",300,84,3,[],Unlock
+r85,Engineer Corps I,Engineer Corps I,Catapults I,Valor Points,1,1,"[300,null,null,null,null,null,null,null,null,null]",300,85,4,[],Unlock
+r86,Engineer Corps I,Engineer Corps I,Siege Engines' Training Cost I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,86,6,[],Unlock
+r87,Engineer Corps I,Engineer Corps I,Siege Engines' Carrying Capacity I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,87,8,[],Unlock
+r88,Engineer Corps I,Engineer Corps I,City Walls II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,88,10,[],Unlock
+r89,Engineer Corps I,Engineer Corps I,Catapults II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,89,11,[],Unlock
+r90,Engineer Corps I,Engineer Corps I,Siege Engines' Training Cost II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,90,13,[],Unlock
+r91,Engineer Corps I,Engineer Corps I,Captain Brann,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,91,15,[],Unlock
+r92,Engineer Corps I,Engineer Corps I,Siege Engines' March Speed I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,92,17,[],Unlock
+r93,Engineer Corps I,Engineer Corps I,City Walls III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,93,19,[],Unlock
+r94,Engineer Corps I,Engineer Corps I,Catapults III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,94,20,[],Unlock
+r95,Engineer Corps I,Engineer Corps I,Siege Engines' March Speed II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,95,22,[],Unlock
+r96,Engineer Corps I,Engineer Corps I,Siege Engines' Carrying Capacity II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,96,24,[],Unlock
+r97,Engineer Corps I,Engineer Corps I,City Walls IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,97,26,[],Unlock
+r98,Engineer Corps I,Engineer Corps I,Catapults IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,98,27,[],Unlock
+r99,Engineer Corps I,Engineer Corps I,Siege Engines' Training Cost III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,99,29,[],Unlock
+r100,Engineer Corps I,Engineer Corps I,Siege Engines' March Speed III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,100,31,[],Unlock
+r101,Engineer Corps I,Engineer Corps I,Siege Engines' Carrying Capacity III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,101,33,[],Unlock
+r102,Engineer Corps I,Engineer Corps I,City Walls V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,102,35,[],Unlock
+r103,Engineer Corps I,Engineer Corps I,Catapults V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,103,36,[],Unlock
+r104,Engineer Corps I,Engineer Corps I,Siege Engines' Training Cost IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,104,38,[],Unlock
+r105,Engineer Corps I,Engineer Corps I,Siege Engines' March Speed IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,105,40,[],Unlock
+r106,Engineer Corps I,Engineer Corps I,Siege Engines' Carrying Capacity IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,106,42,[],Unlock
+r107,Engineer Corps I,Engineer Corps I,City Walls VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,107,44,[],Unlock
+r108,Engineer Corps I,Engineer Corps I,Ballistae VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,108,45,[],Unlock
+r109,Engineer Corps I,Engineer Corps I,Siege Engines' Training Cost V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,109,47,[],Unlock
+r110,Engineer Corps I,Engineer Corps I,Siege Engines' March Speed V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,110,49,[],Unlock
+r111,Engineer Corps I,Engineer Corps I,Siege Engines' Carrying Capacity V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,111,51,[],Unlock
+r112,Engineer Corps I,Engineer Corps I,City Walls VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,112,53,[],Unlock
+r113,Engineer Corps I,Engineer Corps I,Ballistae VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,113,54,[],Unlock
+r114,Monsters I,Monsters I,Monsters III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,114,3,[],Unlock
+r115,Monsters I,Monsters I,Monsters' Cost I,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,115,5,"[""source-total-mismatch""]",Unlock
+r116,Monsters I,Monsters I,Monsters' March Speed I,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,116,7,"[""source-total-mismatch""]",Unlock
+r117,Monsters I,Monsters I,Monsters' Carrying Capacity I,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,117,9,"[""source-total-mismatch""]",Unlock
+r118,Monsters I,Monsters I,Monsters IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,118,11,[],Unlock
+r119,Monsters I,Monsters I,Monsters' March Speed II,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,119,13,[],Unlock
+r120,Monsters I,Monsters I,Monsters' Cost II,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,120,15,[],Unlock
+r121,Monsters I,Monsters I,Monsters V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,121,17,[],Unlock
+r122,Monsters I,Monsters I,Captain Ingrid,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,122,19,[],Unlock
+r123,Monsters I,Monsters I,Monsters' March Speed III,Valor Points,9,10,"[80000000,160000000,240000000,null,720000000,1400000000,2400000000,3600000000,5600000000,8000000000]",22200000000,123,21,"[""missing-level-value""]",Unlock
+r124,Monsters I,Monsters I,Monsters' Carrying Capacity II,Valor Points,10,10,"[80000000,160000000,240000000,400000000,720000000,1400000000,2400000000,3600000000,5600000000,8000000000]",22600000000,124,23,[],Unlock
+r125,Monsters I,Monsters I,Monsters Cost III,Valor Points,10,10,"[80000000,160000000,240000000,400000000,720000000,1400000000,2400000000,3600000000,5600000000,8000000000]",22600000000,125,25,[],Unlock
+r126,Monsters I,Monsters I,Monsters VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,126,27,[],Unlock
+r127,Monsters I,Monsters I,Monsters' March Speed IV,Valor Points,10,10,"[960000000,1900000000,2900000000,4800000000,8700000000,16900000000,28900000000,43000000000,67000000000,96000000000]",271060000000,127,29,[],Unlock
+r128,Monsters I,Monsters I,Monsters' Carrying Capacity III,Valor Points,10,10,"[960000000,1900000000,2900000000,4800000000,8700000000,16900000000,28900000000,43000000000,67000000000,96000000000]",271060000000,128,31,[],Unlock
+r129,Monsters I,Monsters I,Monsters' Cost IV,Valor Points,10,10,"[960000000,1900000000,2900000000,4800000000,8700000000,16900000000,28900000000,43000000000,67000000000,96000000000]",271060000000,129,33,[],Unlock
+r130,Monsters I,Monsters I,Monsters VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,130,35,[],Unlock
+r131,Archeology,Archeology,Tar Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,131,3,[],Unlock
+r132,Archeology,Archeology,Tar Capacity I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,132,5,[],Unlock
+r133,Archeology,Archeology,Crypt Exploration Efficiency I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,133,7,[],Unlock
+r134,Archeology,Archeology,Crypts II,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,134,9,[],Unlock
+r135,Archeology,Archeology,Tar Production II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,135,11,"[""source-total-mismatch""]",Unlock
+r136,Archeology,Archeology,Tar Capacity II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,136,13,"[""source-total-mismatch""]",Unlock
+r137,Archeology,Archeology,Chance to Explore Twice I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,137,15,"[""source-total-mismatch""]",Unlock
+r138,Archeology,Archeology,Crypt Exploration Cost I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,138,17,"[""source-total-mismatch""]",Unlock
+r139,Archeology,Archeology,Crypts III,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,139,19,[],Unlock
+r140,Archeology,Archeology,Tar Production III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,140,21,[],Unlock
+r141,Archeology,Archeology,Tar Capacity III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,141,23,[],Unlock
+r142,Archeology,Archeology,Crypt Exploration Efficiency II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,142,25,[],Unlock
+r143,Archeology,Archeology,Captain Carter,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,143,27,[],Unlock
+r144,Archeology,Archeology,Crypts IV,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,144,29,[],Unlock
+r145,Archeology,Archeology,Crypt Exploration Efficiency III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,145,31,[],Unlock
+r146,Archeology,Archeology,Crypt Exploration Cost II,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,146,33,[],Unlock
+r147,Archeology,Archeology,Chance to Explore Twice II,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,147,35,[],Unlock
+r148,Archeology,Archeology,Crypts V,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,148,37,[],Unlock
+r149,Archeology,Archeology,Tar Capacity IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,149,39,[],Unlock
+r150,Archeology,Archeology,Tar Production IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,150,41,[],Unlock
+r151,Archeology,Archeology,Common Crypt Exploration Efficiency I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,151,43,[],Unlock
+r152,Archeology,Archeology,Common Crypt Exploration Cost I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,152,45,[],Unlock
+r153,Archeology,Archeology,Rare Crypt Exploration Efficiency I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,153,47,[],Unlock
+r154,Archeology,Archeology,Rare Crypt Exploration Cost I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,154,49,[],Unlock
+r155,Archeology,Archeology,Epic Crypt Exploration Efficiency I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,155,51,[],Unlock
+r156,Archeology,Archeology,Epic Crypt Exploration Cost I,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,156,53,[],Unlock
+r157,Archeology,Archeology,Crypts VI,Valor Points,1,1,"[9000000000,null,null,null,null,null,null,null,null,null]",9000000000,157,55,[],Unlock
+r158,Archeology,Archeology,Tar Production V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,158,57,[],Unlock
+r159,Archeology,Archeology,Tar Capacity V,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,159,59,[],Unlock
+r160,Archeology,Archeology,Common Crypt Exploration Efficiency II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,160,61,[],Unlock
+r161,Archeology,Archeology,Common Crypt Exploration Cost II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,161,63,[],Unlock
+r162,Archeology,Archeology,Rare Crypt Exploration Efficiency II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,162,65,[],Unlock
+r163,Archeology,Archeology,Rare Crypt Exploration Cost II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,163,67,[],Unlock
+r164,Archeology,Archeology,Epic Crypt Exploration Efficiency II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,164,69,[],Unlock
+r165,Archeology,Archeology,Epic Crypt Exploration Cost II,Valor Points,10,10,"[1700000000,3500000000,5200000000,8600000000,16000000000,31000000000,52000000000,78000000000,120000000000,170000000000]",486000000000,165,71,[],Unlock
+r166,Archeology,Archeology,Crypts VII,Valor Points,1,1,"[90000000000,null,null,null,null,null,null,null,null,null]",90000000000,166,73,[],Unlock
+r167,Blacksmithing,Blacksmithing,Equipment Crafting Cost I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,167,3,[],Unlock
+r168,Blacksmithing,Blacksmithing,Equipment Crafting Speed I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,168,5,[],Unlock
+r169,Blacksmithing,Blacksmithing,Combining Gems I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,169,7,[],Unlock
+r170,Blacksmithing,Blacksmithing,Combining Enchantments I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,170,9,[],Unlock
+r171,Blacksmithing,Blacksmithing,Gem Crafting I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,171,11,[],Unlock
+r172,Blacksmithing,Blacksmithing,Gem and Enchantment Socketing I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,172,13,[],Unlock
+r173,Blacksmithing,Blacksmithing,Material Quality Choice I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,173,15,[],Unlock
+r174,Blacksmithing,Blacksmithing,Increased Equipment Durability I,Valor Points,1,1,"[450000,null,null,null,null,null,null,null,null,null]",450000,174,17,[],Unlock
+r175,Blacksmithing,Blacksmithing,Enchantment Saving Chance I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,175,19,[],Unlock
+r176,Blacksmithing,Blacksmithing,Gem Saving Chance I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,176,21,[],Unlock
+r177,Blacksmithing,Blacksmithing,Equipment Repair Cost I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,177,23,[],Unlock
+r178,Blacksmithing,Blacksmithing,Equipment Crafting Speed II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,178,25,[],Unlock
+r179,Blacksmithing,Blacksmithing,Material Saving Chance I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,179,27,[],Unlock
+r180,Blacksmithing,Blacksmithing,Combining Gems II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,180,29,[],Unlock
+r181,Blacksmithing,Blacksmithing,Combining Enchantments II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,181,31,[],Unlock
+r182,Blacksmithing,Blacksmithing,Gem Crafting II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,182,33,[],Unlock
+r183,Blacksmithing,Blacksmithing,Gem and Enchantment Socketing II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,183,35,[],Unlock
+r184,Blacksmithing,Blacksmithing,Material Quality Choice II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,184,37,[],Unlock
+r185,Blacksmithing,Blacksmithing,Increased Equipment Durability II,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,185,39,[],Unlock
+r186,Blacksmithing,Blacksmithing,Enchantment Saving Chance II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,186,41,[],Unlock
+r187,Blacksmithing,Blacksmithing,Gem Saving Chance II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,187,43,[],Unlock
+r188,Blacksmithing,Blacksmithing,Equipment Crafting Cost II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,188,45,[],Unlock
+r189,Blacksmithing,Blacksmithing,Equipment Crafting Speed III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,189,47,[],Unlock
+r190,Blacksmithing,Blacksmithing,Equipment Repair Cost II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,190,49,[],Unlock
+r191,Blacksmithing,Blacksmithing,Material Saving Chance II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,191,51,[],Unlock
+r192,Blacksmithing,Blacksmithing,Combining Gems III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,192,53,[],Unlock
+r193,Blacksmithing,Blacksmithing,Combining Enchantments III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,193,55,[],Unlock
+r194,Blacksmithing,Blacksmithing,Gem Crafting III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,194,57,[],Unlock
+r195,Blacksmithing,Blacksmithing,Gem and Enchantment Socketing III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,195,59,[],Unlock
+r196,Blacksmithing,Blacksmithing,Equipment Durability Increase III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,196,61,[],Unlock
+r197,Blacksmithing,Blacksmithing,Material Quality Choice III,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,197,63,[],Unlock
+r198,Blacksmithing,Blacksmithing,Equipment Repair Cost III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,198,65,[],Unlock
+r199,Blacksmithing,Blacksmithing,Gem Saving Chance III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,199,67,[],Unlock
+r200,Blacksmithing,Blacksmithing,Enchantment Saving Chance III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,200,69,[],Unlock
+r201,Blacksmithing,Blacksmithing,Equipment Crafting Cost III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,201,71,[],Unlock
+r202,Blacksmithing,Blacksmithing,Material Saving Chance III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,202,73,[],Unlock
+r203,Blacksmithing,Blacksmithing,Equipment Repair Cost IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,203,75,[],Unlock
+r204,Blacksmithing,Blacksmithing,Combining Gems IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,204,77,[],Unlock
+r205,Blacksmithing,Blacksmithing,Combining Enchantments IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,205,79,[],Unlock
+r206,Blacksmithing,Blacksmithing,Gem Crafting IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,206,81,[],Unlock
+r207,Blacksmithing,Blacksmithing,Gem and Enchantment Socketing IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,207,83,[],Unlock
+r208,Blacksmithing,Blacksmithing,Equipment Durability Increase IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,208,85,[],Unlock
+r209,Blacksmithing,Blacksmithing,Material Quality Choice IV,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,209,87,[],Unlock
+r210,Blacksmithing,Blacksmithing,Material Saving Chance IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,210,89,[],Unlock
+r211,Blacksmithing,Blacksmithing,Enchantment Saving Chance IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,211,91,[],Unlock
+r212,Blacksmithing,Blacksmithing,Gem Saving Chance IV,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,212,93,[],Unlock
+r213,Guardsmen II,Guardsmen II,Guardsmen's Training Cost VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,999000000000,1700000000000]",4153900000000,213,3,[],Unlock
+r214,Guardsmen II,Guardsmen II,Guardsmen's Carrying Capacity VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,999000000000,1700000000000]",4153900000000,214,5,[],Unlock
+r215,Guardsmen II,Guardsmen II,Guardsmen's March Speed VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,999000000000,1700000000000]",4153900000000,215,7,[],Unlock
+r216,Guardsmen II,Guardsmen II,Purifier I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,216,9,[],Unlock
+r217,Guardsmen II,Guardsmen II,Punisher I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,217,10,[],Unlock
+r218,Guardsmen II,Guardsmen II,Smiter I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,218,11,[],Unlock
+r219,Guardsmen II,Guardsmen II,Corax I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,219,12,[],Unlock
+r220,Guardsmen II,Guardsmen II,Guardsmen's Training Cost VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,799000000000,1300000000000,2200000000000,3170000000000,6190000000000,9990000000000,17000000000000]",41569000000000,220,14,[],Unlock
+r221,Guardsmen II,Guardsmen II,Guardsmen's Carrying Capacity VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,799000000000,1300000000000,2200000000000,3170000000000,6190000000000,9990000000000,17000000000000]",41569000000000,221,16,[],Unlock
+r222,Guardsmen II,Guardsmen II,Guardsmen's March Speed VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,799000000000,1300000000000,2200000000000,3170000000000,6190000000000,9990000000000,17000000000000]",41569000000000,222,18,[],Unlock
+r223,Guardsmen II,Guardsmen II,Purifier II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,223,20,[],Unlock
+r224,Guardsmen II,Guardsmen II,Punisher II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,224,21,[],Unlock
+r225,Guardsmen II,Guardsmen II,Smiter II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,225,22,[],Unlock
+r226,Guardsmen II,Guardsmen II,Corax II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,226,23,[],Unlock
+r227,Specialists II,Specialists II,Specialists' Training Cost VI,Conquest Points,10,10,"[5900000000,9900000000,16900000000,27900000000,45900000000,77900000000,129000000000,219000000000,370000000000,599000000000]",1501400000000,227,3,[],Unlock
+r228,Specialists II,Specialists II,Specialists' Carrying Capacity VI,Conquest Points,10,10,"[5900000000,9900000000,16900000000,27900000000,45900000000,77900000000,129000000000,219000000000,370000000000,599000000000]",1501400000000,228,5,[],Unlock
+r229,Specialists II,Specialists II,Specialists' March Speed VI,Conquest Points,10,10,"[5900000000,9900000000,16900000000,27900000000,45900000000,77900000000,129000000000,219000000000,370000000000,599000000000]",1501400000000,229,7,[],Unlock
+r230,Specialists II,Specialists II,Panoptic I,Conquest Points,1,1,"[300000000000,null,null,null,null,null,null,null,null,null]",300000000000,230,9,[],Unlock
+r231,Specialists II,Specialists II,Royal Lion I,Conquest Points,1,1,"[300000000000,null,null,null,null,null,null,null,null,null]",300000000000,231,10,[],Unlock
+r232,Specialists II,Specialists II,Duelist I,Conquest Points,1,1,"[300000000000,null,null,null,null,null,null,null,null,null]",300000000000,232,11,[],Unlock
+r233,Specialists II,Specialists II,Legitimist I,Conquest Points,1,1,"[300000000000,null,null,null,null,null,null,null,null,null]",300000000000,233,12,[],Unlock
+r234,Specialists II,Specialists II,Whitemane I,Conquest Points,1,1,"[300000000000,null,null,null,null,null,null,null,null,null]",300000000000,234,13,[],Unlock
+r235,Specialists II,Specialists II,Specialists' Training Cost VII,Conquest Points,10,10,"[59000000000,99000000000,169000000000,279000000000,459000000000,779000000000,1290000000000,2190000000000,3700000000000,5990000000000]",15014000000000,235,15,[],Unlock
+r236,Specialists II,Specialists II,Specialists' Carrying Capacity VII,Conquest Points,10,10,"[59000000000,99000000000,169000000000,279000000000,459000000000,779000000000,1290000000000,2190000000000,3700000000000,5990000000000]",15014000000000,236,17,[],Unlock
+r237,Specialists II,Specialists II,Specialists' March Speed VII,Conquest Points,10,10,"[59000000000,99000000000,169000000000,279000000000,459000000000,779000000000,1290000000000,2190000000000,3700000000000,5990000000000]",15014000000000,237,19,[],Unlock
+r238,Specialists II,Specialists II,Panoptic II,Conquest Points,1,1,"[3000000000000,null,null,null,null,null,null,null,null,null]",3000000000000,238,21,[],Unlock
+r239,Specialists II,Specialists II,Royal Lion II,Conquest Points,1,1,"[3000000000000,null,null,null,null,null,null,null,null,null]",3000000000000,239,22,[],Unlock
+r240,Specialists II,Specialists II,Duelist II,Conquest Points,1,1,"[3000000000000,null,null,null,null,null,null,null,null,null]",3000000000000,240,23,[],Unlock
+r241,Specialists II,Specialists II,Legitimist II,Conquest Points,1,1,"[3000000000000,null,null,null,null,null,null,null,null,null]",3000000000000,241,24,[],Unlock
+r242,Specialists II,Specialists II,Whitemane II,Conquest Points,1,1,"[3000000000000,null,null,null,null,null,null,null,null,null]",3000000000000,242,25,[],Unlock
+r243,Monsters II,Monsters II,Monsters' Cost V,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,243,3,[],Unlock
+r244,Monsters II,Monsters II,Monsters' Carrying Capacity IV,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,244,5,[],Unlock
+r245,Monsters II,Monsters II,Monsters' March Speed V,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,245,7,[],Unlock
+r246,Monsters II,Monsters II,Monsters I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,246,9,[],Unlock
+r247,Monsters II,Monsters II,Monsters Cost VI,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,247,11,[],Unlock
+r248,Monsters II,Monsters II,Monsters' Carrying Capacity V,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,248,13,[],Unlock
+r249,Monsters II,Monsters II,Monsters' March Speed VI,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,249,15,[],Unlock
+r250,Monsters II,Monsters II,Monsters II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,250,17,[],Unlock
+r251,Engineer Corps II,Engineer Corps II,Siege Engines' Training Cost VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,251,3,[],Unlock
+r252,Engineer Corps II,Engineer Corps II,Siege Engines' March Speed VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,252,5,[],Unlock
+r253,Engineer Corps II,Engineer Corps II,Siege Engines' Carrying Capacity VI,Valor Points,10,10,"[16900000000,28000000000,47000000000,78000000000,130000000000,219000000000,317000000000,619000000000,990000000000,1700000000000]",4144900000000,253,7,[],Unlock
+r254,Engineer Corps II,Engineer Corps II,Fortress Walls I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,254,9,[],Unlock
+r255,Engineer Corps II,Engineer Corps II,Josephine I,Valor Points,1,1,"[900000000000,null,null,null,null,null,null,null,null,null]",900000000000,255,10,[],Unlock
+r256,Engineer Corps II,Engineer Corps II,Siege Engines' Training Cost VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,256,12,[],Unlock
+r257,Engineer Corps II,Engineer Corps II,Siege Engines' March Speed VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,257,14,[],Unlock
+r258,Engineer Corps II,Engineer Corps II,Siege Engines' Carrying Capacity VII,Valor Points,10,10,"[170000000000,280000000000,470000000000,780000000000,1300000000000,2200000000000,3170000000000,6190000000000,9900000000000,17000000000000]",41460000000000,258,16,[],Unlock
+r259,Engineer Corps II,Engineer Corps II,Fortress Walls II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,259,18,[],Unlock
+r260,Engineer Corps II,Engineer Corps II,Josephine II,Valor Points,1,1,"[9000000000000,null,null,null,null,null,null,null,null,null]",9000000000000,260,19,[],Unlock
+r261,Army Modernization,Army Modernization,Army Strength I,Conquest Points,10,10,"[200,300,800,1900,3900,9700,19000,39000,100000,190000]",364800,261,3,[],Boost
+r262,Army Modernization,Army Modernization,Army Health I,Conquest Points,10,10,"[200,300,800,1900,3900,9700,19000,39000,100000,190000]",364800,262,5,[],Boost
+r263,Army Modernization,Army Modernization,Strength of Fortifications I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,263,7,[],Boost
+r264,Army Modernization,Army Modernization,Mounted Units' Strength I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,264,9,[],Boost
+r265,Army Modernization,Army Modernization,Melee Units' Strength I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,265,11,[],Boost
+r266,Army Modernization,Army Modernization,Ranged Units' Strength I,Conquest Points,10,10,"[150,300,800,1900,3900,9700,19000,39000,100000,190000]",364750,266,13,[],Boost
+r267,Army Modernization,Army Modernization,Siege Engines' Strength I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,267,15,"[""source-total-mismatch""]",Boost
+r268,Army Modernization,Army Modernization,Health of Fortifications I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,268,17,"[""source-total-mismatch""]",Boost
+r269,Army Modernization,Army Modernization,Flying Units' Strength I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,269,19,"[""source-total-mismatch""]",Boost
+r270,Army Modernization,Army Modernization,Flying Units' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,270,21,"[""source-total-mismatch""]",Boost
+r271,Army Modernization,Army Modernization,Scouts' Strength I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,271,23,"[""source-total-mismatch""]",Boost
+r272,Army Modernization,Army Modernization,Ranged Units' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,272,25,"[""source-total-mismatch""]",Boost
+r273,Army Modernization,Army Modernization,Mounted Units' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,273,27,"[""source-total-mismatch""]",Boost
+r274,Army Modernization,Army Modernization,Melee Units' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,274,29,"[""source-total-mismatch""]",Boost
+r275,Army Modernization,Army Modernization,Siege Engines' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,275,31,"[""source-total-mismatch""]",Boost
+r276,Army Modernization,Army Modernization,Flying Units' Strength II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,276,33,[],Boost
+r277,Army Modernization,Army Modernization,Scouts' Health I,Conquest Points,10,10,"[20000,40000,60000,100000,180000,360000,600000,900000,1400000,2000000]",5660000,277,35,"[""source-total-mismatch""]",Boost
+r278,Army Modernization,Army Modernization,Flying Units' Health II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,278,37,[],Boost
+r279,Army Modernization,Army Modernization,Ranged Units' Strength II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,279,39,[],Boost
+r280,Army Modernization,Army Modernization,Mounted Units' Strength II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,280,40,[],Boost
+r281,Army Modernization,Army Modernization,Melee Units' Strength II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,281,41,[],Boost
+r282,Army Modernization,Army Modernization,Ranged Units' Health II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,282,43,[],Boost
+r283,Army Modernization,Army Modernization,Mounted Units' Health II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,283,44,[],Boost
+r284,Army Modernization,Army Modernization,Melee Units' Health II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,284,45,[],Boost
+r285,Army Modernization,Army Modernization,Siege Engines' Strength II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,285,47,[],Boost
+r286,Army Modernization,Army Modernization,Siege Engines' Health II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,286,48,[],Boost
+r287,Army Modernization,Army Modernization,Captain Proscope,Conquest Points,1,1,"[22000000,null,null,null,null,null,null,null,null,null]",22000000,287,50,[],Boost
+r288,Army Modernization,Army Modernization,Strength of Fortifications II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,288,52,[],Boost
+r289,Army Modernization,Army Modernization,Health of Fortifications II,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,289,53,[],Boost
+r290,Army Modernization,Army Modernization,Scouts' Strength II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,290,55,[],Boost
+r291,Army Modernization,Army Modernization,Scouts' Health II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,291,56,[],Boost
+r292,Army Modernization,Army Modernization,Ranged Units' Strength III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,292,58,[],Boost
+r293,Army Modernization,Army Modernization,Mounted Units' Strength III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,293,59,[],Boost
+r294,Army Modernization,Army Modernization,Melee Units Strength III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,294,60,[],Boost
+r295,Army Modernization,Army Modernization,Ranged Units' Health III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,295,62,[],Boost
+r296,Army Modernization,Army Modernization,Mounted Units' Health III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,296,63,[],Boost
+r297,Army Modernization,Army Modernization,Melee Units Health III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,297,64,[],Boost
+r298,Army Modernization,Army Modernization,Flying Units' Strength III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,298,66,[],Boost
+r299,Army Modernization,Army Modernization,Flying Units' Health III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,299,68,[],Boost
+r300,Army Modernization,Army Modernization,Siege Engines' Strength III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,300,70,[],Boost
+r301,Army Modernization,Army Modernization,Siege Engines' Health III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,301,72,[],Boost
+r302,Army Modernization,Army Modernization,Strength of Fortifications III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,302,74,[],Boost
+r303,Army Modernization,Army Modernization,Health of Fortifications III,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,303,76,[],Boost
+r304,Army Modernization,Army Modernization,Scouts' Strength III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,304,78,[],Boost
+r305,Army Modernization,Army Modernization,Scouts' Health III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,305,80,[],Boost
+r306,Army Modernization,Army Modernization,Ranged Units' Strength IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,306,82,[],Boost
+r307,Army Modernization,Army Modernization,Mounted Units' Strength IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,307,84,[],Boost
+r308,Army Modernization,Army Modernization,Melee Units' Strength IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,308,86,[],Boost
+r309,Army Modernization,Army Modernization,Ranged Units' Health IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,309,88,[],Boost
+r310,Army Modernization,Army Modernization,Mounted Units' Health IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,310,90,[],Boost
+r311,Army Modernization,Army Modernization,Melee Units' Health IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,311,92,[],Boost
+r312,Army Modernization,Army Modernization,Flying Units' Health IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,312,94,[],Boost
+r313,Army Modernization,Army Modernization,Flying Units' Strength IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,313,96,[],Boost
+r314,Army Modernization,Army Modernization,Siege Engines' Strength IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,314,98,[],Boost
+r315,Army Modernization,Army Modernization,Siege Engines' Health IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,315,100,[],Boost
+r316,Army Modernization,Army Modernization,Strength of Fortifications IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,316,102,[],Boost
+r317,Army Modernization,Army Modernization,Health of Fortifications IV,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,317,104,[],Boost
+r318,Army Modernization,Army Modernization,Scouts' Strength IV,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,318,106,[],Boost
+r319,Army Modernization,Army Modernization,Scouts' Health IV,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,319,108,[],Boost
+r320,Army Modernization,Army Modernization,Ranged Units' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,320,110,[],Boost
+r321,Army Modernization,Army Modernization,Mounted Units' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,321,112,[],Boost
+r322,Army Modernization,Army Modernization,Melee Units' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,322,114,[],Boost
+r323,Army Modernization,Army Modernization,Siege Engines' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,323,116,[],Boost
+r324,Army Modernization,Army Modernization,Siege Engines' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,324,118,[],Boost
+r325,Army Modernization,Army Modernization,Strength of Fortifications V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,325,120,[],Boost
+r326,Army Modernization,Army Modernization,Health of Fortifications V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,326,122,[],Boost
+r327,Army Modernization,Army Modernization,Scouts' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,327,124,[],Boost
+r328,Army Modernization,Army Modernization,Scouts' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,328,126,[],Boost
+r329,Army Modernization,Army Modernization,Ranged Units' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,329,128,[],Boost
+r330,Army Modernization,Army Modernization,Mounted Units' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,330,130,[],Boost
+r331,Army Modernization,Army Modernization,Melee Units' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,331,132,[],Boost
+r332,Army Modernization,Army Modernization,Flying Units' Strength V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,332,134,[],Boost
+r333,Army Modernization,Army Modernization,Flying Units' Health V,Conquest Points,10,10,"[600000000,1200000000,1800000000,3000000000,5400000000,10400000000,18000000000,26400000000,41000000000,56000000000]",163800000000,333,136,[],Boost
+r334,Economy,Economy,Stone Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,334,3,[],Boost
+r335,Economy,Economy,Iron Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,335,4,[],Boost
+r336,Economy,Economy,Lumber Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,336,5,[],Boost
+r337,Economy,Economy,Warehouse Capacity I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,337,7,[],Boost
+r338,Economy,Economy,Construction Speed I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,338,8,[],Boost
+r339,Economy,Economy,Training Queue Limit I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,339,9,[],Boost
+r340,Economy,Economy,Food Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,340,11,[],Boost
+r341,Economy,Economy,Silver Production I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,341,12,[],Boost
+r342,Economy,Economy,Research Speed I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,342,14,[],Boost
+r343,Economy,Economy,Sacred Potion Production I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,343,15,[],Boost
+r344,Economy,Economy,Stone Production II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,344,17,[],Boost
+r345,Economy,Economy,Iron Production II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,345,18,[],Boost
+r346,Economy,Economy,Lumber Production II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,346,19,[],Boost
+r347,Economy,Economy,Warehouse Capacity II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,347,21,[],Boost
+r348,Economy,Economy,Training Queue Limit II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,348,22,[],Boost
+r349,Economy,Economy,Silver Production II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,349,24,[],Boost
+r350,Economy,Economy,Food Production II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,350,25,[],Boost
+r351,Economy,Economy,Research Speed II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,351,27,[],Boost
+r352,Economy,Economy,Construction Speed II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,352,28,[],Boost
+r353,Economy,Economy,Sacred Potion Production II,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,353,29,[],Boost
+r354,Economy,Economy,Stone Production III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,354,31,[],Boost
+r355,Economy,Economy,Iron Production III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,355,32,[],Boost
+r356,Economy,Economy,Lumber Production III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,356,33,[],Boost
+r357,Economy,Economy,Training Queue Limit III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,357,35,[],Boost
+r358,Economy,Economy,Warehouse Capacity III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,358,37,[],Boost
+r359,Economy,Economy,Construction Speed III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,359,38,[],Boost
+r360,Economy,Economy,Food Production III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,360,40,[],Boost
+r361,Economy,Economy,Silver Production III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,361,41,[],Boost
+r362,Economy,Economy,Research Speed III,Valor Points,10,10,"[9600000,14000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2707600000,362,43,[],Boost
+r363,Economy,Economy,Sacred Potion Production III,Valor Points,10,10,"[120000000,230000000,350000000,580000000,1000000000,2100000000,3500000000,5200000000,8100000000,12000000000]",33180000000,363,44,[],Boost
+r364,Monster Boost,Monsters Boost,Beasts' Strength I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,364,3,[],Boost
+r365,Monster Boost,Monsters Boost,Giants' Strength I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,365,5,[],Boost
+r366,Monster Boost,Monsters Boost,Elementals' Strength I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,366,6,[],Boost
+r367,Monster Boost,Monsters Boost,Dragons' Strength I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,367,7,[],Boost
+r368,Monster Boost,Monsters Boost,Beasts' Health I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,368,9,[],Boost
+r369,Monster Boost,Monsters Boost,Giants' Health I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,369,11,[],Boost
+r370,Monster Boost,Monsters Boost,Elementals' Health I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,370,12,[],Boost
+r371,Monster Boost,Monsters Boost,Dragons' Health I,Conquest Points,10,10,"[340000,670000,1000000,1700000,3000000,6000000,10000000,15000000,24000000,34000000]",95710000,371,13,[],Boost
+r372,Monster Boost,Monsters Boost,Beasts' Strength II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,372,15,[],Boost
+r373,Monster Boost,Monsters Boost,Giants' Strength II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,373,17,[],Boost
+r374,Monster Boost,Monsters Boost,Elementals' Strength II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,374,18,[],Boost
+r375,Monster Boost,Monsters Boost,Dragons' Strength II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,375,19,[],Boost
+r376,Monster Boost,Monsters Boost,Beasts' Health II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,376,21,[],Boost
+r377,Monster Boost,Monsters Boost,Chance for Beasts to Strike Two Squads,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,377,22,[],Boost
+r378,Monster Boost,Monsters Boost,Elementals' Health II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,378,24,[],Boost
+r379,Monster Boost,Monsters Boost,Chance for Elementals' to Strike Two Squads,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,379,25,[],Boost
+r380,Monster Boost,Monsters Boost,Giants' Health II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,380,27,[],Boost
+r381,Monster Boost,Monsters Boost,Chance for Giants to Strike Two Squads,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,381,28,[],Boost
+r382,Monster Boost,Monsters Boost,Dragons' Health II,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,382,30,[],Boost
+r383,Monster Boost,Monsters Boost,Chance for Dragons to Strike Two Squads,Conquest Points,10,10,"[3900000,7900000,12000000,20000000,36000000,70000000,120000000,180000000,280000000,390000000]",1119800000,383,31,[],Boost
+r384,Monster Boost,Monsters Boost,Beasts' Strength III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,384,33,[],Boost
+r385,Monster Boost,Monsters Boost,Chance for Beasts to Block a Strike,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,385,34,[],Boost
+r386,Monster Boost,Monsters Boost,Beasts' Health III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,386,35,[],Boost
+r387,Monster Boost,Monsters Boost,Elementals' Strength III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,387,37,[],Boost
+r388,Monster Boost,Monsters Boost,Chance for Elementals to Block a Strike,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,388,38,[],Boost
+r389,Monster Boost,Monsters Boost,Elementals' Health III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,389,39,[],Boost
+r390,Monster Boost,Monsters Boost,Giants' Strength III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,390,41,[],Boost
+r391,Monster Boost,Monsters Boost,Chance for Giants to Block a Strike,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,391,42,[],Boost
+r392,Monster Boost,Monsters Boost,Giants' Health III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,392,43,[],Boost
+r393,Monster Boost,Monsters Boost,Dragons' Strength III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,393,45,[],Boost
+r394,Monster Boost,Monsters Boost,Chance for Dragons to Block a Strike,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,394,46,[],Boost
+r395,Monster Boost,Monsters Boost,Dragons' Health III,Conquest Points,10,10,"[50000000,100000000,150000000,250000000,450000000,870000000,1500000000,2200000000,3400000000,4700000000]",13670000000,395,47,[],Boost
+r396,Logistics,Logistics,Resource Gathering on the World Map I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,396,3,[],Boost
+r397,Logistics,Logistics,Troop Marching Range I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,397,5,[],Boost
+r398,Logistics,Logistics,Caravan Speed I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,398,7,[],Boost
+r399,Logistics,Logistics,Caravan Carrying Capacity I,Valor Points,10,10,"[300,700,1800,4500,8900,22000,45000,90000,220000,450000]",843200,399,8,[],Boost
+r400,Logistics,Logistics,Portal Duration I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,400,10,[],Boost
+r401,Logistics,Logistics,Crypt March Range I,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,401,11,[],Boost
+r402,Logistics,Logistics,Maximum Portals I,Valor Points,1,1,"[8500000,null,null,null,null,null,null,null,null,null]",8500000,402,12,[],Boost
+r403,Logistics,Logistics,Resource Gathering Speed II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,403,14,[],Boost
+r404,Logistics,Logistics,Caravan Speed II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,404,16,[],Boost
+r405,Logistics,Logistics,Caravan Carrying Capacity II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,405,17,[],Boost
+r406,Logistics,Logistics,Troop Marching Range II,Valor Points,10,10,"[45000,90000,140000,230000,410000,820000,1400000,2000000,3200000,4500000]",12835000,406,19,[],Boost
+r407,Logistics,Logistics,Resource Gathering Speed III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,407,21,[],Boost
+r408,Logistics,Logistics,Portal Duration II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,408,22,[],Boost
+r409,Logistics,Logistics,Maximum Portals II,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,409,23,[],Boost
+r410,Logistics,Logistics,Caravan Speed III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,410,25,[],Boost
+r411,Logistics,Logistics,Caravan Carrying Capacity III,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,411,26,[],Boost
+r412,Logistics,Logistics,Crypt March Range II,Valor Points,10,10,"[700000,1400000,2100000,3500000,6400000,13000000,21000000,32000000,50000000,70000000]",200100000,412,28,[],Boost
+r413,Logistics,Logistics,Captain Stror,Valor Points,1,1,"[80000000,null,null,null,null,null,null,null,null,null]",80000000,413,30,[],Boost
+r414,Logistics,Logistics,Portal Duration III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,414,32,[],Boost
+r415,Logistics,Logistics,Troop Marching Range III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,415,33,[],Boost
+r416,Logistics,Logistics,Maximum Portals III,Valor Points,1,1,"[900000000,null,null,null,null,null,null,null,null,null]",900000000,416,34,[],Boost
+r417,Logistics,Logistics,Crypt March Range III,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,417,36,[],Boost
+r418,Logistics,Logistics,Resource Gathering on the World Map IV,Valor Points,10,10,"[9600000,19000000,29000000,48000000,87000000,170000000,290000000,430000000,670000000,960000000]",2712600000,418,38,[],Boost
