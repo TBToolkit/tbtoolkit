@@ -89,12 +89,6 @@ function apply(){
   filtered=records.filter(r=>{
     if(q && !`${r.type} ${r.chest}`.toLowerCase().includes(q))return false;
     if(type && r.type!==type)return false;
-    if(selectedRewards.size){
-      // Include a chest only if it has data for every selected reward.
-      for(const key of selectedRewards){
-        if(r[key]===null||r[key]===undefined)return false;
-      }
-    }
     return true;
   });
 
@@ -118,7 +112,7 @@ function render(){
     $('activeRewardSummary').textContent='Showing all compiled rewards';
   }else{
     const names=[...selectedRewards].map(rewardOptionLabel);
-    $('activeRewardSummary').textContent=`Showing chests with ${names.join(', ')}`;
+    $('activeRewardSummary').textContent=`Showing selected reward columns: ${names.join(', ')}`;
   }
 
   $('chestTableHead').innerHTML=`<tr>${keys.map(k=>`<th>${k==='type'?'Type':k==='chest'?'Chest':labels[k]}</th>`).join('')}</tr>`;
@@ -131,7 +125,8 @@ function render(){
       isDayKey(k)?'days':'',
       selectedRewards.has(k)?'reward-highlight':''
     ].filter(Boolean).join(' ');
-    return `<td class="${cls}">${k==='type'||k==='chest'?String(val??'—'):formatChestValue(val,k)}</td>`;
+    const displayValue=(selectedRewards.has(k) && (val===null||val===undefined||val==='')) ? 0 : val;
+    return `<td class="${cls}">${k==='type'||k==='chest'?String(displayValue??'—'):formatChestValue(displayValue,k)}</td>`;
   }).join('')}</tr>`).join('');
 }
 
@@ -147,7 +142,7 @@ function reset(){
 
 async function init(){
   try{
-    const res=await fetch('data/chest-data.json?v=33',{cache:'no-store'});
+    const res=await fetch('data/chest-data.json?v=36',{cache:'no-store'});
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     payload=await res.json();records=payload.records||[];
     populateFilters();apply();
