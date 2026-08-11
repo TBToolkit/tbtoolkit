@@ -1,0 +1,45 @@
+
+.chest-section{padding-top:24px}
+.chest-explainer{padding:18px 20px;margin-bottom:14px;border:1px solid #304151;background:linear-gradient(145deg,#101b27,#09131e)}
+.chest-explainer h2{margin:0 0 8px;color:#fff;font-size:1rem;text-transform:uppercase}
+.chest-explainer p{margin:0;color:#aab6c2;font-size:.82rem;line-height:1.6}
+.chest-explainer p+p{margin-top:8px}.chest-explainer strong{color:#fff}.chest-caution{color:#8292a1!important;font-size:.72rem!important}
+.chest-toolbar{padding:18px;border:1px solid #304151;background:linear-gradient(145deg,#101b27,#09131e)}
+.chest-search-wrap>label,.chest-filters label{display:block;color:#c1cad3;font-size:.78rem;font-weight:850;text-transform:uppercase;letter-spacing:.045em}
+.chest-search-box{display:flex;align-items:center;gap:9px;margin-top:7px;height:50px;padding:0 11px;border:1px solid #405267;border-radius:8px;background:#050e17}
+.chest-search-box:focus-within{border-color:var(--orange);box-shadow:0 0 0 2px rgba(255,153,0,.12)}
+.chest-search-box>span{font-size:1.3rem;color:#91a0ae}
+.chest-search-box input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f2f5f7;font:inherit;font-size:1rem}
+.chest-search-box input::placeholder{color:#68798a}
+.chest-search-box button{width:31px;height:31px;border:0;border-radius:50%;background:#1c2935;color:#cdd5dd;font-size:1.25rem;cursor:pointer}
+.chest-filters{display:grid;grid-template-columns:1.15fr 1.15fr 1fr;gap:12px;margin-top:15px}
+.chest-filters select{display:block;width:100%;height:46px;margin-top:6px;padding:0 10px;border:1px solid #405267;border-radius:7px;background:#07121d;color:#e8edf1;font:inherit;font-size:.96rem}
+.chest-summary{display:flex;align-items:center;gap:22px;padding:14px 2px;color:#8f9eac}
+.chest-summary>div{display:flex;align-items:baseline;gap:6px}.chest-summary strong{color:#fff;font-size:1.1rem}.chest-summary span{font-size:.72rem}
+.chest-summary p{margin-left:auto;color:#9ca9b5;font-size:.72rem}
+.chest-table-shell{border:1px solid #304151;border-radius:9px;background:#07121d;overflow:hidden}
+.chest-table-scroll{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.chest-table{width:100%;min-width:1540px;border-collapse:separate;border-spacing:0;font-size:.72rem;font-variant-numeric:tabular-nums}
+.chest-table th,.chest-table td{padding:10px 11px;border-right:1px solid rgba(255,255,255,.055);border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;text-align:right}
+.chest-table th{position:sticky;top:0;z-index:4;background:#132231;color:#e8edf2;font-size:.64rem;text-transform:uppercase;letter-spacing:.035em}
+.chest-table th:first-child,.chest-table td:first-child{text-align:left;position:sticky;left:0;z-index:3}
+.chest-table th:nth-child(2),.chest-table td:nth-child(2){text-align:left;position:sticky;left:92px;z-index:3}
+.chest-table th:first-child,.chest-table th:nth-child(2){z-index:5;background:#132231}
+.chest-table td:first-child,.chest-table td:nth-child(2){background:#091622}
+.chest-table tbody tr:nth-child(even) td{background:#0b1926}
+.chest-table tbody tr:nth-child(even) td:first-child,.chest-table tbody tr:nth-child(even) td:nth-child(2){background:#0b1926}
+.chest-table tbody tr:hover td{background:#102333}.chest-table tbody tr:hover td:first-child,.chest-table tbody tr:hover td:nth-child(2){background:#102333}
+.chest-table .type-cell{width:92px;color:#f0a946;font-weight:900;text-transform:uppercase}
+.chest-table .chest-cell{min-width:190px;color:#f1f4f6;font-weight:800}
+.chest-table .blank{color:#4c5d6b}
+.chest-table .days{color:#9fd0ff}.chest-table .reward-highlight{color:#ffd071;font-weight:900;background:rgba(176,115,22,.08)!important}
+.chest-empty{text-align:center;padding:36px 20px}
+.chest-mobile-note{margin-top:14px;padding:13px 15px;border-color:#304151}.chest-mobile-note strong{color:var(--orange-bright);font-size:.7rem;text-transform:uppercase}.chest-mobile-note p{margin:5px 0 0;color:#8292a1;font-size:.72rem;line-height:1.5}
+@media(max-width:760px){
+  .chest-filters{grid-template-columns:1fr}
+  .chest-filters select{height:50px;font-size:1rem}
+  .chest-summary{flex-wrap:wrap;gap:12px}
+  .chest-summary p{width:100%;margin:0}
+  .chest-table{font-size:.7rem}
+  .chest-table th,.chest-table td{padding:9px 10px}
+}
