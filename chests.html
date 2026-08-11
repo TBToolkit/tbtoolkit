@@ -5,10 +5,10 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="Search average Total Battle chest rewards by chest type and resource." name="description"/>
 <title>Chest Data | TB Toolkit</title>
-<link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/chests.css?v=32" rel="stylesheet"/>
+<link href="css/styles.css?v=33" rel="stylesheet"/>
+<link href="css/chests.css?v=33" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script defer src="js/chests.js?v=32"></script>
+<script defer src="js/chests.js?v=33"></script>
 </head>
 <body>
 <header class="site-header">
@@ -62,9 +62,20 @@
 <label>Chest type
 <select id="chestTypeFilter"><option value="">All chest types</option></select>
 </label>
-<label>Reward
-<select id="rewardFilter"><option value="">All rewards</option></select>
-</label>
+<div class="reward-filter-control">
+<span class="filter-label">Reward</span>
+<button id="rewardFilterButton" class="reward-filter-button" type="button" aria-expanded="false" aria-controls="rewardFilterMenu">
+  <span id="rewardFilterButtonText">All rewards</span>
+  <span class="reward-filter-caret" aria-hidden="true">▾</span>
+</button>
+<div id="rewardFilterMenu" class="reward-filter-menu" hidden>
+  <div class="reward-filter-actions">
+    <button type="button" id="selectAllRewards">Select all</button>
+    <button type="button" id="clearAllRewards">Clear all</button>
+  </div>
+  <div id="rewardFilterOptions" class="reward-filter-options"></div>
+</div>
+</div>
 <label>Sort
 <select id="chestSort">
 <option value="source">Source order</option>
