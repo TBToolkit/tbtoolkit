@@ -1,23 +1,112 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="Chest reference data for Total Battle players." name="description"/><title>Chest Data | TB Toolkit</title><link href="css/styles.css?v=27" rel="stylesheet"/><script defer="" src="js/site.js"></script></head><body>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Search average Total Battle chest rewards by chest type and resource." name="description"/>
+<title>Chest Data | TB Toolkit</title>
+<link href="css/styles.css?v=32" rel="stylesheet"/>
+<link href="css/chests.css?v=32" rel="stylesheet"/>
+<script defer src="js/site.js"></script>
+<script defer src="js/chests.js?v=32"></script>
+</head>
+<body>
 <header class="site-header">
 <div class="container header-row">
 <a class="brand" href="index.html" aria-label="TB Toolkit home">
 <img class="brand-wordmark" src="assets/images/tbtoolkit-wordmark.webp" alt="TB Toolkit"/>
 <span class="brand-sub">Tools for Total Battle players</span>
 </a>
-<button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle="" type="button">
+<button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle type="button">
 <span></span><span></span><span></span>
 </button>
-<nav aria-label="Main navigation" class="nav" data-nav="">
-<a href="index.html">Home</a><a href="stacking.html">Stacking Calculators</a><a aria-current="page" href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
+<nav aria-label="Main navigation" class="nav" data-nav>
+<a href="index.html">Home</a>
+<a href="stacking.html">Stacking Calculators</a>
+<a aria-current="page" href="chests.html">Chest Data</a>
+<a href="calendar.html">Event Calendar</a>
+<a href="research.html">Research</a>
+<a href="resources.html">Resources</a>
+<a href="about.html">About</a>
 </nav>
 </div>
 </header>
-<main><section class="page-hero"><div class="container"><div class="breadcrumb">Home / Chest Data</div><h1 class="page-title">Chest Data</h1><p class="page-intro">Chest values and related reference information will be available here.</p></div></section><section class="section"><div class="container"><div class="card content-card"><h2>Current data source</h2><p>The current chest spreadsheet link will be added here. Later, the same data can be displayed directly on TB Toolkit in a searchable format.</p><a aria-disabled="true" class="button button-secondary button-disabled" href="#">Spreadsheet link coming soon</a></div></div></section></main>
+
+<main>
+<section class="page-hero">
+<div class="container">
+<div class="breadcrumb">Home / Chest Data</div>
+<h1 class="page-title">Chest Data</h1>
+<p class="page-intro">Average rewards from Total Battle chests, based on compiled opening data.</p>
+</div>
+</section>
+
+<section class="section chest-section">
+<div class="container">
+<div class="card chest-explainer">
+<h2>How to read this table</h2>
+<p>Every value is the <strong>average amount received per chest</strong>. Actual drops vary from chest to chest, but larger samples should trend toward these averages. For example, an average of 2,290 Gold per Arachne chest means opening 100 similar chests would be expected to yield about 229,000 Gold over time.</p>
+<p class="chest-caution">Blank cells mean there is no compiled average for that reward in the current dataset.</p>
+</div>
+
+<div class="card chest-toolbar">
+<div class="chest-search-wrap">
+<label for="chestSearch">Search chests</label>
+<div class="chest-search-box">
+<span aria-hidden="true">⌕</span>
+<input id="chestSearch" type="search" autocomplete="off" placeholder="Search chest name or type…"/>
+<button id="clearChestSearch" type="button" aria-label="Clear search" hidden>×</button>
+</div>
+</div>
+<div class="chest-filters">
+<label>Chest type
+<select id="chestTypeFilter"><option value="">All chest types</option></select>
+</label>
+<label>Reward
+<select id="rewardFilter"><option value="">All rewards</option></select>
+</label>
+<label>Sort
+<select id="chestSort">
+<option value="source">Source order</option>
+<option value="name">Chest name A–Z</option>
+<option value="type">Chest type A–Z</option>
+</select>
+</label>
+</div>
+</div>
+
+<div class="chest-summary">
+<div><strong id="visibleChestCount">0</strong><span>chests shown</span></div>
+<div><strong id="visibleTypeCount">0</strong><span>chest types</span></div>
+<p id="activeRewardSummary">Showing all compiled rewards</p>
+</div>
+
+<div id="chestEmpty" class="card chest-empty" hidden>
+<h2>No chests found</h2>
+<p>Try a different search term or clear one of the filters.</p>
+<button class="button button-primary" id="resetChestFilters" type="button">Clear filters</button>
+</div>
+
+<div class="chest-table-shell" id="chestTableShell">
+<div class="chest-table-scroll">
+<table class="chest-table">
+<thead id="chestTableHead"></thead>
+<tbody id="chestTableBody"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card chest-mobile-note">
+<strong>Mobile tip</strong>
+<p>Swipe left and right across the table to see additional reward columns. Selecting a specific reward above reduces the table to the chest information plus that reward.</p>
+</div>
+</div>
+</section>
+</main>
+
 <footer class="site-footer">
 <div class="container footer-row">
-<div>© <span data-year=""></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
+<div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
 <nav aria-label="Footer navigation" class="footer-links">
 <a href="stacking.html">Stacking Calculators</a>
 <a href="chests.html">Chest Data</a>
@@ -27,4 +116,6 @@
 <a href="about.html">About</a>
 </nav>
 </div>
-</footer></body></html>
+</footer>
+</body>
+</html>
