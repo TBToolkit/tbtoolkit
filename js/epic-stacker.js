@@ -13,13 +13,13 @@ function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
 function formatFillPercent(el){const n=parseNumber(el.value);el.value=Number.isFinite(n)?n.toFixed(2):'0.00';}
-const TIER_COLORS={9:'#365f2e',8:'#4e5960',7:'#8c681f',6:'#87382e',5:'#865426',4:'#533d73',3:'#315f78',2:'#4e6d32',1:'#626863'};
+const TIER_COLORS={9:'#69b85a',8:'#9aa4ad',7:'#d8ad42',6:'#d96858',5:'#d7974b',4:'#9673c8',3:'#55a6cf',2:'#7eae59',1:'#8f9892'};
 function hexToRgb(hex){const s=hex.replace('#','');return[parseInt(s.slice(0,2),16),parseInt(s.slice(2,4),16),parseInt(s.slice(4,6),16)];}
 function mixHex(hex1,hex2,amount){const a=hexToRgb(hex1),b=hexToRgb(hex2),c=a.map((v,i)=>Math.round(v+(b[i]-v)*amount));return`#${c.map(v=>v.toString(16).padStart(2,'0')).join('')}`;}
 function tierNumber(level){const m=String(level||'').match(/\d+/);return m?Number(m[0]):0;}
 const MERC_SUBTYPE_LIGHTEN={MNST:0,COM:.06,SPCL:.12,GRD:.18,EMH:.24,EX:.30,ARNE:.36,ENG:.42};
 function mercSubtype(level){const parts=String(level||'').toUpperCase().split('-');return parts.length>1?parts.slice(1).join('-'):'';}
-function outputRowColors(category,row){const tier=tierNumber(row.level);let base=TIER_COLORS[tier]||'#34495a';if(category==='troop'){const meta=units.troop.find(u=>u.id===row.id),cls=String(meta?.class||'').toUpperCase(),lighten=cls==='SPECIALIST'?.16:cls==='ENGINEER'?.30:0;base=mixHex(base,'#ffffff',lighten);}else if(category==='mercenary'){const subtype=mercSubtype(row.level),lighten=MERC_SUBTYPE_LIGHTEN[subtype]??0;base=mixHex(base,'#ffffff',lighten);}const rowColor=mixHex(base,'#061725',.42),accent=mixHex(base,'#ffffff',.22);return{rowColor,accent};}
+function outputRowColors(category,row){const tier=tierNumber(row.level);let base=TIER_COLORS[tier]||'#34495a';if(category==='troop'){const meta=units.troop.find(u=>u.id===row.id),cls=String(meta?.class||'').toUpperCase(),lighten=cls==='SPECIALIST'?.16:cls==='ENGINEER'?.30:0;base=mixHex(base,'#ffffff',lighten);}else if(category==='mercenary'){const subtype=mercSubtype(row.level),lighten=MERC_SUBTYPE_LIGHTEN[subtype]??0;base=mixHex(base,'#ffffff',lighten);}const rowColor=mixHex(base,'#061725',.62),accent=mixHex(base,'#ffffff',.12),soft=mixHex(base,'#061725',.78);return{rowColor,accent,soft};}
 
 function orderRowColors(category,level){
   const tier=tierNumber(level);
@@ -39,6 +39,19 @@ function orderRowColors(category,level){
     rowColor:mixHex(base,'#061725',.42),
     accent:mixHex(base,'#ffffff',.22)
   };
+}
+function selectionLevelColors(category,level){
+  const tier=tierNumber(level);
+  let base=TIER_COLORS[tier]||'#718394';
+  if(category==='troop'){
+    const prefix=String(level||'').toUpperCase().charAt(0);
+    const lighten=prefix==='S'?.10:prefix==='E'?.20:0;
+    base=mixHex(base,'#ffffff',lighten);
+  }else if(category==='mercenary'){
+    const subtype=mercSubtype(level);
+    base=mixHex(base,'#ffffff',(MERC_SUBTYPE_LIGHTEN[subtype]??0)*.30);
+  }
+  return{base,surface:mixHex(base,'#07141e',.74),surfaceStrong:mixHex(base,'#07141e',.62),border:mixHex(base,'#ffffff',.08),text:mixHex(base,'#ffffff',.25)};
 }
 function resultTextColor(category,row){
   const tier=tierNumber(row.level);
@@ -196,6 +209,11 @@ function createUnitOption(category,unit,selected){
   const label=document.createElement('label');
   const on=selected.has(unit.id);
   label.className=`hierarchy-unit${on?' selected':''}`;
+  const levelColors=selectionLevelColors(category,unit.level);
+  label.style.setProperty('--level-base',levelColors.base);
+  label.style.setProperty('--level-surface',levelColors.surface);
+  label.style.setProperty('--level-border',levelColors.border);
+  label.style.setProperty('--level-text',levelColors.text);
   label.title=`${unit.name} · ${unit.level} · ${unit.type} · Strength/EA ${formatInteger(unit.strengthEach)}`;
   label.innerHTML=`<input type="checkbox" ${on?'checked':''}><span class="hierarchy-check" aria-hidden="true">${on?'✓':''}</span><span class="hierarchy-unit-copy"><strong>${escapeHtml(unit.name)}</strong><small>${escapeHtml(unit.type)}</small></span>`;
   label.querySelector('input').addEventListener('change',e=>setOneSelection(category,unit.id,e.target.checked));
@@ -203,6 +221,12 @@ function createUnitOption(category,unit,selected){
 }
 function createLevelDetails({category,level,rows,selected,key,label=level,subgroups=null}){
   const details=document.createElement('details');details.className='selection-level';details.open=expandedSelectionSections.has(key);
+  const levelColors=selectionLevelColors(category,level);
+  details.style.setProperty('--level-base',levelColors.base);
+  details.style.setProperty('--level-surface',levelColors.surface);
+  details.style.setProperty('--level-surface-strong',levelColors.surfaceStrong);
+  details.style.setProperty('--level-border',levelColors.border);
+  details.style.setProperty('--level-text',levelColors.text);
   details.addEventListener('toggle',()=>details.open?expandedSelectionSections.add(key):expandedSelectionSections.delete(key));
   const summary=document.createElement('summary');
   const chosen=rows.filter(u=>selected.has(u.id)).length;
@@ -273,7 +297,11 @@ function renderResultRows(category,rows){
   for(const row of rows){
     const div=document.createElement('div');
     div.className='result-row compact-result-row';
+    const resultColors=outputRowColors(category,row);
     div.style.setProperty('--result-text',resultTextColor(category,row));
+    div.style.setProperty('--result-bg',resultColors.rowColor);
+    div.style.setProperty('--result-bg-soft',resultColors.soft);
+    div.style.setProperty('--result-accent',resultColors.accent);
     div.innerHTML=`<div class="result-label"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</span></div><span class="result-leader" aria-hidden="true"></span><div class="result-qty">${formatInteger(row.qty)}</div>`;
     target.appendChild(div);
   }
@@ -494,7 +522,7 @@ function updateCapacity(result){for(const [name,actual,limit] of [['leadership',
 function recalculate(){readInputs();const any=Object.values(modeState().selectedIds).some(a=>a.length);if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}const errors=validate();showValidation(errors);if(errors.length){clearResults('Complete the required inputs.');return;}try{const inputs=resolveAutoFills(baseEngineInputs());syncCustomOrders();const result=activeMode==='custom'?calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,inputs}):calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs});renderResultRows('mercenary',result.categories.mercenary.results);renderResultRows('monster',result.categories.monster.results);renderResultRows('troop',result.categories.troop.results);updateCapacity(result);renderLayerHealthChart(result);const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;els.resultEmpty.hidden=true;els.resultGroups.hidden=false;}catch(error){console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');}}
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
 function switchMode(mode){if(mode===activeMode)return;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
-function wireEvents(){document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));els.clearAllSelections.addEventListener('click',clearAllSelections);els.resetCalculator.addEventListener('click',resetCalculator);for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].addEventListener('focus',()=>{els[id].value=String(parseNumber(els[id].value)||'');});els[id].addEventListener('blur',()=>formatFieldInteger(els[id]));els[id].addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill']){
+function wireEvents(){document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));els.clearAllSelections.addEventListener('click',clearAllSelections);els.resetCalculator.addEventListener('click',resetCalculator);const quickInputIds=['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth'];for(const id of quickInputIds){const input=els[id];input.addEventListener('focus',()=>{input.value=String(parseNumber(input.value)||'');requestAnimationFrame(()=>input.select());});input.addEventListener('pointerup',e=>{e.preventDefault();input.select();});input.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const index=quickInputIds.indexOf(id),nextIndex=index+(e.shiftKey?-1:1);if(nextIndex<0||nextIndex>=quickInputIds.length)return;e.preventDefault();const next=els[quickInputIds[nextIndex]];next.focus();requestAnimationFrame(()=>next.select());});input.addEventListener('blur',()=>formatFieldInteger(input));input.addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill']){
   els[id].addEventListener('input',recalculate);
   els[id].addEventListener('blur',()=>{formatFillPercent(els[id]);readInputs();recalculate();});
 }els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});els.resetRankSeparation.addEventListener('click',()=>{const d=activeMode==='epic'?'0.40':'2.50';els.rankSeparation.value=d;modeState().inputs.rankSeparation=d;updateRankSeparationDisplay();saveState();recalculate();});for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});els.arachne.addEventListener('change',recalculate);}
