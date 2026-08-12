@@ -7,9 +7,9 @@
 <meta content="Native Epic army stacking calculator for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=24" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=43" rel="stylesheet"/>
 <script defer="" src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=25" type="module"></script>
+<script src="js/epic-stacker.js?v=43" type="module"></script>
 </head>
 <body class="epic-page">
 <header class="site-header">
@@ -88,16 +88,16 @@
 <div class="epic-panel-body">
 <div class="health-grid">
 <label>Monster Health
-                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" placeholder="Health" type="text" value="100"/><span>%</span></div>
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" placeholder="Health" type="text" value="1600"/><span>%</span></div>
 </label>
 <label>Human Health
-                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" placeholder="Health" type="text" value="100"/><span>%</span></div>
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" placeholder="Health" type="text" value="1500"/><span>%</span></div>
 </label>
 <label>Epic Hunter Health
-                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" placeholder="Health" type="text" value="100"/><span>%</span></div>
+                <div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" placeholder="Health" type="text" value="859"/><span>%</span></div>
 </label>
 </div>
-<p class="setting-note health-help">Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit. Enter the <strong>Health %</strong> shown in each unit's Stats.</p>
+<details class="health-help-details"><summary>Using your own Health % values?</summary><p>Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit, then enter the Health % shown in each unit's Stats.</p></details>
 <div class="checkbox-row" id="arachneRow">
 <input id="arachne" type="checkbox"/>
 <label for="arachne">Fighting Arachne Swarm</label>
@@ -117,21 +117,17 @@
 </div>
 </section>
 <section class="epic-panel">
-<h2 class="epic-panel-title">Capacity Check</h2>
+<h2 class="epic-panel-title">Capacity</h2>
 <div class="epic-panel-body">
 <div class="capacity-grid">
 <div class="capacity-row"><span class="capacity-label">Leadership</span><div class="capacity-bar" id="leadershipBar"><i></i></div><span class="capacity-value" id="leadershipActual">—</span></div>
 <div class="capacity-row"><span class="capacity-label">Authority</span><div class="capacity-bar" id="authorityBar"><i></i></div><span class="capacity-value" id="authorityActual">—</span></div>
 <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
 </div>
+<div class="calculator-utility-row">
+<div class="auto-update-note"><span class="live-dot"></span>Auto-updating · saved on this device</div>
+<button class="epic-action danger compact-reset" id="resetCalculator" type="button">Reset</button>
 </div>
-</section>
-<section class="epic-panel">
-<h2 class="epic-panel-title">Calculator</h2>
-<div class="epic-panel-body">
-<div class="auto-update-note"><span class="live-dot"></span>Updates automatically</div>
-<button class="epic-action danger" id="resetCalculator" type="button">Reset Calculator</button>
-<p class="setting-note">Inputs and selections are saved on this device automatically.</p>
 </div>
 </section>
 </aside>
@@ -148,8 +144,8 @@
 </div>
 <div class="selection-content" id="selectionContent">
 <div class="category-toolbar" id="categoryToolbar">
-<p>Each unit is selected individually. Within a level, units are shown from highest Strength/EA to lowest.</p>
-<button class="toolbar-button" id="clearCategory" type="button">Clear Category</button>
+<p>Tap units to include them. Units remain in Total Battle mobile-entry order.</p>
+<button class="toolbar-button" id="clearCategory" type="button">Clear</button>
 </div>
 <div aria-live="polite" class="level-selection-list" id="unitSelectGrid"></div>
 </div>
@@ -167,10 +163,10 @@
 </section>
 <section class="result-panel tab-view-panel" hidden="" id="resultsView">
 <div class="result-head">
-<h2>Final Army</h2>
+<h2>Results</h2>
 <span class="result-status" id="resultStatus">Enter your values and select units.</span>
 </div>
-<div class="result-empty" id="resultEmpty">Calculated quantities will appear here in the same order used by the Total Battle mobile app.</div>
+<div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden="" id="resultGroups">
 <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
 <section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
@@ -180,7 +176,7 @@
 <section class="layer-chart-panel tab-view-panel" hidden="" id="layerChartPanel">
 <div class="layer-chart-head">
 <div>
-<div class="section-number">5 · Layer Health &amp; Dying Order</div>
+<div class="section-number">Layer Health &amp; Dying Order</div>
 <p>Each line shows calculated squad health from highest to lowest within that army type. Overlap is shown for reference only.</p>
 </div>
 <div aria-label="Dying order direction" class="die-direction">
