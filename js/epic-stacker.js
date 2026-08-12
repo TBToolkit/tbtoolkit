@@ -8,7 +8,7 @@ const units={troop:[],monster:[],mercenary:[]};const els={};let activeCategory='
 function defaultInputs(mode){return{leadership:'',leadershipFill:'99.99',autoLeadership:true,authority:'',authorityFill:'10.00',autoAuthority:false,dominance:'',dominanceFill:'99.99',autoDominance:true,monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',arachne:false,rankSeparation:mode==='epic'?'0.40':'2.50'};}
 const state={modes:{epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]}}}};
 function modeState(){return state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetRankSeparation','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderTab','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','unitSelectGrid','selectionContent','categoryToolbar','clearCategory','troopCount','monsterCount','mercenaryCount','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetRankSeparation','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -61,7 +61,7 @@ async function loadData(){const entries=await Promise.all(Object.entries(DATA_UR
 function loadSavedState(){try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(saved?.modes){activeMode=saved.activeMode==='custom'?'custom':'epic';for(const mode of ['epic','custom']){Object.assign(state.modes[mode].inputs,saved.modes[mode]?.inputs||{});for(const c of ['troop','monster','mercenary']){if(Array.isArray(saved.modes[mode]?.selectedIds?.[c]))state.modes[mode].selectedIds[c]=saved.modes[mode].selectedIds[c];if(mode==='custom'&&Array.isArray(saved.modes.custom?.orders?.[c]))state.modes.custom.orders[c]=saved.modes.custom.orders[c];}}return;}const legacy=JSON.parse(localStorage.getItem(LEGACY_EPIC_KEY)||'null');if(legacy){Object.assign(state.modes.epic.inputs,legacy.inputs||{});for(const c of ['troop','monster','mercenary'])if(Array.isArray(legacy.selectedIds?.[c]))state.modes.epic.selectedIds[c]=legacy.selectedIds[c];}}catch(_){}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({activeMode,modes:state.modes}));}
 function updateRankSeparationDisplay(){const max=activeMode==='epic'?1:5;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
-function configureModeUI(){const epic=activeMode==='epic';document.querySelectorAll('.mode-button').forEach(b=>{const on=b.dataset.mode===activeMode;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});els.modeDescription.textContent=epic?'Automatically orders selected squads for Epic battles.':'You control the layer dying order; unit-type order inside each layer remains automatic.';els.orderTab.hidden=epic;els.arachneRow.hidden=!epic;els.separationLabel.textContent=epic?'Squad Separation':'Layer Separation';els.rankSeparation.min='0';els.rankSeparation.max=epic?'1':'5';els.rankSeparation.step=epic?'0.01':'0.05';els.separationMin.textContent='0%';els.separationMid.textContent=epic?'0.50%':'2.50%';els.separationMax.textContent=epic?'1.00%':'5.00%';}
+function configureModeUI(){const epic=activeMode==='epic';document.querySelectorAll('.mode-button').forEach(b=>{const on=b.dataset.mode===activeMode;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});els.modeDescription.textContent=epic?'Automatically orders selected squads for Epic battles.':'You control the layer dying order; unit-type order inside each layer remains automatic.';els.orderView.hidden=epic;els.arachneRow.hidden=!epic;els.separationLabel.textContent=epic?'Squad Separation':'Layer Separation';els.rankSeparation.min='0';els.rankSeparation.max=epic?'1':'5';els.rankSeparation.step=epic?'0.01':'0.05';els.separationMin.textContent='0%';els.separationMid.textContent=epic?'0.50%':'2.50%';els.separationMax.textContent=epic?'1.00%':'5.00%';const nums=document.querySelectorAll('.output-section-number');if(nums[0])nums[0].textContent=epic?'3':'4';if(nums[1])nums[1].textContent=epic?'4':'5';}
 function applyStateToInputs(){for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].value=modeState().inputs[id]||'';formatFieldInteger(els[id]);}for(const id of ['leadershipFill','authorityFill','dominanceFill']){els[id].value=modeState().inputs[id]??'';formatFillPercent(els[id]);}const sepMax=activeMode==='epic'?1:5;els.rankSeparation.value=String(Math.min(sepMax,Math.max(0,parseNumber(modeState().inputs.rankSeparation??(activeMode==='epic'?'0.40':'2.50')))));for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].checked=!!modeState().inputs[id];els.arachne.checked=!!modeState().inputs.arachne;configureModeUI();updateRankSeparationDisplay();updateFillFieldStates();}
 function readInputs(){for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth'])modeState().inputs[id]=String(parseNumber(els[id].value)||'');for(const id of ['rankSeparation'])modeState().inputs[id]=String(parseNumber(els[id].value));for(const id of ['autoLeadership','autoAuthority','autoDominance'])modeState().inputs[id]=els[id].checked;for(const [cat,meta] of Object.entries(CAPACITY_META)){if(!modeState().inputs[meta.auto])modeState().inputs[meta.fill]=String(parseNumber(els[meta.fill].value));}modeState().inputs.arachne=els.arachne.checked;saveState();}
 function updateFillFieldStates(){for(const [cat,meta] of Object.entries(CAPACITY_META)){const auto=!!modeState().inputs[meta.auto];els[meta.fill].disabled=auto;if(!auto)els[meta.fill].value=modeState().inputs[meta.fill]??'99.99';}}
@@ -162,46 +162,98 @@ function renderOrderView(){
     });
   }
 }
-function updateCounts(){for(const c of ['troop','monster','mercenary'])els[`${c}Count`].textContent=modeState().selectedIds[c].length;}
-function renderSelectionGrid(){
-  const selected=selectedSet(activeCategory);
-  els.unitSelectGrid.innerHTML='';
-  for(const group of getLevelRows(activeCategory)){
-    const wrap=document.createElement('section');
-    wrap.className='unit-level-row';
-    const allSelected=group.rows.length&&group.rows.every(u=>selected.has(u.id));
-    const someSelected=group.rows.some(u=>selected.has(u.id));
-    const levelColors=orderRowColors(activeCategory,group.level);
-    wrap.style.setProperty('--level-accent',levelColors.accent);
+const expandedSelectionSections=new Set();
+const MERC_LEVEL_LABEL={2:'II',7:'VII',6:'VI',5:'V'};
+const MERC_GROUP_ORDER=['COMMON','MONSTER','SPECIALIST','GUARDSMAN','EPIC - HUNTER','EPIC - EVENT','ARACHNE','ENGINEER'];
+const MERC_GROUP_LABEL={'COMMON':'Common','MONSTER':'Monsters','SPECIALIST':'Specialists','GUARDSMAN':'Guardsmen','EPIC - HUNTER':'Epic Hunters','EPIC - EVENT':'Epic Event','ARACHNE':'Arachne','ENGINEER':'Engineers'};
 
-    const side=document.createElement('label');
-    side.className='level-selector';
-    side.innerHTML=`<input type="checkbox" ${allSelected?'checked':''}><div><strong>${escapeHtml(group.level)}</strong><span>All</span></div>`;
-    const cb=side.querySelector('input');
-    cb.indeterminate=!allSelected&&someSelected;
-    cb.addEventListener('change',()=>toggleLevel(group.rows,cb.checked));
-    wrap.appendChild(side);
-
-    const cards=document.createElement('div');
-    cards.className='level-cards';
-    for(const unit of group.rows){
-      const label=document.createElement('label');
-      const isSelected=selected.has(unit.id);
-      label.className=`unit-option${isSelected?' selected':''}`;
-      label.style.setProperty('--unit-accent',levelColors.accent);
-      label.title=`${unit.name} · ${unit.level} · ${unit.type} · Strength/EA ${formatInteger(unit.strengthEach)}`;
-      label.innerHTML=`<input type="checkbox" ${isSelected?'checked':''}><span class="unit-check" aria-hidden="true">${isSelected?'✓':''}</span><div class="unit-copy"><div class="unit-name">${escapeHtml(unit.name)}</div><div class="unit-type">${escapeHtml(unit.type)}</div></div>`;
-      label.querySelector('input').addEventListener('change',e=>toggleUnit(unit.id,e.target.checked));
-      cards.appendChild(label);
+function setSelection(category,rows,checked){
+  const set=selectedSet(category);
+  for(const unit of rows)checked?set.add(unit.id):set.delete(unit.id);
+  modeState().selectedIds[category]=[...set];
+  syncCustomOrders();saveState();updateCounts();renderAllSelections();
+  if(activeMode==='custom')renderOrderView();
+  recalculate();
+}
+function setOneSelection(category,id,checked){
+  const set=selectedSet(category);checked?set.add(id):set.delete(id);
+  modeState().selectedIds[category]=[...set];
+  syncCustomOrders();saveState();updateCounts();renderAllSelections();
+  if(activeMode==='custom')renderOrderView();
+  recalculate();
+}
+function clearAllSelections(){
+  modeState().selectedIds={troop:[],monster:[],mercenary:[]};
+  if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
+  saveState();updateCounts();renderAllSelections();if(activeMode==='custom')renderOrderView();recalculate();
+}
+function checkboxState(input,rows,selected){
+  const all=rows.length>0&&rows.every(u=>selected.has(u.id));
+  const some=rows.some(u=>selected.has(u.id));
+  input.checked=all;input.indeterminate=!all&&some;
+}
+function createUnitOption(category,unit,selected){
+  const label=document.createElement('label');
+  const on=selected.has(unit.id);
+  label.className=`hierarchy-unit${on?' selected':''}`;
+  label.title=`${unit.name} · ${unit.level} · ${unit.type} · Strength/EA ${formatInteger(unit.strengthEach)}`;
+  label.innerHTML=`<input type="checkbox" ${on?'checked':''}><span class="hierarchy-check" aria-hidden="true">${on?'✓':''}</span><span class="hierarchy-unit-copy"><strong>${escapeHtml(unit.name)}</strong><small>${escapeHtml(unit.type)}</small></span>`;
+  label.querySelector('input').addEventListener('change',e=>setOneSelection(category,unit.id,e.target.checked));
+  return label;
+}
+function createLevelDetails({category,level,rows,selected,key,label=level,subgroups=null}){
+  const details=document.createElement('details');details.className='selection-level';details.open=expandedSelectionSections.has(key);
+  details.addEventListener('toggle',()=>details.open?expandedSelectionSections.add(key):expandedSelectionSections.delete(key));
+  const summary=document.createElement('summary');
+  const chosen=rows.filter(u=>selected.has(u.id)).length;
+  summary.innerHTML=`<span class="level-chevron" aria-hidden="true"></span><label class="level-master"><input type="checkbox"><span>${escapeHtml(label)}</span></label><span class="level-selected-count">${chosen}/${rows.length}</span>`;
+  const master=summary.querySelector('input');checkboxState(master,rows,selected);
+  summary.querySelector('.level-master').addEventListener('click',e=>e.stopPropagation());master.addEventListener('click',e=>e.stopPropagation());master.addEventListener('change',e=>setSelection(category,rows,e.target.checked));
+  details.appendChild(summary);
+  const body=document.createElement('div');body.className='selection-level-body';
+  if(subgroups){
+    for(const subgroup of subgroups){
+      const sub=document.createElement('details');sub.className='selection-subgroup';const subKey=`${key}|${subgroup.name}`;sub.open=expandedSelectionSections.has(subKey);
+      sub.addEventListener('toggle',()=>sub.open?expandedSelectionSections.add(subKey):expandedSelectionSections.delete(subKey));
+      const ss=document.createElement('summary');const sc=subgroup.rows.filter(u=>selected.has(u.id)).length;
+      ss.innerHTML=`<span class="subgroup-chevron" aria-hidden="true"></span><label class="subgroup-master"><input type="checkbox"><span>${escapeHtml(subgroup.label)}</span></label><span>${sc}/${subgroup.rows.length}</span>`;
+      const sm=ss.querySelector('input');checkboxState(sm,subgroup.rows,selected);ss.querySelector('.subgroup-master').addEventListener('click',e=>e.stopPropagation());sm.addEventListener('click',e=>e.stopPropagation());sm.addEventListener('change',e=>setSelection(category,subgroup.rows,e.target.checked));
+      sub.appendChild(ss);
+      const grid=document.createElement('div');grid.className='hierarchy-unit-list';for(const unit of subgroup.rows)grid.appendChild(createUnitOption(category,unit,selected));sub.appendChild(grid);body.appendChild(sub);
     }
-    wrap.appendChild(cards);
-    els.unitSelectGrid.appendChild(wrap);
+  }else{
+    const grid=document.createElement('div');grid.className='hierarchy-unit-list';for(const unit of rows)grid.appendChild(createUnitOption(category,unit,selected));body.appendChild(grid);
+  }
+  details.appendChild(body);return details;
+}
+function renderTroopClass(className,targetId){
+  const target=els[targetId],selected=selectedSet('troop');target.innerHTML='';
+  const rows=units.troop.filter(u=>String(u.class).toUpperCase()===className);
+  const map=new Map();for(const u of rows){if(!map.has(u.level))map.set(u.level,[]);map.get(u.level).push(u);}const levels=[...map.keys()].sort(troopLevelCompare);
+  for(const level of levels){const group=map.get(level).sort((a,b)=>a.displayOrder-b.displayOrder);target.appendChild(createLevelDetails({category:'troop',level,rows:group,selected,key:`troop|${className}|${level}`}));}
+}
+function renderMonsters(){
+  const target=els.monsterSelection,selected=selectedSet('monster');target.innerHTML='';
+  for(const group of getLevelRows('monster'))target.appendChild(createLevelDetails({category:'monster',level:group.level,rows:group.rows.sort((a,b)=>a.displayOrder-b.displayOrder),selected,key:`monster|${group.level}`}));
+}
+function renderMercenaries(){
+  const target=els.mercenarySelection,selected=selectedSet('mercenary');target.innerHTML='';
+  const tiers=[...new Set(units.mercenary.map(u=>tierNumber(u.level)))].sort((a,b)=>{const o=[2,7,6,5];return o.indexOf(a)-o.indexOf(b);});
+  for(const tier of tiers){
+    const rows=units.mercenary.filter(u=>tierNumber(u.level)===tier).sort((a,b)=>a.displayOrder-b.displayOrder);
+    const groups=[];for(const cls of MERC_GROUP_ORDER){const r=rows.filter(u=>String(u.class).toUpperCase()===cls);if(r.length)groups.push({name:cls,label:MERC_GROUP_LABEL[cls]||cls,rows:r});}
+    const extras=[...new Set(rows.map(u=>String(u.class).toUpperCase()))].filter(c=>!MERC_GROUP_ORDER.includes(c));for(const cls of extras){const r=rows.filter(u=>String(u.class).toUpperCase()===cls);groups.push({name:cls,label:cls,rows:r});}
+    target.appendChild(createLevelDetails({category:'mercenary',level:String(tier),label:MERC_LEVEL_LABEL[tier]||String(tier),rows,selected,key:`mercenary|${tier}`,subgroups:groups}));
   }
 }
-function toggleUnit(id,checked){const set=selectedSet(activeCategory);checked?set.add(id):set.delete(id);modeState().selectedIds[activeCategory]=[...set];syncCustomOrders();saveState();updateCounts();renderSelectionGrid();if(activeMode==='custom'&&activeView==='order')renderOrderView();recalculate();}
-function toggleLevel(rows,checked){const set=selectedSet(activeCategory);for(const u of rows)checked?set.add(u.id):set.delete(u.id);modeState().selectedIds[activeCategory]=[...set];syncCustomOrders();saveState();updateCounts();renderSelectionGrid();if(activeMode==='custom'&&activeView==='order')renderOrderView();recalculate();}
-function clearCurrent(){modeState().selectedIds[activeCategory]=[];syncCustomOrders();saveState();updateCounts();renderSelectionGrid();if(activeMode==='custom'&&activeView==='order')renderOrderView();recalculate();}
-function setView(view){const unitView=['troop','monster','mercenary'].includes(view);if(view==='order'&&activeMode!=='custom')view='troop';activeView=view;if(unitView)activeCategory=view;document.querySelectorAll('.category-tab[data-view]').forEach(b=>{const active=b.dataset.view===view;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});els.selectionContent.hidden=!unitView;els.orderView.hidden=view!=='order';els.resultsView.hidden=view!=='results';els.layerChartPanel.hidden=view!=='visual';if(unitView)renderSelectionGrid();if(view==='order')renderOrderView();}
+function setMaster(master,rows,category){const selected=selectedSet(category);checkboxState(master,rows,selected);master.onchange=e=>setSelection(category,rows,e.target.checked);}
+function updateCounts(){
+  const sel=modeState().selectedIds;const g=units.troop.filter(u=>u.class==='GUARDSMAN'),s=units.troop.filter(u=>u.class==='SPECIALIST'),e=units.troop.filter(u=>u.class==='ENGINEER');const troopSel=new Set(sel.troop);
+  els.guardsmanCount.textContent=`${g.filter(u=>troopSel.has(u.id)).length} selected`;els.specialistCount.textContent=`${s.filter(u=>troopSel.has(u.id)).length} selected`;els.engineerCount.textContent=`${e.filter(u=>troopSel.has(u.id)).length} selected`;
+  els.monsterCardCount.textContent=`${sel.monster.length} selected`;els.mercenaryCardCount.textContent=`${sel.mercenary.length} selected`;
+  setMaster(els.guardsmanMaster,g,'troop');setMaster(els.specialistMaster,s,'troop');setMaster(els.engineerMaster,e,'troop');setMaster(els.monsterMaster,units.monster,'monster');setMaster(els.mercenaryMaster,units.mercenary,'mercenary');
+}
+function renderAllSelections(){renderTroopClass('GUARDSMAN','guardsmanSelection');renderTroopClass('SPECIALIST','specialistSelection');renderTroopClass('ENGINEER','engineerSelection');renderMonsters();renderMercenaries();updateCounts();}
 
 
 function baseEngineInputs(){const i=modeState().inputs;return{leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,dominance:parseNumber(i.dominance),dominanceFill:parseNumber(i.dominanceFill)/100,arachne:activeMode==='epic'&&!!i.arachne,healthInputs:{MONSTER:parseNumber(i.monsterHealth),HUMAN:parseNumber(i.humanHealth),EPIC_HUNTER:parseNumber(i.epicHunterHealth)},rankSeparation:parseNumber(i.rankSeparation)/100,layerSeparation:parseNumber(i.rankSeparation)/100};}
@@ -440,11 +492,11 @@ function renderLayerHealthChart(result){
 }
 function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(modeState().inputs.leadership)],['authority',result?.totals.authority,parseNumber(modeState().inputs.authority)],['dominance',result?.totals.dominance,parseNumber(modeState().inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
 function recalculate(){readInputs();const any=Object.values(modeState().selectedIds).some(a=>a.length);if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}const errors=validate();showValidation(errors);if(errors.length){clearResults('Complete the required inputs.');return;}try{const inputs=resolveAutoFills(baseEngineInputs());syncCustomOrders();const result=activeMode==='custom'?calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,inputs}):calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs});renderResultRows('mercenary',result.categories.mercenary.results);renderResultRows('monster',result.categories.monster.results);renderResultRows('troop',result.categories.troop.results);updateCapacity(result);renderLayerHealthChart(result);const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;els.resultEmpty.hidden=true;els.resultGroups.hidden=false;}catch(error){console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');}}
-function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();updateCounts();setView(activeView);clearResults();}
-function switchMode(mode){if(mode===activeMode)return;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();updateCounts();if(activeView==='order'&&mode==='epic')activeView='troop';setView(activeView);saveState();recalculate();}
-function wireEvents(){document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));document.querySelectorAll('.category-tab[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));els.clearCategory.addEventListener('click',clearCurrent);els.resetCalculator.addEventListener('click',resetCalculator);for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].addEventListener('focus',()=>{els[id].value=String(parseNumber(els[id].value)||'');});els[id].addEventListener('blur',()=>formatFieldInteger(els[id]));els[id].addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill']){
+function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
+function switchMode(mode){if(mode===activeMode)return;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
+function wireEvents(){document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));els.clearAllSelections.addEventListener('click',clearAllSelections);els.resetCalculator.addEventListener('click',resetCalculator);for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth']){els[id].addEventListener('focus',()=>{els[id].value=String(parseNumber(els[id].value)||'');});els[id].addEventListener('blur',()=>formatFieldInteger(els[id]));els[id].addEventListener('input',recalculate);}for(const id of ['leadershipFill','authorityFill','dominanceFill']){
   els[id].addEventListener('input',recalculate);
   els[id].addEventListener('blur',()=>{formatFillPercent(els[id]);readInputs();recalculate();});
 }els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});els.resetRankSeparation.addEventListener('click',()=>{const d=activeMode==='epic'?'0.40':'2.50';els.rankSeparation.value=d;modeState().inputs.rankSeparation=d;updateRankSeparationDisplay();saveState();recalculate();});for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});els.arachne.addEventListener('change',recalculate);}
-async function init(){cacheElements();loadSavedState();applyStateToInputs();wireEvents();try{await loadData();configureModeUI();applyStateToInputs();syncCustomOrders();updateCounts();setView('troop');recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
+async function init(){cacheElements();loadSavedState();applyStateToInputs();wireEvents();try{await loadData();configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
 init();
