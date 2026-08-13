@@ -42,7 +42,7 @@
 
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">
-<div><span class="section-kicker">1</span><h2>Army Limits &amp; Health Inputs</h2></div>
+<div><span class="section-kicker">1</span><h2>Army Limits</h2></div>
 <div class="auto-update-note"><span class="live-dot"></span>Auto-updating · saved on this device</div>
 </div>
 <div class="setup-grid">
@@ -69,9 +69,11 @@
 </div>
 </div>
 <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
-</div>
-
-<div class="setup-block health-setup-block">
+<div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
+<details class="advanced advanced-settings-panel">
+<summary>Advanced Settings</summary>
+<div class="advanced-settings-content">
+<div class="advanced-health-block">
 <h3>Health Inputs</h3>
 <div class="health-grid">
 <label>Monster Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" value="1600"/><span>%</span></div></label>
@@ -79,8 +81,11 @@
 <label>Epic Hunter Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" value="859"/><span>%</span></div></label>
 </div>
 <details class="health-help-details"><summary>Using your own Health % values?</summary><p>Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit, then enter the Health % shown in each unit's Stats.</p></details>
-<div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
-<details class="advanced"><summary>Advanced settings</summary><div class="advanced-row layer-separation-control"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.40%</output></div><input class="separation-slider" id="rankSeparation" max="1" min="0" step="0.01" type="range" value="0.40"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div><button class="slider-reset" id="resetRankSeparation" type="button">↺ Reset to Default</button></div></details>
+</div>
+<div class="advanced-row layer-separation-control"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.40%</output></div><input class="separation-slider" id="rankSeparation" max="1" min="0" step="0.01" type="range" value="0.40"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div></div>
+<button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
+</div>
+</details>
 </div>
 </div>
 </section>
