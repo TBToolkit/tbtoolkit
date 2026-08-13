@@ -1,6 +1,7 @@
 (() => {
 const $=id=>document.getElementById(id);
 let payload={records:[],fields:[]},records=[],filtered=[];
+let columnSort={key:null,direction:null};
 const fixedKeys=['type','chest'];
 const numberFormat=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const resourceKeys=[
@@ -92,9 +93,27 @@ function apply(){
     return true;
   });
 
-  const sort=$('chestSort').value;
-  if(sort==='name')filtered.sort((a,b)=>a.chest.localeCompare(b.chest));
-  else if(sort==='type')filtered.sort((a,b)=>a.type.localeCompare(b.type)||a.chest.localeCompare(b.chest));
+  if(columnSort.key){
+    const key=columnSort.key;
+    const dir=columnSort.direction==='desc'?-1:1;
+    filtered.sort((a,b)=>{
+      if(key==='type'||key==='chest'){
+        return dir*String(a[key]??'').localeCompare(String(b[key]??''),undefined,{numeric:true,sensitivity:'base'});
+      }
+      const av=Number(a[key]),bv=Number(b[key]);
+      const aMissing=a[key]===null||a[key]===undefined||a[key]===''||!Number.isFinite(av);
+      const bMissing=b[key]===null||b[key]===undefined||b[key]===''||!Number.isFinite(bv);
+      if(aMissing&&bMissing)return a.chest.localeCompare(b.chest,undefined,{numeric:true});
+      if(aMissing)return 1;
+      if(bMissing)return -1;
+      if(av!==bv)return dir*(av-bv);
+      return a.chest.localeCompare(b.chest,undefined,{numeric:true});
+    });
+  }else{
+    const sort=$('chestSort').value;
+    if(sort==='name')filtered.sort((a,b)=>a.chest.localeCompare(b.chest));
+    else if(sort==='type')filtered.sort((a,b)=>a.type.localeCompare(b.type)||a.chest.localeCompare(b.chest));
+  }
 
   render();
 }
@@ -118,7 +137,13 @@ function render(){
     $('activeRewardSummary').textContent=`Showing selected reward columns: ${names.join(', ')}`;
   }
 
-  $('chestTableHead').innerHTML=`<tr>${keys.map(k=>`<th>${k==='type'?'Type':k==='chest'?'Chest':labels[k]}</th>`).join('')}</tr>`;
+  $('chestTableHead').innerHTML=`<tr>${keys.map(k=>{
+    const active=columnSort.key===k;
+    const arrow=active?(columnSort.direction==='asc'?'▲':'▼'):'';
+    const label=k==='type'?'Type':k==='chest'?'Chest':labels[k];
+    const title=(k==='type'||k==='chest')?'Sort A–Z / Z–A':'Sort smallest to largest / largest to smallest';
+    return `<th class="sortable-header${active?' is-sorted':''}" data-sort-key="${k}" title="${title}" aria-sort="${active?(columnSort.direction==='asc'?'ascending':'descending'):'none'}" tabindex="0"><span>${label}</span><span class="sort-arrow" aria-hidden="true">${arrow}</span></th>`;
+  }).join('')}</tr>`;
   $('chestTableBody').innerHTML=filtered.map(r=>`<tr>${keys.map(k=>{
     const val=r[k];
     const cls=[
@@ -137,6 +162,7 @@ function reset(){
   $('chestSearch').value='';
   $('chestTypeFilter').value='';
   $('chestSort').value='source';
+  columnSort={key:null,direction:null};
   selectedRewards.clear();
   $('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=false);
   updateRewardButton();
@@ -155,7 +181,27 @@ async function init(){
   }
 }
 $('chestSearch').addEventListener('input',apply);
-['chestTypeFilter','chestSort'].forEach(id=>$(id).addEventListener('change',apply));
+$('chestTypeFilter').addEventListener('change',apply);
+$('chestSort').addEventListener('change',()=>{columnSort={key:null,direction:null};apply();});
+
+function activateColumnSort(th){
+  const key=th?.dataset?.sortKey;
+  if(!key)return;
+  if(columnSort.key===key){
+    columnSort.direction=columnSort.direction==='asc'?'desc':'asc';
+  }else{
+    columnSort={key,direction:'asc'};
+  }
+  apply();
+}
+$('chestTableHead').addEventListener('click',evt=>activateColumnSort(evt.target.closest('.sortable-header')));
+$('chestTableHead').addEventListener('keydown',evt=>{
+  if(evt.key!=='Enter'&&evt.key!==' ')return;
+  const th=evt.target.closest('.sortable-header');
+  if(!th)return;
+  evt.preventDefault();
+  activateColumnSort(th);
+});
 
 $('rewardFilterButton').addEventListener('click',()=>{
   const menu=$('rewardFilterMenu');
