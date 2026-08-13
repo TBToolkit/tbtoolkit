@@ -108,6 +108,9 @@ function render(){
 
   const keys=getVisibleKeys();
 
+  const chestTable=document.querySelector('.chest-table');
+  if(chestTable)chestTable.classList.toggle('compact-reward-view',selectedRewards.size>0);
+
   if(selectedRewards.size===0){
     $('activeRewardSummary').textContent='Showing all compiled rewards';
   }else{
