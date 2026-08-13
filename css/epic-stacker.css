@@ -693,3 +693,15 @@ details.advanced{margin-top:8px;padding-top:7px}
   .capacity-results .capacity-row{grid-template-columns:72px 1fr}.capacity-results .capacity-value{grid-column:1/-1;text-align:right;margin-top:-2px}
   .layer-chart-panel .die-direction{display:none}
 }
+
+/* v46: Advanced settings now live directly beneath Army Limits. */
+.setup-grid{grid-template-columns:minmax(0,1fr)}
+.advanced-settings-panel{margin-top:14px!important;padding-top:12px!important}
+.advanced-settings-panel>summary{display:flex;align-items:center;justify-content:space-between;min-height:40px;padding:0 2px;font-size:.8rem!important;letter-spacing:.03em}
+.advanced-settings-content{display:grid;gap:16px;padding:14px 0 2px}
+.advanced-health-block h3{margin:0 0 10px}
+.advanced-settings-content .health-grid{grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px}
+.advanced-settings-content .health-help-details{margin-top:8px}
+.advanced-settings-content .layer-separation-control{margin-top:0;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
+.advanced-reset{justify-self:start;margin-top:0}
+@media (max-width:760px){.advanced-settings-content .health-grid{grid-template-columns:1fr}.advanced-reset{width:100%}}
