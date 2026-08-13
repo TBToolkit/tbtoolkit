@@ -705,3 +705,119 @@ details.advanced{margin-top:8px;padding-top:7px}
 .advanced-settings-content .layer-separation-control{margin-top:0;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
 .advanced-reset{justify-self:start;margin-top:0}
 @media (max-width:760px){.advanced-settings-content .health-grid{grid-template-columns:1fr}.advanced-reset{width:100%}}
+
+
+/* v47: Compact horizontal Army Limits controls.
+   Desktop: Leadership / Authority / Dominance sit side-by-side.
+   Each card keeps Maximum on top with compact Max Fill + Fill controls below. */
+.compact-limit-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(210px,260px));
+  gap:14px;
+  max-width:808px;
+  align-items:start;
+}
+.compact-limit-list .limit-row{
+  display:grid;
+  grid-template-columns:auto auto;
+  grid-template-areas:
+    "name name"
+    "maximum maximum"
+    "autofill fill";
+  justify-content:start;
+  align-items:end;
+  column-gap:10px;
+  row-gap:7px;
+  min-width:0;
+  padding:12px 13px 13px;
+  border:1px solid #2d4052;
+  border-radius:9px;
+  background:#0d1822;
+}
+.compact-limit-list .limit-row:last-child{border-bottom:1px solid #2d4052}
+.compact-limit-list .limit-name{
+  grid-area:name;
+  align-self:auto;
+  margin:0 0 1px;
+  color:#f0f4f7;
+  font-size:.78rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.025em;
+}
+.compact-limit-list .limit-maximum{grid-area:maximum}
+.compact-limit-list .limit-fill{grid-area:fill}
+.compact-limit-list .auto-fill-toggle{
+  grid-area:autofill;
+  align-self:end;
+  width:auto;
+  min-width:0;
+  height:39px;
+  margin:0;
+  padding:0 10px;
+  white-space:nowrap;
+}
+.compact-limit-list .limit-control{width:auto;min-width:0}
+.compact-limit-list .limit-maximum .epic-input{
+  width:12ch;
+  max-width:100%;
+}
+.compact-limit-list .limit-fill .percent-field{
+  width:9ch;
+  min-width:0;
+}
+.compact-limit-list .limit-fill .percent-field .epic-input{
+  width:100%;
+  min-width:0;
+  padding-left:7px;
+  padding-right:24px;
+  text-align:right;
+}
+.compact-limit-list .field-label{margin-bottom:5px}
+.setup-block>.setting-note{
+  max-width:808px;
+  margin-top:8px;
+}
+.setup-block>#arachneRow{max-width:808px}
+
+@media (max-width:900px){
+  .compact-limit-list{
+    grid-template-columns:repeat(2,minmax(210px,260px));
+    max-width:534px;
+  }
+}
+@media (max-width:600px){
+  .compact-limit-list{
+    grid-template-columns:1fr;
+    max-width:none;
+    gap:9px;
+  }
+  .compact-limit-list .limit-row{
+    grid-template-columns:auto auto;
+    width:100%;
+    padding:11px 12px 12px;
+  }
+  .compact-limit-list .limit-maximum .epic-input{width:12ch}
+  .compact-limit-list .limit-fill .percent-field{width:9ch}
+}
+
+
+/* v48: Make the Advanced Settings disclosure state obvious. */
+.advanced-settings-panel > summary{
+  justify-content:flex-start;
+  gap:8px;
+  cursor:pointer;
+  list-style:none;
+}
+.advanced-settings-panel > summary::-webkit-details-marker{display:none}
+.advanced-settings-panel > summary::before{
+  content:"▶";
+  display:inline-block;
+  font-size:.72em;
+  line-height:1;
+  transform-origin:center;
+  transition:transform .15s ease;
+}
+.advanced-settings-panel[open] > summary::before{
+  transform:rotate(90deg);
+}
