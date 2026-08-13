@@ -205,3 +205,47 @@
     left:92px!important;
   }
 }
+
+
+/* v51: When one or more custom reward columns are selected, size the
+   table to its visible content instead of stretching across the viewport. */
+.chest-table.compact-reward-view{
+  width:max-content;
+  min-width:0;
+}
+.chest-table.compact-reward-view th,
+.chest-table.compact-reward-view td{
+  width:auto;
+}
+.chest-table.compact-reward-view th:first-child,
+.chest-table.compact-reward-view td:first-child{
+  width:92px;
+  min-width:92px;
+  max-width:92px;
+}
+.chest-table.compact-reward-view th:nth-child(2),
+.chest-table.compact-reward-view td:nth-child(2){
+  width:190px;
+  min-width:190px;
+  max-width:240px;
+}
+.chest-table.compact-reward-view th:nth-child(n+3){
+  min-width:96px;
+  max-width:145px;
+}
+.chest-table.compact-reward-view td:nth-child(n+3){
+  min-width:96px;
+}
+
+@media(max-width:760px){
+  .chest-table.compact-reward-view th:nth-child(2),
+  .chest-table.compact-reward-view td:nth-child(2){
+    width:175px;
+    min-width:175px;
+    max-width:210px;
+  }
+  .chest-table.compact-reward-view th:nth-child(n+3),
+  .chest-table.compact-reward-view td:nth-child(n+3){
+    min-width:92px;
+  }
+}
