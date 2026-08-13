@@ -249,3 +249,26 @@
     min-width:92px;
   }
 }
+
+
+/* v52: sortable column headers */
+.chest-table th.sortable-header{
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+}
+.chest-table th.sortable-header:hover,
+.chest-table th.sortable-header:focus-visible{
+  background:#26384a;
+  color:#f0a51a;
+  outline:none;
+}
+.chest-table th.sortable-header.is-sorted{
+  color:#f0a51a;
+}
+.chest-table .sort-arrow{
+  display:inline-block;
+  min-width:1em;
+  margin-left:6px;
+  font-size:.82em;
+}
