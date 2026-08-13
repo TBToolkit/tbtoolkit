@@ -821,3 +821,71 @@ details.advanced{margin-top:8px;padding-top:7px}
 .advanced-settings-panel[open] > summary::before{
   transform:rotate(90deg);
 }
+
+
+/* v50: Put Advanced Settings beside Army Limits on desktop and compact health inputs. */
+.setup-grid{
+  grid-template-columns:minmax(620px, 1.2fr) minmax(440px, .8fr)!important;
+  gap:22px;
+  align-items:start;
+}
+.advanced-settings-column{
+  min-width:0;
+  padding-left:22px;
+  border-left:1px solid #2b3d4e;
+}
+.advanced-settings-column .advanced-settings-panel{
+  margin-top:0!important;
+  padding-top:0!important;
+}
+.advanced-settings-column .advanced-settings-panel>summary{
+  min-height:34px;
+}
+.advanced-settings-column .advanced-settings-content{
+  gap:14px;
+  padding-top:10px;
+}
+.advanced-settings-column .health-grid{
+  grid-template-columns:repeat(3, max-content)!important;
+  justify-content:start;
+  gap:16px!important;
+}
+.advanced-settings-column .health-grid>label{
+  width:max-content;
+}
+.advanced-settings-column .health-percent-field{
+  width:112px;
+  min-width:112px;
+  max-width:112px;
+}
+.advanced-settings-column .health-percent-field .epic-input{
+  width:100%;
+}
+.advanced-settings-column .layer-separation-control{
+  margin-top:2px;
+}
+.advanced-settings-column .health-help-details{
+  max-width:560px;
+}
+@media (max-width:1180px){
+  .setup-grid{
+    grid-template-columns:1fr!important;
+    gap:0;
+  }
+  .advanced-settings-column{
+    margin-top:14px;
+    padding-left:0;
+    padding-top:14px;
+    border-left:0;
+    border-top:1px solid #2b3d4e;
+  }
+}
+@media (max-width:600px){
+  .advanced-settings-column .health-grid{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  .advanced-settings-column .health-grid>label{
+    width:max-content;
+  }
+}
