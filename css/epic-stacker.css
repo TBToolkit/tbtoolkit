@@ -889,3 +889,56 @@ details.advanced{margin-top:8px;padding-top:7px}
     width:max-content;
   }
 }
+
+
+/* v53: Protect result quantities from clipping at narrow column widths.
+   The quantity always keeps its intrinsic width; the label and dotted
+   leader yield space first. */
+.result-row.compact-result-row{
+  min-width:0;
+}
+
+.result-row.compact-result-row .result-label{
+  flex:1 1 0;
+  min-width:0;
+}
+
+.result-row.compact-result-row .result-leader{
+  flex:1 10 18px;
+  min-width:0;
+}
+
+.result-row.compact-result-row .result-qty{
+  flex:0 0 max-content;
+  width:max-content;
+  min-width:max-content;
+  max-width:none;
+  white-space:nowrap;
+  overflow:visible;
+  padding-left:2px;
+}
+
+/* Give the rightmost number a little breathing room from the card edge. */
+.result-row.compact-result-row{
+  padding-right:10px;
+}
+
+/* At especially narrow widths, sacrifice the dotted leader before
+   allowing the quantity to become cramped. */
+@media (max-width:1180px){
+  .result-row.compact-result-row{
+    gap:5px;
+  }
+  .result-row.compact-result-row .result-leader{
+    flex-basis:8px;
+  }
+}
+
+@media (max-width:760px){
+  .result-row.compact-result-row .result-leader{
+    display:none;
+  }
+  .result-row.compact-result-row .result-label{
+    padding-right:6px;
+  }
+}
