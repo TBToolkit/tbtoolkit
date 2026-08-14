@@ -171,7 +171,7 @@ function reset(){
 
 async function init(){
   try{
-    const res=await fetch('data/chest-data.json?v=36',{cache:'no-store'});
+    const res=await fetch('data/chest-data.json?v=54',{cache:'no-store'});
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     payload=await res.json();records=payload.records||[];
     populateFilters();apply();
