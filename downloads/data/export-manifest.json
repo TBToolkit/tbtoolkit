@@ -8,7 +8,7 @@
   },
   "chests": {
     "label": "Chest Data",
-    "records": 46,
+    "records": 47,
     "csv": "downloads/data/chests.csv",
     "json": "downloads/data/chests.json",
     "xlsx": "downloads/data/chests.xlsx"
@@ -36,7 +36,7 @@
   },
   "all": {
     "label": "All TB Toolkit Data",
-    "records": 631,
+    "records": 632,
     "csv": "downloads/data/all-data-csv.zip",
     "json": "downloads/data/all-data.json",
     "xlsx": "downloads/data/all-data.xlsx"
