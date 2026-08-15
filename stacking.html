@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=44" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=56" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=44" type="module"></script>
+<script src="js/epic-stacker.js?v=56" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -75,14 +75,49 @@
 <details class="advanced advanced-settings-panel">
 <summary>Advanced Settings</summary>
 <div class="advanced-settings-content">
+
 <div class="advanced-health-block">
 <h3>Health Inputs</h3>
 <div class="health-grid">
-<label>Monster Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="numeric" type="text" value="1600"/><span>%</span></div></label>
-<label>Human Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="humanHealth" inputmode="numeric" type="text" value="1500"/><span>%</span></div></label>
-<label>Epic Hunter Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="epicHunterHealth" inputmode="numeric" type="text" value="859"/><span>%</span></div></label>
+<label>Monster Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div></label>
+<label>Human Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="humanHealth" inputmode="decimal" type="text" value="1500"/><span>%</span></div></label>
+<label>Epic Hunter Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text" value="859"/><span>%</span></div></label>
 </div>
-<details class="health-help-details"><summary>Using your own Health % values?</summary><p>Use a recent battle report against the same Epic. Open one Monster unit, one Human unit, and one Epic Hunter unit, then enter the Health % shown in each unit's Stats.</p></details>
+</div>
+
+<div class="epic-v2-only">
+<div class="advanced-divider"></div>
+<h3>Strength &amp; Combat</h3>
+<div class="combat-input-grid">
+<label>Monster Strength<div class="percent-field"><input class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div></label>
+<label>Strength Against Epic<div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></label>
+<label>Monster Double Damage<div class="percent-field"><input class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div></label>
+<label>Monster Strike Twice<div class="percent-field"><input class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div></label>
+</div>
+
+<label class="checkbox-row compact-family-override"><input id="useCustomFamilyBonuses" type="checkbox"/><span>Use custom Human / Epic Hunter bonuses</span></label>
+
+<div class="derived-family-grid">
+<section>
+<h4>Human</h4>
+<label>Strength<div class="percent-field"><input class="epic-input family-derived-field" id="humanStrength" inputmode="decimal" type="text"/><span>%</span></div></label>
+<label>Double Damage<div class="percent-field"><input class="epic-input family-derived-field" id="humanDD" inputmode="decimal" type="text"/><span>%</span></div></label>
+<label>Strike Twice<div class="percent-field"><input class="epic-input family-derived-field" id="humanST" inputmode="decimal" type="text"/><span>%</span></div></label>
+</section>
+<section>
+<h4>Epic Hunter</h4>
+<label>Strength<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div></label>
+<label>Double Damage<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div></label>
+<label>Strike Twice<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div></label>
+</section>
+</div>
+<p class="setting-note epic-v2-note">Human values default to Monster −100 percentage points for Health/Strength. Epic Hunter defaults to Monster −741. DD is shared; ST defaults to Monster −5 points. Enable the override only if your account differs.</p>
+</div>
+
+<div class="advanced-row layer-separation-control custom-v1-only"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">2.50%</output></div><input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="2.50"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">2.50%</span><span id="separationMax">5.00%</span></div></div>
+<button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
+</div>
+</details>
 </div>
 <div class="advanced-row layer-separation-control"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.40%</output></div><input class="separation-slider" id="rankSeparation" max="1" min="0" step="0.01" type="range" value="0.40"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div></div>
 <button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
@@ -143,6 +178,23 @@
 <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
 </div>
 </div>
+<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
+<div class="prediction-summary">
+<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
+<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
+</div>
+<details class="battle-details">
+<summary>Battle Details</summary>
+<div class="prediction-meta" id="predictionMeta"></div>
+<div class="prediction-table-wrap">
+<table class="prediction-table">
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
+<tbody id="predictionRows"></tbody>
+</table>
+</div>
+</details>
+</section>
 <div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden id="resultGroups">
 <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
