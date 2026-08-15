@@ -942,3 +942,174 @@ details.advanced{margin-top:8px;padding-top:7px}
     padding-right:6px;
   }
 }
+
+
+/* ==========================================================================
+   v56 — Epic Stacker v2 production integration
+   ========================================================================== */
+
+.epic-v2-only[hidden],
+.custom-v1-only[hidden]{display:none!important}
+
+.advanced-divider{
+  height:1px;
+  margin:4px 0 12px;
+  background:#263848;
+}
+
+.combat-input-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(130px,170px));
+  gap:10px 14px;
+  justify-content:start;
+}
+.combat-input-grid>label,
+.derived-family-grid label{
+  color:#aeb9c3;
+  font-size:.64rem;
+  font-weight:800;
+}
+.combat-input-grid .percent-field,
+.derived-family-grid .percent-field{
+  width:112px;
+  margin-top:5px;
+}
+.combat-input-grid .epic-input,
+.derived-family-grid .epic-input{
+  width:100%;
+}
+
+.compact-family-override{
+  display:flex;
+  width:max-content;
+  max-width:100%;
+  min-height:34px;
+  margin:12px 0 4px;
+  padding:0;
+  background:transparent;
+  border:0;
+}
+
+.derived-family-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(150px,1fr));
+  gap:14px;
+  margin-top:8px;
+}
+.derived-family-grid section{
+  padding:10px;
+  border:1px solid #293d4e;
+  border-radius:8px;
+  background:#091723;
+}
+.derived-family-grid h4{
+  margin:0 0 8px;
+  color:#e8edf1;
+  font-size:.72rem;
+  text-transform:uppercase;
+}
+.derived-family-grid label{
+  display:block;
+  margin-top:8px;
+}
+.family-derived-field[readonly]{
+  color:#8fa0af;
+  background:#07111a;
+  border-color:#263645;
+  cursor:default;
+}
+.epic-v2-note{max-width:570px}
+
+.epic-prediction-panel{
+  margin:10px 10px 0;
+  padding:10px;
+  border:1px solid #2e4355;
+  border-radius:8px;
+  background:#081722;
+}
+.prediction-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.prediction-summary>div{
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:7px;
+  background:#0b1c29;
+}
+.prediction-summary span{
+  display:block;
+  color:#8293a1;
+  font-size:.58rem;
+  font-weight:850;
+  text-transform:uppercase;
+}
+.prediction-summary strong{
+  display:block;
+  margin-top:4px;
+  color:#f0f3f5;
+  font-size:.86rem;
+}
+.battle-details{
+  margin-top:9px;
+  border-top:1px solid rgba(255,255,255,.06);
+  padding-top:8px;
+}
+.battle-details>summary{
+  cursor:pointer;
+  color:#aebbc6;
+  font-size:.65rem;
+  font-weight:850;
+}
+.prediction-meta{
+  margin:8px 0;
+  color:#8798a7;
+  font-size:.62rem;
+  line-height:1.45;
+}
+.prediction-table-wrap{overflow-x:auto}
+.prediction-table{
+  width:100%;
+  min-width:690px;
+  border-collapse:collapse;
+  font-size:.59rem;
+}
+.prediction-table th,
+.prediction-table td{
+  padding:6px 7px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  text-align:right;
+  white-space:nowrap;
+}
+.prediction-table th:first-child,
+.prediction-table td:first-child{text-align:left}
+.prediction-table th{
+  color:#8193a2;
+  text-transform:uppercase;
+  font-size:.53rem;
+}
+.prediction-table td{color:#c9d1d8}
+
+.optimizing-status{
+  color:#f0a51a!important;
+}
+.optimizing-status::before{
+  content:"";
+  display:inline-block;
+  width:8px;height:8px;
+  margin-right:6px;
+  border:2px solid rgba(240,165,26,.28);
+  border-top-color:#f0a51a;
+  border-radius:50%;
+  animation:epicSpin .7s linear infinite;
+  vertical-align:-1px;
+}
+@keyframes epicSpin{to{transform:rotate(360deg)}}
+
+@media(max-width:760px){
+  .combat-input-grid{grid-template-columns:1fr 1fr}
+  .derived-family-grid{grid-template-columns:1fr}
+  .prediction-summary{grid-template-columns:1fr}
+  .epic-prediction-panel{margin:8px 7px 0;padding:8px}
+}
