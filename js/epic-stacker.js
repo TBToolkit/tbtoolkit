@@ -818,7 +818,6 @@ function validate(){
 function showValidation(errors){if(!errors.length){els.validationBox.classList.remove('show');els.validationBox.innerHTML='';return;}els.validationBox.innerHTML=`<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;els.validationBox.classList.add('show');}
 function clearResults(message='Enter your values and select units.'){clearClassicBattleDetails();els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.classList.remove('optimizing-status');els.resultStatus.textContent=message;clearPrediction();for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
 
-
 function clearClassicBattleDetails(){
   if(els.classicBattleDetails)els.classicBattleDetails.hidden=true;
   if(els.classicBattleRows)els.classicBattleRows.innerHTML='';
