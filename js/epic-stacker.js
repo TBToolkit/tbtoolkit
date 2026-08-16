@@ -89,6 +89,9 @@ function setDerivedField(id,value,readonly=true){
   if(!els[id])return;
   els[id].value=Number.isFinite(Number(value))?String(Math.max(0,Number(value))):'0';
   els[id].readOnly=readonly;
+  els[id].disabled=readonly;
+  els[id].tabIndex=readonly?-1:0;
+  els[id].setAttribute('aria-readonly',String(readonly));
 }
 function syncDerivedEpicBonuses(){
   if(activeMode!=='epic')return;
@@ -108,7 +111,11 @@ function syncDerivedEpicBonuses(){
     setDerivedField('epicHunterST',Math.max(0,st-5),true);
   }else{
     for(const id of ['humanHealth','epicHunterHealth','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST']){
-      if(els[id])els[id].readOnly=false;
+      if(!els[id])continue;
+      els[id].readOnly=false;
+      els[id].disabled=false;
+      els[id].tabIndex=0;
+      els[id].setAttribute('aria-readonly','false');
     }
   }
 }
@@ -282,8 +289,8 @@ function configureModeUI(){
     els.separationMin.textContent='0%';els.separationMid.textContent='2.50%';els.separationMax.textContent='5.00%';
   }
   const nums=document.querySelectorAll('.output-section-number');
-  if(nums[0])nums[0].textContent=epic?'3':'4';
-  if(nums[1])nums[1].textContent=epic?'4':'5';
+  if(nums[0])nums[0].textContent=epic?'4':'4';
+  if(nums[1])nums[1].textContent=epic?'5':'5';
   syncDerivedEpicBonuses();
 }
 function applyStateToInputs(){
@@ -881,10 +888,21 @@ function wireEvents(){
   }
 
   const advancedIds=['monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'];
+  const editableAdvancedOrder=()=>advancedIds.filter(id=>els[id]&&!els[id].disabled&&!els[id].readOnly&&els[id].offsetParent!==null);
   for(const id of advancedIds){
     const input=els[id];if(!input)continue;
     input.addEventListener('focus',()=>requestAnimationFrame(()=>input.select()));
-    input.addEventListener('pointerup',e=>{e.preventDefault();input.select();});
+    input.addEventListener('pointerup',e=>{if(input.disabled||input.readOnly)return;e.preventDefault();input.select();});
+    input.addEventListener('keydown',e=>{
+      if((e.key!=='Tab'&&e.key!=='Enter')||input.disabled||input.readOnly)return;
+      const order=editableAdvancedOrder();
+      const index=order.indexOf(id);
+      if(index<0||order.length<2)return;
+      e.preventDefault();
+      const step=e.shiftKey&&e.key==='Tab'?-1:1;
+      const next=els[order[(index+step+order.length)%order.length]];
+      next.focus();requestAnimationFrame(()=>next.select());
+    });
     input.addEventListener('input',()=>{
       if(activeMode==='epic'&&['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
       recalculate();
