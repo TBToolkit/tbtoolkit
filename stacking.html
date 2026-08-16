@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=59" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=63" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=61" type="module"></script>
+<script src="js/epic-stacker.js?v=63" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -30,8 +30,9 @@
 <div>
 <div class="breadcrumb">Home / Stacking Calculator</div>
 <h1>Stacking Calculator</h1>
-<div aria-label="Calculator mode" class="mode-switch" role="group">
+<div aria-label="Calculator mode" class="mode-switch three-mode-switch" role="group">
 <button aria-pressed="true" class="mode-button active" data-mode="epic" type="button">Epic Stacker</button>
+<button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer</button>
 <button aria-pressed="false" class="mode-button" data-mode="custom" type="button">Custom Stacker</button>
 </div>
 <p class="mode-description" id="modeDescription">Automatically orders selected squads for Epic battles.</p>
@@ -90,7 +91,7 @@
 </div>
 </div>
 
-<div class="epic-v2-only">
+<div class="optimizer-only">
 <div class="advanced-divider"></div>
 <h3>Strength &amp; Combat</h3>
 <div class="combat-input-grid">
@@ -119,7 +120,7 @@
 <p class="setting-note epic-v2-note">Human values default to Monster −100 percentage points for Health/Strength. Epic Hunter defaults to Monster −741. DD is shared; ST defaults to Monster −5 points. Enable the override only if your account differs.</p>
 </div>
 
-<div class="custom-v1-only">
+<div class="separation-mode-only">
 <div class="advanced-divider"></div>
 <div class="advanced-row layer-separation-control">
 <div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">2.50%</output></div>
@@ -163,7 +164,7 @@
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
-<div class="selection-optimize-row epic-v2-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
+<div class="selection-optimize-row optimizer-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
 </section>
 
 <section class="topdown-panel order-view" hidden id="orderView">
@@ -188,7 +189,7 @@
 <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
 </div>
 </div>
-<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
+<section class="epic-prediction-panel optimizer-only" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
 <div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
