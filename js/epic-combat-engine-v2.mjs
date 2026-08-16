@@ -1,3 +1,4 @@
+export const EPIC_COMBAT_ENGINE_BUILD = '2.0';
 const TARGETS = Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 
 const BONUS_FAMILY_BY_SPECIES = Object.freeze({

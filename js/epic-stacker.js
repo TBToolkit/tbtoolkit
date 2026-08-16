@@ -5,7 +5,7 @@ const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const DATA_URLS={troop:'data/troops.json',monster:'data/monsters.json',mercenary:'data/mercenaries.json'};
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
-let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';
+let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;
 function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
@@ -268,7 +268,9 @@ function renderPrediction(opt){
   els.damagePerThousandGold.textContent=formatDamage(perThousand);
   const minSep=r.separationSummary?.minPct;
   const improvement=opt.diagnostics?.improvementPct;
-  els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs seed: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Minimum health separation: ${minSep.toFixed(4)}% · `:''}${opt.diagnostics?.evaluations?.toLocaleString('en-US')??'—'} candidates evaluated`;
+  const run=lastEpicRunDiagnostics;
+  const buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'';
+  els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs seed: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Minimum health separation: ${minSep.toFixed(4)}% · `:''}${opt.diagnostics?.evaluations?.toLocaleString('en-US')??'—'} candidates evaluated${buildText}`;
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
   els.predictionRows.innerHTML=rows.map(s=>`<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`).join('');
 }
@@ -332,7 +334,7 @@ function startEpicOptimization(){
   els.resultStatus.classList.add('optimizing-status');
   openOptimizerModal();
 
-  epicWorker=new Worker('js/epic-optimizer-worker.mjs?v=59',{type:'module'});
+  epicWorker=new Worker('js/epic-optimizer-worker.mjs?v=61',{type:'module'});
   epicWorker.onmessage=(event)=>{
     const msg=event.data??{};
     if(msg.requestId!==requestId)return;
@@ -353,6 +355,13 @@ function startEpicOptimization(){
     }
     if(msg.type==='result'){
       try{
+        lastEpicRunDiagnostics=msg.diagnostics??null;
+        console.info('[TB Toolkit Epic Optimizer]',{
+          build:lastEpicRunDiagnostics,
+          expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,
+          capacities:msg.payload?.result?.capacities,
+          quantities:msg.payload?.quantities
+        });
         updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.evaluations});
         renderEpicOptimizedResult(msg.payload);
         epicResultCurrent=true;
@@ -979,7 +988,7 @@ function recalculate(){
   }
 }
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
-function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();epicResultCurrent=false;lastOptimizedEpicSignature='';readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
+function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();epicResultCurrent=false;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
 function resetAdvancedSettings(){
   const defaults=defaultInputs(activeMode);
   const i=modeState().inputs;

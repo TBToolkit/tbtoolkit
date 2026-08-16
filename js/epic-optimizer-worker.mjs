@@ -1,10 +1,10 @@
-import { optimizeEpicQuantities } from './epic-quantity-optimizer.mjs';
+import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=61';
 
 let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=59', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=61', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();
@@ -37,7 +37,22 @@ self.onmessage = async (event)=>{
       }
     });
     self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
-    self.postMessage({type:'result',requestId,payload:result});
+    const quantities=result?.quantities??{};
+    const quantityFingerprint=Object.keys(quantities).sort().map(k=>`${k}:${quantities[k]}`).join('|');
+    self.postMessage({
+      type:'result',
+      requestId,
+      payload:result,
+      diagnostics:{
+        optimizerBuild:EPIC_OPTIMIZER_BUILD,
+        engineBuild:'2.0',
+        armyDatabase:'ARMY9-126edf91c542',
+        armyCount:Array.isArray(army)?army.length:0,
+        quantityFingerprint,
+        inputPayload:msg.bonuses,
+        capacityLimits:msg.capacityLimits
+      }
+    });
   }catch(error){
     self.postMessage({
       type:'error',
