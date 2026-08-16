@@ -1418,3 +1418,61 @@ body.optimizer-modal-open{overflow:hidden}
 .inline-info-help{position:relative;display:inline-block}.inline-info-help>summary{display:grid;place-items:center;width:22px;height:22px;padding:0;list-style:none;cursor:pointer;border:1px solid #496075;border-radius:50%;color:#b9c7d2;background:#0b1a26;font-size:.69rem;font-weight:900}.inline-info-help>summary::-webkit-details-marker{display:none}.inline-info-help[open]>summary{color:#10161b;background:#f0a51a;border-color:#f0a51a}
 .inline-info-card{position:absolute;z-index:30;left:0;top:calc(100% + 7px);width:min(360px,calc(100vw - 38px));padding:11px 12px;border:1px solid #40576a;border-radius:9px;background:#0b1924;box-shadow:0 12px 35px rgba(0,0,0,.38);color:#aebbc6;font-size:.67rem;line-height:1.45}.inline-info-card strong{display:block;margin-bottom:5px;color:#edf2f5;font-size:.7rem}.inline-info-card p{margin:5px 0 0}
 @media(max-width:640px){.inline-info-card{position:fixed;left:18px;right:18px;top:auto;bottom:18px;width:auto;max-height:45vh;overflow:auto}}
+
+
+/* ==========================================================================
+   v66 — Classic/Custom ELD metrics + unified input typography
+   ========================================================================== */
+
+.epic-input,
+.percent-field .epic-input,
+.health-percent-field .epic-input,
+.combat-input-grid .epic-input,
+.derived-family-grid .epic-input,
+.limit-control .epic-input{
+  font-family:inherit!important;
+  font-size:.86rem!important;
+  font-weight:700!important;
+  line-height:1.15!important;
+  letter-spacing:normal!important;
+}
+
+.percent-field>span,
+.health-percent-field>span,
+.combat-input-grid .percent-field>span,
+.derived-family-grid .percent-field>span{
+  font-family:inherit!important;
+  font-size:.86rem!important;
+  font-weight:700!important;
+  line-height:1!important;
+}
+
+.classic-prediction-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin:8px 0 10px;
+}
+.classic-prediction-summary>div{
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:7px;
+  background:#0b1c29;
+}
+.classic-prediction-summary span{
+  display:block;
+  color:#8293a1;
+  font-size:.58rem;
+  font-weight:850;
+  text-transform:uppercase;
+}
+.classic-prediction-summary strong{
+  display:block;
+  margin-top:4px;
+  color:#f0f3f5;
+  font-size:.86rem;
+}
+
+@media(max-width:760px){
+  .classic-prediction-summary{grid-template-columns:1fr}
+}
