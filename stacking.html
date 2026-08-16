@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=67" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=68" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=67" type="module"></script>
+<script src="js/epic-stacker.js?v=68" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -216,6 +216,32 @@
 </section>
 <details class="battle-details classic-battle-details separation-mode-only" hidden id="classicBattleDetails">
 <summary>Battle Details</summary>
+<div class="prediction-meta" id="classicBattleMeta"></div>
+<div class="prediction-table-wrap">
+<table class="prediction-table classic-details-table">
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attack Order</th><th>Squad Health</th><th>Capacity</th></tr></thead>
+<tbody id="classicBattleRows"></tbody>
+</table>
+</div>
+</details>
+<div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
+<div class="result-groups" hidden id="resultGroups">
+<section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
+<section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
+<section class="result-group"><h3>Troops</h3><div class="result-list" id="troopResults"></div></section>
+</div>
+<div class="calculator-utility-row result-utility"><div></div><button class="epic-action danger compact-reset" id="resetCalculator" type="button">Reset Calculator</button></div>
+</section>
+
+<section class="topdown-panel layer-chart-panel" id="layerChartPanel">
+<div class="layer-chart-head">
+<div><div class="section-number"><span class="section-kicker output-section-number">4</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
+<div aria-label="Dying order direction" class="die-direction"><span>Dies First</span><b>→</b><span>Dies Last</span></div>
+</div>
+<div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
+<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view layer-health separation.</div>
+<div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
+<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
 </div>
 </div>
