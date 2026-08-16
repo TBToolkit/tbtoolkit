@@ -5,7 +5,7 @@ const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const DATA_URLS={troop:'data/troops.json',monster:'data/monsters.json',mercenary:'data/mercenaries.json'};
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
-let epicWorker=null;let epicRequestId=0;let epicDebounceTimer=null;
+let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;
 function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
@@ -18,7 +18,7 @@ useCustomFamilyBonuses:false,
 arachne:false,rankSeparation:mode==='epic'?'0.10':'2.50'};}
 const state={modes:{epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]}}}};
 function modeState(){return state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','cancelOptimization'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -96,6 +96,7 @@ function setDerivedField(id,value,readonly=true){
 function syncDerivedEpicBonuses(){
   if(activeMode!=='epic')return;
   const custom=!!els.useCustomFamilyBonuses?.checked;
+  if(els.customFamilyBonusFields)els.customFamilyBonusFields.hidden=!custom;
   const mh=parseNumber(els.monsterHealth?.value);
   const ms=parseNumber(els.monsterStrength?.value);
   const dd=parseNumber(els.monsterDD?.value);
@@ -155,8 +156,59 @@ function effectiveEpicCapacityLimits(){
   };
 }
 function cancelEpicOptimization(){
-  if(epicDebounceTimer){clearTimeout(epicDebounceTimer);epicDebounceTimer=null;}
   if(epicWorker){epicWorker.terminate();epicWorker=null;}
+  closeOptimizerModal();
+}
+
+function setOptimizeButtonState(){
+  if(!els.optimizeArmy)return;
+  const any=Object.values(modeState().selectedIds).some(a=>a.length);
+  const errors=any?validate():[];
+  els.optimizeArmy.disabled=!any||errors.length>0||!!epicWorker;
+  els.optimizeArmy.textContent=epicResultCurrent?'Re-optimize Army':'Optimize Army';
+  if(!any)els.optimizeHelp.textContent='Select the units you want to include.';
+  else if(errors.length)els.optimizeHelp.textContent='Complete the required inputs before optimizing.';
+  else if(epicResultCurrent)els.optimizeHelp.textContent='Change any input or selection, then re-optimize when ready.';
+  else els.optimizeHelp.textContent='Ready. Click Optimize Army to calculate the best quantities.';
+}
+function openOptimizerModal(){
+  if(!els.optimizerModal)return;
+  els.optimizerModal.hidden=false;
+  document.body.classList.add('optimizer-modal-open');
+  updateOptimizerProgress({phase:'loading',progressPct:0,evaluations:0});
+}
+function closeOptimizerModal(){
+  if(!els.optimizerModal)return;
+  els.optimizerModal.hidden=true;
+  document.body.classList.remove('optimizer-modal-open');
+}
+function optimizationHeadline(progress){
+  if(progress.phase==='loading')return 'Loading the validated army database…';
+  if(progress.phase==='seed')return 'Building a feasible starting health ladder…';
+  if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
+  const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
+  if(i<2)return 'Testing broad quantity reallocations…';
+  if(i<5)return 'Refining squad quantities and death order…';
+  if(i<n-1)return 'Fine-tuning the highest-value quantity changes…';
+  return 'Running the final precision pass…';
+}
+function updateOptimizerProgress(progress={}){
+  const pct=Math.max(0,Math.min(100,Math.round(Number(progress.progressPct||0))));
+  if(els.optimizerProgressBar)els.optimizerProgressBar.style.width=`${pct}%`;
+  if(els.optimizerProgressTrack)els.optimizerProgressTrack.setAttribute('aria-valuenow',String(pct));
+  if(els.optimizerProgressPercent)els.optimizerProgressPercent.textContent=`${pct}%`;
+  if(els.optimizerProgressHeadline)els.optimizerProgressHeadline.textContent=optimizationHeadline(progress);
+  if(els.optimizerProgressEvaluations){
+    const e=Number(progress.evaluations||0);
+    els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} candidates evaluated`:'';
+  }
+  if(els.optimizerProgressDetail){
+    if(Number.isFinite(Number(progress.expectedLifetimeDamage))&&Number(progress.expectedLifetimeDamage)>0){
+      els.optimizerProgressDetail.textContent=`Current best expected lifetime damage: ${formatDamage(progress.expectedLifetimeDamage)}. The optimizer is continuing to search for a better feasible army.`;
+    }else{
+      els.optimizerProgressDetail.textContent='The optimizer evaluates candidate integer quantities with the validated two-initiative battle simulation.';
+    }
+  }
 }
 function formatDamage(value){
   const n=Number(value)||0;
@@ -225,48 +277,77 @@ function renderEpicOptimizedResult(opt){
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
 }
-function queueEpicOptimization(){
-  cancelEpicOptimization();
+function startEpicOptimization(){
+  if(activeMode!=='epic'||epicWorker)return;
+  readInputs();
+  syncDerivedEpicBonuses();
+  readInputs();
+  const any=Object.values(modeState().selectedIds).some(a=>a.length);
+  const errors=any?validate():['Select units to build your stack.'];
+  showValidation(errors);
+  if(errors.length){setOptimizeButtonState();return;}
+
+  resolveAutoFills(baseEngineInputs());
   const requestId=++epicRequestId;
+  epicResultCurrent=false;
+  els.optimizeArmy.disabled=true;
   els.resultStatus.textContent='Optimizing quantities…';
   els.resultStatus.classList.add('optimizing-status');
-  clearPrediction();
-  epicDebounceTimer=setTimeout(()=>{
-    epicDebounceTimer=null;
-    epicWorker=new Worker('js/epic-optimizer-worker.mjs?v=56',{type:'module'});
-    epicWorker.onmessage=(event)=>{
-      const msg=event.data??{};
-      if(msg.requestId!==requestId)return;
-      if(msg.type==='error'){
-        console.error(msg.message,msg.stack);
-        els.resultStatus.classList.remove('optimizing-status');
-        showValidation([msg.message||'The Epic optimizer could not complete the stack.']);
-        clearResults('Optimization error.');
-        return;
-      }
-      if(msg.type==='result'){
-        try{renderEpicOptimizedResult(msg.payload);}
-        catch(error){
-          console.error(error);
-          showValidation([error.message||'The Epic optimizer result could not be rendered.']);
-          clearResults('Optimization error.');
-        }
-      }
-    };
-    epicWorker.onerror=(event)=>{
-      if(requestId!==epicRequestId)return;
-      console.error(event);
+  openOptimizerModal();
+
+  epicWorker=new Worker('js/epic-optimizer-worker.mjs?v=59',{type:'module'});
+  epicWorker.onmessage=(event)=>{
+    const msg=event.data??{};
+    if(msg.requestId!==requestId)return;
+    if(msg.type==='progress'){
+      updateOptimizerProgress(msg.payload);
+      return;
+    }
+    if(msg.type==='error'){
+      console.error(msg.message,msg.stack);
+      if(epicWorker){epicWorker.terminate();epicWorker=null;}
+      closeOptimizerModal();
       els.resultStatus.classList.remove('optimizing-status');
-      showValidation(['The Epic optimizer worker encountered an error.']);
+      showValidation([msg.message||'The Epic optimizer could not complete the stack.']);
       clearResults('Optimization error.');
-    };
-    epicWorker.postMessage({
-      type:'optimize',requestId,
-      selectedIds:[...modeState().selectedIds.troop,...modeState().selectedIds.monster,...modeState().selectedIds.mercenary],
-      bonuses:epicBonusPayload(),
-      capacityLimits:effectiveEpicCapacityLimits()
-    });
-  },250);
+      epicResultCurrent=false;
+      setOptimizeButtonState();
+      return;
+    }
+    if(msg.type==='result'){
+      try{
+        updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.evaluations});
+        renderEpicOptimizedResult(msg.payload);
+        epicResultCurrent=true;
+      }catch(error){
+        console.error(error);
+        showValidation([error.message||'The Epic optimizer result could not be rendered.']);
+        clearResults('Optimization error.');
+        epicResultCurrent=false;
+      }finally{
+        if(epicWorker){epicWorker.terminate();epicWorker=null;}
+        setTimeout(closeOptimizerModal,180);
+        setOptimizeButtonState();
+      }
+    }
+  };
+  epicWorker.onerror=(event)=>{
+    if(requestId!==epicRequestId)return;
+    console.error(event);
+    if(epicWorker){epicWorker.terminate();epicWorker=null;}
+    closeOptimizerModal();
+    els.resultStatus.classList.remove('optimizing-status');
+    showValidation(['The Epic optimizer worker encountered an error.']);
+    clearResults('Optimization error.');
+    epicResultCurrent=false;
+    setOptimizeButtonState();
+  };
+  epicWorker.postMessage({
+    type:'optimize',requestId,
+    selectedIds:[...modeState().selectedIds.troop,...modeState().selectedIds.monster,...modeState().selectedIds.mercenary],
+    bonuses:epicBonusPayload(),
+    capacityLimits:effectiveEpicCapacityLimits()
+  });
 }
 function configureModeUI(){
   const epic=activeMode==='epic';
@@ -292,6 +373,7 @@ function configureModeUI(){
   if(nums[0])nums[0].textContent=epic?'4':'4';
   if(nums[1])nums[1].textContent=epic?'5':'5';
   syncDerivedEpicBonuses();
+  setOptimizeButtonState();
 }
 function applyStateToInputs(){
   const i=modeState().inputs;
@@ -817,15 +899,28 @@ function recalculate(){
   readInputs();
   syncDerivedEpicBonuses();
   readInputs();
+
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
-  if(!any){cancelEpicOptimization();showValidation([]);clearResults('Select units to build your stack.');return;}
-  const errors=validate();showValidation(errors);
-  if(errors.length){cancelEpicOptimization();clearResults('Complete the required inputs.');return;}
   if(activeMode==='epic'){
-    resolveAutoFills(baseEngineInputs());
-    queueEpicOptimization();
+    if(epicWorker){epicWorker.terminate();epicWorker=null;closeOptimizerModal();}
+    const errors=any?validate():[];
+    showValidation(errors);
+    epicResultCurrent=false;
+    clearPrediction();
+    els.resultGroups.hidden=true;
+    els.resultEmpty.hidden=false;
+    els.resultEmpty.textContent=any&&!errors.length?'Click Optimize Army to calculate quantities.':'Quantities appear in Total Battle mobile-entry order.';
+    els.resultStatus.classList.remove('optimizing-status');
+    els.resultStatus.textContent=!any?'Select units to build your stack.':errors.length?'Complete the required inputs.':'Ready to optimize.';
+    resetCapacityRows();
+    resetLayerHealthChart();
+    setOptimizeButtonState();
     return;
   }
+
+  if(!any){showValidation([]);clearResults('Select units to build your stack.');return;}
+  const errors=validate();showValidation(errors);
+  if(errors.length){clearResults('Complete the required inputs.');return;}
   cancelEpicOptimization();
   try{
     const inputs=resolveAutoFills(baseEngineInputs());
@@ -846,7 +941,7 @@ function recalculate(){
   }
 }
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
-function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
+function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();epicResultCurrent=false;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
 function resetAdvancedSettings(){
   const defaults=defaultInputs(activeMode);
   const i=modeState().inputs;
@@ -924,6 +1019,15 @@ function wireEvents(){
     els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});
   }
   els.arachne.addEventListener('change',recalculate);
+  els.optimizeArmy.addEventListener('click',startEpicOptimization);
+  els.cancelOptimization.addEventListener('click',()=>{
+    if(epicWorker){epicWorker.terminate();epicWorker=null;}
+    closeOptimizerModal();
+    els.resultStatus.classList.remove('optimizing-status');
+    els.resultStatus.textContent='Optimization cancelled.';
+    epicResultCurrent=false;
+    setOptimizeButtonState();
+  });
 }
 async function init(){cacheElements();loadSavedState();applyStateToInputs();wireEvents();try{await loadData();configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
 init();

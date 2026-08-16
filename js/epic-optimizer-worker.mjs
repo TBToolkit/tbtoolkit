@@ -4,7 +4,7 @@ let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=56', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=59', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();
@@ -19,6 +19,7 @@ self.onmessage = async (event)=>{
   const requestId = msg.requestId;
   try{
     const army = await loadArmy();
+    self.postMessage({type:'progress', requestId, payload:{phase:'loading',progressPct:2}});
     const result = optimizeEpicQuantities({
       units: army,
       selectedIds: msg.selectedIds,
@@ -26,9 +27,17 @@ self.onmessage = async (event)=>{
       capacityLimits: msg.capacityLimits,
       seedSeparationPct: 0.10,
       minimumHealthSeparationPct: 0.01,
-      minimumQuantity: 1
+      minimumQuantity: 1,
+      onProgress:(progress)=>{
+        const stageCount=Math.max(1,Number(progress.stageCount||1));
+        const progressPct=progress.phase==='seed'
+          ? 8
+          : Math.min(96,10+Math.round(((Number(progress.stageIndex)+1)/stageCount)*86));
+        self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
+      }
     });
-    self.postMessage({type:'result', requestId, payload:result});
+    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
+    self.postMessage({type:'result',requestId,payload:result});
   }catch(error){
     self.postMessage({
       type:'error',

@@ -131,6 +131,7 @@ export function optimizeEpicQuantities({
   stageFractions = [0.05,0.02,0.01,0.005,0.002,0.001,0.0005,0.0002,0.0001],
   maxRoundsPerStage = 20,
   minimumQuantity = 1,
+  onProgress = null,
 }) {
   const selectedIdSet = new Set(selectedIds ?? []);
   const selectedNameSet = new Set(selectedNames ?? []);
@@ -150,6 +151,17 @@ export function optimizeEpicQuantities({
   let bestScore = result.expectedTotalLifetimeDamage;
   let evaluations = 1;
   const stages = [];
+  if (typeof onProgress === 'function') {
+    onProgress({
+      phase:'seed',
+      stageIndex:-1,
+      stageCount:stageFractions.length,
+      evaluations,
+      expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+      capacities:{...result.capacities},
+      minHealthSeparationPct:result.separationSummary.minPct,
+    });
+  }
 
   const groups = CAPACITY_TYPES.map(type => ({ type, units:selected.filter(u => u.capacityType===type) })).filter(g => g.units.length && limits[g.type] > 0);
 
@@ -244,6 +256,20 @@ export function optimizeEpicQuantities({
       capacities:{...result.capacities},
       minHealthSeparationPct:result.separationSummary.minPct,
     });
+    if (typeof onProgress === 'function') {
+      onProgress({
+        phase:'stage',
+        stageIndex:stages.length-1,
+        stageCount:stageFractions.length,
+        fraction:Number(fraction),
+        rounds,
+        acceptedMoves:stageAccepted,
+        evaluations,
+        expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+        capacities:{...result.capacities},
+        minHealthSeparationPct:result.separationSummary.minPct,
+      });
+    }
   }
 
   return {
