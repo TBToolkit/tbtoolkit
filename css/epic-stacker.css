@@ -1329,3 +1329,29 @@ body.optimizer-modal-open{overflow:hidden}
 @media(max-width:520px){
   .selection-area .selection-card-grid{grid-template-columns:1fr}
 }
+
+
+/* ==========================================================================
+   v63 — Three calculator modes + mobile-compatible Epic Optimizer
+   ========================================================================== */
+.optimizer-only[hidden],
+.separation-mode-only[hidden]{display:none!important}
+
+.three-mode-switch{
+  display:inline-flex;
+  flex-wrap:wrap;
+}
+.three-mode-switch .mode-button{white-space:nowrap}
+
+@media(max-width:640px){
+  .three-mode-switch{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+  }
+  .three-mode-switch .mode-button{
+    width:100%;
+    min-height:44px;
+    text-align:center;
+  }
+}
