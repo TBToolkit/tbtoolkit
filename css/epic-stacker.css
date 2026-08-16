@@ -1355,3 +1355,59 @@ body.optimizer-modal-open{overflow:hidden}
     text-align:center;
   }
 }
+
+
+/* ==========================================================================
+   v64 — shared health rules + classic/custom Battle Details
+   ========================================================================== */
+
+.beta-tag{
+  display:inline-block;
+  margin-left:4px;
+  padding:1px 5px;
+  border:1px solid rgba(240,165,26,.55);
+  border-radius:999px;
+  color:#f4b33a;
+  font-size:.54rem;
+  font-weight:900;
+  line-height:1.25;
+  vertical-align:1px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.mode-button.active .beta-tag{
+  color:#15100a;
+  border-color:rgba(21,16,10,.42);
+}
+
+.health-override-row{
+  width:max-content;
+  max-width:100%;
+  margin:10px 0 0;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.health-derived-note{
+  margin-top:5px;
+  max-width:520px;
+}
+
+.classic-battle-details{
+  margin:10px 12px 4px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.classic-battle-details[hidden]{display:none!important}
+.classic-details-table{
+  min-width:650px;
+}
+
+@media(max-width:640px){
+  .three-mode-switch .mode-button{
+    white-space:normal;
+  }
+  .health-override-row{
+    width:100%;
+  }
+}
