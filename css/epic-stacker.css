@@ -1213,3 +1213,119 @@ details.advanced{margin-top:8px;padding-top:7px}
   .selection-main-column>.selection-card-grid{grid-template-columns:1fr}
   .selection-main-column .selection-mercenaries{grid-column:auto}
 }
+
+
+/* ==========================================================================
+   v59 — manual Epic optimization + compact Advanced Settings
+   ========================================================================== */
+
+.advanced-settings-panel .epic-input,
+.advanced-settings-panel .percent-field .epic-input{
+  font-family:inherit;
+  font-size:.86rem;
+  font-weight:700;
+  line-height:1.15;
+}
+.advanced-settings-panel .percent-field>span{
+  font-size:.86rem;
+  line-height:1;
+}
+
+#customFamilyBonusFields[hidden]{display:none!important}
+
+.selection-prediction-grid{display:block;padding:0}
+.selection-main-column{display:block}
+.prediction-side-column{display:none!important}
+.selection-area .selection-card-grid{
+  grid-template-columns:repeat(5,minmax(150px,1fr));
+}
+
+.selection-optimize-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:14px;
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,.055);
+}
+.optimize-help{
+  color:#8293a2;
+  font-size:.67rem;
+  line-height:1.4;
+}
+.optimize-army-button{
+  min-width:170px;
+  min-height:42px;
+  background:linear-gradient(180deg,#f5ae2c,#df8f16);
+  border-color:#ffc055;
+  color:#091018;
+  font-weight:950;
+}
+.optimize-army-button:hover:not(:disabled){filter:brightness(1.08)}
+.optimize-army-button:disabled{opacity:.48;cursor:not-allowed}
+
+.result-panel>.epic-prediction-panel{margin:10px 12px 4px}
+.result-panel>.epic-prediction-panel .prediction-summary{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+body.optimizer-modal-open{overflow:hidden}
+.optimizer-modal{
+  position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:18px
+}
+.optimizer-modal[hidden]{display:none!important}
+.optimizer-modal-backdrop{
+  position:absolute;inset:0;background:rgba(2,8,13,.78);backdrop-filter:blur(3px)
+}
+.optimizer-dialog{
+  position:relative;z-index:1;width:min(520px,100%);
+  display:grid;grid-template-columns:42px minmax(0,1fr);gap:14px;
+  padding:20px;border:1px solid #40576a;border-radius:12px;
+  background:linear-gradient(145deg,#152431,#0c1822);
+  box-shadow:0 24px 70px rgba(0,0,0,.48)
+}
+.optimizer-spinner{
+  width:36px;height:36px;border:4px solid rgba(240,165,26,.18);
+  border-top-color:#f0a51a;border-radius:50%;animation:epicSpin .8s linear infinite
+}
+.optimizer-dialog-copy{min-width:0}
+.optimizer-eyebrow{
+  display:block;color:#f0a51a;font-size:.62rem;font-weight:900;
+  letter-spacing:.08em;text-transform:uppercase
+}
+.optimizer-dialog h2{margin:3px 0 5px;font-size:1.05rem;color:#f2f5f7}
+#optimizerProgressHeadline{margin:0 0 13px;color:#c8d2da;font-size:.78rem;font-weight:750}
+.optimizer-progress-track{
+  position:relative;height:10px;overflow:hidden;border:1px solid #33495a;
+  border-radius:999px;background:#06111a
+}
+.optimizer-progress-track i{
+  display:block;width:0;height:100%;border-radius:inherit;
+  background:linear-gradient(90deg,#64bb73,#a2dc48);transition:width .22s ease
+}
+.optimizer-progress-meta{
+  display:flex;justify-content:space-between;gap:10px;margin-top:6px;
+  color:#8293a2;font-size:.62rem
+}
+.optimizer-progress-detail{
+  min-height:2.7em;margin:11px 0 13px;color:#8fa0ae;
+  font-size:.67rem;line-height:1.45
+}
+.optimizer-cancel{min-width:90px}
+
+@media(max-width:1100px){
+  .selection-area .selection-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .selection-area .selection-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .selection-optimize-row{flex-direction:column;align-items:stretch}
+  .optimize-help{text-align:center}
+  .optimize-army-button{width:100%;min-height:48px;font-size:.88rem}
+  .result-panel>.epic-prediction-panel .prediction-summary{grid-template-columns:1fr}
+  .optimizer-dialog{grid-template-columns:1fr;width:min(440px,100%);padding:18px}
+  .optimizer-spinner{width:32px;height:32px}
+  .optimizer-cancel{width:100%;min-height:44px}
+}
+@media(max-width:520px){
+  .selection-area .selection-card-grid{grid-template-columns:1fr}
+}
