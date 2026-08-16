@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=63" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=64" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=63" type="module"></script>
+<script src="js/epic-stacker.js?v=64" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -32,8 +32,8 @@
 <h1>Stacking Calculator</h1>
 <div aria-label="Calculator mode" class="mode-switch three-mode-switch" role="group">
 <button aria-pressed="true" class="mode-button active" data-mode="epic" type="button">Epic Stacker</button>
-<button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer</button>
 <button aria-pressed="false" class="mode-button" data-mode="custom" type="button">Custom Stacker</button>
+<button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer <span class="beta-tag">Beta</span></button>
 </div>
 <p class="mode-description" id="modeDescription">Automatically orders selected squads for Epic battles.</p>
 </div>
@@ -89,6 +89,8 @@
 <label>Human Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="humanHealth" inputmode="decimal" type="text" value="1500"/><span>%</span></div></label>
 <label>Epic Hunter Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text" value="859"/><span>%</span></div></label>
 </div>
+<label class="checkbox-row health-override-row separation-mode-only"><input id="useCustomHealthInputs" type="checkbox"/><span>Use custom Human / Epic Hunter health</span></label>
+<p class="setting-note separation-mode-only health-derived-note">Human Health defaults to Monster Health −100 percentage points. Epic Hunter Health defaults to Monster Health −741.</p>
 </div>
 
 <div class="optimizer-only">
@@ -123,8 +125,8 @@
 <div class="separation-mode-only">
 <div class="advanced-divider"></div>
 <div class="advanced-row layer-separation-control">
-<div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">2.50%</output></div>
-<input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="2.50"/>
+<div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">0.50%</output></div>
+<input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="0.50"/>
 <div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">2.50%</span><span id="separationMax">5.00%</span></div>
 </div>
 <button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
@@ -206,6 +208,16 @@
 </div>
 </details>
 </section>
+<details class="battle-details classic-battle-details separation-mode-only" hidden id="classicBattleDetails">
+<summary>Battle Details</summary>
+<div class="prediction-meta" id="classicBattleMeta"></div>
+<div class="prediction-table-wrap">
+<table class="prediction-table classic-details-table">
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attack Order</th><th>Squad Health</th><th>Capacity</th></tr></thead>
+<tbody id="classicBattleRows"></tbody>
+</table>
+</div>
+</details>
 <div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden id="resultGroups">
 <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
