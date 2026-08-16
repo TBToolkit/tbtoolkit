@@ -1421,9 +1421,8 @@ body.optimizer-modal-open{overflow:hidden}
 
 
 /* ==========================================================================
-   v66 — Classic/Custom ELD metrics + unified input typography
+   v68 — unified calculator input typography
    ========================================================================== */
-
 .epic-input,
 .percent-field .epic-input,
 .health-percent-field .epic-input,
@@ -1436,7 +1435,6 @@ body.optimizer-modal-open{overflow:hidden}
   line-height:1.15!important;
   letter-spacing:normal!important;
 }
-
 .percent-field>span,
 .health-percent-field>span,
 .combat-input-grid .percent-field>span,
@@ -1446,39 +1444,3 @@ body.optimizer-modal-open{overflow:hidden}
   font-weight:700!important;
   line-height:1!important;
 }
-
-.classic-prediction-summary{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
-  margin:8px 0 10px;
-}
-.classic-prediction-summary>div{
-  padding:9px 10px;
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:7px;
-  background:#0b1c29;
-}
-.classic-prediction-summary span{
-  display:block;
-  color:#8293a1;
-  font-size:.58rem;
-  font-weight:850;
-  text-transform:uppercase;
-}
-.classic-prediction-summary strong{
-  display:block;
-  margin-top:4px;
-  color:#f0f3f5;
-  font-size:.86rem;
-}
-
-@media(max-width:760px){
-  .classic-prediction-summary{grid-template-columns:1fr}
-}
-
-
-/* v67 — Classic/Custom Battle Details no longer show ELD/economics because
-   those modes do not collect the combat-strength inputs required to make
-   those estimates meaningful. */
-.classic-prediction-summary{display:none!important}
