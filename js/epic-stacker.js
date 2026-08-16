@@ -5,7 +5,7 @@ const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const DATA_URLS={troop:'data/troops.json',monster:'data/monsters.json',mercenary:'data/mercenaries.json'};
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
-let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;
+let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';
 function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
@@ -160,6 +160,43 @@ function cancelEpicOptimization(){
   closeOptimizerModal();
 }
 
+
+function currentEpicEffectiveSignature(){
+  if(activeMode!=='epic')return'';
+  const i=modeState().inputs;
+  const selected={
+    troop:[...(modeState().selectedIds.troop||[])].sort(),
+    monster:[...(modeState().selectedIds.monster||[])].sort(),
+    mercenary:[...(modeState().selectedIds.mercenary||[])].sort()
+  };
+  const effective={
+    selected,
+    leadership:parseNumber(i.leadership),
+    authority:parseNumber(i.authority),
+    dominance:parseNumber(i.dominance),
+    autoLeadership:!!i.autoLeadership,
+    autoAuthority:!!i.autoAuthority,
+    autoDominance:!!i.autoDominance,
+    leadershipFill:parseNumber(i.leadershipFill),
+    authorityFill:parseNumber(i.authorityFill),
+    dominanceFill:parseNumber(i.dominanceFill),
+    arachne:!!i.arachne,
+    monsterHealth:parseNumber(i.monsterHealth),
+    humanHealth:parseNumber(i.humanHealth),
+    epicHunterHealth:parseNumber(i.epicHunterHealth),
+    monsterStrength:parseNumber(i.monsterStrength),
+    humanStrength:parseNumber(i.humanStrength),
+    epicHunterStrength:parseNumber(i.epicHunterStrength),
+    strengthAgainstEpic:parseNumber(i.strengthAgainstEpic),
+    monsterDD:parseNumber(i.monsterDD),
+    humanDD:parseNumber(i.humanDD),
+    epicHunterDD:parseNumber(i.epicHunterDD),
+    monsterST:parseNumber(i.monsterST),
+    humanST:parseNumber(i.humanST),
+    epicHunterST:parseNumber(i.epicHunterST)
+  };
+  return JSON.stringify(effective);
+}
 function setOptimizeButtonState(){
   if(!els.optimizeArmy)return;
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
@@ -319,6 +356,7 @@ function startEpicOptimization(){
         updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.evaluations});
         renderEpicOptimizedResult(msg.payload);
         epicResultCurrent=true;
+        lastOptimizedEpicSignature=currentEpicEffectiveSignature();
       }catch(error){
         console.error(error);
         showValidation([error.message||'The Epic optimizer result could not be rendered.']);
@@ -941,7 +979,7 @@ function recalculate(){
   }
 }
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic':'Custom'} Stacker inputs and selections on this device?`))return;state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
-function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();epicResultCurrent=false;readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
+function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();epicResultCurrent=false;lastOptimizedEpicSignature='';readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();recalculate();}
 function resetAdvancedSettings(){
   const defaults=defaultInputs(activeMode);
   const i=modeState().inputs;
@@ -1005,8 +1043,37 @@ function wireEvents(){
   }
 
   els.useCustomFamilyBonuses.addEventListener('change',()=>{
+    if(activeMode!=='epic'){
+      modeState().inputs.useCustomFamilyBonuses=els.useCustomFamilyBonuses.checked;
+      syncDerivedEpicBonuses();
+      recalculate();
+      return;
+    }
+
+    // Capture the values actually used by the optimizer before changing
+    // between derived/manual entry modes.
+    readInputs();
+    const before=currentEpicEffectiveSignature();
+
     modeState().inputs.useCustomFamilyBonuses=els.useCustomFamilyBonuses.checked;
-    syncDerivedEpicBonuses();recalculate();
+    syncDerivedEpicBonuses();
+    readInputs();
+    saveState();
+
+    const after=currentEpicEffectiveSignature();
+
+    // Merely opening/closing the custom-family controls is not a calculation
+    // change. Preserve the current optimized output when the effective values
+    // are unchanged.
+    if(before===after){
+      if(lastOptimizedEpicSignature && after===lastOptimizedEpicSignature){
+        epicResultCurrent=true;
+      }
+      setOptimizeButtonState();
+      return;
+    }
+
+    recalculate();
   });
 
   for(const id of ['leadershipFill','authorityFill','dominanceFill']){
