@@ -1113,3 +1113,134 @@ details.advanced{margin-top:8px;padding-top:7px}
   .prediction-summary{grid-template-columns:1fr}
   .epic-prediction-panel{margin:8px 7px 0;padding:8px}
 }
+
+
+/* ==========================================================================
+   v57 — Epic v2 housekeeping
+   ========================================================================== */
+
+/* Advanced Settings is intentionally always visible. */
+.advanced-settings-panel.always-open{
+  margin:0!important;
+  padding:0!important;
+}
+.advanced-settings-title{
+  margin:0 0 10px;
+  color:#eef2f5;
+  font-size:.82rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.035em;
+}
+.advanced-settings-panel.always-open .advanced-settings-content{
+  display:grid;
+  gap:14px;
+  padding-top:0;
+}
+
+/* Derived family values are display-only unless the override is enabled. */
+.family-derived-field[readonly]{
+  pointer-events:none;
+  user-select:none;
+  opacity:.72;
+  cursor:default;
+}
+.family-derived-field[readonly]:focus{
+  outline:none;
+  box-shadow:none;
+}
+
+/* Desktop: use the former empty right-side space for prediction output. */
+.selection-prediction-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(340px,390px);
+  gap:14px;
+  align-items:start;
+  padding:0 12px 12px;
+}
+.selection-main-column{
+  min-width:0;
+}
+.selection-main-column .selection-card-grid{
+  grid-template-columns:repeat(3,minmax(165px,1fr));
+  padding:0;
+}
+.selection-main-column .selection-mercenaries{
+  grid-column:span 2;
+}
+.prediction-side-column{
+  min-width:0;
+  border-left:1px solid #2a3d4d;
+  padding-left:14px;
+}
+.prediction-side-heading{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  margin-bottom:8px;
+}
+.prediction-side-heading h2{
+  margin:0;
+  color:#f0f3f5;
+  font-size:.82rem;
+  text-transform:uppercase;
+  letter-spacing:.035em;
+}
+.prediction-side-column .epic-prediction-panel{
+  margin:0;
+  padding:10px;
+}
+.prediction-side-column .prediction-summary{
+  grid-template-columns:1fr;
+}
+.prediction-side-column .prediction-table{
+  min-width:680px;
+}
+
+/* Result section no longer needs to reserve space for prediction. */
+.results-view .epic-prediction-panel{
+  margin:0;
+}
+
+@media(max-width:1180px){
+  .selection-prediction-grid{
+    grid-template-columns:1fr;
+  }
+  .prediction-side-column{
+    border-left:0;
+    border-top:1px solid #2a3d4d;
+    padding-left:0;
+    padding-top:12px;
+  }
+  .prediction-side-column .prediction-summary{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media(max-width:900px){
+  .selection-main-column .selection-card-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .selection-main-column .selection-mercenaries{
+    grid-column:1/-1;
+  }
+}
+
+@media(max-width:760px){
+  .selection-prediction-grid{
+    padding:0 10px 10px;
+  }
+  .prediction-side-column .prediction-summary{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:520px){
+  .selection-main-column .selection-card-grid{
+    grid-template-columns:1fr;
+  }
+  .selection-main-column .selection-mercenaries{
+    grid-column:auto;
+  }
+}
