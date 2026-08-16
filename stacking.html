@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=56" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=58" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=56" type="module"></script>
+<script src="js/epic-stacker.js?v=58" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -45,35 +45,41 @@
 <div><span class="section-kicker">1</span><h2>Army Limits</h2></div>
 <div class="auto-update-note"><span class="live-dot"></span>Auto-updating · saved on this device</div>
 </div>
+
 <div class="setup-grid">
 <div class="setup-block">
 <h3>Army Limits</h3>
 <div class="limit-list compact-limit-list">
+
 <div class="limit-row">
 <div class="limit-name">Leadership</div>
 <div class="limit-control limit-maximum"><label class="field-label" for="leadership">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="leadership" inputmode="numeric" placeholder="Enter value" type="text"/></div>
 <label class="auto-fill-toggle"><input checked id="autoLeadership" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="leadershipFill">Fill</label><div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
+
 <div class="limit-row">
 <div class="limit-name">Authority</div>
 <div class="limit-control limit-maximum"><label class="field-label" for="authority">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="authority" inputmode="numeric" placeholder="Enter value" type="text"/></div>
 <label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="authorityFill">Fill</label><div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="10.00"/><span>%</span></div></div>
 </div>
+
 <div class="limit-row">
 <div class="limit-name">Dominance</div>
 <div class="limit-control limit-maximum"><label class="field-label" for="dominance">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="dominance" inputmode="numeric" placeholder="Enter value" type="text"/></div>
 <label class="auto-fill-toggle"><input checked id="autoDominance" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="dominanceFill">Fill</label><div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
+
 </div>
 <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
 <div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
 </div>
+
 <div class="advanced-settings-column">
-<details class="advanced advanced-settings-panel">
-<summary>Advanced Settings</summary>
+<section class="advanced advanced-settings-panel always-open" aria-labelledby="advancedSettingsTitle">
+<div class="advanced-settings-title" id="advancedSettingsTitle">Advanced Settings</div>
 <div class="advanced-settings-content">
 
 <div class="advanced-health-block">
@@ -114,15 +120,18 @@
 <p class="setting-note epic-v2-note">Human values default to Monster −100 percentage points for Health/Strength. Epic Hunter defaults to Monster −741. DD is shared; ST defaults to Monster −5 points. Enable the override only if your account differs.</p>
 </div>
 
-<div class="advanced-row layer-separation-control custom-v1-only"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">2.50%</output></div><input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="2.50"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">2.50%</span><span id="separationMax">5.00%</span></div></div>
+<div class="custom-v1-only">
+<div class="advanced-divider"></div>
+<div class="advanced-row layer-separation-control">
+<div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">2.50%</output></div>
+<input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="2.50"/>
+<div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">2.50%</span><span id="separationMax">5.00%</span></div>
+</div>
 <button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
 </div>
-</details>
+
 </div>
-<div class="advanced-row layer-separation-control"><div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.40%</output></div><input class="separation-slider" id="rankSeparation" max="1" min="0" step="0.01" type="range" value="0.40"/><div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div></div>
-<button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
-</div>
-</details>
+</section>
 </div>
 </div>
 </section>
@@ -132,6 +141,9 @@
 <div><span class="section-kicker">2</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
 <button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button>
 </div>
+
+<div class="selection-prediction-grid">
+<div class="selection-main-column">
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
 <div class="selection-card-title"><div><h3>Guardsmen</h3><span id="guardsmanCount">0 selected</span></div><label class="category-master"><input id="guardsmanMaster" type="checkbox"/><span>All</span></label></div>
@@ -153,6 +165,28 @@
 <div class="selection-card-title"><div><h3>Mercenaries</h3><span id="mercenaryCardCount">0 selected</span></div><label class="category-master"><input id="mercenaryMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
+</div>
+</div>
+<aside class="prediction-side-column epic-v2-only">
+<div class="prediction-side-heading"><span class="section-kicker">3</span><h2>Prediction</h2></div>
+<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
+<div class="prediction-summary">
+<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
+<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
+</div>
+<details class="battle-details">
+<summary>Battle Details</summary>
+<div class="prediction-meta" id="predictionMeta"></div>
+<div class="prediction-table-wrap">
+<table class="prediction-table">
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
+<tbody id="predictionRows"></tbody>
+</table>
+</div>
+</details>
+</section>
+</aside>
 </div>
 </section>
 
@@ -178,23 +212,7 @@
 <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
 </div>
 </div>
-<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
-<div class="prediction-summary">
-<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
-<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
-<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
-</div>
-<details class="battle-details">
-<summary>Battle Details</summary>
-<div class="prediction-meta" id="predictionMeta"></div>
-<div class="prediction-table-wrap">
-<table class="prediction-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
-<tbody id="predictionRows"></tbody>
-</table>
-</div>
-</details>
-</section>
+
 <div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden id="resultGroups">
 <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
