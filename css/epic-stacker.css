@@ -1476,3 +1476,9 @@ body.optimizer-modal-open{overflow:hidden}
 @media(max-width:760px){
   .classic-prediction-summary{grid-template-columns:1fr}
 }
+
+
+/* v67 — Classic/Custom Battle Details no longer show ELD/economics because
+   those modes do not collect the combat-strength inputs required to make
+   those estimates meaningful. */
+.classic-prediction-summary{display:none!important}
