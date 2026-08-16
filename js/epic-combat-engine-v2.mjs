@@ -1,5 +1,11 @@
-export const EPIC_COMBAT_ENGINE_BUILD = '2.0';
-const TARGETS = Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
+export const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
+const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
+const TARGETS=TARGET_TYPES; // backward-compatible export alias
+function enemySquadsForBattle(arachne){
+ const copies=arachne?2:1,squads=[];
+ for(const type of TARGET_TYPES)for(let copy=1;copy<=copies;copy++)squads.push({id:`${type}-${copy}`,type,copy});
+ return squads;
+}
 
 const BONUS_FAMILY_BY_SPECIES = Object.freeze({
   BEAST: 'MONSTER', DRAGON: 'MONSTER', GIANT: 'MONSTER', ELEMENTAL: 'MONSTER',
@@ -110,19 +116,14 @@ export function buildSquad(unit, quantity, bonusInputs) {
   const pST = clampProbability(family.st);
 
   const commonBonus = 1 + family.strength + bonusInputs.strengthAgainstEpic + Number(unit.bonuses?.epic ?? 0) + (bonusInputs.arachne ? Number(unit.bonuses?.arachne ?? 0) : 0);
-  const targetDamages = TARGETS.map((target, targetOrder) => {
-    const matchup = Number(unit.bonuses?.[MATCHUP_KEY[target]] ?? 0);
-    return {
-      target,
-      targetOrder,
-      matchup,
-      deterministicDamage: q * Number(unit.baseStrength) * (commonBonus + matchup),
-    };
-  }).sort((a,b) => b.deterministicDamage - a.deterministicDamage || a.targetOrder - b.targetOrder);
-
-  const first = targetDamages[0];
-  const second = targetDamages.find(x => x.target !== first.target);
-  const expectedDamagePerOpportunity = (1 + pDD) * (first.deterministicDamage + pST * second.deterministicDamage);
+  const targetDamages=enemySquadsForBattle(bonusInputs.arachne).map((enemy,targetOrder)=>{
+    const matchup=Number(unit.bonuses?.[MATCHUP_KEY[enemy.type]]??0);
+    return {target:enemy.type,targetId:enemy.id,targetCopy:enemy.copy,targetOrder,matchup,
+      deterministicDamage:q*Number(unit.baseStrength)*(commonBonus+matchup)};
+  }).sort((a,b)=>b.deterministicDamage-a.deterministicDamage||a.targetOrder-b.targetOrder);
+  const first=targetDamages[0];
+  const second=targetDamages.find(x=>x.targetId!==first.targetId);
+  const expectedDamagePerOpportunity=(1+pDD)*(first.deterministicDamage+pST*second.deterministicDamage);
 
   return {
     id: unit.id,
@@ -147,8 +148,8 @@ export function buildSquad(unit, quantity, bonusInputs) {
     rawGoldRevivalCost: q * Number(unit.goldRevivalCost),
     pDD,
     pST,
-    firstStrike: { target: first.target, deterministicDamage: first.deterministicDamage, matchup: first.matchup },
-    secondStrike: { target: second.target, deterministicDamage: second.deterministicDamage, matchup: second.matchup },
+    firstStrike:{target:first.target,targetId:first.targetId,deterministicDamage:first.deterministicDamage,matchup:first.matchup},
+    secondStrike:{target:second.target,targetId:second.targetId,deterministicDamage:second.deterministicDamage,matchup:second.matchup},
     expectedDamagePerOpportunity,
   };
 }
@@ -173,7 +174,7 @@ function chooseEnemyTarget(squads, alive) {
   return best;
 }
 
-export function simulateInitiativeCase(squads, friendlyStarts) {
+export function simulateInitiativeCase(squads, friendlyStarts, enemySquadCount = 4) {
   const alive = new Set(squads.filter(s => s.quantity > 0).map(s => s.id));
   const attackOpportunities = Object.fromEntries(squads.map(s => [s.id, 0]));
   const lifetimeDamage = Object.fromEntries(squads.map(s => [s.id, 0]));
@@ -210,7 +211,7 @@ export function simulateInitiativeCase(squads, friendlyStarts) {
     let enemyAttacks = 0;
     let friendlyTurn = friendlyHasInitiative;
 
-    while (enemyAttacks < 4 && alive.size) {
+    while (enemyAttacks < enemySquadCount && alive.size) {
       if (friendlyTurn) friendlyAttack(attackedThisCycle);
       else { enemyAttack(); enemyAttacks += 1; }
       friendlyTurn = !friendlyTurn;
@@ -260,8 +261,9 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
     if (Number(quantity) > 0) squads.push(buildSquad(unit, Number(quantity), resolvedBonuses));
   }
 
-  const friendlyFirst = simulateInitiativeCase(squads, true);
-  const epicFirst = simulateInitiativeCase(squads, false);
+  const enemySquadCount=resolvedBonuses.arachne?8:4;
+  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
+  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount);
   const expectedTotalLifetimeDamage = (friendlyFirst.totalDamage + epicFirst.totalDamage) / 2;
   const capacities = { LEADERSHIP:0, DOMINANCE:0, AUTHORITY:0 };
   let rawGoldRevivalCost = 0;

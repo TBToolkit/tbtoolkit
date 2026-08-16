@@ -1,6 +1,12 @@
-/* TB Toolkit Epic Optimizer 1.1 — bundled classic Worker for mobile compatibility. */
-const EPIC_COMBAT_ENGINE_BUILD = '2.0';
-const TARGETS = Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
+/* TB Toolkit Epic Optimizer 1.1 / Combat Engine 2.1 */
+const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
+const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
+const TARGETS=TARGET_TYPES; // backward-compatible export alias
+function enemySquadsForBattle(arachne){
+ const copies=arachne?2:1,squads=[];
+ for(const type of TARGET_TYPES)for(let copy=1;copy<=copies;copy++)squads.push({id:`${type}-${copy}`,type,copy});
+ return squads;
+}
 
 const BONUS_FAMILY_BY_SPECIES = Object.freeze({
   BEAST: 'MONSTER', DRAGON: 'MONSTER', GIANT: 'MONSTER', ELEMENTAL: 'MONSTER',
@@ -111,19 +117,14 @@ function buildSquad(unit, quantity, bonusInputs) {
   const pST = clampProbability(family.st);
 
   const commonBonus = 1 + family.strength + bonusInputs.strengthAgainstEpic + Number(unit.bonuses?.epic ?? 0) + (bonusInputs.arachne ? Number(unit.bonuses?.arachne ?? 0) : 0);
-  const targetDamages = TARGETS.map((target, targetOrder) => {
-    const matchup = Number(unit.bonuses?.[MATCHUP_KEY[target]] ?? 0);
-    return {
-      target,
-      targetOrder,
-      matchup,
-      deterministicDamage: q * Number(unit.baseStrength) * (commonBonus + matchup),
-    };
-  }).sort((a,b) => b.deterministicDamage - a.deterministicDamage || a.targetOrder - b.targetOrder);
-
-  const first = targetDamages[0];
-  const second = targetDamages.find(x => x.target !== first.target);
-  const expectedDamagePerOpportunity = (1 + pDD) * (first.deterministicDamage + pST * second.deterministicDamage);
+  const targetDamages=enemySquadsForBattle(bonusInputs.arachne).map((enemy,targetOrder)=>{
+    const matchup=Number(unit.bonuses?.[MATCHUP_KEY[enemy.type]]??0);
+    return {target:enemy.type,targetId:enemy.id,targetCopy:enemy.copy,targetOrder,matchup,
+      deterministicDamage:q*Number(unit.baseStrength)*(commonBonus+matchup)};
+  }).sort((a,b)=>b.deterministicDamage-a.deterministicDamage||a.targetOrder-b.targetOrder);
+  const first=targetDamages[0];
+  const second=targetDamages.find(x=>x.targetId!==first.targetId);
+  const expectedDamagePerOpportunity=(1+pDD)*(first.deterministicDamage+pST*second.deterministicDamage);
 
   return {
     id: unit.id,
@@ -148,8 +149,8 @@ function buildSquad(unit, quantity, bonusInputs) {
     rawGoldRevivalCost: q * Number(unit.goldRevivalCost),
     pDD,
     pST,
-    firstStrike: { target: first.target, deterministicDamage: first.deterministicDamage, matchup: first.matchup },
-    secondStrike: { target: second.target, deterministicDamage: second.deterministicDamage, matchup: second.matchup },
+    firstStrike:{target:first.target,targetId:first.targetId,deterministicDamage:first.deterministicDamage,matchup:first.matchup},
+    secondStrike:{target:second.target,targetId:second.targetId,deterministicDamage:second.deterministicDamage,matchup:second.matchup},
     expectedDamagePerOpportunity,
   };
 }
@@ -174,7 +175,7 @@ function chooseEnemyTarget(squads, alive) {
   return best;
 }
 
-function simulateInitiativeCase(squads, friendlyStarts) {
+function simulateInitiativeCase(squads, friendlyStarts, enemySquadCount = 4) {
   const alive = new Set(squads.filter(s => s.quantity > 0).map(s => s.id));
   const attackOpportunities = Object.fromEntries(squads.map(s => [s.id, 0]));
   const lifetimeDamage = Object.fromEntries(squads.map(s => [s.id, 0]));
@@ -211,7 +212,7 @@ function simulateInitiativeCase(squads, friendlyStarts) {
     let enemyAttacks = 0;
     let friendlyTurn = friendlyHasInitiative;
 
-    while (enemyAttacks < 4 && alive.size) {
+    while (enemyAttacks < enemySquadCount && alive.size) {
       if (friendlyTurn) friendlyAttack(attackedThisCycle);
       else { enemyAttack(); enemyAttacks += 1; }
       friendlyTurn = !friendlyTurn;
@@ -261,8 +262,9 @@ function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }
     if (Number(quantity) > 0) squads.push(buildSquad(unit, Number(quantity), resolvedBonuses));
   }
 
-  const friendlyFirst = simulateInitiativeCase(squads, true);
-  const epicFirst = simulateInitiativeCase(squads, false);
+  const enemySquadCount=resolvedBonuses.arachne?8:4;
+  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
+  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount);
   const expectedTotalLifetimeDamage = (friendlyFirst.totalDamage + epicFirst.totalDamage) / 2;
   const capacities = { LEADERSHIP:0, DOMINANCE:0, AUTHORITY:0 };
   let rawGoldRevivalCost = 0;
@@ -308,7 +310,6 @@ function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }
 }
 
 { TARGETS, BONUS_FAMILY_BY_SPECIES };
-
 
 const EPIC_OPTIMIZER_BUILD = '1.1.1';
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -600,44 +601,20 @@ function optimizeEpicQuantities({
 
 { CAPACITY_TYPES };
 
-
 let armyPromise=null;
 async function loadArmy(){
-  if(!armyPromise){
-    const url=new URL('../data/army-v2.json?v=63',self.location.href);
-    armyPromise=fetch(url,{cache:'no-store'}).then(async r=>{
-      if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);
-      return r.json();
-    });
-  }
-  return armyPromise;
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=65',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ return armyPromise;
 }
-
 self.onmessage=async(event)=>{
-  const msg=event.data??{};
-  if(msg.type!=='optimize')return;
-  const requestId=msg.requestId;
-  try{
-    const army=await loadArmy();
-    self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
-    const result=optimizeEpicQuantities({
-      units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,
-      seedSeparationPct:0.10,minimumHealthSeparationPct:0.01,minimumQuantity:1,
-      onProgress:(progress)=>{
-        const stageCount=Math.max(1,Number(progress.stageCount||1));
-        const progressPct=progress.phase==='seed'?8:Math.min(96,10+Math.round(((Number(progress.stageIndex)+1)/stageCount)*86));
-        self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
-      }
-    });
-    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
-    const quantities=result?.quantities??{};
-    const quantityFingerprint=Object.keys(quantities).sort().map(k=>`${k}:${quantities[k]}`).join('|');
-    self.postMessage({type:'result',requestId,payload:result,diagnostics:{
-      optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,
-      armyDatabase:'ARMY9-mobile-v63',armyCount:Array.isArray(army)?army.length:0,
-      quantityFingerprint,inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits
-    }});
-  }catch(error){
-    self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});
-  }
+ const msg=event.data??{};if(msg.type!=='optimize')return;const requestId=msg.requestId;
+ try{
+  const army=await loadArmy();self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
+  const result=optimizeEpicQuantities({units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,seedSeparationPct:.10,minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:(progress)=>{
+   const n=Math.max(1,Number(progress.stageCount||1));const progressPct=progress.phase==='seed'?8:Math.min(96,10+Math.round(((Number(progress.stageIndex)+1)/n)*86));
+   self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
+  }});
+  self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
+  self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v65',armyCount:army.length,inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits}});
+ }catch(error){self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});}
 };
