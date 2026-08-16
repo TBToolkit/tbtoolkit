@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=64" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=65" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=64" type="module"></script>
+<script src="js/epic-stacker.js?v=65" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -76,6 +76,12 @@
 </div>
 <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
 <div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
+<div class="optimizer-only optimizer-merc-option">
+<label class="checkbox-row compact-option-row"><input id="includeMercenariesInOptimization" type="checkbox"/><span>Include Mercenaries in Optimization</span></label>
+<details class="inline-info-help"><summary aria-label="About mercenary optimization" title="More information">i</summary>
+<div class="inline-info-card"><strong>Include Mercenaries in Optimization</strong>
+<p>Leave this off when your mercenary quantities are small and you mainly want to optimize full Leadership and Dominance. Selected mercenaries are ignored by the optimizer and can be added manually in game.</p>
+<p>Turn it on when your mercenary army is large enough to materially affect the battle. Mercenary squads can change death order and attack opportunities, which can also change the optimized Troop and Monster quantities.</p></div></details></div>
 </div>
 
 <div class="advanced-settings-column">
