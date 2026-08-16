@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=58" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=59" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=58" type="module"></script>
+<script src="js/epic-stacker.js?v=59" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -43,7 +43,7 @@
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">
 <div><span class="section-kicker">1</span><h2>Army Limits</h2></div>
-<div class="auto-update-note"><span class="live-dot"></span>Auto-updating · saved on this device</div>
+<div class="auto-update-note"><span class="live-dot"></span>Inputs saved on this device</div>
 </div>
 
 <div class="setup-grid">
@@ -103,7 +103,7 @@
 
 <label class="checkbox-row compact-family-override"><input id="useCustomFamilyBonuses" type="checkbox"/><span>Use custom Human / Epic Hunter bonuses</span></label>
 
-<div class="derived-family-grid">
+<div class="derived-family-grid" hidden id="customFamilyBonusFields">
 <section>
 <h4>Human</h4>
 <label>Strength<div class="percent-field"><input class="epic-input family-derived-field" id="humanStrength" inputmode="decimal" type="text"/><span>%</span></div></label>
@@ -142,8 +142,6 @@
 <button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button>
 </div>
 
-<div class="selection-prediction-grid">
-<div class="selection-main-column">
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
 <div class="selection-card-title"><div><h3>Guardsmen</h3><span id="guardsmanCount">0 selected</span></div><label class="category-master"><input id="guardsmanMaster" type="checkbox"/><span>All</span></label></div>
@@ -166,28 +164,7 @@
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
-</div>
-<aside class="prediction-side-column epic-v2-only">
-<div class="prediction-side-heading"><span class="section-kicker">3</span><h2>Prediction</h2></div>
-<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
-<div class="prediction-summary">
-<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
-<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
-<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
-</div>
-<details class="battle-details">
-<summary>Battle Details</summary>
-<div class="prediction-meta" id="predictionMeta"></div>
-<div class="prediction-table-wrap">
-<table class="prediction-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
-<tbody id="predictionRows"></tbody>
-</table>
-</div>
-</details>
-</section>
-</aside>
-</div>
+<div class="selection-optimize-row epic-v2-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
 </section>
 
 <section class="topdown-panel order-view" hidden id="orderView">
@@ -212,7 +189,23 @@
 <div class="capacity-row"><span class="capacity-label">Dominance</span><div class="capacity-bar" id="dominanceBar"><i></i></div><span class="capacity-value" id="dominanceActual">—</span></div>
 </div>
 </div>
-
+<section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
+<div class="prediction-summary">
+<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
+<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
+</div>
+<details class="battle-details">
+<summary>Battle Details</summary>
+<div class="prediction-meta" id="predictionMeta"></div>
+<div class="prediction-table-wrap">
+<table class="prediction-table">
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
+<tbody id="predictionRows"></tbody>
+</table>
+</div>
+</details>
+</section>
 <div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden id="resultGroups">
 <section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
@@ -234,6 +227,23 @@
 </section>
 </div>
 </div>
+
+<div class="optimizer-modal" hidden id="optimizerModal">
+<div class="optimizer-modal-backdrop"></div>
+<div aria-describedby="optimizerProgressDetail" aria-labelledby="optimizerProgressTitle" aria-modal="true" class="optimizer-dialog" role="dialog">
+<div class="optimizer-spinner" aria-hidden="true"></div>
+<div class="optimizer-dialog-copy">
+<span class="optimizer-eyebrow">Epic Stacker</span>
+<h2 id="optimizerProgressTitle">Optimizing Army</h2>
+<p id="optimizerProgressHeadline">Preparing your selected squads…</p>
+<div aria-label="Optimization progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="optimizerProgressTrack" role="progressbar"><i id="optimizerProgressBar"></i></div>
+<div class="optimizer-progress-meta"><span id="optimizerProgressPercent">0%</span><span id="optimizerProgressEvaluations"></span></div>
+<p class="optimizer-progress-detail" id="optimizerProgressDetail">The optimizer evaluates candidate integer quantities with the validated battle simulation.</p>
+<button class="toolbar-button optimizer-cancel" id="cancelOptimization" type="button">Cancel</button>
+</div>
+</div>
+</div>
+
 </main>
 
 <footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking Calculators</a><a href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a></nav></div></footer>
