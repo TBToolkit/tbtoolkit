@@ -432,7 +432,7 @@ function compareScore(a, b, epsilon = 1e-3) {
  *
  * This is intentionally deterministic so regression results are reproducible.
  */
-function optimizeEpicQuantities({
+function optimizeFromSeed({
   units,
   selectedIds,
   selectedNames,
@@ -600,7 +600,6 @@ function optimizeEpicQuantities({
   };
 }
 
-{ CAPACITY_TYPES };
 
 
 const EPIC_OPTIMIZER_BUILD = '1.2-validation';
