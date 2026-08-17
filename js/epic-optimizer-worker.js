@@ -1,4 +1,4 @@
-/* TB Toolkit Epic Optimizer 1.1 / Combat Engine 2.1 */
+/* TB Toolkit Epic Optimizer 1.2 Beta */
 const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
@@ -311,7 +311,8 @@ function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }
 
 { TARGETS, BONUS_FAMILY_BY_SPECIES };
 
-const EPIC_OPTIMIZER_BUILD = '1.1.1';
+
+const EPIC_OPTIMIZER_CORE_BUILD = '1.1-search-core';
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 
 function finite(v, label) {
@@ -601,20 +602,144 @@ function optimizeEpicQuantities({
 
 { CAPACITY_TYPES };
 
+
+const EPIC_OPTIMIZER_BUILD = '1.2-validation';
+
+const SEED_CAPACITY_TYPES=['LEADERSHIP','DOMINANCE','AUTHORITY'];
+
+function limitsOf(limits){
+  return Object.fromEntries(SEED_CAPACITY_TYPES.map(t=>[t,Math.max(0,Math.floor(Number(limits?.[t]??0)))]));
+}
+function hashOrder(unitId,salt){
+  let x=(Number(unitId)^Number(salt))>>>0;
+  x=Math.imul(x^(x>>>16),0x45d9f3b);
+  x=Math.imul(x^(x>>>16),0x45d9f3b);
+  return (x^(x>>>16))>>>0;
+}
+function selectUnits(units,selectedIds,selectedNames){
+  const ids=new Set(selectedIds??[]),names=new Set(selectedNames??[]);
+  return units.filter(u=>ids.size?ids.has(u.id):names.has(u.name));
+}
+function makeEqualHealthSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,salt=0,separationPct=.05,order='hash'}){
+  const selected=selectUnits(units,selectedIds,selectedNames);
+  const resolved=deriveBonusInputs(bonuses);
+  const limits=limitsOf(capacityLimits);
+  const q={};
+
+  for(const type of SEED_CAPACITY_TYPES){
+    let group=selected.filter(u=>u.capacityType===type);
+    if(!group.length||limits[type]<=0)continue;
+    group=group.slice().sort((a,b)=>{
+      if(order==='forward')return (a.displayOrder??a.unitId)-(b.displayOrder??b.unitId)||a.unitId-b.unitId;
+      if(order==='reverse')return (b.displayOrder??b.unitId)-(a.displayOrder??a.unitId)||b.unitId-a.unitId;
+      return hashOrder(a.unitId,salt)-hashOrder(b.unitId,salt)||a.unitId-b.unitId;
+    });
+
+    const rows=group.map((u,index)=>({
+      u,
+      oneHealth:buildSquad(u,1,resolved).effectiveHealth,
+      factor:1+index*(Number(separationPct)/100)
+    }));
+    const denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0);
+    const targetHealth=denom>0?limits[type]/denom:0;
+    for(const r of rows){
+      q[r.u.name]=Math.max(1,Math.round(targetHealth*r.factor/r.oneHealth));
+    }
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
+}
+function seedFeasible({units,quantities,bonuses,capacityLimits,minimumHealthSeparationPct}){
+  const result=scoreEpicArmy({units,quantities,bonuses});
+  const limits=limitsOf(capacityLimits);
+  for(const t of CAPACITY_TYPES)if((result.capacities[t]??0)>limits[t])return false;
+  const min=result.separationSummary.minPct;
+  return min===null||min+1e-12>=minimumHealthSeparationPct;
+}
+
+function optimizeEpicQuantities(args){
+  const selected=selectUnits(args.units,args.selectedIds,args.selectedNames);
+  if(!selected.length)throw new Error('At least one selected squad is required.');
+  if(args.initialQuantities){
+    return optimizeFromSeed(args);
+  }
+
+  // Two deterministic, approximately equal-effective-health starting points.
+  // Neither uses PvE rank or a preselected optimal dying order.
+  const seedSpecs=[
+    {name:'equal-health-canonical',order:'forward',salt:0},
+    {name:'equal-health-hash',order:'hash',salt:0x9e3779b9}
+  ];
+  const separationAttempts=[.03,.04,.05,.06,.08,.12,.16,.20,.30,.40];
+  const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
+  const seeds=[];
+
+  for(const spec of seedSpecs){
+    let found=null;
+    for(const separationPct of separationAttempts){
+      const quantities=makeEqualHealthSeed({...args,...spec,separationPct});
+      if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){
+        found={...spec,separationPct,quantities};
+        break;
+      }
+    }
+    if(found)seeds.push(found);
+  }
+  if(!seeds.length)throw new Error('Unable to construct a feasible equal-health optimizer seed.');
+
+  let best=null;
+  const seedDiagnostics=[];
+  for(let i=0;i<seeds.length;i++){
+    const seed=seeds[i];
+    const result=optimizeFromSeed({
+      ...args,
+      initialQuantities:seed.quantities,
+      onProgress:typeof args.onProgress==='function'
+        ? p=>args.onProgress({...p,seedIndex:i,seedCount:seeds.length,seedName:seed.name})
+        : null
+    });
+    seedDiagnostics.push({
+      name:seed.name,
+      separationPct:seed.separationPct,
+      initialExpectedLifetimeDamage:result.initialResult.expectedTotalLifetimeDamage,
+      finalExpectedLifetimeDamage:result.result.expectedTotalLifetimeDamage,
+      evaluations:result.diagnostics.evaluations
+    });
+    if(!best||result.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-3)best=result;
+  }
+  best.diagnostics.optimizerVersion='1.2-validation';
+  best.diagnostics.seedStrategy='multi-seed-equal-effective-health';
+  best.diagnostics.seeds=seedDiagnostics;
+  best.diagnostics.totalEvaluations=seedDiagnostics.reduce((s,x)=>s+x.evaluations,0);
+  return best;
+}
+
+
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=65',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=70',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 self.onmessage=async(event)=>{
  const msg=event.data??{};if(msg.type!=='optimize')return;const requestId=msg.requestId;
  try{
-  const army=await loadArmy();self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
-  const result=optimizeEpicQuantities({units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,seedSeparationPct:.10,minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:(progress)=>{
-   const n=Math.max(1,Number(progress.stageCount||1));const progressPct=progress.phase==='seed'?8:Math.min(96,10+Math.round(((Number(progress.stageIndex)+1)/n)*86));
-   self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
+  const army=await loadArmy();
+  self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
+  const result=optimizeEpicQuantities({
+   units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,
+   minimumHealthSeparationPct:.01,minimumQuantity:1,
+   onProgress:(progress)=>{
+    const sc=Math.max(1,Number(progress.seedCount??1)),si=Math.max(0,Number(progress.seedIndex??0));
+    const st=Math.max(1,Number(progress.stageCount??1));
+    const within=progress.phase==='seed'?.04:Math.min(.98,(Number(progress.stageIndex??0)+1)/st);
+    const progressPct=Math.min(96,5+Math.round(((si+within)/sc)*91));
+    self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
+   }
+  });
+  self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
+  self.postMessage({type:'result',requestId,payload:result,diagnostics:{
+   optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v70',
+   armyCount:army.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,
+   inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits
   }});
-  self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
-  self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v65',armyCount:army.length,inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits}});
  }catch(error){self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});}
 };

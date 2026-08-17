@@ -291,7 +291,7 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
-  if(progress.phase==='seed')return 'Building a feasible starting health ladder…';
+  if(progress.phase==='seed'){const i=Number(progress.seedIndex??0)+1,n=Math.max(1,Number(progress.seedCount??1));return `Building equal-health starting point ${i} of ${n}…`; }
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';
@@ -342,7 +342,9 @@ function renderPrediction(opt){
   const buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'';
   const mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization';
   const epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';
-  els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs seed: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Minimum health separation: ${minSep.toFixed(4)}% · `:''}${opt.diagnostics?.evaluations?.toLocaleString('en-US')??'—'} candidates evaluated${epicTypeText}${mercText}${buildText}`;
+  const evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;
+  const seedText=opt.diagnostics?.seedStrategy==='multi-seed-equal-effective-health'?' · Multi-seed equal-health search':'';
+  els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs selected seed: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Minimum health separation: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated${seedText}${epicTypeText}${mercText}${buildText}`;
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
   els.predictionRows.innerHTML=rows.map(s=>`<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`).join('');
 }
@@ -408,7 +410,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=65');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=70');
   }catch(error){
     console.error(error);
     closeOptimizerModal();
