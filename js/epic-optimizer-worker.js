@@ -1,4 +1,4 @@
-/* TB Toolkit Epic Optimizer 2.0 Global */
+/* TB Toolkit Epic Optimizer 2.0 Paired Counterfactual v84 */
 const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
@@ -604,7 +604,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.0-counterfactual';
+const EPIC_OPTIMIZER_BUILD = '2.0-paired-counterfactual';
 
 
 function finite(v, label) {
@@ -1020,39 +1020,72 @@ function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimum
   return {best:population[0],population,evaluations};
 }
 
-
-function thresholdQuantityForHealth(targetUnit,targetSquad,otherSquad,direction){
- if(!targetUnit||!targetSquad||!otherSquad||!(targetSquad.quantity>0)||!(targetSquad.effectiveHealth>0))return null;
- const oneHealth=targetSquad.effectiveHealth/targetSquad.quantity;if(!(oneHealth>0))return null;
- const raw=otherSquad.effectiveHealth/oneHealth;return direction==='above'?Math.floor(raw)+1:Math.max(1,Math.ceil(raw)-1);
+export 
+function thresholdQuantityForHealth(targetUnit, targetSquad, otherSquad, direction){
+  if(!targetUnit||!targetSquad||!otherSquad||!(targetSquad.quantity>0)||!(targetSquad.effectiveHealth>0)) return null;
+  const oneHealth=targetSquad.effectiveHealth/targetSquad.quantity;
+  if(!(oneHealth>0)) return null;
+  const raw=otherSquad.effectiveHealth/oneHealth;
+  return direction==='above' ? Math.floor(raw)+1 : Math.max(1,Math.ceil(raw)-1);
 }
-function thresholdQuantityForAttack(targetUnit,targetSquad,otherSquad,direction){
- if(!targetUnit||!targetSquad||!otherSquad||!(Number(targetUnit.baseStrength)>0))return null;
- const raw=otherSquad.nominalSquadStrength/Number(targetUnit.baseStrength);return direction==='above'?Math.floor(raw)+1:Math.max(1,Math.ceil(raw)-1);
+function thresholdQuantityForAttack(targetUnit, targetSquad, otherSquad, direction){
+  if(!targetUnit||!targetSquad||!otherSquad||!(targetUnit.baseStrength>0)) return null;
+  const raw=otherSquad.nominalSquadStrength/Number(targetUnit.baseStrength);
+  return direction==='above' ? Math.floor(raw)+1 : Math.max(1,Math.ceil(raw)-1);
 }
 function rebalanceThresholdMove({selected,quantities,limits,target,desiredQty,donor,minimumQuantity=1}){
- const q={...quantities},current=Number(q[target.name]??0);
- if(!Number.isInteger(desiredQty)||desiredQty<minimumQuantity||desiredQty===current)return null;
- const targetCost=Number(target.capacityCost),donorCost=Number(donor.capacityCost),delta=desiredQty-current;q[target.name]=desiredQty;
- if(delta>0){const donorQty=Number(q[donor.name]??0);let take=Math.ceil(delta*targetCost/donorCost);if(donorQty-take<minimumQuantity)return null;q[donor.name]=donorQty-take;}
- else{const released=(-delta)*targetCost,give=Math.floor(released/donorCost);if(give>0)q[donor.name]=Number(q[donor.name]??0)+give;}
- return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity});
+  const q={...quantities};
+  const current=Number(q[target.name]??0);
+  if(!Number.isInteger(desiredQty)||desiredQty<minimumQuantity||desiredQty===current)return null;
+  const targetCost=Number(target.capacityCost),donorCost=Number(donor.capacityCost);
+  const delta=desiredQty-current;
+  q[target.name]=desiredQty;
+  if(delta>0){
+    const donorQty=Number(q[donor.name]??0);
+    let take=Math.ceil(delta*targetCost/donorCost);
+    if(donorQty-take<minimumQuantity)return null;
+    q[donor.name]=donorQty-take;
+  } else {
+    const released=(-delta)*targetCost;
+    const give=Math.floor(released/donorCost);
+    if(give>0)q[donor.name]=Number(q[donor.name]??0)+give;
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity});
 }
 function opportunityThresholdRefine({units,selected,bonuses,capacityLimits,start,minimumQuantity=1,onProgress=null,maxRounds=5}){
- const limits=limitsOf(capacityLimits);let quantities={...start.quantities},result=start.result??scoreEpicArmy({units,quantities,bonuses}),evaluations=0,accepted=0;
- const selectedById=new Map(selected.map(u=>[u.id,u]));
- for(let round=0;round<maxRounds;round++){let best=null,bestScore=result.expectedTotalLifetimeDamage;
-  const healthOrder=result.squads.slice().sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId),attackOrder=result.squads.slice().sort((a,b)=>b.nominalSquadStrength-a.nominalSquadStrength||a.unitId-b.unitId);
-  const hIndex=new Map(healthOrder.map((x,i)=>[x.id,i])),aIndex=new Map(attackOrder.map((x,i)=>[x.id,i]));
-  for(const targetSquad of result.squads){const target=selectedById.get(targetSquad.id);if(!target)continue;const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id);if(!peers.length)continue;const candidates=new Set();
-   const hi=hIndex.get(target.id);for(const d of [-3,-2,-1,1,2,3]){const j=hi+d;if(j>=0&&j<healthOrder.length){const other=healthOrder[j];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForHealth(target,targetSquad,other,dir);if(x)candidates.add(x);}}}
-   const ai=aIndex.get(target.id);for(const d of [-3,-2,-1,1,2,3]){const j=ai+d;if(j>=0&&j<attackOrder.length){const other=attackOrder[j];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForAttack(target,targetSquad,other,dir);if(x)candidates.add(x);}}}
-   const cur=Number(quantities[target.name]??0);for(const frac of [.00005,.0001,.0002,.0005,.001,.002,.005]){const step=Math.max(1,Math.round(cur*frac));candidates.add(Math.max(minimumQuantity,cur-step));candidates.add(cur+step);}
-   for(const desiredQty of candidates){if(desiredQty===cur)continue;for(const donor of peers){const q=rebalanceThresholdMove({selected,quantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;if(!candidateFeasible({result:cand,limits}))continue;if(cand.expectedTotalLifetimeDamage>bestScore+1e-9){best={quantities:q,result:cand,target:target.id,donor:donor.id,beforeOpp:targetSquad.averageAttackOpportunities,afterOpp:cand.squads.find(x=>x.id===target.id)?.averageAttackOpportunities??null};bestScore=cand.expectedTotalLifetimeDamage;}}}
+  const limits=limitsOf(capacityLimits);
+  let quantities={...start.quantities},result=start.result??scoreEpicArmy({units,quantities,bonuses}),evaluations=0,accepted=0;
+  const selectedById=new Map(selected.map(u=>[u.id,u]));
+  for(let round=0;round<maxRounds;round++){
+    let best=null,bestScore=result.expectedTotalLifetimeDamage;
+    const healthOrder=result.squads.slice().sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId);
+    const attackOrder=result.squads.slice().sort((a,b)=>b.nominalSquadStrength-a.nominalSquadStrength||a.unitId-b.unitId);
+    const hIndex=new Map(healthOrder.map((s,i)=>[s.id,i])),aIndex=new Map(attackOrder.map((s,i)=>[s.id,i]));
+    for(const targetSquad of result.squads){
+      const target=selectedById.get(targetSquad.id); if(!target)continue;
+      const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id); if(!peers.length)continue;
+      const candidates=new Set();
+      const hi=hIndex.get(target.id);
+      for(const d of [-3,-2,-1,1,2,3]){const j=hi+d;if(j>=0&&j<healthOrder.length){const other=healthOrder[j]; if(other.capacityType===target.capacityType){for(const dir of ['above','below']){const x=thresholdQuantityForHealth(target,targetSquad,other,dir);if(x)candidates.add(x);}}}}
+      const ai=aIndex.get(target.id);
+      for(const d of [-3,-2,-1,1,2,3]){const j=ai+d;if(j>=0&&j<attackOrder.length){const other=attackOrder[j]; if(other.capacityType===target.capacityType){for(const dir of ['above','below']){const x=thresholdQuantityForAttack(target,targetSquad,other,dir);if(x)candidates.add(x);}}}}
+      const cur=Number(quantities[target.name]??0);
+      for(const frac of [.00005,.0001,.0002,.0005,.001,.002,.005]){const step=Math.max(1,Math.round(cur*frac));candidates.add(Math.max(minimumQuantity,cur-step));candidates.add(cur+step);}
+      for(const desiredQty of candidates){
+        if(desiredQty===cur)continue;
+        for(const donor of peers){
+          const q=rebalanceThresholdMove({selected,quantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;
+          const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;
+          if(!candidateFeasible({result:cand,limits}))continue;
+          if(cand.expectedTotalLifetimeDamage>bestScore+1e-9){best={quantities:q,result:cand,target:target.id,donor:donor.id,beforeOpp:targetSquad.averageAttackOpportunities,afterOpp:cand.squads.find(s=>s.id===target.id)?.averageAttackOpportunities??null};bestScore=cand.expectedTotalLifetimeDamage;}
+        }
+      }
+    }
+    if(!best)break;
+    quantities=best.quantities; result=best.result; accepted++;
+    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
   }
-  if(!best)break;quantities=best.quantities;result=best.result;accepted++;if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
- }
- return {quantities,result,evaluations,acceptedMoves:accepted};
+  return {quantities,result,evaluations,acceptedMoves:accepted};
 }
 
 
@@ -1184,6 +1217,74 @@ function counterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,
   return {best,evaluations,basinResults,basinCount:chosen.length};
 }
 
+
+function pairedCounterfactualCondition(result,constraints){
+  return constraints.every(c=>{
+    const s=result.squads.find(x=>x.id===c.targetId); if(!s)return false;
+    const opp=Number(s.averageAttackOpportunities??0),death=Number(s.predictedDeathPosition??999);
+    return c.mode==='surrender'?(opp<=c.beforeOpp-.49||death<c.beforeDeath):(opp>=c.beforeOpp+.49||death>c.beforeDeath);
+  });
+}
+
+function pairedCounterfactualAnneal({units,selected,bonuses,limits,seed,constraints,minimumQuantity=1,iterations=1800,salt=0}){
+  const rng=mulberry32((0x84C0FFEE^Number(salt))>>>0);
+  let q={...seed.quantities},result=seed.result??scoreEpicArmy({units,quantities:q,bonuses});
+  if(!pairedCounterfactualCondition(result,constraints))return {quantities:q,result,evaluations:0,accepted:0};
+  let current=result.expectedTotalLifetimeDamage,bestQ={...q},bestResult=result,best=current,evaluations=0,accepted=0;
+  for(let i=0;i<iterations;i++){
+    const phase=i/Math.max(1,iterations-1),intensity=phase<.30?.28:phase<.68?.09:.022;
+    const nq=randomCounterfactualMutate({selected,quantities:q,limits,rng,scale:intensity,minimumQuantity});
+    const nr=scoreEpicArmy({units,quantities:nq,bonuses});evaluations++;
+    if(!candidateFeasible({result:nr,limits})||!pairedCounterfactualCondition(nr,constraints))continue;
+    const nv=nr.expectedTotalLifetimeDamage,temp=(1-phase)*Math.max(2e6,best*.0030)+2e6;
+    if(nv>=current||rng()<Math.exp((nv-current)/temp)){q=nq;result=nr;current=nv;accepted++;}
+    if(nv>best){best=nv;bestQ={...nq};bestResult=nr;}
+  }
+  return {quantities:bestQ,result:bestResult,evaluations,accepted};
+}
+
+function pairedCounterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,onProgress=null,maxPairs=4}){
+  const limits=limitsOf(capacityLimits),base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
+  const selectedById=new Map(selected.map(u=>[u.id,u])); let evaluations=0;
+  const deathRank=new Map(base.squads.map(s=>[s.id,Number(s.predictedDeathPosition??999)]));
+  const withAttack=base.squads.filter(s=>Number(s.averageAttackOpportunities??0)>0);
+  const low=withAttack.slice().sort((a,b)=>Number(a.expectedDamagePerOpportunity??0)-Number(b.expectedDamagePerOpportunity??0)||(deathRank.get(a.id)??999)-(deathRank.get(b.id)??999)).slice(0,Math.min(3,withAttack.length));
+  const high=withAttack.slice().sort((a,b)=>Number(b.expectedDamagePerOpportunity??0)-Number(a.expectedDamagePerOpportunity??0)||(deathRank.get(b.id)??999)-(deathRank.get(a.id)??999)).slice(0,Math.min(3,withAttack.length));
+  const specs=[]; for(const s of low)specs.push({s,mode:'surrender'}); for(const s of high)if(!specs.some(x=>x.s.id===s.id&&x.mode==='gain'))specs.push({s,mode:'gain'});
+
+  function moveOptions(currentQuantities,currentResult,spec,maxOptions=5){
+    const targetSquad=currentResult.squads.find(x=>x.id===spec.s.id); const target=selectedById.get(spec.s.id); if(!targetSquad||!target)return [];
+    const healthOrder=currentResult.squads.slice().sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId),attackOrder=currentResult.squads.slice().sort((a,b)=>b.nominalSquadStrength-a.nominalSquadStrength||a.unitId-b.unitId);
+    const hi=healthOrder.findIndex(s=>s.id===target.id),ai=attackOrder.findIndex(s=>s.id===target.id),desired=new Set(),cur=Number(currentQuantities[target.name]??0);
+    for(const d of [-6,-3,-1,1,3,6]){
+      const hj=hi+d;if(hj>=0&&hj<healthOrder.length){const other=healthOrder[hj];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForHealth(target,targetSquad,other,dir);if(x)desired.add(x);}}
+      const aj=ai+d;if(aj>=0&&aj<attackOrder.length){const other=attackOrder[aj];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForAttack(target,targetSquad,other,dir);if(x)desired.add(x);}}
+    }
+    for(const frac of [.01,.03,.06]){const st=Math.max(1,Math.round(cur*frac));desired.add(Math.max(minimumQuantity,cur-st));desired.add(cur+st);}
+    const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id),out=[];
+    const beforeOpp=Number(spec.s.averageAttackOpportunities??0),beforeDeath=Number(spec.s.predictedDeathPosition??999);
+    for(const desiredQty of desired){if(desiredQty===cur)continue;for(const donor of peers){const q=rebalanceThresholdMove({selected,quantities:currentQuantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;if(!candidateFeasible({result:cand,limits}))continue;const after=cand.squads.find(x=>x.id===target.id);if(!after)continue;const ao=Number(after.averageAttackOpportunities??0),ad=Number(after.predictedDeathPosition??999);const changed=spec.mode==='surrender'?(ao<=beforeOpp-.49||ad<beforeDeath):(ao>=beforeOpp+.49||ad>beforeDeath);if(changed)out.push({quantities:q,result:cand,constraint:{targetId:target.id,mode:spec.mode,beforeOpp,beforeDeath},target:target.id,mode:spec.mode});}}
+    out.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage); const uniq=[],seen=new Set();for(const r of out){const sig=deathSignature(r.result);if(seen.has(sig))continue;seen.add(sig);uniq.push(r);if(uniq.length>=maxOptions)break;}return uniq;
+  }
+
+  const firstMoves=[]; for(const spec of specs){for(const m of moveOptions(start.quantities,base,spec,1))firstMoves.push(m);}
+  firstMoves.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+  const pairSeeds=[];
+  for(const first of firstMoves.slice(0,Math.min(6,firstMoves.length))){
+    for(const spec2 of specs){if(spec2.s.id===first.target)continue;const seconds=moveOptions(first.quantities,first.result,spec2,1);for(const second of seconds){const c1=first.constraint,c2={...second.constraint,beforeOpp:Number(base.squads.find(s=>s.id===spec2.s.id)?.averageAttackOpportunities??second.constraint.beforeOpp),beforeDeath:Number(base.squads.find(s=>s.id===spec2.s.id)?.predictedDeathPosition??second.constraint.beforeDeath)};const constraints=[c1,c2];if(!pairedCounterfactualCondition(second.result,constraints))continue;pairSeeds.push({quantities:second.quantities,result:second.result,constraints,targets:[first.target,spec2.s.id],modes:[first.mode,spec2.mode]});}
+    }
+  }
+  const unique=[],seen=new Set(); pairSeeds.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);for(const p of pairSeeds){const sig=deathSignature(p.result)+'|'+p.targets.slice().sort().join(',');if(seen.has(sig))continue;seen.add(sig);unique.push(p);if(unique.length>=maxPairs)break;}
+  let best={quantities:{...start.quantities},result:base,source:'paired-counterfactual-start'};const pairResults=[];
+  for(let i=0;i<unique.length;i++){
+    const seed=unique[i],anneal=pairedCounterfactualAnneal({units,selected,bonuses,limits,seed,constraints:seed.constraints,minimumQuantity,iterations:1800,salt:(i+1)*104729});evaluations+=anneal.evaluations;
+    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:anneal.quantities,minimumQuantity,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:4,onProgress:typeof onProgress==='function'?p=>onProgress({...p,phase:'paired-counterfactual',pairIndex:i,pairCount:unique.length,pairTargets:seed.targets}):null});evaluations+=Number(local.diagnostics?.evaluations??0);
+    pairResults.push({targets:seed.targets,modes:seed.modes,rawEld:seed.result.expectedTotalLifetimeDamage,annealEld:anneal.result.expectedTotalLifetimeDamage,eld:local.result.expectedTotalLifetimeDamage});
+    if(local.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-9)best={quantities:local.quantities,result:local.result,source:`paired-${seed.targets.join('-')}`};
+  }
+  return {best,evaluations,pairResults,pairCount:unique.length};
+}
+
 function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -1230,17 +1331,21 @@ function optimizeEpicQuantities(args) {
   const counterfactual=counterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:threshold.quantities,result:threshold.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxBasins:4});
   totalEvaluations+=counterfactual.evaluations;
 
-  // Re-run threshold refinement from the best counterfactual basin, then do a final fine deterministic polish.
-  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:4});
+  // Paired counterfactual search can cross wider valleys where two coordinated structural changes are required.
+  const paired=pairedCounterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPairs:4});
+  totalEvaluations+=paired.evaluations;
+
+  // Re-run threshold refinement from the best paired basin, then do a final fine deterministic polish.
+  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:5});
   totalEvaluations+=threshold2.evaluations;
-  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:10,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'counterfactual-best'}):null});
+  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:12,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'paired-counterfactual-best'}):null});
   totalEvaluations+=polish.diagnostics.evaluations;
 
   const start=seedScores[0].result;
   const out=polish;
   out.initialResult=start;
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + counterfactual basin search + exact-engine polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single and paired counterfactual basin search + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
@@ -1249,6 +1354,9 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.counterfactualBest=counterfactual.best.result.expectedTotalLifetimeDamage;
   out.diagnostics.counterfactualBasins=counterfactual.basinResults;
   out.diagnostics.counterfactualBasinCount=counterfactual.basinCount;
+  out.diagnostics.pairedCounterfactualBest=paired.best.result.expectedTotalLifetimeDamage;
+  out.diagnostics.pairedCounterfactualPairs=paired.pairResults;
+  out.diagnostics.pairedCounterfactualPairCount=paired.pairCount;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
@@ -1256,12 +1364,6 @@ function optimizeEpicQuantities(args) {
 }
 
 
-
-let armyPromise=null;
-async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=83',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
- return armyPromise;
-}
 self.onmessage=async(event)=>{
  const msg=event.data??{};if(msg.type!=='optimize')return;const requestId=msg.requestId;
  try{
@@ -1276,8 +1378,9 @@ self.onmessage=async(event)=>{
     else if(progress.phase==='local') progressPct=22+Math.round(((Number(progress.seedIndex||0)+(Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))/Math.max(1,Number(progress.seedCount||1)))*48);
     else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*12);
     else if(progress.phase==='threshold') progressPct=84+Math.round((Number(progress.round||0)/Math.max(1,Number(progress.roundCount||1)))*4);
-    else if(progress.phase==='counterfactual') progressPct=89+Math.round(((Number(progress.basinIndex||0)+1)/Math.max(1,Number(progress.basinCount||1)))*5);
-    else if(progress.phase==='polish') progressPct=95+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*2);
+    else if(progress.phase==='counterfactual') progressPct=88+Math.round(((Number(progress.basinIndex||0)+1)/Math.max(1,Number(progress.basinCount||1)))*3);
+    else if(progress.phase==='paired-counterfactual') progressPct=91+Math.round(((Number(progress.pairIndex||0)+1)/Math.max(1,Number(progress.pairCount||1)))*4);
+    else if(progress.phase==='polish') progressPct=96+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*1);
     self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
    }
   });

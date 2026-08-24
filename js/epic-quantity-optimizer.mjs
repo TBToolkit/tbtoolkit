@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '2.0-counterfactual';
+export const EPIC_OPTIMIZER_BUILD = '2.0-paired-counterfactual';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -613,6 +613,74 @@ function counterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,
   return {best,evaluations,basinResults,basinCount:chosen.length};
 }
 
+
+function pairedCounterfactualCondition(result,constraints){
+  return constraints.every(c=>{
+    const s=result.squads.find(x=>x.id===c.targetId); if(!s)return false;
+    const opp=Number(s.averageAttackOpportunities??0),death=Number(s.predictedDeathPosition??999);
+    return c.mode==='surrender'?(opp<=c.beforeOpp-.49||death<c.beforeDeath):(opp>=c.beforeOpp+.49||death>c.beforeDeath);
+  });
+}
+
+function pairedCounterfactualAnneal({units,selected,bonuses,limits,seed,constraints,minimumQuantity=1,iterations=1800,salt=0}){
+  const rng=mulberry32((0x84C0FFEE^Number(salt))>>>0);
+  let q={...seed.quantities},result=seed.result??scoreEpicArmy({units,quantities:q,bonuses});
+  if(!pairedCounterfactualCondition(result,constraints))return {quantities:q,result,evaluations:0,accepted:0};
+  let current=result.expectedTotalLifetimeDamage,bestQ={...q},bestResult=result,best=current,evaluations=0,accepted=0;
+  for(let i=0;i<iterations;i++){
+    const phase=i/Math.max(1,iterations-1),intensity=phase<.30?.28:phase<.68?.09:.022;
+    const nq=randomCounterfactualMutate({selected,quantities:q,limits,rng,scale:intensity,minimumQuantity});
+    const nr=scoreEpicArmy({units,quantities:nq,bonuses});evaluations++;
+    if(!candidateFeasible({result:nr,limits})||!pairedCounterfactualCondition(nr,constraints))continue;
+    const nv=nr.expectedTotalLifetimeDamage,temp=(1-phase)*Math.max(2e6,best*.0030)+2e6;
+    if(nv>=current||rng()<Math.exp((nv-current)/temp)){q=nq;result=nr;current=nv;accepted++;}
+    if(nv>best){best=nv;bestQ={...nq};bestResult=nr;}
+  }
+  return {quantities:bestQ,result:bestResult,evaluations,accepted};
+}
+
+function pairedCounterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,onProgress=null,maxPairs=4}){
+  const limits=limitsOf(capacityLimits),base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
+  const selectedById=new Map(selected.map(u=>[u.id,u])); let evaluations=0;
+  const deathRank=new Map(base.squads.map(s=>[s.id,Number(s.predictedDeathPosition??999)]));
+  const withAttack=base.squads.filter(s=>Number(s.averageAttackOpportunities??0)>0);
+  const low=withAttack.slice().sort((a,b)=>Number(a.expectedDamagePerOpportunity??0)-Number(b.expectedDamagePerOpportunity??0)||(deathRank.get(a.id)??999)-(deathRank.get(b.id)??999)).slice(0,Math.min(3,withAttack.length));
+  const high=withAttack.slice().sort((a,b)=>Number(b.expectedDamagePerOpportunity??0)-Number(a.expectedDamagePerOpportunity??0)||(deathRank.get(b.id)??999)-(deathRank.get(a.id)??999)).slice(0,Math.min(3,withAttack.length));
+  const specs=[]; for(const s of low)specs.push({s,mode:'surrender'}); for(const s of high)if(!specs.some(x=>x.s.id===s.id&&x.mode==='gain'))specs.push({s,mode:'gain'});
+
+  function moveOptions(currentQuantities,currentResult,spec,maxOptions=5){
+    const targetSquad=currentResult.squads.find(x=>x.id===spec.s.id); const target=selectedById.get(spec.s.id); if(!targetSquad||!target)return [];
+    const healthOrder=currentResult.squads.slice().sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId),attackOrder=currentResult.squads.slice().sort((a,b)=>b.nominalSquadStrength-a.nominalSquadStrength||a.unitId-b.unitId);
+    const hi=healthOrder.findIndex(s=>s.id===target.id),ai=attackOrder.findIndex(s=>s.id===target.id),desired=new Set(),cur=Number(currentQuantities[target.name]??0);
+    for(const d of [-6,-3,-1,1,3,6]){
+      const hj=hi+d;if(hj>=0&&hj<healthOrder.length){const other=healthOrder[hj];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForHealth(target,targetSquad,other,dir);if(x)desired.add(x);}}
+      const aj=ai+d;if(aj>=0&&aj<attackOrder.length){const other=attackOrder[aj];if(other.capacityType===target.capacityType)for(const dir of ['above','below']){const x=thresholdQuantityForAttack(target,targetSquad,other,dir);if(x)desired.add(x);}}
+    }
+    for(const frac of [.01,.03,.06]){const st=Math.max(1,Math.round(cur*frac));desired.add(Math.max(minimumQuantity,cur-st));desired.add(cur+st);}
+    const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id),out=[];
+    const beforeOpp=Number(spec.s.averageAttackOpportunities??0),beforeDeath=Number(spec.s.predictedDeathPosition??999);
+    for(const desiredQty of desired){if(desiredQty===cur)continue;for(const donor of peers){const q=rebalanceThresholdMove({selected,quantities:currentQuantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;if(!candidateFeasible({result:cand,limits}))continue;const after=cand.squads.find(x=>x.id===target.id);if(!after)continue;const ao=Number(after.averageAttackOpportunities??0),ad=Number(after.predictedDeathPosition??999);const changed=spec.mode==='surrender'?(ao<=beforeOpp-.49||ad<beforeDeath):(ao>=beforeOpp+.49||ad>beforeDeath);if(changed)out.push({quantities:q,result:cand,constraint:{targetId:target.id,mode:spec.mode,beforeOpp,beforeDeath},target:target.id,mode:spec.mode});}}
+    out.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage); const uniq=[],seen=new Set();for(const r of out){const sig=deathSignature(r.result);if(seen.has(sig))continue;seen.add(sig);uniq.push(r);if(uniq.length>=maxOptions)break;}return uniq;
+  }
+
+  const firstMoves=[]; for(const spec of specs){for(const m of moveOptions(start.quantities,base,spec,1))firstMoves.push(m);}
+  firstMoves.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+  const pairSeeds=[];
+  for(const first of firstMoves.slice(0,Math.min(6,firstMoves.length))){
+    for(const spec2 of specs){if(spec2.s.id===first.target)continue;const seconds=moveOptions(first.quantities,first.result,spec2,1);for(const second of seconds){const c1=first.constraint,c2={...second.constraint,beforeOpp:Number(base.squads.find(s=>s.id===spec2.s.id)?.averageAttackOpportunities??second.constraint.beforeOpp),beforeDeath:Number(base.squads.find(s=>s.id===spec2.s.id)?.predictedDeathPosition??second.constraint.beforeDeath)};const constraints=[c1,c2];if(!pairedCounterfactualCondition(second.result,constraints))continue;pairSeeds.push({quantities:second.quantities,result:second.result,constraints,targets:[first.target,spec2.s.id],modes:[first.mode,spec2.mode]});}
+    }
+  }
+  const unique=[],seen=new Set(); pairSeeds.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);for(const p of pairSeeds){const sig=deathSignature(p.result)+'|'+p.targets.slice().sort().join(',');if(seen.has(sig))continue;seen.add(sig);unique.push(p);if(unique.length>=maxPairs)break;}
+  let best={quantities:{...start.quantities},result:base,source:'paired-counterfactual-start'};const pairResults=[];
+  for(let i=0;i<unique.length;i++){
+    const seed=unique[i],anneal=pairedCounterfactualAnneal({units,selected,bonuses,limits,seed,constraints:seed.constraints,minimumQuantity,iterations:1800,salt:(i+1)*104729});evaluations+=anneal.evaluations;
+    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:anneal.quantities,minimumQuantity,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:4,onProgress:typeof onProgress==='function'?p=>onProgress({...p,phase:'paired-counterfactual',pairIndex:i,pairCount:unique.length,pairTargets:seed.targets}):null});evaluations+=Number(local.diagnostics?.evaluations??0);
+    pairResults.push({targets:seed.targets,modes:seed.modes,rawEld:seed.result.expectedTotalLifetimeDamage,annealEld:anneal.result.expectedTotalLifetimeDamage,eld:local.result.expectedTotalLifetimeDamage});
+    if(local.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-9)best={quantities:local.quantities,result:local.result,source:`paired-${seed.targets.join('-')}`};
+  }
+  return {best,evaluations,pairResults,pairCount:unique.length};
+}
+
 export function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -659,17 +727,21 @@ export function optimizeEpicQuantities(args) {
   const counterfactual=counterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:threshold.quantities,result:threshold.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxBasins:4});
   totalEvaluations+=counterfactual.evaluations;
 
-  // Re-run threshold refinement from the best counterfactual basin, then do a final fine deterministic polish.
-  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:4});
+  // Paired counterfactual search can cross wider valleys where two coordinated structural changes are required.
+  const paired=pairedCounterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPairs:4});
+  totalEvaluations+=paired.evaluations;
+
+  // Re-run threshold refinement from the best paired basin, then do a final fine deterministic polish.
+  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:5});
   totalEvaluations+=threshold2.evaluations;
-  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:10,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'counterfactual-best'}):null});
+  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:12,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'paired-counterfactual-best'}):null});
   totalEvaluations+=polish.diagnostics.evaluations;
 
   const start=seedScores[0].result;
   const out=polish;
   out.initialResult=start;
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + counterfactual basin search + exact-engine polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single and paired counterfactual basin search + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
@@ -678,6 +750,9 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.counterfactualBest=counterfactual.best.result.expectedTotalLifetimeDamage;
   out.diagnostics.counterfactualBasins=counterfactual.basinResults;
   out.diagnostics.counterfactualBasinCount=counterfactual.basinCount;
+  out.diagnostics.pairedCounterfactualBest=paired.best.result.expectedTotalLifetimeDamage;
+  out.diagnostics.pairedCounterfactualPairs=paired.pairResults;
+  out.diagnostics.pairedCounterfactualPairCount=paired.pairCount;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
