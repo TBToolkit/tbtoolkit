@@ -1,4 +1,4 @@
-/* TB Toolkit Epic Optimizer 1.2 Beta */
+/* TB Toolkit Epic Optimizer 1.3 Hybrid Beta */
 const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
@@ -445,6 +445,7 @@ function optimizeFromSeed({
   maxRoundsPerStage = 20,
   minimumQuantity = 1,
   onProgress = null,
+  structureValidator = null,
 }) {
   const selectedIdSet = new Set(selectedIds ?? []);
   const selectedNameSet = new Set(selectedNames ?? []);
@@ -457,7 +458,7 @@ function optimizeFromSeed({
     : createLegacyHealthLadderSeed({ units, selectedIds:selected.map(u=>u.id), bonuses, capacityLimits:limits, separationPct:seedSeparationPct });
 
   let result = scoreEpicArmy({ units, quantities, bonuses });
-  if (!candidateFeasible({ result, limits, minimumHealthSeparationPct })) {
+  if (!candidateFeasible({ result, limits, minimumHealthSeparationPct }) || (structureValidator && !structureValidator(result, selected))) {
     throw new Error(`Initial optimizer seed is not feasible. min separation=${result.separationSummary.minPct}`);
   }
   const initialResult = result;
@@ -510,7 +511,7 @@ function optimizeFromSeed({
             if (used > limits[group.type]) continue;
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (!candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct })) continue;
+            if (!candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) || (structureValidator && !structureValidator(candResult, selected))) continue;
             const candScore = candResult.expectedTotalLifetimeDamage;
             if (compareScore(candScore, bestCandidateScore)) {
               bestCandidateScore = candScore;
@@ -529,7 +530,7 @@ function optimizeFromSeed({
             const cand = { ...quantities, [u.name]: current - delta };
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
+            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && (!structureValidator || structureValidator(candResult, selected)) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
               bestCandidateScore = candResult.expectedTotalLifetimeDamage;
               bestCandidate = cand;
               bestCandidateResult = candResult;
@@ -543,7 +544,7 @@ function optimizeFromSeed({
             const cand = { ...quantities, [u.name]: current + inc };
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
+            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && (!structureValidator || structureValidator(candResult, selected)) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
               bestCandidateScore = candResult.expectedTotalLifetimeDamage;
               bestCandidate = cand;
               bestCandidateResult = candResult;
@@ -602,7 +603,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '1.2-validation';
+const EPIC_OPTIMIZER_BUILD = '1.3-hybrid';
 
 const SEED_CAPACITY_TYPES=['LEADERSHIP','DOMINANCE','AUTHORITY'];
 
@@ -647,6 +648,9 @@ function makeEqualHealthSeed({units,selectedIds,selectedNames,bonuses,capacityLi
   }
   return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
 }
+function matchupRankScore(unit,bonuses){const b=unit.bonuses??{};return Math.max(Number(b.flying??0),Number(b.mounted??0),Number(b.melee??0),Number(b.ranged??0))+Number(b.epic??0)+(bonuses?.arachne?Number(b.arachne??0):0);}
+function createMatchupRankedSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10}){const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};for(const type of SEED_CAPACITY_TYPES){let group=selected.filter(u=>u.capacityType===type);if(!group.length||limits[type]<=0)continue;group=group.slice().sort((a,b)=>matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses)||(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0));const n=group.length,rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+(n-1-index)*(Number(separationPct)/100)})),denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));}return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});}
+function higherTierTroopLineagePreserved(result,selected){const deaths=new Map(result.squads.map(s=>[s.id,s.predictedDeathPosition])),groups=new Map();for(const u of selected.filter(u=>u.category==='troop')){const base=String(u.name).replace(/\s+[12]$/,'').trim(),key=`${u.unitClass}|${u.combatType}|${base}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u);}for(const arr of groups.values()){arr.sort((a,b)=>(a.tierNumber??0)-(b.tierNumber??0));for(let i=1;i<arr.length;i++){const lo=arr[i-1],hi=arr[i],ld=deaths.get(lo.id),hd=deaths.get(hi.id);if(Number.isFinite(ld)&&Number.isFinite(hd)&&hd<=ld)return false;}}return true;}
 function seedFeasible({units,quantities,bonuses,capacityLimits,minimumHealthSeparationPct}){
   const result=scoreEpicArmy({units,quantities,bonuses});
   const limits=limitsOf(capacityLimits);
@@ -656,66 +660,19 @@ function seedFeasible({units,quantities,bonuses,capacityLimits,minimumHealthSepa
 }
 
 function optimizeEpicQuantities(args){
-  const selected=selectUnits(args.units,args.selectedIds,args.selectedNames);
-  if(!selected.length)throw new Error('At least one selected squad is required.');
-  if(args.initialQuantities){
-    return optimizeFromSeed(args);
-  }
-
-  // Two deterministic, approximately equal-effective-health starting points.
-  // Neither uses PvE rank or a preselected optimal dying order.
-  const seedSpecs=[
-    {name:'equal-health-canonical',order:'forward',salt:0},
-    {name:'equal-health-hash',order:'hash',salt:0x9e3779b9}
-  ];
-  const separationAttempts=[.03,.04,.05,.06,.08,.12,.16,.20,.30,.40];
-  const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
-  const seeds=[];
-
-  for(const spec of seedSpecs){
-    let found=null;
-    for(const separationPct of separationAttempts){
-      const quantities=makeEqualHealthSeed({...args,...spec,separationPct});
-      if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){
-        found={...spec,separationPct,quantities};
-        break;
-      }
-    }
-    if(found)seeds.push(found);
-  }
-  if(!seeds.length)throw new Error('Unable to construct a feasible equal-health optimizer seed.');
-
-  let best=null;
-  const seedDiagnostics=[];
-  for(let i=0;i<seeds.length;i++){
-    const seed=seeds[i];
-    const result=optimizeFromSeed({
-      ...args,
-      initialQuantities:seed.quantities,
-      onProgress:typeof args.onProgress==='function'
-        ? p=>args.onProgress({...p,seedIndex:i,seedCount:seeds.length,seedName:seed.name})
-        : null
-    });
-    seedDiagnostics.push({
-      name:seed.name,
-      separationPct:seed.separationPct,
-      initialExpectedLifetimeDamage:result.initialResult.expectedTotalLifetimeDamage,
-      finalExpectedLifetimeDamage:result.result.expectedTotalLifetimeDamage,
-      evaluations:result.diagnostics.evaluations
-    });
-    if(!best||result.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-3)best=result;
-  }
-  best.diagnostics.optimizerVersion='1.2-validation';
-  best.diagnostics.seedStrategy='multi-seed-equal-effective-health';
-  best.diagnostics.seeds=seedDiagnostics;
-  best.diagnostics.totalEvaluations=seedDiagnostics.reduce((s,x)=>s+x.evaluations,0);
-  return best;
+  const selected=selectUnits(args.units,args.selectedIds,args.selectedNames);if(!selected.length)throw new Error('At least one selected squad is required.');
+  if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator:higherTierTroopLineagePreserved});
+  const attempts=[.03,.05,.08,.10,.15,.20,.30,.40,.60,1.00];const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));let seed=null;
+  for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(higherTierTroopLineagePreserved(sr,selected)){seed={separationPct,quantities};break;}}}
+  if(!seed)throw new Error('Unable to construct a feasible matchup-ranked optimizer starting ladder.');
+  const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator:higherTierTroopLineagePreserved,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
+  result.diagnostics.optimizerVersion='1.3-hybrid';result.diagnostics.seedStrategy='matchup-ranked-health-ladder';result.diagnostics.seedSeparationPct=seed.separationPct;result.diagnostics.totalEvaluations=result.diagnostics.evaluations;return result;
 }
 
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=70',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=72',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 self.onmessage=async(event)=>{
@@ -736,7 +693,7 @@ self.onmessage=async(event)=>{
   });
   self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
   self.postMessage({type:'result',requestId,payload:result,diagnostics:{
-   optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v70',
+   optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v72',
    armyCount:army.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,
    inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits
   }});
