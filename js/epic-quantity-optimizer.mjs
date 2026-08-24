@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '2.0-research-refined';
+export const EPIC_OPTIMIZER_BUILD = '2.0-global';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -343,16 +343,131 @@ function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPc
 }
 function seedFeasible({units,quantities,bonuses,capacityLimits}){const result=scoreEpicArmy({units,quantities,bonuses}),limits=limitsOf(capacityLimits);for(const t of CAPACITY_TYPES)if((result.capacities[t]??0)>limits[t])return false;return true;}
 
+function hashOrder(unitId,salt){
+  let x=(Number(unitId)^Number(salt))>>>0;
+  x=Math.imul(x^(x>>>16),0x45d9f3b);
+  x=Math.imul(x^(x>>>16),0x45d9f3b);
+  return (x^(x>>>16))>>>0;
+}
+
+function makeEqualHealthSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,salt=0,separationPct=.05,order='hash'}){
+  const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};
+  for(const type of CAPACITY_TYPES){
+    let group=selected.filter(u=>u.capacityType===type); if(!group.length||limits[type]<=0)continue;
+    group=group.slice().sort((a,b)=>{
+      if(order==='forward')return (a.displayOrder??a.unitId)-(b.displayOrder??b.unitId)||a.unitId-b.unitId;
+      if(order==='reverse')return (b.displayOrder??b.unitId)-(a.displayOrder??a.unitId)||b.unitId-a.unitId;
+      return hashOrder(a.unitId,salt)-hashOrder(b.unitId,salt)||a.unitId-b.unitId;
+    });
+    const rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+index*(Number(separationPct)/100)}));
+    const denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;
+    for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
+}
+
+function mulberry32(seed){let a=seed>>>0;return ()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function deathSignature(result){return result.squads.slice().sort((a,b)=>a.predictedDeathPosition-b.predictedDeathPosition).map(s=>s.id).join('|');}
+
+function mutateQuantities({selected,quantities,limits,rng,intensity=.02,moves=2,minimumQuantity=1}){
+  const q={...quantities};
+  const groups=CAPACITY_TYPES.map(type=>({type,units:selected.filter(u=>u.capacityType===type)})).filter(g=>g.units.length>1&&limits[g.type]>0);
+  for(let m=0;m<moves;m++){
+    const g=groups[Math.floor(rng()*groups.length)]; if(!g)break;
+    let donor=g.units[Math.floor(rng()*g.units.length)],receiver=g.units[Math.floor(rng()*g.units.length)];
+    if(donor.id===receiver.id){m--;continue;}
+    const variableIntensity=intensity*(0.35+1.3*rng());
+    const capChunk=Math.max(1,Math.round(limits[g.type]*variableIntensity));
+    let recvDelta=Math.max(1,Math.floor(capChunk/Number(receiver.capacityCost)));
+    let donorDelta=Math.ceil(recvDelta*Number(receiver.capacityCost)/Number(donor.capacityCost));
+    const donorQty=Number(q[donor.name]??0);
+    if(donorQty-donorDelta<minimumQuantity){donorDelta=Math.max(0,donorQty-minimumQuantity);recvDelta=Math.floor(donorDelta*Number(donor.capacityCost)/Number(receiver.capacityCost));}
+    if(recvDelta<=0||donorDelta<=0)continue;
+    q[donor.name]=donorQty-donorDelta;
+    q[receiver.name]=Number(q[receiver.name]??0)+recvDelta;
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity});
+}
+
+function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimumQuantity=1,onProgress=null}){
+  const limits=limitsOf(capacityLimits),rng=mulberry32(0x2A4B6C8D),populationSize=10,offspringPerParent=4,generations=8;
+  let evaluations=0;
+  let population=seeds.map(x=>({quantities:{...x.quantities},result:x.result??scoreEpicArmy({units,quantities:x.quantities,bonuses}),source:x.source??'seed'}));
+  evaluations+=seeds.filter(x=>!x.result).length;
+  population.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage); population=population.slice(0,populationSize);
+  const intensities=[.08,.04,.02,.01,.005,.002];
+  for(let gen=0;gen<generations;gen++){
+    const candidates=[...population];
+    const intensity=intensities[Math.min(intensities.length-1,Math.floor(gen/2))];
+    for(const parent of population){
+      for(let k=0;k<offspringPerParent;k++){
+        const q=mutateQuantities({selected,quantities:parent.quantities,limits,rng,intensity,moves:1+Math.floor(rng()*3),minimumQuantity});
+        const result=scoreEpicArmy({units,quantities:q,bonuses}); evaluations++;
+        if(candidateFeasible({result,limits}))candidates.push({quantities:q,result,source:`evo-g${gen+1}`});
+      }
+    }
+    candidates.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+    const next=[],seen=new Set();
+    // Preserve high fitness while retaining different death-order basins.
+    for(const c of candidates){const sig=deathSignature(c.result);if(!seen.has(sig)||next.length<Math.ceil(populationSize*.6)){next.push(c);seen.add(sig);}if(next.length>=populationSize)break;}
+    population=next;
+    if(typeof onProgress==='function')onProgress({phase:'evolution',generation:gen+1,generationCount:generations,evaluations,expectedLifetimeDamage:population[0].result.expectedTotalLifetimeDamage});
+  }
+  return {best:population[0],population,evaluations};
+}
+
 export function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
-  const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
+  const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
   const structureValidator=(result,chosen)=>hybridTroopStructurePreserved(result,chosen,minSep);
   if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator});
-  const attempts=[.03,.05,.08,.10,.15,.20,.30,.40,.60,1.00]; let seed=null;
-  for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(structureValidator(sr,selected)){seed={separationPct,quantities};break;}}}
-  if(!seed)throw new Error('Unable to construct a feasible matchup-ranked optimizer starting ladder.');
-  const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
-  result.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD; result.diagnostics.seedStrategy='matchup-ranked-health-ladder'; result.diagnostics.seedSeparationPct=seed.separationPct; result.diagnostics.totalEvaluations=result.diagnostics.evaluations; return result;
+
+  const seedDefs=[];
+  for(const separationPct of [.03,.05,.10,.20])seedDefs.push({name:`matchup-${separationPct}`,make:()=>createMatchupRankedSeed({...args,separationPct})});
+  for(const separationPct of [.03,.05,.10])seedDefs.push({name:`legacy-${separationPct}`,make:()=>createLegacyHealthLadderSeed({...args,separationPct})});
+  seedDefs.push({name:'forward',make:()=>makeEqualHealthSeed({...args,order:'forward',separationPct:.05})});
+  seedDefs.push({name:'reverse',make:()=>makeEqualHealthSeed({...args,order:'reverse',separationPct:.05})});
+  for(const salt of [17,53,101,211])seedDefs.push({name:`diverse-${salt}`,make:()=>makeEqualHealthSeed({...args,order:'hash',salt,separationPct:.08})});
+
+  let totalEvaluations=0;
+  const seedScores=[];
+  for(let i=0;i<seedDefs.length;i++){
+    const d=seedDefs[i],quantities=d.make(),result=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses}); totalEvaluations++;
+    if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:limits})&&structureValidator(result,selected))seedScores.push({name:d.name,quantities,result});
+    if(typeof args.onProgress==='function')args.onProgress({phase:'seed-screen',seedIndex:i,seedCount:seedDefs.length,evaluations:totalEvaluations,expectedLifetimeDamage:result.expectedTotalLifetimeDamage});
+  }
+  if(!seedScores.length)throw new Error('Unable to construct a feasible optimizer starting population.');
+  seedScores.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+
+  // Optimize several independent basins with a medium-cost deterministic local search.
+  const finalists=[];
+  const localSeedCount=Math.min(4,seedScores.length);
+  for(let i=0;i<localSeedCount;i++){
+    const s=seedScores[i];
+    const local=optimizeFromSeed({...args,initialQuantities:s.quantities,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:8,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'local',seedIndex:i,seedCount:localSeedCount,seedName:s.name}):null});
+    totalEvaluations+=local.diagnostics.evaluations;
+    finalists.push({name:s.name,quantities:local.quantities,result:local.result,local});
+  }
+  finalists.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+
+  const evo=evolutionaryRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,seeds:finalists.map(f=>({quantities:f.quantities,result:f.result,source:f.name})),minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress});
+  totalEvaluations+=evo.evaluations;
+
+  // Final fine deterministic polish in the best discovered basin.
+  const polish=optimizeFromSeed({...args,initialQuantities:evo.best.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:10,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'evolution-best'}):null});
+  totalEvaluations+=polish.diagnostics.evaluations;
+
+  const start=seedScores[0].result;
+  const out=polish;
+  out.initialResult=start;
+  out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + exact-engine polish';
+  out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
+  out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
+  out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
+  out.diagnostics.totalEvaluations=totalEvaluations;
+  out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
+  return out;
 }
 
 export { CAPACITY_TYPES };

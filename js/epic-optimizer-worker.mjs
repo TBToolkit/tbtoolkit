@@ -1,10 +1,10 @@
-import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=78';
+import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=79';
 
 let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=78', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=79', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();
@@ -29,14 +29,16 @@ self.onmessage = async (event)=>{
       minimumHealthSeparationPct: 0.01,
       minimumQuantity: 1,
       onProgress:(progress)=>{
-        const stageCount=Math.max(1,Number(progress.stageCount||1));
-        const progressPct=progress.phase==='seed'
-          ? 8
-          : Math.min(96,10+Math.round(((Number(progress.stageIndex)+1)/stageCount)*86));
-        self.postMessage({type:'progress',requestId,payload:{...progress,progressPct}});
+        let progressPct=10;
+        if(progress.phase==='seed-screen') progressPct=5+Math.round(((Number(progress.seedIndex||0)+1)/Math.max(1,Number(progress.seedCount||1)))*15);
+        else if(progress.phase==='local') progressPct=22+Math.round(((Number(progress.seedIndex||0)+(Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))/Math.max(1,Number(progress.seedCount||1)))*48);
+        else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*14);
+        else if(progress.phase==='polish') progressPct=87+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*9);
+        self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
       }
+
     });
-    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.evaluations}});
+    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
     const quantities=result?.quantities??{};
     const quantityFingerprint=Object.keys(quantities).sort().map(k=>`${k}:${quantities[k]}`).join('|');
     self.postMessage({
@@ -45,8 +47,8 @@ self.onmessage = async (event)=>{
       payload:result,
       diagnostics:{
         optimizerBuild:EPIC_OPTIMIZER_BUILD,
-        engineBuild:'2.0',
-        armyDatabase:'ARMY9-126edf91c542',
+        engineBuild:'2.1-arachne8',
+        armyDatabase:'ARMY9-v72',
         armyCount:Array.isArray(army)?army.length:0,
         quantityFingerprint,
         inputPayload:msg.bonuses,

@@ -287,7 +287,10 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
-  if(progress.phase==='seed')return 'Building matchup-ranked starting health ladder…';
+  if(progress.phase==='seed'||progress.phase==='seed-screen')return 'Comparing independent starting army structures…';
+  if(progress.phase==='local')return 'Optimizing the strongest independent structures…';
+  if(progress.phase==='evolution')return 'Exploring new death and attack-order structures…';
+  if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';
@@ -326,7 +329,7 @@ function clearPrediction(){
 }
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);els.rawGoldRevival.textContent=Math.round(r.rawGoldRevivalCost).toLocaleString('en-US');const perThousand=r.rawGoldRevivalCost>0?r.expectedTotalLifetimeDamage/r.rawGoldRevivalCost*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;
-  if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs starting ladder: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Matchup-ranked starting ladder · Engineers sacrificed first · Higher-tier direct troop counterparts preserved${epicTypeText}${mercText}${buildText}`;}
+  if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText} · Full battle simulation using the displayed quantities.`;}
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);els.predictionRows.innerHTML=rows.map(s=>`<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`).join('');
 }
@@ -392,7 +395,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=78');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=79');
   }catch(error){
     console.error(error);
     closeOptimizerModal();
