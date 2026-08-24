@@ -1,9 +1,8 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=43';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=72';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
-const DATA_URLS={troop:'data/troops.json',monster:'data/monsters.json',mercenary:'data/mercenaries.json'};
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
@@ -85,7 +84,36 @@ function resultTextColor(category,row){
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
 function iconFallback(img){img.onerror=()=>{if(img.dataset.fallback)return;img.dataset.fallback='1';img.src='assets/unit-icons/missing-icon.svg';img.classList.add('missing-icon');};}
 
-async function loadData(){const entries=await Promise.all(Object.entries(DATA_URLS).map(async([k,url])=>{const r=await fetch(url,{cache:'no-cache'});if(!r.ok)throw new Error(`Could not load ${url}`);return[k,await r.json()];}));entries.forEach(([k,v])=>units[k]=v);const ar=await fetch('data/army-v2.json?v=72',{cache:'no-cache'});if(!ar.ok)throw new Error('Could not load canonical army database');armyV2=await ar.json();}
+function legacyUnitFromCanonical(unit){
+  const capacityField=unit.category==='troop'?'leadershipEach':unit.category==='monster'?'dominanceEach':'authorityEach';
+  const mercGroupMap={COM:'COMMON',MNST:'MONSTER',SPCL:'SPECIALIST',GRD:'GUARDSMAN',EMH:'EPIC - HUNTER',EX:'EPIC - EVENT',ARNE:'ARACHNE',ENG:'ENGINEER'};
+  const tierSubtype=String(unit.tier||'').toUpperCase().split('-').slice(1).join('-');
+  const legacyClass=unit.category==='mercenary'?(mercGroupMap[tierSubtype]||unit.unitClass):unit.unitClass;
+  return{
+    id:unit.id,
+    category:unit.category,
+    displayOrder:unit.displayOrder,
+    class:legacyClass,
+    type:unit.combatType,
+    name:unit.name,
+    level:unit.tier,
+    strengthEach:unit.baseStrength,
+    healthEach:unit.baseHealth,
+    [capacityField]:unit.capacityCost,
+    species:unit.species,
+    selectionKey:`${unit.tier}|${unit.combatType}`,
+    icon:unit.icon,
+    bonuses:{...(unit.bonuses||{})}
+  };
+}
+async function loadData(){
+  const r=await fetch('data/army-v2.json?v=74',{cache:'no-store'});
+  if(!r.ok)throw new Error('Could not load canonical army database');
+  armyV2=await r.json();
+  for(const category of ['troop','monster','mercenary']){
+    units[category]=armyV2.filter(u=>u.category===category).map(legacyUnitFromCanonical);
+  }
+}
 function loadSavedState(){
   try{
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
