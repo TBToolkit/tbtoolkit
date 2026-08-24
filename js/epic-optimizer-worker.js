@@ -603,7 +603,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '1.3-hybrid';
+const EPIC_OPTIMIZER_BUILD = '1.3.1-hybrid';
 
 const SEED_CAPACITY_TYPES=['LEADERSHIP','DOMINANCE','AUTHORITY'];
 
@@ -649,8 +649,10 @@ function makeEqualHealthSeed({units,selectedIds,selectedNames,bonuses,capacityLi
   return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
 }
 function matchupRankScore(unit,bonuses){const b=unit.bonuses??{};return Math.max(Number(b.flying??0),Number(b.mounted??0),Number(b.melee??0),Number(b.ranged??0))+Number(b.epic??0)+(bonuses?.arachne?Number(b.arachne??0):0);}
-function createMatchupRankedSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10}){const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};for(const type of SEED_CAPACITY_TYPES){let group=selected.filter(u=>u.capacityType===type);if(!group.length||limits[type]<=0)continue;group=group.slice().sort((a,b)=>matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses)||(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0));const n=group.length,rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+(n-1-index)*(Number(separationPct)/100)})),denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));}return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});}
+function createMatchupRankedSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10}){const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};for(const type of SEED_CAPACITY_TYPES){let group=selected.filter(u=>u.capacityType===type);if(!group.length||limits[type]<=0)continue;group=group.slice().sort((a,b)=>{const ae=a.category==='troop'&&String(a.unitClass).toUpperCase()==='ENGINEER'?0:1,be=b.category==='troop'&&String(b.unitClass).toUpperCase()==='ENGINEER'?0:1;if(ae!==be)return ae-be;if(ae===0&&be===0)return (a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);return matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses)||(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);});const n=group.length,rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+(n-1-index)*(Number(separationPct)/100)})),denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));}return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});}
 function higherTierTroopLineagePreserved(result,selected){const deaths=new Map(result.squads.map(s=>[s.id,s.predictedDeathPosition])),groups=new Map();for(const u of selected.filter(u=>u.category==='troop')){const base=String(u.name).replace(/\s+[12]$/,'').trim(),key=`${u.unitClass}|${u.combatType}|${base}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u);}for(const arr of groups.values()){arr.sort((a,b)=>(a.tierNumber??0)-(b.tierNumber??0));for(let i=1;i<arr.length;i++){const lo=arr[i-1],hi=arr[i],ld=deaths.get(lo.id),hd=deaths.get(hi.id);if(Number.isFinite(ld)&&Number.isFinite(hd)&&hd<=ld)return false;}}return true;}
+function sacrificialTroopEngineersFirst(result,selected){const deaths=new Map(result.squads.map(s=>[s.id,s.predictedDeathPosition]));const engineers=selected.filter(u=>u.category==='troop'&&String(u.unitClass).toUpperCase()==='ENGINEER').slice().sort((a,b)=>(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0));if(!engineers.length)return true;for(let i=0;i<engineers.length;i++){if(deaths.get(engineers[i].id)!==i+1)return false;}return true;}
+function hybridTroopStructurePreserved(result,selected){return higherTierTroopLineagePreserved(result,selected)&&sacrificialTroopEngineersFirst(result,selected);}
 function seedFeasible({units,quantities,bonuses,capacityLimits,minimumHealthSeparationPct}){
   const result=scoreEpicArmy({units,quantities,bonuses});
   const limits=limitsOf(capacityLimits);
@@ -661,18 +663,18 @@ function seedFeasible({units,quantities,bonuses,capacityLimits,minimumHealthSepa
 
 function optimizeEpicQuantities(args){
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames);if(!selected.length)throw new Error('At least one selected squad is required.');
-  if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator:higherTierTroopLineagePreserved});
+  if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator:hybridTroopStructurePreserved});
   const attempts=[.03,.05,.08,.10,.15,.20,.30,.40,.60,1.00];const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));let seed=null;
-  for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(higherTierTroopLineagePreserved(sr,selected)){seed={separationPct,quantities};break;}}}
+  for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(hybridTroopStructurePreserved(sr,selected)){seed={separationPct,quantities};break;}}}
   if(!seed)throw new Error('Unable to construct a feasible matchup-ranked optimizer starting ladder.');
-  const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator:higherTierTroopLineagePreserved,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
-  result.diagnostics.optimizerVersion='1.3-hybrid';result.diagnostics.seedStrategy='matchup-ranked-health-ladder';result.diagnostics.seedSeparationPct=seed.separationPct;result.diagnostics.totalEvaluations=result.diagnostics.evaluations;return result;
+  const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator:hybridTroopStructurePreserved,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
+  result.diagnostics.optimizerVersion='1.3.1-hybrid';result.diagnostics.seedStrategy='matchup-ranked-health-ladder';result.diagnostics.seedSeparationPct=seed.separationPct;result.diagnostics.totalEvaluations=result.diagnostics.evaluations;return result;
 }
 
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=72',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=75',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 self.onmessage=async(event)=>{
