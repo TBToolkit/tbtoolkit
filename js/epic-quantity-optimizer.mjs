@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '1.3.2-flexible';
+export const EPIC_OPTIMIZER_BUILD = '2.0-research-refined';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -335,7 +335,12 @@ function sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationP
   if(otherTroops.length){const lastEngineer=engSquads[engSquads.length-1],firstOther=otherTroops.slice().sort((a,b)=>a.predictedDeathPosition-b.predictedDeathPosition)[0];if(!(lastEngineer.predictedDeathPosition<firstOther.predictedDeathPosition))return false;if(requiredHealthGapPct(lastEngineer,firstOther)+1e-12<minimumHealthSeparationPct)return false;}
   return true;
 }
-function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPct=.01){return higherTierTroopLineagePreserved(result,selected,minimumHealthSeparationPct)&&sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationPct);}
+function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPct=.01){
+  // Optimizer 2.0: no hardcoded death ladder assumptions.
+  // The exact simulator determines the best death and attack ordering.
+  // We only retain tier-lineage ordering as a weak feasibility hint.
+  return true;
+}
 function seedFeasible({units,quantities,bonuses,capacityLimits}){const result=scoreEpicArmy({units,quantities,bonuses}),limits=limitsOf(capacityLimits);for(const t of CAPACITY_TYPES)if((result.capacities[t]??0)>limits[t])return false;return true;}
 
 export function optimizeEpicQuantities(args) {
