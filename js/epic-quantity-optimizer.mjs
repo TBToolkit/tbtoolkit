@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '2.0-paired-counterfactual';
+export const EPIC_OPTIMIZER_BUILD = '2.0-group-redistribution';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -681,6 +681,129 @@ function pairedCounterfactualBasinRefine({units,selected,bonuses,capacityLimits,
   return {best,evaluations,pairResults,pairCount:unique.length};
 }
 
+export 
+function groupRedistributionAllocate(group,budget,weights,minimumQuantity=1){
+  const q={};
+  let remaining=Math.max(0,Math.floor(Number(budget)||0));
+  // Keep every selected unit actionable. Group redistribution changes stack shape, not selection.
+  for(const u of group){
+    const cost=Math.max(1,Number(u.capacityCost));
+    q[u.name]=minimumQuantity;
+    remaining-=minimumQuantity*cost;
+  }
+  if(remaining<0)return null;
+  const clean=group.map((u,i)=>Math.max(0.0001,Number(weights?.[i]??1)));
+  const sum=clean.reduce((a,b)=>a+b,0)||1;
+  const desired=[];
+  for(let i=0;i<group.length;i++){
+    const u=group[i],cost=Math.max(1,Number(u.capacityCost));
+    const raw=(remaining*clean[i]/sum)/cost;
+    const add=Math.max(0,Math.floor(raw));
+    q[u.name]+=add;
+    desired.push({u,frac:raw-add,weight:clean[i]});
+  }
+  let used=group.reduce((s,u)=>s+Number(q[u.name]??0)*Number(u.capacityCost),0);
+  let left=Math.max(0,Math.floor(budget-used));
+  // Spend discrete remainder in the units with the largest unmet fractional allocation.
+  desired.sort((a,b)=>b.frac-a.frac||b.weight-a.weight||String(a.u.id).localeCompare(String(b.u.id)));
+  let guard=0;
+  while(left>0&&guard++<10000){
+    let placed=false;
+    for(const row of desired){
+      const cost=Number(row.u.capacityCost);
+      if(cost<=left){q[row.u.name]++;left-=cost;placed=true;break;}
+    }
+    if(!placed)break;
+  }
+  return q;
+}
+
+function redistributionGroups(selected,result){
+  const groups=[];
+  const seen=new Set();
+  const add=(key,units)=>{
+    const arr=units.filter(Boolean);
+    if(arr.length<3||arr.length>8)return;
+    const sig=arr.map(u=>u.id).sort().join('|');
+    if(seen.has(sig))return;seen.add(sig);groups.push({key,units:arr});
+  };
+  // Same-tier groups are a natural mechanical family (G8, S9, M7, etc.) without encoding unit names.
+  const byTier=new Map();
+  for(const u of selected){const k=`${u.capacityType}|${u.tier??''}`;if(!byTier.has(k))byTier.set(k,[]);byTier.get(k).push(u);}
+  for(const [k,arr] of byTier)add(`tier:${k}`,arr);
+  // Also explore compact whole-capacity groups when the selected pool itself is small.
+  for(const type of CAPACITY_TYPES){const arr=selected.filter(u=>u.capacityType===type);if(arr.length>=3&&arr.length<=8)add(`capacity:${type}`,arr);}
+  // For larger pools, add adjacent quartets in the current death ladder. This generalizes to mercenary-heavy armies.
+  const byId=new Map(selected.map(u=>[u.id,u]));
+  for(const type of CAPACITY_TYPES){
+    const ordered=(result?.squads??[]).filter(s=>s.capacityType===type).sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999)).map(s=>byId.get(s.id)).filter(Boolean);
+    if(ordered.length>8){for(let i=0;i+3<ordered.length;i+=2)add(`death-block:${type}:${i}`,ordered.slice(i,i+4));}
+  }
+  return groups;
+}
+
+function groupRedistributionRefine({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,onProgress=null,maxRounds=1,maxSeeds=3}){
+  const limits=limitsOf(capacityLimits);
+  const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
+  let best={quantities:{...start.quantities},result:base,source:'group-redistribution-start'};
+  let evaluations=0,accepted=0;
+  const summaries=[],basinSeeds=[];
+  const groups=redistributionGroups(selected,base);
+  for(let gi=0;gi<groups.length;gi++){
+    const g=groups[gi],type=g.units[0].capacityType;
+    if(!g.units.every(u=>u.capacityType===type))continue;
+    const usage=capacityUsage(selected,start.quantities);
+    const groupUsed=g.units.reduce((sum,u)=>sum+Number(start.quantities[u.name]??0)*Number(u.capacityCost),0);
+    const slack=Math.max(0,Number(limits[type]??0)-Number(usage[type]??0));
+    const budget=Math.max(0,Math.floor(groupUsed+slack));
+    if(!(budget>0))continue;
+    const n=g.units.length,weightSets=[];
+    const currentCaps=g.units.map(u=>Math.max(1,Number(start.quantities[u.name]??minimumQuantity)*Number(u.capacityCost)));
+    const currentSum=currentCaps.reduce((x,y)=>x+y,0)||1;
+    weightSets.push(currentCaps.map(x=>x/currentSum));
+    for(let i=0;i<n;i++){
+      for(const factor of [.35,.5,.55,.6]){const w=Array(n).fill(1);w[i]=factor;weightSets.push(w);}
+      const favor=Array(n).fill(1);favor[i]=2.0;weightSets.push(favor);
+      // Two-axis share changes help cross valleys that require one squad to shrink while another also shifts.
+      for(let j=0;j<n;j++){if(j===i)continue;const w=Array(n).fill(1);w[i]=.55;w[j]=.8;weightSets.push(w);}
+    }
+    for(let shift=1;shift<n;shift++)weightSets.push(currentCaps.map((_,i)=>currentCaps[(i+shift)%n]/currentSum));
+    weightSets.push([...currentCaps].reverse().map(x=>x/currentSum));
+    const salt=[...String(g.key)].reduce((sum,c)=>((sum*33)^c.charCodeAt(0))>>>0,0)^0x87A11CE;
+    const rng=mulberry32(salt>>>0);
+    for(let k=0;k<12;k++){const w=[];for(let i=0;i<n;i++)w.push(-Math.log(Math.max(1e-9,1-rng())));weightSets.push(w);}
+    const candidates=[];
+    for(const weights of weightSets){
+      const alloc=groupRedistributionAllocate(g.units,budget,weights,minimumQuantity);if(!alloc)continue;
+      const q={...start.quantities,...alloc};
+      const repaired=repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity});
+      const cand=scoreEpicArmy({units,quantities:repaired,bonuses});evaluations++;
+      if(!candidateFeasible({result:cand,limits})||(structureValidator&&!structureValidator(cand,selected)))continue;
+      candidates.push({quantities:repaired,result:cand,groupKey:g.key,capacityType:type});
+      if(cand.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-9){best={quantities:repaired,result:cand,source:`group-raw-${g.key}`};accepted++;}
+    }
+    candidates.sort((x,y)=>y.result.expectedTotalLifetimeDamage-x.result.expectedTotalLifetimeDamage);
+    if(candidates.length){
+      const top=candidates[0],baseSig=deathSignature(base);
+      const alternate=candidates.find(c=>deathSignature(c.result)!==baseSig&&c.result.expectedTotalLifetimeDamage>=base.expectedTotalLifetimeDamage*.97);
+      basinSeeds.push(alternate??top);
+      summaries.push({key:g.key,size:n,budget,rawBestEld:top.result.expectedTotalLifetimeDamage,alternateEld:alternate?.result.expectedTotalLifetimeDamage??null});
+    }
+    if(typeof onProgress==='function')onProgress({phase:'group-redistribution',round:1,roundCount:1,groupIndex:gi,groupCount:groups.length,evaluations,acceptedMoves:accepted,groupKey:g.key,expectedLifetimeDamage:best.result.expectedTotalLifetimeDamage});
+  }
+  basinSeeds.sort((x,y)=>y.result.expectedTotalLifetimeDamage-x.result.expectedTotalLifetimeDamage);
+  const chosen=[],seenTypes=new Set();
+  for(const seed of basinSeeds){if(chosen.length>=maxSeeds)break;if(!seenTypes.has(seed.capacityType)){chosen.push(seed);seenTypes.add(seed.capacityType);}}
+  for(const seed of basinSeeds){if(chosen.length>=maxSeeds)break;if(!chosen.includes(seed))chosen.push(seed);}
+  for(let i=0;i<chosen.length;i++){
+    const seed=chosen[i];
+    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:seed.quantities,minimumQuantity,structureValidator,stageFractions:[.005,.002,.001,.0005],maxRoundsPerStage:3,onProgress:null});
+    evaluations+=Number(local.diagnostics?.evaluations??0);
+    if(local.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-9){best={quantities:local.quantities,result:local.result,source:`group-polish-${seed.groupKey}`};accepted++;}
+  }
+  return {best,evaluations,acceptedMoves:accepted,summaries,seedCount:chosen.length};
+}
+
 export function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -731,17 +854,21 @@ export function optimizeEpicQuantities(args) {
   const paired=pairedCounterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPairs:4});
   totalEvaluations+=paired.evaluations;
 
-  // Re-run threshold refinement from the best paired basin, then do a final fine deterministic polish.
-  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:5});
+  // Coordinated capacity-group redistribution explores multi-unit valleys inside tier/capacity families.
+  const groupRedistribution=groupRedistributionRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:1,maxSeeds:3});
+  totalEvaluations+=groupRedistribution.evaluations;
+
+  // Re-run threshold refinement from the best redistributed basin, then do a final fine deterministic polish.
+  const threshold2=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:groupRedistribution.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:5});
   totalEvaluations+=threshold2.evaluations;
-  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:12,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'paired-counterfactual-best'}):null});
+  const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:12,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'group-redistribution-best'}):null});
   totalEvaluations+=polish.diagnostics.evaluations;
 
   const start=seedScores[0].result;
   const out=polish;
   out.initialResult=start;
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single and paired counterfactual basin search + exact-engine polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
@@ -753,6 +880,9 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.pairedCounterfactualBest=paired.best.result.expectedTotalLifetimeDamage;
   out.diagnostics.pairedCounterfactualPairs=paired.pairResults;
   out.diagnostics.pairedCounterfactualPairCount=paired.pairCount;
+  out.diagnostics.groupRedistributionBest=groupRedistribution.best.result.expectedTotalLifetimeDamage;
+  out.diagnostics.groupRedistributionAcceptedMoves=groupRedistribution.acceptedMoves;
+  out.diagnostics.groupRedistributionSummaries=groupRedistribution.summaries;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;

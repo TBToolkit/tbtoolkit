@@ -1,10 +1,10 @@
-import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=84';
+import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=87';
 
 let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=84', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=87', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();
@@ -35,7 +35,8 @@ self.onmessage = async (event)=>{
         else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*12);
         else if(progress.phase==='threshold') progressPct=84+Math.round((Number(progress.round||0)/Math.max(1,Number(progress.roundCount||1)))*4);
         else if(progress.phase==='counterfactual') progressPct=88+Math.round(((Number(progress.basinIndex||0)+1)/Math.max(1,Number(progress.basinCount||1)))*3);
-        else if(progress.phase==='paired-counterfactual') progressPct=91+Math.round(((Number(progress.pairIndex||0)+1)/Math.max(1,Number(progress.pairCount||1)))*4);
+        else if(progress.phase==='paired-counterfactual') progressPct=91+Math.round(((Number(progress.pairIndex||0)+1)/Math.max(1,Number(progress.pairCount||1)))*2);
+        else if(progress.phase==='group-redistribution') progressPct=93+Math.round(((Number(progress.groupIndex||0)+1)/Math.max(1,Number(progress.groupCount||1)))*2);
         else if(progress.phase==='polish') progressPct=96+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*1);
         self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
       }

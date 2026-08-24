@@ -292,6 +292,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='evolution')return 'Exploring new death and attack-order structures…';
   if(progress.phase==='threshold')return 'Testing attack-opportunity thresholds…';
   if(progress.phase==='counterfactual')return 'Challenging the current structure in alternate battle basins…';
+  if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
@@ -397,7 +398,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=86');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=87');
   }catch(error){
     console.error(error);
     closeOptimizerModal();
