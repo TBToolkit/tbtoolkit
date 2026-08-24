@@ -470,7 +470,6 @@ function configureModeUI(){
   if(nums[1])nums[1].textContent=custom?'5':optimizer?'5':'4';
 
   syncDerivedEpicBonuses();
-  else syncDerivedHealthInputs();
   setOptimizeButtonState();
 }
 function applyStateToInputs(){
