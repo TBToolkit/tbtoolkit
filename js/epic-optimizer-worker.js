@@ -604,7 +604,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '1.3.2-flexible';
+const EPIC_OPTIMIZER_BUILD = '2.0-research-refined';
 
 const SEED_CAPACITY_TYPES=['LEADERSHIP','DOMINANCE','AUTHORITY'];
 
@@ -701,8 +701,9 @@ function sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationP
   return true;
 }
 function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPct=.01){
-  return higherTierTroopLineagePreserved(result,selected,minimumHealthSeparationPct)
-    &&sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationPct);
+  // Optimizer 2.0: no hardcoded death-ladder or Engineer-first assumptions.
+  // The exact battle simulator determines death and attack ordering.
+  return true;
 }
 function seedFeasible({units,quantities,bonuses,capacityLimits}){
   const result=scoreEpicArmy({units,quantities,bonuses});
@@ -720,13 +721,13 @@ function optimizeEpicQuantities(args){
   for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits,minimumHealthSeparationPct:minSep})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(structureValidator(sr,selected)){seed={separationPct,quantities};break;}}}
   if(!seed)throw new Error('Unable to construct a feasible matchup-ranked optimizer starting ladder.');
   const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
-  result.diagnostics.optimizerVersion='1.3.2-flexible';result.diagnostics.seedStrategy='matchup-ranked-health-ladder';result.diagnostics.seedSeparationPct=seed.separationPct;result.diagnostics.totalEvaluations=result.diagnostics.evaluations;return result;
+  result.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;result.diagnostics.seedStrategy='matchup-ranked-health-ladder';result.diagnostics.seedSeparationPct=seed.separationPct;result.diagnostics.totalEvaluations=result.diagnostics.evaluations;return result;
 }
 
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=75',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=78',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 self.onmessage=async(event)=>{
