@@ -1,10 +1,10 @@
-import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=79';
+import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=82';
 
 let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=79', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=82', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();
@@ -32,8 +32,9 @@ self.onmessage = async (event)=>{
         let progressPct=10;
         if(progress.phase==='seed-screen') progressPct=5+Math.round(((Number(progress.seedIndex||0)+1)/Math.max(1,Number(progress.seedCount||1)))*15);
         else if(progress.phase==='local') progressPct=22+Math.round(((Number(progress.seedIndex||0)+(Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))/Math.max(1,Number(progress.seedCount||1)))*48);
-        else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*14);
-        else if(progress.phase==='polish') progressPct=87+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*9);
+        else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*12);
+        else if(progress.phase==='threshold') progressPct=85+Math.round((Number(progress.round||0)/Math.max(1,Number(progress.roundCount||1)))*7);
+        else if(progress.phase==='polish') progressPct=93+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*5);
         self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
       }
 

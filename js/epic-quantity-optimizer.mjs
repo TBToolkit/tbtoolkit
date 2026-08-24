@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '2.0-global';
+export const EPIC_OPTIMIZER_BUILD = '2.0-threshold';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -416,6 +416,74 @@ function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimum
   return {best:population[0],population,evaluations};
 }
 
+export 
+function thresholdQuantityForHealth(targetUnit, targetSquad, otherSquad, direction){
+  if(!targetUnit||!targetSquad||!otherSquad||!(targetSquad.quantity>0)||!(targetSquad.effectiveHealth>0)) return null;
+  const oneHealth=targetSquad.effectiveHealth/targetSquad.quantity;
+  if(!(oneHealth>0)) return null;
+  const raw=otherSquad.effectiveHealth/oneHealth;
+  return direction==='above' ? Math.floor(raw)+1 : Math.max(1,Math.ceil(raw)-1);
+}
+function thresholdQuantityForAttack(targetUnit, targetSquad, otherSquad, direction){
+  if(!targetUnit||!targetSquad||!otherSquad||!(targetUnit.baseStrength>0)) return null;
+  const raw=otherSquad.nominalSquadStrength/Number(targetUnit.baseStrength);
+  return direction==='above' ? Math.floor(raw)+1 : Math.max(1,Math.ceil(raw)-1);
+}
+function rebalanceThresholdMove({selected,quantities,limits,target,desiredQty,donor,minimumQuantity=1}){
+  const q={...quantities};
+  const current=Number(q[target.name]??0);
+  if(!Number.isInteger(desiredQty)||desiredQty<minimumQuantity||desiredQty===current)return null;
+  const targetCost=Number(target.capacityCost),donorCost=Number(donor.capacityCost);
+  const delta=desiredQty-current;
+  q[target.name]=desiredQty;
+  if(delta>0){
+    const donorQty=Number(q[donor.name]??0);
+    let take=Math.ceil(delta*targetCost/donorCost);
+    if(donorQty-take<minimumQuantity)return null;
+    q[donor.name]=donorQty-take;
+  } else {
+    const released=(-delta)*targetCost;
+    const give=Math.floor(released/donorCost);
+    if(give>0)q[donor.name]=Number(q[donor.name]??0)+give;
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity});
+}
+function opportunityThresholdRefine({units,selected,bonuses,capacityLimits,start,minimumQuantity=1,onProgress=null,maxRounds=5}){
+  const limits=limitsOf(capacityLimits);
+  let quantities={...start.quantities},result=start.result??scoreEpicArmy({units,quantities,bonuses}),evaluations=0,accepted=0;
+  const selectedById=new Map(selected.map(u=>[u.id,u]));
+  for(let round=0;round<maxRounds;round++){
+    let best=null,bestScore=result.expectedTotalLifetimeDamage;
+    const healthOrder=result.squads.slice().sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId);
+    const attackOrder=result.squads.slice().sort((a,b)=>b.nominalSquadStrength-a.nominalSquadStrength||a.unitId-b.unitId);
+    const hIndex=new Map(healthOrder.map((s,i)=>[s.id,i])),aIndex=new Map(attackOrder.map((s,i)=>[s.id,i]));
+    for(const targetSquad of result.squads){
+      const target=selectedById.get(targetSquad.id); if(!target)continue;
+      const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id); if(!peers.length)continue;
+      const candidates=new Set();
+      const hi=hIndex.get(target.id);
+      for(const d of [-3,-2,-1,1,2,3]){const j=hi+d;if(j>=0&&j<healthOrder.length){const other=healthOrder[j]; if(other.capacityType===target.capacityType){for(const dir of ['above','below']){const x=thresholdQuantityForHealth(target,targetSquad,other,dir);if(x)candidates.add(x);}}}}
+      const ai=aIndex.get(target.id);
+      for(const d of [-3,-2,-1,1,2,3]){const j=ai+d;if(j>=0&&j<attackOrder.length){const other=attackOrder[j]; if(other.capacityType===target.capacityType){for(const dir of ['above','below']){const x=thresholdQuantityForAttack(target,targetSquad,other,dir);if(x)candidates.add(x);}}}}
+      const cur=Number(quantities[target.name]??0);
+      for(const frac of [.00005,.0001,.0002,.0005,.001,.002,.005]){const step=Math.max(1,Math.round(cur*frac));candidates.add(Math.max(minimumQuantity,cur-step));candidates.add(cur+step);}
+      for(const desiredQty of candidates){
+        if(desiredQty===cur)continue;
+        for(const donor of peers){
+          const q=rebalanceThresholdMove({selected,quantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;
+          const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;
+          if(!candidateFeasible({result:cand,limits}))continue;
+          if(cand.expectedTotalLifetimeDamage>bestScore+1e-9){best={quantities:q,result:cand,target:target.id,donor:donor.id,beforeOpp:targetSquad.averageAttackOpportunities,afterOpp:cand.squads.find(s=>s.id===target.id)?.averageAttackOpportunities??null};bestScore=cand.expectedTotalLifetimeDamage;}
+        }
+      }
+    }
+    if(!best)break;
+    quantities=best.quantities; result=best.result; accepted++;
+    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
+  }
+  return {quantities,result,evaluations,acceptedMoves:accepted};
+}
+
 export function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -453,18 +521,24 @@ export function optimizeEpicQuantities(args) {
   const evo=evolutionaryRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,seeds:finalists.map(f=>({quantities:f.quantities,result:f.result,source:f.name})),minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress});
   totalEvaluations+=evo.evaluations;
 
-  // Final fine deterministic polish in the best discovered basin.
-  const polish=optimizeFromSeed({...args,initialQuantities:evo.best.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:10,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'evolution-best'}):null});
+  // Explicitly search health/attack-priority thresholds that can change discrete attack opportunities.
+  const threshold=opportunityThresholdRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:evo.best,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:5});
+  totalEvaluations+=threshold.evaluations;
+
+  // Final fine deterministic polish in the best discovered threshold basin.
+  const polish=optimizeFromSeed({...args,initialQuantities:threshold.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:10,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'evolution-best'}):null});
   totalEvaluations+=polish.diagnostics.evaluations;
 
   const start=seedScores[0].result;
   const out=polish;
   out.initialResult=start;
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + exact-engine polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity threshold search + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
+  out.diagnostics.thresholdBest=threshold.result.expectedTotalLifetimeDamage;
+  out.diagnostics.thresholdAcceptedMoves=threshold.acceptedMoves;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
   return out;
