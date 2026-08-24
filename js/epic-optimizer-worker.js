@@ -1363,6 +1363,12 @@ function optimizeEpicQuantities(args) {
 }
 
 
+let armyPromise=null;
+async function loadArmy(){
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=86',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ return armyPromise;
+}
+
 self.onmessage=async(event)=>{
  const msg=event.data??{};if(msg.type!=='optimize')return;const requestId=msg.requestId;
  try{
