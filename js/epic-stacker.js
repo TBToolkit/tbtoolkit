@@ -397,7 +397,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=84');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=85');
   }catch(error){
     console.error(error);
     closeOptimizerModal();

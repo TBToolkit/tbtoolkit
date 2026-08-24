@@ -1020,7 +1020,6 @@ function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimum
   return {best:population[0],population,evaluations};
 }
 
-export 
 function thresholdQuantityForHealth(targetUnit, targetSquad, otherSquad, direction){
   if(!targetUnit||!targetSquad||!otherSquad||!(targetSquad.quantity>0)||!(targetSquad.effectiveHealth>0)) return null;
   const oneHealth=targetSquad.effectiveHealth/targetSquad.quantity;
