@@ -1,4 +1,4 @@
-export const EPIC_OPTIMIZER_BUILD = '1.1.1';
+export const EPIC_OPTIMIZER_BUILD = '1.3.2-flexible';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
@@ -96,10 +96,8 @@ export function repairCapacity({ units, quantities, capacityLimits, minimumQuant
   return q;
 }
 
-function candidateFeasible({ result, limits, minimumHealthSeparationPct }) {
+function candidateFeasible({ result, limits }) {
   for (const type of CAPACITY_TYPES) if ((result.capacities[type] ?? 0) > limits[type]) return false;
-  const minSep = result.separationSummary.minPct;
-  if (minSep !== null && minSep + 1e-12 < minimumHealthSeparationPct) return false;
   return true;
 }
 
@@ -120,7 +118,7 @@ function compareScore(a, b, epsilon = 1e-3) {
  *
  * This is intentionally deterministic so regression results are reproducible.
  */
-export function optimizeEpicQuantities({
+function optimizeFromSeed({
   units,
   selectedIds,
   selectedNames,
@@ -133,6 +131,7 @@ export function optimizeEpicQuantities({
   maxRoundsPerStage = 20,
   minimumQuantity = 1,
   onProgress = null,
+  structureValidator = null,
 }) {
   const selectedIdSet = new Set(selectedIds ?? []);
   const selectedNameSet = new Set(selectedNames ?? []);
@@ -145,7 +144,7 @@ export function optimizeEpicQuantities({
     : createLegacyHealthLadderSeed({ units, selectedIds:selected.map(u=>u.id), bonuses, capacityLimits:limits, separationPct:seedSeparationPct });
 
   let result = scoreEpicArmy({ units, quantities, bonuses });
-  if (!candidateFeasible({ result, limits, minimumHealthSeparationPct })) {
+  if (!candidateFeasible({ result, limits }) || (structureValidator && !structureValidator(result, selected))) {
     throw new Error(`Initial optimizer seed is not feasible. min separation=${result.separationSummary.minPct}`);
   }
   const initialResult = result;
@@ -198,7 +197,7 @@ export function optimizeEpicQuantities({
             if (used > limits[group.type]) continue;
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (!candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct })) continue;
+            if (!candidateFeasible({ result:candResult, limits }) || (structureValidator && !structureValidator(candResult, selected))) continue;
             const candScore = candResult.expectedTotalLifetimeDamage;
             if (compareScore(candScore, bestCandidateScore)) {
               bestCandidateScore = candScore;
@@ -217,7 +216,7 @@ export function optimizeEpicQuantities({
             const cand = { ...quantities, [u.name]: current - delta };
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
+            if (candidateFeasible({ result:candResult, limits }) && (!structureValidator || structureValidator(candResult, selected)) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
               bestCandidateScore = candResult.expectedTotalLifetimeDamage;
               bestCandidate = cand;
               bestCandidateResult = candResult;
@@ -231,7 +230,7 @@ export function optimizeEpicQuantities({
             const cand = { ...quantities, [u.name]: current + inc };
             const candResult = scoreEpicArmy({ units, quantities:cand, bonuses });
             evaluations += 1;
-            if (candidateFeasible({ result:candResult, limits, minimumHealthSeparationPct }) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
+            if (candidateFeasible({ result:candResult, limits }) && (!structureValidator || structureValidator(candResult, selected)) && compareScore(candResult.expectedTotalLifetimeDamage, bestCandidateScore)) {
               bestCandidateScore = candResult.expectedTotalLifetimeDamage;
               bestCandidate = cand;
               bestCandidateResult = candResult;
@@ -286,6 +285,69 @@ export function optimizeEpicQuantities({
       minimumHealthSeparationPct,
     },
   };
+}
+
+
+const SEED_CAPACITY_TYPES = CAPACITY_TYPES;
+function selectUnits(units, selectedIds, selectedNames) {
+  const ids = new Set(selectedIds ?? []), names = new Set(selectedNames ?? []);
+  return units.filter(u => ids.size ? ids.has(u.id) : names.has(u.name));
+}
+function limitsOf(limits) { return normalizedLimits(limits); }
+function matchupRankScore(unit, bonuses) {
+  const b=unit.bonuses??{};
+  return Math.max(Number(b.flying??0),Number(b.mounted??0),Number(b.melee??0),Number(b.ranged??0)) + Number(b.epic??0) + (bonuses?.arachne?Number(b.arachne??0):0);
+}
+function createMatchupRankedSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10}) {
+  const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};
+  for(const type of SEED_CAPACITY_TYPES){
+    let group=selected.filter(u=>u.capacityType===type); if(!group.length||limits[type]<=0)continue;
+    group=group.slice().sort((a,b)=>{
+      const ae=a.category==='troop'&&String(a.unitClass).toUpperCase()==='ENGINEER'?0:1;
+      const be=b.category==='troop'&&String(b.unitClass).toUpperCase()==='ENGINEER'?0:1;
+      if(ae!==be)return ae-be;
+      if(ae===0&&be===0)return (a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);
+      return matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses)||(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);
+    });
+    const n=group.length,rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+(n-1-index)*(Number(separationPct)/100)}));
+    const denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;
+    for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));
+  }
+  return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
+}
+function requiredHealthGapPct(earlierSquad,laterSquad){
+  if(!earlierSquad||!laterSquad||!(laterSquad.effectiveHealth>0))return Infinity;
+  return (earlierSquad.effectiveHealth/laterSquad.effectiveHealth-1)*100;
+}
+function higherTierTroopLineagePreserved(result,selected,minimumHealthSeparationPct=.01){
+  const byId=new Map(result.squads.map(s=>[s.id,s])),groups=new Map();
+  for(const u of selected.filter(u=>u.category==='troop')){const base=String(u.name).replace(/\s+[12]$/,'').trim(),key=`${u.unitClass}|${u.combatType}|${base}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u);}
+  for(const arr of groups.values()){arr.sort((a,b)=>(a.tierNumber??0)-(b.tierNumber??0));for(let i=1;i<arr.length;i++){const lo=byId.get(arr[i-1].id),hi=byId.get(arr[i].id);if(!lo||!hi)continue;if(!(lo.predictedDeathPosition<hi.predictedDeathPosition))return false;if(requiredHealthGapPct(lo,hi)+1e-12<minimumHealthSeparationPct)return false;}}
+  return true;
+}
+function sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationPct=.01){
+  const byId=new Map(result.squads.map(s=>[s.id,s]));
+  const engineers=selected.filter(u=>u.category==='troop'&&String(u.unitClass).toUpperCase()==='ENGINEER').slice().sort((a,b)=>(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0));
+  if(!engineers.length)return true;
+  const engSquads=engineers.map(u=>byId.get(u.id)); if(engSquads.some(s=>!s))return false;
+  for(let i=0;i+1<engSquads.length;i++){if(!(engSquads[i].predictedDeathPosition<engSquads[i+1].predictedDeathPosition))return false;if(requiredHealthGapPct(engSquads[i],engSquads[i+1])+1e-12<minimumHealthSeparationPct)return false;}
+  const otherTroops=selected.filter(u=>u.category==='troop'&&String(u.unitClass).toUpperCase()!=='ENGINEER').map(u=>byId.get(u.id)).filter(Boolean);
+  if(otherTroops.length){const lastEngineer=engSquads[engSquads.length-1],firstOther=otherTroops.slice().sort((a,b)=>a.predictedDeathPosition-b.predictedDeathPosition)[0];if(!(lastEngineer.predictedDeathPosition<firstOther.predictedDeathPosition))return false;if(requiredHealthGapPct(lastEngineer,firstOther)+1e-12<minimumHealthSeparationPct)return false;}
+  return true;
+}
+function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPct=.01){return higherTierTroopLineagePreserved(result,selected,minimumHealthSeparationPct)&&sacrificialTroopEngineersFirst(result,selected,minimumHealthSeparationPct);}
+function seedFeasible({units,quantities,bonuses,capacityLimits}){const result=scoreEpicArmy({units,quantities,bonuses}),limits=limitsOf(capacityLimits);for(const t of CAPACITY_TYPES)if((result.capacities[t]??0)>limits[t])return false;return true;}
+
+export function optimizeEpicQuantities(args) {
+  const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
+  const minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
+  const structureValidator=(result,chosen)=>hybridTroopStructurePreserved(result,chosen,minSep);
+  if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator});
+  const attempts=[.03,.05,.08,.10,.15,.20,.30,.40,.60,1.00]; let seed=null;
+  for(const separationPct of attempts){const quantities=createMatchupRankedSeed({...args,separationPct});if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:args.capacityLimits})){const sr=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});if(structureValidator(sr,selected)){seed={separationPct,quantities};break;}}}
+  if(!seed)throw new Error('Unable to construct a feasible matchup-ranked optimizer starting ladder.');
+  const result=optimizeFromSeed({...args,initialQuantities:seed.quantities,structureValidator,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,seedIndex:0,seedCount:1,seedName:'matchup-ranked'}):null});
+  result.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD; result.diagnostics.seedStrategy='matchup-ranked-health-ladder'; result.diagnostics.seedSeparationPct=seed.separationPct; result.diagnostics.totalEvaluations=result.diagnostics.evaluations; return result;
 }
 
 export { CAPACITY_TYPES };
