@@ -13,6 +13,13 @@
     "json": "downloads/data/chests.json",
     "xlsx": "downloads/data/chests.xlsx"
   },
+  "army": {
+    "label": "Army Data \u2014 All Units",
+    "records": 167,
+    "csv": "downloads/data/army.csv",
+    "json": "downloads/data/army.json",
+    "xlsx": "downloads/data/army.xlsx"
+  },
   "troops": {
     "label": "Troops",
     "records": 65,
