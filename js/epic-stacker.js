@@ -1154,7 +1154,34 @@ function recalculate(){
   }
 }
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
-function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();if(activeMode==='optimizer'){syncDerivedEpicBonuses();readInputs();const sig=currentEpicEffectiveSignature();if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){epicResultCurrent=true;renderEpicOptimizedResult(lastOptimizedEpicPayload);setOptimizeButtonState();return;}}recalculate();}
+function refreshActiveMode({save=true}={}){
+  configureModeUI();
+  applyStateToInputs();
+  syncCustomOrders();
+  renderAllSelections();
+  if(activeMode==='custom')renderOrderView();
+  syncDerivedEpicBonuses();
+  readInputs();
+  if(save)saveState();
+
+  if(activeMode==='optimizer'){
+    const sig=currentEpicEffectiveSignature();
+    if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){
+      epicResultCurrent=true;
+      renderEpicOptimizedResult(lastOptimizedEpicPayload);
+      setOptimizeButtonState();
+      return;
+    }
+  }
+  recalculate();
+}
+function switchMode(mode){
+  if(mode===activeMode)return;
+  cancelEpicOptimization();
+  readInputs();
+  activeMode=mode;
+  refreshActiveMode();
+}
 function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])els[id].value=i[id];if(activeMode!=='optimizer'){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
@@ -1302,20 +1329,23 @@ async function init(){
   wireEvents();
   try{
     await loadData();
-    configureModeUI();
-    applyStateToInputs();
-    syncCustomOrders();
-    renderAllSelections();
-    if(activeMode==='custom')renderOrderView();
-
-    // Startup is complete only after the database, saved selections, and
-    // derived bonus fields have all been restored. This final synchronization
-    // prevents the Optimizer button from inheriting a pre-load disabled state.
-    syncDerivedEpicBonuses();
-    readInputs();
     appInitialized=true;
-    recalculate();
-    setOptimizeButtonState();
+
+    // Use the exact same synchronization path on first load that is used
+    // after a calculator-mode change. This prevents startup-only state drift.
+    refreshActiveMode({save:false});
+
+    // Some mobile browsers restore form/control state after the first script
+    // pass. Reassert the active calculator state after the first rendered
+    // frame, then once more shortly afterward as a defensive fallback.
+    requestAnimationFrame(()=>{
+      if(!appInitialized)return;
+      refreshActiveMode({save:false});
+      setTimeout(()=>{
+        if(!appInitialized)return;
+        refreshActiveMode({save:false});
+      },120);
+    });
   }catch(error){
     console.error(error);
     appInitialized=false;
