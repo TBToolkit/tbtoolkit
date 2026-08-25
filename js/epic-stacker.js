@@ -396,9 +396,16 @@ function openSacrificeHelp(note){
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
   if(Number.isFinite(penalty)){
-    const pct=penalty<.01?penalty.toFixed(3):penalty<.1?penalty.toFixed(2):penalty.toFixed(1);
-    if(note.classification==='marginal')text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by only ${pct}%.`;
-    else text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by about ${pct}%.`;
+    const prefix=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath}`;
+    if(penalty<=0){
+      text+=`${prefix} produced no measurable change in total expected lifetime damage.`;
+    }else if(penalty<.001){
+      text+=`${prefix} reduced total expected lifetime damage by less than 0.001%.`;
+    }else{
+      const pct=penalty<.01?penalty.toFixed(3):penalty<.1?penalty.toFixed(2):penalty.toFixed(1);
+      if(note.classification==='marginal')text+=`${prefix} reduced total expected lifetime damage by only ${pct}%.`;
+      else text+=`${prefix} reduced total expected lifetime damage by about ${pct}%.`;
+    }
   }
   document.getElementById('sacrificeHelpText').textContent=text;
   modal.hidden=false;document.body.classList.add('sacrifice-help-modal-open');
