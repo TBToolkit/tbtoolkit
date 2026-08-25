@@ -705,7 +705,7 @@ function createUnitOption(category,unit,selected){
   return label;
 }
 function createLevelDetails({category,level,rows,selected,key,label=level,subgroups=null}){
-  const details=document.createElement('details');details.className='selection-level';details.open=expandedSelectionSections.has(key);
+  const details=document.createElement('details');details.className='selection-level';details.open=expandedSelectionSections.has(key);details.dataset.selectionCategory=category;details.dataset.selectionLevel=String(level);
   const levelColors=selectionLevelColors(category,level);
   details.style.setProperty('--level-base',levelColors.base);
   details.style.setProperty('--level-surface',levelColors.surface);
@@ -716,7 +716,7 @@ function createLevelDetails({category,level,rows,selected,key,label=level,subgro
   const summary=document.createElement('summary');
   const chosen=rows.filter(u=>selected.has(u.id)).length;
   summary.innerHTML=`<span class="level-chevron" aria-hidden="true"></span><label class="level-master"><input type="checkbox"><span>${escapeHtml(label)}</span></label><span class="level-selected-count">${chosen}/${rows.length}</span>`;
-  const master=summary.querySelector('input');checkboxState(master,rows,selected);
+  const master=summary.querySelector('input');master.dataset.selectionMaster='level';master.dataset.selectionCategory=category;master.dataset.selectionLevel=String(level);checkboxState(master,rows,selected);
   summary.querySelector('.level-master').addEventListener('click',e=>e.stopPropagation());master.addEventListener('click',e=>e.stopPropagation());master.addEventListener('change',e=>setSelection(category,rows,e.target.checked));
   details.appendChild(summary);
   const body=document.createElement('div');body.className='selection-level-body';
@@ -767,21 +767,34 @@ function renderAllSelections(){renderTroopClass('GUARDSMAN','guardsmanSelection'
 
 function reconcileSelectionsFromRenderedUI(){
   if(!appInitialized)return false;
-  const next={troop:[],monster:[],mercenary:[]};
+  const next={troop:new Set(),monster:new Set(),mercenary:new Set()};
   const seen={troop:false,monster:false,mercenary:false};
-  document.querySelectorAll('.hierarchy-unit input[data-selection-category][data-unit-id]').forEach(input=>{
-    const category=input.dataset.selectionCategory;
-    const id=input.dataset.unitId;
-    if(!next[category]||!id)return;
+
+  // Mobile browsers may restore a collapsed level's master checkbox without
+  // restoring the dynamically-created child checkboxes. A checked level
+  // master therefore represents the whole level and takes precedence.
+  document.querySelectorAll('.selection-level').forEach(details=>{
+    const category=details.dataset.selectionCategory;
+    const level=details.dataset.selectionLevel;
+    if(!next[category]||!level)return;
+    const master=details.querySelector(':scope > summary input[data-selection-master="level"]');
+    if(!master)return;
     seen[category]=true;
-    if(input.checked)next[category].push(id);
+    if(master.checked&&!master.indeterminate){
+      for(const unit of units[category])if(String(unit.level)===String(level))next[category].add(unit.id);
+      return;
+    }
+    // Partial or unchecked levels use the leaf checkboxes that are available.
+    details.querySelectorAll('.hierarchy-unit input[data-unit-id]').forEach(input=>{
+      if(input.checked)next[category].add(input.dataset.unitId);
+    });
   });
 
   let changed=false;
   for(const category of ['troop','monster','mercenary']){
     if(!seen[category])continue;
     const current=[...(modeState().selectedIds[category]||[])].sort();
-    const restored=[...new Set(next[category])].sort();
+    const restored=[...next[category]].sort();
     if(current.length!==restored.length||current.some((id,index)=>id!==restored[index])){
       modeState().selectedIds[category]=restored;
       changed=true;
@@ -790,17 +803,14 @@ function reconcileSelectionsFromRenderedUI(){
   if(changed){
     syncCustomOrders();
     saveState();
-    updateCounts();
+    renderAllSelections();
+    if(activeMode==='custom')renderOrderView();
   }
   return changed;
 }
 function refreshAfterBrowserRestore(){
   if(!appInitialized)return;
-  const changed=reconcileSelectionsFromRenderedUI();
-  if(changed){
-    renderAllSelections();
-    if(activeMode==='custom')renderOrderView();
-  }
+  reconcileSelectionsFromRenderedUI();
   recalculate();
   setOptimizeButtonState();
 }
