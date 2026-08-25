@@ -604,7 +604,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.0-near-optimal';
+const EPIC_OPTIMIZER_BUILD = '2.0-near-optimal-v2';
 
 
 function finite(v, label) {
@@ -1430,22 +1430,23 @@ function practicalStructureScore(result){
 }
 
 function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05}){
-  const maxEld=Number(maximum?.result?.expectedTotalLifetimeDamage||0);
-  if(!(maxEld>0))return {chosen:maximum,changed:false,lossPct:0,score:practicalStructureScore(maximum?.result)};
-  const eligible=[maximum,...(candidates??[]).filter(c=>{
-    const eld=Number(c?.result?.expectedTotalLifetimeDamage||0);
-    const lossPct=(maxEld-eld)/maxEld*100;
-    return eld>0&&lossPct>=-1e-9&&lossPct<=tolerancePct+1e-9;
-  })];
+  const pool=[maximum,...(candidates??[])].filter(c=>Number(c?.result?.expectedTotalLifetimeDamage||0)>0);
+  if(!pool.length)return {chosen:maximum,mathematicalMaximum:maximum,changed:false,lossPct:0,score:practicalStructureScore(maximum?.result)};
+  const mathematicalMaximum=pool.reduce((best,c)=>Number(c.result.expectedTotalLifetimeDamage||0)>Number(best.result.expectedTotalLifetimeDamage||0)?c:best,pool[0]);
+  const maxEld=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
+  const eligible=pool.filter(c=>{
+    const eld=Number(c.result.expectedTotalLifetimeDamage||0);
+    return ((maxEld-eld)/maxEld*100)<=tolerancePct+1e-9;
+  });
   eligible.sort((a,b)=>{
     const pa=practicalStructureScore(a.result),pb=practicalStructureScore(b.result);
     if(pa!==pb)return pa-pb;
     return Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0);
   });
-  const chosen=eligible[0]??maximum;
+  const chosen=eligible[0]??mathematicalMaximum;
   const chosenEld=Number(chosen.result.expectedTotalLifetimeDamage||0);
   const lossPct=Math.max(0,(maxEld-chosenEld)/maxEld*100);
-  return {chosen,changed:chosen!==maximum,lossPct,score:practicalStructureScore(chosen.result),maximumScore:practicalStructureScore(maximum.result)};
+  return {chosen,mathematicalMaximum,changed:chosen!==maximum,maximumChanged:mathematicalMaximum!==maximum,lossPct,score:practicalStructureScore(chosen.result),maximumScore:practicalStructureScore(mathematicalMaximum.result)};
 }
 
 function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3}){
@@ -1594,29 +1595,37 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.groupRedistributionSummaries=groupRedistribution.summaries;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
 
-  // First measure unusual opening sacrifices around the mathematical maximum.
-  const maximum={quantities:{...out.quantities},result:out.result};
-  const unusualAtMaximum=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:maximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
-  totalEvaluations+=unusualAtMaximum.evaluations;
-
-  // Production tie-break: armies within 0.05% of the maximum are treated as
-  // operationally equivalent. Among those, prefer the structure with fewer
-  // productive opening sacrifices. This does not hardcode tiers or unit names.
-  const practicalChoice=chooseNearOptimalPractical({maximum,candidates:unusualAtMaximum.alternatives,tolerancePct:.05});
-  if(practicalChoice.changed){
-    out.quantities={...practicalChoice.chosen.quantities};
-    out.result=practicalChoice.chosen.result;
+  // Final explainable search. Counterfactuals are allowed to become the new
+  // mathematical maximum; if that happens, analyze the improved basin again.
+  let mathematicalMaximum={quantities:{...out.quantities},result:out.result};
+  const practicalPool=[mathematicalMaximum];
+  let finalSearchEvaluations=0;
+  let searchPasses=0;
+  for(let pass=0;pass<2;pass++){
+    searchPasses++;
+    const analysis=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+    totalEvaluations+=analysis.evaluations;finalSearchEvaluations+=analysis.evaluations;
+    practicalPool.push(...analysis.alternatives);
+    const improved=analysis.alternatives.reduce((best,c)=>Number(c.result.expectedTotalLifetimeDamage||0)>Number(best.result.expectedTotalLifetimeDamage||0)?c:best,mathematicalMaximum);
+    if(Number(improved.result.expectedTotalLifetimeDamage||0)<=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0)+1e-6)break;
+    mathematicalMaximum=improved;
   }
 
-  // Re-run explanation analysis on the army that is actually returned so the
-  // Battle Details flags describe the displayed structure, not the discarded maximum.
+  // Among armies within 0.05% of the true maximum discovered by the final
+  // counterfactual passes, prefer the more practical opening structure.
+  const practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.05});
+  out.quantities={...practicalChoice.chosen.quantities};
+  out.result=practicalChoice.chosen.result;
+
+  // Explain the army actually returned.
   const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
-  totalEvaluations+=unusualFinal.evaluations;
+  totalEvaluations+=unusualFinal.evaluations;finalSearchEvaluations+=unusualFinal.evaluations;
   out.diagnostics.unusualSacrifices=unusualFinal.notes;
-  out.diagnostics.unusualSacrificeEvaluations=unusualAtMaximum.evaluations+unusualFinal.evaluations;
-  out.diagnostics.maximumExpectedLifetimeDamage=Number(maximum.result.expectedTotalLifetimeDamage||0);
+  out.diagnostics.unusualSacrificeEvaluations=finalSearchEvaluations;
+  out.diagnostics.finalCounterfactualPasses=searchPasses;
+  out.diagnostics.maximumExpectedLifetimeDamage=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
   out.diagnostics.nearOptimalTolerancePct=.05;
-  out.diagnostics.practicalTieBreakApplied=practicalChoice.changed;
+  out.diagnostics.practicalTieBreakApplied=out.result!==practicalChoice.mathematicalMaximum.result;
   out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
   out.diagnostics.practicalStructureScore=practicalChoice.score;
   out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
@@ -1628,7 +1637,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=98',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=103',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
