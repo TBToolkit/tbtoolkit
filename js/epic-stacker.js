@@ -316,6 +316,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='threshold')return 'Testing attack-opportunity thresholds…';
   if(progress.phase==='counterfactual')return 'Challenging the current structure in alternate battle basins…';
   if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
+  if(progress.phase==='death-position')return 'Testing widely different death-order structures…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
@@ -363,21 +364,25 @@ function renderPrediction(opt){
   // A productive squad can be visibly unusual even when the small final
   // counterfactual pass cannot find a feasible later-position comparison.
   const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
-  const damageValues=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).sort((a,b)=>a-b);
-  const damageMedian=damageValues.length?damageValues[Math.floor(damageValues.length/2)]:0;
+  const damageValues=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);
+  const upperQuartile=damageValues.length?damageValues[Math.floor((damageValues.length-1)*.75)]:0;
+  const enemySquadCount=modeState().inputs.arachne?8:4;
+  const selectedTierMax=new Map();
+  for(const s of rows){const tierNum=Number((String(s.tier||'').match(/\d+/)||[0])[0]);selectedTierMax.set(s.capacityType,Math.max(selectedTierMax.get(s.capacityType)||0,tierNum));}
+  const familyMedian=new Map();
+  for(const type of ['LEADERSHIP','DOMINANCE','AUTHORITY']){const a=productive.filter(s=>s.capacityType===type).map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((x,y)=>x-y);familyMedian.set(type,a.length?a[Math.floor(a.length/2)]:0);}
   const unusualMap=new Map();
   if(activeMode==='optimizer'){
     for(const s of rows){
       const death=Number(s.predictedDeathPosition??999);
-      const productiveEarly=death<=4&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0;
-      const meaningfulDamage=Number(s.expectedDamagePerOpportunity||0)>=damageMedian*.72;
+      const productiveEarly=death<=enemySquadCount&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0;
       const normalSacrifice=String(s.combatType||'').toUpperCase()==='SIEGE';
+      const damage=Number(s.expectedDamagePerOpportunity||0),tierNum=Number((String(s.tier||'').match(/\d+/)||[0])[0]);
+      const topTier=tierNum>0&&tierNum>=Number(selectedTierMax.get(s.capacityType)||0);
+      const meaningfulDamage=(topTier&&damage>=Number(familyMedian.get(s.capacityType)||0))||damage>=upperQuartile;
       if(!productiveEarly||!meaningfulDamage||normalSacrifice)continue;
       const diagnostic=diagnosticNotes.get(String(s.id));
-      unusualMap.set(String(s.id),diagnostic??{
-        id:String(s.id),name:s.name,tier:s.tier,originalDeath:death,
-        penaltyPct:null,classification:'unknown'
-      });
+      unusualMap.set(String(s.id),diagnostic??{id:String(s.id),name:s.name,tier:s.tier,originalDeath:death,penaltyPct:null,classification:'unknown'});
     }
   }
 
@@ -476,7 +481,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=103');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=104');
   }catch(error){
     console.error(error);
     closeOptimizerModal();
