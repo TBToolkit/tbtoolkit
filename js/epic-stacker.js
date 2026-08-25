@@ -1140,7 +1140,44 @@ function recalculate(){
 function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
 function switchMode(mode){if(mode===activeMode)return;cancelEpicOptimization();readInputs();activeMode=mode;configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();saveState();if(activeMode==='optimizer'){syncDerivedEpicBonuses();readInputs();const sig=currentEpicEffectiveSignature();if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){epicResultCurrent=true;renderEpicOptimizedResult(lastOptimizedEpicPayload);setOptimizeButtonState();return;}}recalculate();}
 function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])els[id].value=i[id];if(activeMode!=='optimizer'){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
+const STAT_HELP_BASE='assets/images/stat-help/';
+const STAT_HELP={
+  monsterHealth:{title:'Monster Health',text:'Open one of your Monster squads, then copy the Health percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-health.webp','2. Copy the Health value.']]},
+  humanHealth:{title:'Human Health',text:'Open one of your Human troops, then copy the Health percentage shown in the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-health.webp','2. Copy the Health value.']]},
+  epicHunterHealth:{title:'Epic Hunter Health',text:'Open your Superior Epic Monster Hunter, then copy the Health percentage shown in the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-health.webp','2. Copy the Health value.']]},
+  monsterStrength:{title:'Monster Strength',text:'Open one of your Monster squads, then copy the Strength percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-strength.webp','2. Copy the Strength value.']]},
+  strengthAgainstEpic:{title:'Strength Against Epic',text:'Copy “Strength of your entire army against epic monsters.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-epic-strength.webp','Monster example'],['human-epic-strength.webp','Human example'],['epic-hunter-epic-strength.webp','Epic Hunter example']]},
+  monsterDD:{title:'Monster Double Damage',text:'Open one of your Monster squads, then copy “Chance to deal double damage” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-dd.webp','2. Copy Double Damage.']]},
+  monsterST:{title:'Monster Strike Twice',text:'Open one of your Monster squads, then copy “Chance to strike two squads” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-st.webp','2. Copy Strike Twice.']]},
+  humanStrength:{title:'Human Strength',text:'Open one of your Human troops, then copy the Strength percentage shown in the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-strength.webp','2. Copy the Strength value.']]},
+  humanDD:{title:'Human Double Damage',text:'Open one of your Human troops, then copy “Chance to deal double damage” from the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-dd.webp','2. Copy Double Damage.']]},
+  humanST:{title:'Human Strike Twice',text:'Open one of your Human troops, then copy “Chance to strike two squads” from the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-st.webp','2. Copy Strike Twice.']]},
+  epicHunterStrength:{title:'Epic Hunter Strength',text:'Open your Superior Epic Monster Hunter, then copy the Strength percentage shown in the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-strength.webp','2. Copy the Strength value.']]},
+  epicHunterDD:{title:'Epic Hunter Double Damage',text:'Open your Superior Epic Monster Hunter, then copy “Chance to deal double damage” from the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-dd.webp','2. Copy Double Damage.']]},
+  epicHunterST:{title:'Epic Hunter Strike Twice',text:'Open your Superior Epic Monster Hunter, then copy “Chance to strike two squads” from the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-st.webp','2. Copy Strike Twice.']]}
+};
+let statHelpReturnFocus=null;
+function openStatHelp(key,trigger){
+  const help=STAT_HELP[key],modal=document.getElementById('statHelpModal');if(!help||!modal)return;
+  statHelpReturnFocus=trigger||document.activeElement;
+  document.getElementById('statHelpTitle').textContent=help.title;
+  document.getElementById('statHelpText').textContent=help.text;
+  document.getElementById('statHelpGallery').innerHTML=help.images.map(([src,caption])=>`<figure class="stat-help-figure"><img alt="${escapeHtml(caption)}" loading="lazy" src="${STAT_HELP_BASE}${encodeURIComponent(src)}"/><figcaption>${escapeHtml(caption)}</figcaption></figure>`).join('');
+  modal.hidden=false;document.body.classList.add('stat-help-modal-open');
+  requestAnimationFrame(()=>modal.querySelector('.stat-help-close')?.focus());
+}
+function closeStatHelp(){
+  const modal=document.getElementById('statHelpModal');if(!modal||modal.hidden)return;
+  modal.hidden=true;document.body.classList.remove('stat-help-modal-open');
+  const target=statHelpReturnFocus;statHelpReturnFocus=null;if(target&&typeof target.focus==='function')target.focus();
+}
+function wireStatHelp(){
+  document.querySelectorAll('[data-stat-help]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();openStatHelp(button.dataset.statHelp,button);}));
+  document.querySelectorAll('[data-stat-help-close]').forEach(button=>button.addEventListener('click',closeStatHelp));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('statHelpModal')?.hidden)closeStatHelp();});
+}
 function wireEvents(){
+  wireStatHelp();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
   els.clearAllSelections.addEventListener('click',clearAllSelections);
   els.resetCalculator.addEventListener('click',resetCalculator);
