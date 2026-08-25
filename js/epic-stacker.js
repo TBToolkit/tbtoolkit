@@ -109,12 +109,25 @@ function legacyUnitFromCanonical(unit){
   };
 }
 async function loadData(){
-  const r=await fetch('data/army-v2.json?v=74',{cache:'no-store'});
-  if(!r.ok)throw new Error('Could not load canonical army database');
-  armyV2=await r.json();
-  for(const category of ['troop','monster','mercenary']){
-    units[category]=armyV2.filter(u=>u.category===category).map(legacyUnitFromCanonical);
+  // Use a root-relative URL first so the database loads correctly even when
+  // the calculator is reached through a clean/mobile route. Fall back to the
+  // document-relative URL for static/local hosting.
+  const sources=['/data/army-v2.json?v=94','data/army-v2.json?v=94'];
+  let lastError=null;
+  for(const source of sources){
+    try{
+      const r=await fetch(source,{cache:'no-store'});
+      if(!r.ok)throw new Error(`Army database request failed (${r.status})`);
+      const data=await r.json();
+      if(!Array.isArray(data)||!data.length)throw new Error('Army database is empty or invalid');
+      armyV2=data;
+      for(const category of ['troop','monster','mercenary']){
+        units[category]=armyV2.filter(u=>u.category===category).map(legacyUnitFromCanonical);
+      }
+      return;
+    }catch(error){lastError=error;}
   }
+  throw lastError||new Error('Could not load canonical army database');
 }
 function loadSavedState(){
   try{
