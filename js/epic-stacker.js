@@ -7,6 +7,7 @@ const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
+let appInitialized=false;
 function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
@@ -265,6 +266,12 @@ function currentEpicEffectiveSignature(){
 }
 function setOptimizeButtonState(){
   if(!els.optimizeArmy||activeMode!=='optimizer')return;
+  if(!appInitialized){
+    els.optimizeArmy.disabled=true;
+    els.optimizeArmy.textContent='Optimize Army';
+    els.optimizeHelp.textContent='Loading calculator data…';
+    return;
+  }
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
   const errors=any?validate():[];
   els.optimizeArmy.disabled=!any||errors.length>0||!!epicWorker;
@@ -1274,5 +1281,33 @@ function wireEvents(){
     setOptimizeButtonState();
   });
 }
-async function init(){cacheElements();loadSavedState();loadSavedOptimizerResult();applyStateToInputs();wireEvents();try{await loadData();configureModeUI();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();recalculate();}catch(error){console.error(error);showValidation(['The unit database could not be loaded. Refresh the page and try again.']);}}
+async function init(){
+  cacheElements();
+  loadSavedState();
+  loadSavedOptimizerResult();
+  applyStateToInputs();
+  wireEvents();
+  try{
+    await loadData();
+    configureModeUI();
+    applyStateToInputs();
+    syncCustomOrders();
+    renderAllSelections();
+    if(activeMode==='custom')renderOrderView();
+
+    // Startup is complete only after the database, saved selections, and
+    // derived bonus fields have all been restored. This final synchronization
+    // prevents the Optimizer button from inheriting a pre-load disabled state.
+    syncDerivedEpicBonuses();
+    readInputs();
+    appInitialized=true;
+    recalculate();
+    setOptimizeButtonState();
+  }catch(error){
+    console.error(error);
+    appInitialized=false;
+    setOptimizeButtonState();
+    showValidation(['The unit database could not be loaded. Refresh the page and try again.']);
+  }
+}
 init();
