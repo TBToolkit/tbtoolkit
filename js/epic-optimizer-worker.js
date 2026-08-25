@@ -604,7 +604,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.0-explainable';
+const EPIC_OPTIMIZER_BUILD = '2.0-near-optimal';
 
 
 function finite(v, label) {
@@ -1407,6 +1407,47 @@ function groupRedistributionRefine({units,selected,bonuses,capacityLimits,start,
 }
 
 
+
+function practicalStructureScore(result){
+  const rows=[...(result?.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
+  const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0&&String(s.combatType||'').toUpperCase()!=='SIEGE');
+  const damages=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);
+  const median=damages.length?Math.max(1,damages[Math.floor(damages.length/2)]):1;
+  let score=0;
+  for(const s of productive){
+    const death=Number(s.predictedDeathPosition??999);
+    if(death<=4){
+      const damageWeight=Math.max(.5,Number(s.expectedDamagePerOpportunity||0)/median);
+      const timingWeight=5-death;
+      // Productive opening sacrifices dominate the practical tie-break.
+      score+=1000+100*timingWeight*damageWeight;
+    }
+  }
+  // Prefer a little more spacing when two structures have the same opening-sacrifice profile.
+  const minSep=Number(result?.separationSummary?.minPct);
+  if(Number.isFinite(minSep)&&minSep<.001)score+=(0.001-minSep)*10;
+  return score;
+}
+
+function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05}){
+  const maxEld=Number(maximum?.result?.expectedTotalLifetimeDamage||0);
+  if(!(maxEld>0))return {chosen:maximum,changed:false,lossPct:0,score:practicalStructureScore(maximum?.result)};
+  const eligible=[maximum,...(candidates??[]).filter(c=>{
+    const eld=Number(c?.result?.expectedTotalLifetimeDamage||0);
+    const lossPct=(maxEld-eld)/maxEld*100;
+    return eld>0&&lossPct>=-1e-9&&lossPct<=tolerancePct+1e-9;
+  })];
+  eligible.sort((a,b)=>{
+    const pa=practicalStructureScore(a.result),pb=practicalStructureScore(b.result);
+    if(pa!==pb)return pa-pb;
+    return Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0);
+  });
+  const chosen=eligible[0]??maximum;
+  const chosenEld=Number(chosen.result.expectedTotalLifetimeDamage||0);
+  const lossPct=Math.max(0,(maxEld-chosenEld)/maxEld*100);
+  return {chosen,changed:chosen!==maximum,lossPct,score:practicalStructureScore(chosen.result),maximumScore:practicalStructureScore(maximum.result)};
+}
+
 function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3}){
   const limits=limitsOf(capacityLimits);
   const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
@@ -1423,7 +1464,7 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
     if(!(Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0))return false;
     return Number(s.expectedDamagePerOpportunity||0)>=damageMedian*.72;
   }).slice(0,maxFlags);
-  const notes=[];let evaluations=0;
+  const notes=[];const alternatives=[];let evaluations=0;
 
   for(const targetSquad of candidates){
     const target=selectedById.get(targetSquad.id);if(!target)continue;
@@ -1459,15 +1500,17 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
     if(!altSquad)continue;
     const penaltyPct=baseEld>0?Math.max(0,(baseEld-Number(alt.expectedTotalLifetimeDamage||0))/baseEld*100):null;
     const classification=penaltyPct==null?'unknown':penaltyPct<.10?'marginal':penaltyPct<.50?'moderate':'meaningful';
-    notes.push({
+    const note={
       id:target.id,name:target.name,tier:target.tier,capacityType:target.capacityType,
       originalDeath:Number(targetSquad.predictedDeathPosition??0),
       alternativeDeath:Number(altSquad.predictedDeathPosition??0),
       originalEld:baseEld,alternativeEld:Number(alt.expectedTotalLifetimeDamage||0),
       penaltyPct,classification
-    });
+    };
+    notes.push(note);
+    alternatives.push({quantities:{...local.quantities},result:alt,note});
   }
-  return {notes,evaluations};
+  return {notes,alternatives,evaluations};
 }
 
 function optimizeEpicQuantities(args) {
@@ -1551,11 +1594,32 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.groupRedistributionSummaries=groupRedistribution.summaries;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
 
-  // Explain counter-intuitive opening sacrifices without changing the maximum-ELD result.
-  const unusual=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
-  totalEvaluations+=unusual.evaluations;
-  out.diagnostics.unusualSacrifices=unusual.notes;
-  out.diagnostics.unusualSacrificeEvaluations=unusual.evaluations;
+  // First measure unusual opening sacrifices around the mathematical maximum.
+  const maximum={quantities:{...out.quantities},result:out.result};
+  const unusualAtMaximum=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:maximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+  totalEvaluations+=unusualAtMaximum.evaluations;
+
+  // Production tie-break: armies within 0.05% of the maximum are treated as
+  // operationally equivalent. Among those, prefer the structure with fewer
+  // productive opening sacrifices. This does not hardcode tiers or unit names.
+  const practicalChoice=chooseNearOptimalPractical({maximum,candidates:unusualAtMaximum.alternatives,tolerancePct:.05});
+  if(practicalChoice.changed){
+    out.quantities={...practicalChoice.chosen.quantities};
+    out.result=practicalChoice.chosen.result;
+  }
+
+  // Re-run explanation analysis on the army that is actually returned so the
+  // Battle Details flags describe the displayed structure, not the discarded maximum.
+  const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+  totalEvaluations+=unusualFinal.evaluations;
+  out.diagnostics.unusualSacrifices=unusualFinal.notes;
+  out.diagnostics.unusualSacrificeEvaluations=unusualAtMaximum.evaluations+unusualFinal.evaluations;
+  out.diagnostics.maximumExpectedLifetimeDamage=Number(maximum.result.expectedTotalLifetimeDamage||0);
+  out.diagnostics.nearOptimalTolerancePct=.05;
+  out.diagnostics.practicalTieBreakApplied=practicalChoice.changed;
+  out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
+  out.diagnostics.practicalStructureScore=practicalChoice.score;
+  out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
   return out;
