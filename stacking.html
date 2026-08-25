@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=72" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=88" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=87" type="module"></script>
+<script src="js/epic-stacker.js?v=88" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -91,9 +91,9 @@
 <div class="advanced-health-block">
 <h3>Health Inputs</h3>
 <div class="health-grid">
-<label>Monster Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div></label>
-<label>Human Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="humanHealth" inputmode="decimal" type="text" value="1500"/><span>%</span></div></label>
-<label>Epic Hunter Health<div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text" value="859"/><span>%</span></div></label>
+<div class="help-input-field"><div class="help-field-heading"><label for="monsterHealth">Monster Health</label><button aria-label="Show where to find Monster Health" class="stat-help-button" data-stat-help="monsterHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="humanHealth">Human Health</label><button aria-label="Show where to find Human Health" class="stat-help-button" data-stat-help="humanHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="humanHealth" inputmode="decimal" type="text" value="1500"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="epicHunterHealth">Epic Hunter Health</label><button aria-label="Show where to find Epic Hunter Health" class="stat-help-button" data-stat-help="epicHunterHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text" value="859"/><span>%</span></div></div>
 </div>
 
 </div>
@@ -102,10 +102,10 @@
 <div class="advanced-divider"></div>
 <h3>Strength &amp; Combat</h3>
 <div class="combat-input-grid">
-<label>Monster Strength<div class="percent-field"><input class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div></label>
-<label>Strength Against Epic<div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></label>
-<label>Monster Double Damage<div class="percent-field"><input class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div></label>
-<label>Monster Strike Twice<div class="percent-field"><input class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div></label>
+<div class="help-input-field"><div class="help-field-heading"><label for="monsterStrength">Monster Strength</label><button aria-label="Show where to find Monster Strength" class="stat-help-button" data-stat-help="monsterStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="strengthAgainstEpic">Strength Against Epic</label><button aria-label="Show where to find Strength Against Epic" class="stat-help-button" data-stat-help="strengthAgainstEpic" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="monsterDD">Monster Double Damage</label><button aria-label="Show where to find Monster Double Damage" class="stat-help-button" data-stat-help="monsterDD" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="monsterST">Monster Strike Twice</label><button aria-label="Show where to find Monster Strike Twice" class="stat-help-button" data-stat-help="monsterST" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div></div>
 </div>
 
 <label class="checkbox-row compact-family-override"><input id="useCustomFamilyBonuses" type="checkbox"/><span>Use custom Human / Epic Hunter health &amp; combat bonuses</span></label>
@@ -113,15 +113,15 @@
 <div class="derived-family-grid" hidden id="customFamilyBonusFields">
 <section>
 <h4>Human</h4>
-<label>Strength<div class="percent-field"><input class="epic-input family-derived-field" id="humanStrength" inputmode="decimal" type="text"/><span>%</span></div></label>
-<label>Double Damage<div class="percent-field"><input class="epic-input family-derived-field" id="humanDD" inputmode="decimal" type="text"/><span>%</span></div></label>
-<label>Strike Twice<div class="percent-field"><input class="epic-input family-derived-field" id="humanST" inputmode="decimal" type="text"/><span>%</span></div></label>
+<div class="help-input-field"><div class="help-field-heading"><label for="humanStrength">Strength</label><button aria-label="Show where to find Human Strength" class="stat-help-button" data-stat-help="humanStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="humanStrength" inputmode="decimal" type="text"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="humanDD">Double Damage</label><button aria-label="Show where to find Human Double Damage" class="stat-help-button" data-stat-help="humanDD" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="humanDD" inputmode="decimal" type="text"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="humanST">Strike Twice</label><button aria-label="Show where to find Human Strike Twice" class="stat-help-button" data-stat-help="humanST" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="humanST" inputmode="decimal" type="text"/><span>%</span></div></div>
 </section>
 <section>
 <h4>Epic Hunter</h4>
-<label>Strength<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div></label>
-<label>Double Damage<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div></label>
-<label>Strike Twice<div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div></label>
+<div class="help-input-field"><div class="help-field-heading"><label for="epicHunterStrength">Strength</label><button aria-label="Show where to find Epic Hunter Strength" class="stat-help-button" data-stat-help="epicHunterStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="epicHunterDD">Double Damage</label><button aria-label="Show where to find Epic Hunter Double Damage" class="stat-help-button" data-stat-help="epicHunterDD" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div></div>
+<div class="help-input-field"><div class="help-field-heading"><label for="epicHunterST">Strike Twice</label><button aria-label="Show where to find Epic Hunter Strike Twice" class="stat-help-button" data-stat-help="epicHunterST" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div></div>
 </section>
 </div>
 <p class="setting-note epic-v2-note">Human values default to Monster −100 percentage points for Health/Strength. Epic Hunter defaults to Monster −741. DD is shared; ST defaults to Monster −5 points. Enable the override only if your account differs.</p>
@@ -232,6 +232,15 @@
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
 <div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
+</div>
+</div>
+
+<div class="stat-help-modal" hidden id="statHelpModal">
+<div class="stat-help-backdrop" data-stat-help-close></div>
+<div aria-describedby="statHelpText" aria-labelledby="statHelpTitle" aria-modal="true" class="stat-help-dialog" role="dialog">
+<div class="stat-help-header"><div><span class="stat-help-eyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
+<p class="stat-help-text" id="statHelpText"></p>
+<div class="stat-help-gallery" id="statHelpGallery"></div>
 </div>
 </div>
 
