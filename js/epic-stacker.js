@@ -354,15 +354,38 @@ function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);els.rawGoldRevival.textContent=Math.round(r.rawGoldRevivalCost).toLocaleString('en-US');const perThousand=r.rawGoldRevivalCost>0?r.expectedTotalLifetimeDamage/r.rawGoldRevivalCost*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;
   if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText} · Full battle simulation using the displayed quantities.`;}
-  const unusualMap=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[n.id,n]));
+  const diagnosticNotes=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[String(n.id),n]));
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
+
+  // Detection and counterfactual attribution are intentionally separate.
+  // A productive squad can be visibly unusual even when the small final
+  // counterfactual pass cannot find a feasible later-position comparison.
+  const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
+  const damageValues=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).sort((a,b)=>a-b);
+  const damageMedian=damageValues.length?damageValues[Math.floor(damageValues.length/2)]:0;
+  const unusualMap=new Map();
+  if(activeMode==='optimizer'){
+    for(const s of rows){
+      const death=Number(s.predictedDeathPosition??999);
+      const productiveEarly=death<=4&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0;
+      const meaningfulDamage=Number(s.expectedDamagePerOpportunity||0)>=damageMedian*.72;
+      const normalSacrifice=String(s.combatType||'').toUpperCase()==='SIEGE';
+      if(!productiveEarly||!meaningfulDamage||normalSacrifice)continue;
+      const diagnostic=diagnosticNotes.get(String(s.id));
+      unusualMap.set(String(s.id),diagnostic??{
+        id:String(s.id),name:s.name,tier:s.tier,originalDeath:death,
+        penaltyPct:null,classification:'unknown'
+      });
+    }
+  }
+
   els.predictionRows.innerHTML=rows.map(s=>{
-    const note=activeMode==='optimizer'?unusualMap.get(s.id):null;
+    const note=activeMode==='optimizer'?unusualMap.get(String(s.id)):null;
     const flag=note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
     return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
   if(activeMode==='optimizer'&&unusualMap.size){
-    els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(button.dataset.sacrificeId))));
+    els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(String(button.dataset.sacrificeId)))));
   }
 }
 
@@ -373,7 +396,7 @@ function openSacrificeHelp(note){
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
   if(Number.isFinite(penalty)){
-    const pct=penalty.toFixed(penalty<.1?2:1);
+    const pct=penalty<.01?penalty.toFixed(3):penalty<.1?penalty.toFixed(2):penalty.toFixed(1);
     if(note.classification==='marginal')text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by only ${pct}%.`;
     else text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by about ${pct}%.`;
   }
