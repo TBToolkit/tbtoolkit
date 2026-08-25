@@ -354,8 +354,34 @@ function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);els.rawGoldRevival.textContent=Math.round(r.rawGoldRevivalCost).toLocaleString('en-US');const perThousand=r.rawGoldRevivalCost>0?r.expectedTotalLifetimeDamage/r.rawGoldRevivalCost*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;
   if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText} · Full battle simulation using the displayed quantities.`;}
-  const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);els.predictionRows.innerHTML=rows.map(s=>`<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`).join('');
+  const unusualMap=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[n.id,n]));
+  const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
+  els.predictionRows.innerHTML=rows.map(s=>{
+    const note=activeMode==='optimizer'?unusualMap.get(s.id):null;
+    const flag=note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
+    return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
+  }).join('');
+  if(activeMode==='optimizer'&&unusualMap.size){
+    els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(button.dataset.sacrificeId))));
+  }
 }
+
+function openSacrificeHelp(note){
+  if(!note)return;
+  const modal=document.getElementById('sacrificeHelpModal');if(!modal)return;
+  const penalty=Number(note.penaltyPct);
+  document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
+  let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
+  if(Number.isFinite(penalty)){
+    const pct=penalty.toFixed(penalty<.1?2:1);
+    if(note.classification==='marginal')text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by only ${pct}%.`;
+    else text+=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath} reduced total expected lifetime damage by about ${pct}%.`;
+  }
+  document.getElementById('sacrificeHelpText').textContent=text;
+  modal.hidden=false;document.body.classList.add('sacrifice-help-modal-open');
+}
+function closeSacrificeHelp(){const modal=document.getElementById('sacrificeHelpModal');if(!modal)return;modal.hidden=true;document.body.classList.remove('sacrifice-help-modal-open');}
+
 function scoreClassicResult(result){if(!armyV2.length)return null;const quantities={};for(const cat of ['troop','monster','mercenary'])for(const row of result?.categories?.[cat]?.results??[])quantities[row.name]=row.qty;return {result:scoreEpicArmy({units:armyV2,quantities,bonuses:epicBonusPayload()}),diagnostics:{classic:true}};}
 function convertEpicV2Result(opt){
   const r=opt.result;
@@ -418,7 +444,7 @@ function startEpicOptimization(){
   openOptimizerModal();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=87');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=98');
   }catch(error){
     console.error(error);
     closeOptimizerModal();
@@ -1269,6 +1295,9 @@ function wireStatHelp(){
   document.querySelectorAll('[data-stat-help]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();openStatHelp(button.dataset.statHelp,button);}));
   document.querySelectorAll('[data-stat-help-close]').forEach(button=>button.addEventListener('click',closeStatHelp));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('statHelpModal')?.hidden)closeStatHelp();});
+  document.querySelectorAll('[data-sacrifice-help-close]').forEach(el=>el.addEventListener('click',closeSacrificeHelp));
+  document.getElementById('sacrificeHelpModal')?.querySelector('.sacrifice-help-backdrop')?.addEventListener('click',closeSacrificeHelp);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('sacrificeHelpModal')?.hidden)closeSacrificeHelp();});
 }
 function wireEvents(){
   wireStatHelp();

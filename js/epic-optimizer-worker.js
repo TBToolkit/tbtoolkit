@@ -604,7 +604,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.0-group-redistribution';
+const EPIC_OPTIMIZER_BUILD = '2.0-explainable';
 
 
 function finite(v, label) {
@@ -1406,6 +1406,70 @@ function groupRedistributionRefine({units,selected,bonuses,capacityLimits,start,
   return {best,evaluations,acceptedMoves:accepted,summaries,seedCount:chosen.length};
 }
 
+
+function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3}){
+  const limits=limitsOf(capacityLimits);
+  const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
+  const baseEld=Number(base.expectedTotalLifetimeDamage||0);
+  const selectedById=new Map(selected.map(u=>[u.id,u]));
+  const ordered=[...(base.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
+  const earlyLimit=Math.min(4,ordered.length);
+  const productive=ordered.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
+  const damageMedian=(()=>{const a=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).sort((a,b)=>a-b);return a.length?a[Math.floor(a.length/2)]:0;})();
+  const candidates=ordered.filter(s=>{
+    const death=Number(s.predictedDeathPosition??999),u=selectedById.get(s.id);
+    if(!u||death>earlyLimit)return false;
+    if(String(u.combatType||'').toUpperCase()==='SIEGE')return false;
+    if(!(Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0))return false;
+    return Number(s.expectedDamagePerOpportunity||0)>=damageMedian*.72;
+  }).slice(0,maxFlags);
+  const notes=[];let evaluations=0;
+
+  for(const targetSquad of candidates){
+    const target=selectedById.get(targetSquad.id);if(!target)continue;
+    const peers=selected.filter(u=>u.capacityType===target.capacityType&&u.id!==target.id);if(!peers.length)continue;
+    const later=ordered.filter(s=>s.capacityType===target.capacityType&&Number(s.predictedDeathPosition??999)>=Number(targetSquad.predictedDeathPosition??0)+5);
+    if(!later.length)continue;
+    const sampleIdx=[0,Math.floor((later.length-1)*.33),Math.floor((later.length-1)*.66),later.length-1];
+    const sampled=[...new Map(sampleIdx.map(i=>later[i]).filter(Boolean).map(s=>[s.id,s])).values()];
+    let rawBest=null;
+    for(const other of sampled){
+      const desiredQty=thresholdQuantityForHealth(target,targetSquad,other,'below');
+      if(!desiredQty)continue;
+      for(const donor of peers){
+        const q=rebalanceThresholdMove({selected,quantities:start.quantities,limits,target,desiredQty,donor,minimumQuantity});if(!q)continue;
+        const cand=scoreEpicArmy({units,quantities:q,bonuses});evaluations++;
+        if(!candidateFeasible({result:cand,limits}))continue;
+        const after=cand.squads.find(s=>s.id===target.id);if(!after)continue;
+        if(Number(after.predictedDeathPosition??0)<Number(targetSquad.predictedDeathPosition??0)+5)continue;
+        if(!rawBest||cand.expectedTotalLifetimeDamage>rawBest.result.expectedTotalLifetimeDamage)rawBest={quantities:q,result:cand};
+      }
+    }
+    if(!rawBest)continue;
+    const minimumLaterDeath=Number(targetSquad.predictedDeathPosition??0)+5;
+    const altValidator=(result,chosen)=>{
+      if(structureValidator&&!structureValidator(result,chosen))return false;
+      const s=result.squads.find(x=>x.id===target.id);
+      return !!s&&Number(s.predictedDeathPosition??0)>=minimumLaterDeath;
+    };
+    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:rawBest.quantities,minimumQuantity,structureValidator:altValidator,stageFractions:[.002,.001,.0005],maxRoundsPerStage:2,onProgress:null});
+    evaluations+=Number(local.diagnostics?.evaluations??0);
+    const alt=local.result;
+    const altSquad=alt.squads.find(s=>s.id===target.id);
+    if(!altSquad)continue;
+    const penaltyPct=baseEld>0?Math.max(0,(baseEld-Number(alt.expectedTotalLifetimeDamage||0))/baseEld*100):null;
+    const classification=penaltyPct==null?'unknown':penaltyPct<.10?'marginal':penaltyPct<.50?'moderate':'meaningful';
+    notes.push({
+      id:target.id,name:target.name,tier:target.tier,capacityType:target.capacityType,
+      originalDeath:Number(targetSquad.predictedDeathPosition??0),
+      alternativeDeath:Number(altSquad.predictedDeathPosition??0),
+      originalEld:baseEld,alternativeEld:Number(alt.expectedTotalLifetimeDamage||0),
+      penaltyPct,classification
+    });
+  }
+  return {notes,evaluations};
+}
+
 function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -1486,6 +1550,12 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.groupRedistributionAcceptedMoves=groupRedistribution.acceptedMoves;
   out.diagnostics.groupRedistributionSummaries=groupRedistribution.summaries;
   out.diagnostics.threshold2Best=threshold2.result.expectedTotalLifetimeDamage;
+
+  // Explain counter-intuitive opening sacrifices without changing the maximum-ELD result.
+  const unusual=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+  totalEvaluations+=unusual.evaluations;
+  out.diagnostics.unusualSacrifices=unusual.notes;
+  out.diagnostics.unusualSacrificeEvaluations=unusual.evaluations;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
   return out;
@@ -1494,7 +1564,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=87',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=98',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
