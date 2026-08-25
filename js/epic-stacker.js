@@ -1,4 +1,4 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=43';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
@@ -16,7 +16,7 @@ monsterStrength:'2299.5',strengthAgainstEpic:'3225',monsterDD:'12',monsterST:'12
 humanStrength:'2199.5',epicHunterStrength:'1558.5',
 humanDD:'12',epicHunterDD:'12',humanST:'7',epicHunterST:'7',
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
-arachne:false,rankSeparation:mode==='epic'?'0.10':mode==='custom'?'0.50':'0.10'};}
+arachne:false,rankSeparation:mode==='optimizer'?'0.10':'0.05'};}
 const state={modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
@@ -145,7 +145,7 @@ function loadSavedState(){
       for(const key of ['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne']){
         if(previousOptimizer?.inputs?.[key]!==undefined)state.modes.epic.inputs[key]=previousOptimizer.inputs[key];
       }
-      state.modes.epic.inputs.rankSeparation='0.10';
+      state.modes.epic.inputs.rankSeparation='0.05';
 
       Object.assign(state.modes.custom.inputs,saved.modes.custom?.inputs||{});
       for(const c of ['troop','monster','mercenary']){
@@ -168,7 +168,7 @@ function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({activeMode
 function loadSavedOptimizerResult(){try{const saved=JSON.parse(localStorage.getItem(OPTIMIZER_RESULT_KEY)||'null');if(!saved?.payload||!saved?.signature)return;lastOptimizedEpicPayload=saved.payload;lastOptimizedEpicSignature=saved.signature;lastEpicRunDiagnostics=saved.runDiagnostics??null;}catch(error){console.warn('Could not restore saved Epic Optimizer result.',error);}}
 function saveOptimizerResult(){try{if(!lastOptimizedEpicPayload||!lastOptimizedEpicSignature)return;localStorage.setItem(OPTIMIZER_RESULT_KEY,JSON.stringify({payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()}));}catch(error){console.warn('Could not save Epic Optimizer result.',error);}}
 function clearSavedOptimizerResult(){lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;localStorage.removeItem(OPTIMIZER_RESULT_KEY);}
-function updateRankSeparationDisplay(){const max=activeMode==='epic'?1:5;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
+function updateRankSeparationDisplay(){const max=.5;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
 function setDerivedField(id,value,readonly=true){
   if(!els[id])return;
@@ -375,7 +375,7 @@ function renderEpicOptimizedResult(opt){
   renderPrediction(opt);
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
-  els.resultStatus.textContent=`${count} optimized unit layer${count===1?'':'s'} · mobile entry order`;
+  els.resultStatus.textContent=`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
 }
@@ -485,8 +485,8 @@ function configureModeUI(){
   els.modeDescription.textContent=classic
     ?'Automatically orders selected squads for Epic battles using fixed health separation.'
     : optimizer
-      ?'Starts from a matchup-ranked health ladder, then optimizes expected lifetime damage while preserving higher-tier direct troop counterparts.'
-      :'You control the layer dying order; unit-type order inside each layer remains automatic.';
+      ?'Epic Optimizer calculates stack quantities for the units you select. It searches many possible army structures and uses simulated Epic battles to find the army with the highest expected lifetime damage. The optimizer considers unit health, strength, combat bonuses, Double Damage, Strike Twice, death order, attack order, and available army capacity.'
+      :'You control the squad death order by level. Unit-type order within each level remains automatic.';
 
   els.orderView.hidden=!custom;
   els.arachneRow.hidden=custom;
@@ -494,14 +494,10 @@ function configureModeUI(){
   document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer);
 
 
-  if(classic){
+  if(classic||custom){
     els.separationLabel.textContent='Squad Separation';
-    els.rankSeparation.min='0';els.rankSeparation.max='1';els.rankSeparation.step='0.01';
-    els.separationMin.textContent='0%';els.separationMid.textContent='0.50%';els.separationMax.textContent='1.00%';
-  }else if(custom){
-    els.separationLabel.textContent='Layer Separation';
-    els.rankSeparation.min='0';els.rankSeparation.max='5';els.rankSeparation.step='0.05';
-    els.separationMin.textContent='0%';els.separationMid.textContent='2.50%';els.separationMax.textContent='5.00%';
+    els.rankSeparation.min='0';els.rankSeparation.max='0.5';els.rankSeparation.step='0.01';
+    els.separationMin.textContent='0%';els.separationMid.textContent='0.25%';els.separationMax.textContent='0.50%';
   }
 
   const nums=document.querySelectorAll('.output-section-number');
@@ -522,7 +518,7 @@ function applyStateToInputs(){
     els[id].value=i[id]??'';
     formatFillPercent(els[id]);
   }
-  els.rankSeparation.value=String(Math.min(5,Math.max(0,parseNumber(i.rankSeparation??'2.50'))));
+  els.rankSeparation.value=String(Math.min(.5,Math.max(0,parseNumber(i.rankSeparation??'0.05'))));
   for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].checked=!!i[id];
   els.arachne.checked=!!i.arachne;
   els.useCustomFamilyBonuses.checked=!!i.useCustomFamilyBonuses;
@@ -788,8 +784,8 @@ function validate(){
     if(!(inp.healthInputs.HUMAN>0))errors.push('Enter Human Health.');
     if(!(inp.healthInputs.EPIC_HUNTER>0))errors.push('Enter Epic Hunter Health.');
     const sep=parseNumber(modeState().inputs.rankSeparation);
-    const maxSep=activeMode==='epic'?1:5;
-    if(sep<0||sep>maxSep)errors.push(`${activeMode==='epic'?'Squad':'Layer'} separation must be between 0% and ${maxSep}%.`);
+    const maxSep=.5;
+    if(sep<0||sep>maxSep)errors.push(`Squad separation must be between 0% and ${maxSep}%.`);
   }
 
   if(modeState().selectedIds.troop.length&&!(inp.leadership>0))errors.push('Enter Leadership for selected Troops.');
@@ -1131,7 +1127,7 @@ function recalculate(){
     updateCapacity(result);const scored=scoreClassicResult(result);if(scored){renderLayerHealthChart(convertEpicV2Result(scored));renderPrediction(scored);}else{renderLayerHealthChart(result);clearPrediction();}
 
     const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
-    els.resultStatus.textContent=`${count} calculated unit layer${count===1?'':'s'} · mobile entry order`;
+    els.resultStatus.textContent=`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
     els.resultEmpty.hidden=true;els.resultGroups.hidden=false;
   }catch(error){
     console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');

@@ -274,19 +274,30 @@ export function calculateCustomCategory({
   const maxHealthEach = Math.max(...selected.map(u=>u.healthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];
-  const separation = inputs.layerSeparation;
+  const separation = Number.isFinite(inputs.rankSeparation) ? inputs.rankSeparation : inputs.layerSeparation;
+
+  // Custom Stacker uses the player's level order to define the death ladder.
+  // Within each level, the existing matchup ranking remains automatic: weaker
+  // matchup squads die earlier and stronger matchup squads die later. Squad
+  // Separation is then applied between every adjacent squad in that full order,
+  // matching the health-ladder concept used by Epic Stacker.
+  const ordered = selected
+    .map(unit=>({unit,orderIndex:orderMap.get(unit.level),rank:customInternalRank(unit,units)}))
+    .sort((a,b)=>a.orderIndex-b.orderIndex || a.rank-b.rank || a.unit.displayOrder-b.unit.displayOrder);
+  const deathIndexById = new Map(ordered.map((row,index)=>[row.unit.id,index]));
+  const squadCount = ordered.length;
 
   const interim = selected.map(unit=>{
     const orderIndex = orderMap.get(unit.level);
-    const layerModifier = 1.1 - orderIndex * separation;
     const rank = customInternalRank(unit, units);
-    const typeModifier = separation - rank * separation / 5;
+    const deathIndex = deathIndexById.get(unit.id) ?? 0;
+    const squadModifier = 1 + (squadCount - 1 - deathIndex) * separation;
     const adj = speciesAdjustment(unit.species, inputs.healthInputs);
-    const modifier = layerModifier + typeModifier + adj;
+    const modifier = squadModifier + adj;
     const capEach = unit[config.capacityEach];
     const C = modifier * maxHealthEach / unit.healthEach;
     const D = C * capEach;
-    return {unit,rank,layerModifier,typeModifier,speciesAdjustment:adj,modifier,C,D,capEach};
+    return {unit,rank,orderIndex,deathIndex,squadModifier,speciesAdjustment:adj,modifier,C,D,capEach};
   });
 
   const sumD = interim.reduce((s,r)=>s+r.D,0);
@@ -298,8 +309,8 @@ export function calculateCustomCategory({
     return {
       id:row.unit.id,category,displayOrder:row.unit.displayOrder,selectionKey:row.unit.selectionKey,
       level:row.unit.level,type:row.unit.type,name:row.unit.name,icon:row.unit.icon,
-      qty,rawQty,roundTo,rank:row.rank,layerModifier:row.layerModifier,typeModifier:row.typeModifier,
-      speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
+      qty,rawQty,roundTo,rank:row.rank,orderIndex:row.orderIndex,deathIndex:row.deathIndex,
+      squadModifier:row.squadModifier,speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
       squadHealth:(qty*row.unit.healthEach)/(1+row.speciesAdjustment),
       squadStrength:row.unit.strengthEach*qty,totalCapacity,
       nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.unit.healthEach
