@@ -1672,3 +1672,43 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .sacrifice-help-dialog p{margin:14px 0 2px;color:#c3ced7;font-size:.88rem;line-height:1.6}
 .sacrifice-help-close{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #40566a;border-radius:9px;background:#111f2b;color:#dbe4eb;font-size:1.5rem;line-height:1;cursor:pointer}
 @media(max-width:760px){.sacrifice-help-modal{padding:10px}.sacrifice-help-dialog{padding:14px;border-radius:11px}.sacrifice-flag{width:24px;height:24px}}
+
+/* v103 — optimizer progress ELD status */
+.optimizer-eld-status{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:13px;
+}
+.optimizer-eld-status>div{
+  border:1px solid #31485b;
+  border-radius:8px;
+  background:#071725;
+  padding:10px 12px;
+  min-width:0;
+}
+.optimizer-eld-status span{
+  display:block;
+  color:#8fa1b1;
+  font-size:.62rem;
+  line-height:1.25;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  font-weight:850;
+}
+.optimizer-eld-status strong{
+  display:block;
+  margin-top:4px;
+  color:#f2f5f7;
+  font-size:1rem;
+  font-variant-numeric:tabular-nums;
+}
+.optimizer-progress-note{
+  margin:8px 0 0;
+  color:#8193a2;
+  font-size:.67rem;
+  line-height:1.45;
+}
+@media(max-width:520px){
+  .optimizer-eld-status{grid-template-columns:1fr}
+}
