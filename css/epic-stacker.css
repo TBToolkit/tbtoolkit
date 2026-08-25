@@ -1479,3 +1479,89 @@ body.stat-help-modal-open{overflow:hidden}
   .stat-help-figure img{max-height:none}
 }
 .derived-family-grid .help-field-heading label{margin-top:0}
+
+/* ==========================================================================\n   v89 — mobile-safe Health / Strength & Combat help layout\n   ========================================================================== */
+@media (max-width:760px){
+  /* Never let the advanced input area establish a page-wide minimum width. */
+  .advanced-settings-column,
+  .advanced-settings-panel,
+  .advanced-settings-content,
+  .advanced-health-block,
+  .advanced-combat-block,
+  .health-grid,
+  .combat-input-grid,
+  .derived-family-grid,
+  .help-input-field,
+  .help-field-heading,
+  .percent-field{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box;
+  }
+
+  /* A single column is much easier to read/tap on phones and prevents clipping. */
+  .advanced-settings-column .health-grid,
+  .advanced-settings-content .health-grid,
+  .combat-input-grid,
+  .derived-family-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%;
+    gap:12px!important;
+  }
+
+  /* Keep the help control beside the label instead of pushing it to the far edge. */
+  .help-field-heading{
+    justify-content:flex-start;
+    align-items:center;
+    gap:8px;
+    width:100%;
+  }
+  .help-field-heading label{
+    min-width:0;
+    max-width:calc(100% - 40px);
+    font-size:.66rem;
+    letter-spacing:.035em;
+    overflow-wrap:anywhere;
+  }
+  .stat-help-button{
+    flex:0 0 30px;
+    width:30px;
+    height:30px;
+    font-size:.78rem;
+  }
+
+  /* Inputs get the available width, while remaining comfortably sized on tablets. */
+  .advanced-settings-column .health-percent-field,
+  .health-grid .health-percent-field,
+  .combat-input-grid .percent-field,
+  .derived-family-grid .percent-field{
+    width:100%!important;
+    min-width:0!important;
+    max-width:220px!important;
+    margin-top:4px;
+  }
+  .advanced-settings-column .health-percent-field .epic-input,
+  .combat-input-grid .epic-input,
+  .derived-family-grid .epic-input{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .compact-family-override{
+    width:100%;
+  }
+  .derived-family-grid section{
+    min-width:0;
+  }
+}
+
+@media (max-width:420px){
+  .setup-grid{padding-left:10px!important;padding-right:10px!important}
+  .advanced-settings-column{width:100%;overflow:visible}
+  .advanced-settings-content{width:100%}
+  .help-field-heading label{font-size:.64rem}
+  .stat-help-button{flex-basis:32px;width:32px;height:32px}
+  .advanced-settings-column .health-percent-field,
+  .combat-input-grid .percent-field,
+  .derived-family-grid .percent-field{max-width:none!important}
+}
