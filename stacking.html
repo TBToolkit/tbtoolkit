@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=92" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=98" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=96" type="module"></script>
+<script src="js/epic-stacker.js?v=98" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -243,6 +243,15 @@
 <p class="stat-help-text" id="statHelpText"></p>
 <div class="stat-help-gallery" id="statHelpGallery"></div>
 </div>
+</div>
+
+
+<div class="sacrifice-help-modal" hidden id="sacrificeHelpModal">
+  <div class="sacrifice-help-backdrop"></div>
+  <div aria-describedby="sacrificeHelpText" aria-labelledby="sacrificeHelpTitle" aria-modal="true" class="sacrifice-help-dialog" role="dialog">
+    <div class="sacrifice-help-header"><div><span class="sacrifice-help-eyebrow">Optimizer decision</span><h2 id="sacrificeHelpTitle">Why does this squad die early?</h2></div><button aria-label="Close explanation" class="sacrifice-help-close" data-sacrifice-help-close type="button">×</button></div>
+    <p id="sacrificeHelpText"></p>
+  </div>
 </div>
 
 <div class="optimizer-modal" hidden id="optimizerModal">
