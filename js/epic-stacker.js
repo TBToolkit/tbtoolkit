@@ -483,10 +483,10 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=classic
-    ?'Automatically orders selected squads for Epic battles using fixed health separation.'
+    ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
     : optimizer
       ?'Epic Optimizer calculates stack quantities for the units you select. It searches many possible army structures and uses simulated Epic battles to find the army with the highest expected lifetime damage. The optimizer considers unit health, strength, combat bonuses, Double Damage, Strike Twice, death order, attack order, and available army capacity.'
-      :'You control the squad death order by level. Unit-type order within each level remains automatic.';
+      :'You choose the death order by level. The calculator automatically orders unit types within each level.';
 
   els.orderView.hidden=!custom;
   els.arachneRow.hidden=custom;
