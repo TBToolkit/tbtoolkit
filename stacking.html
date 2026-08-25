@@ -8,7 +8,7 @@
 <link href="css/styles.css?v=32" rel="stylesheet"/>
 <link href="css/epic-stacker.css?v=89" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=88" type="module"></script>
+<script src="js/epic-stacker.js?v=91" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -130,9 +130,10 @@
 <div class="separation-mode-only">
 <div class="advanced-divider"></div>
 <div class="advanced-row layer-separation-control">
-<div class="slider-heading"><label for="rankSeparation" id="separationLabel">Layer Separation</label><output for="rankSeparation" id="rankSeparationValue">0.50%</output></div>
-<input class="separation-slider" id="rankSeparation" max="5" min="0" step="0.05" type="range" value="0.50"/>
-<div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">2.50%</span><span id="separationMax">5.00%</span></div>
+<div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.05%</output></div>
+<input class="separation-slider" id="rankSeparation" max="0.5" min="0" step="0.01" type="range" value="0.05"/>
+<div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.25%</span><span id="separationMax">0.50%</span></div>
+<p class="setting-note separation-help">Squad Separation is the target health gap between squads next to each other in the planned death order. A higher value creates a larger health gap but can use army capacity less efficiently. At 0.05%, each squad is targeted to have about 0.05% more health than the squad that should die after it.</p>
 </div>
 <button class="slider-reset advanced-reset" id="resetAdvancedSettings" type="button">↺ Reset to Defaults</button>
 </div>
@@ -228,7 +229,7 @@
 <div aria-label="Dying order direction" class="die-direction"><span>Dies First</span><b>→</b><span>Dies Last</span></div>
 </div>
 <div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
-<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view layer-health separation.</div>
+<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad-health separation.</div>
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
 <div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
