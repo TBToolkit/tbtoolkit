@@ -700,7 +700,7 @@ function createUnitOption(category,unit,selected){
   label.style.setProperty('--level-border',levelColors.border);
   label.style.setProperty('--level-text',levelColors.text);
   label.title=`${unit.name} · ${unit.level} · ${unit.type} · Strength/EA ${formatInteger(unit.strengthEach)}`;
-  label.innerHTML=`<input type="checkbox" ${on?'checked':''}><span class="hierarchy-check" aria-hidden="true">${on?'✓':''}</span><span class="hierarchy-unit-copy"><strong>${escapeHtml(unit.name)}</strong><small>${escapeHtml(unit.type)}</small></span>`;
+  label.innerHTML=`<input type="checkbox" data-selection-category="${escapeHtml(category)}" data-unit-id="${escapeHtml(unit.id)}" ${on?'checked':''}><span class="hierarchy-check" aria-hidden="true">${on?'✓':''}</span><span class="hierarchy-unit-copy"><strong>${escapeHtml(unit.name)}</strong><small>${escapeHtml(unit.type)}</small></span>`;
   label.querySelector('input').addEventListener('change',e=>setOneSelection(category,unit.id,e.target.checked));
   return label;
 }
@@ -763,6 +763,47 @@ function updateCounts(){
   setMaster(els.guardsmanMaster,g,'troop');setMaster(els.specialistMaster,s,'troop');setMaster(els.engineerMaster,e,'troop');setMaster(els.monsterMaster,units.monster,'monster');setMaster(els.mercenaryMaster,units.mercenary,'mercenary');
 }
 function renderAllSelections(){renderTroopClass('GUARDSMAN','guardsmanSelection');renderTroopClass('SPECIALIST','specialistSelection');renderTroopClass('ENGINEER','engineerSelection');renderMonsters();renderMercenaries();updateCounts();}
+
+
+function reconcileSelectionsFromRenderedUI(){
+  if(!appInitialized)return false;
+  const next={troop:[],monster:[],mercenary:[]};
+  const seen={troop:false,monster:false,mercenary:false};
+  document.querySelectorAll('.hierarchy-unit input[data-selection-category][data-unit-id]').forEach(input=>{
+    const category=input.dataset.selectionCategory;
+    const id=input.dataset.unitId;
+    if(!next[category]||!id)return;
+    seen[category]=true;
+    if(input.checked)next[category].push(id);
+  });
+
+  let changed=false;
+  for(const category of ['troop','monster','mercenary']){
+    if(!seen[category])continue;
+    const current=[...(modeState().selectedIds[category]||[])].sort();
+    const restored=[...new Set(next[category])].sort();
+    if(current.length!==restored.length||current.some((id,index)=>id!==restored[index])){
+      modeState().selectedIds[category]=restored;
+      changed=true;
+    }
+  }
+  if(changed){
+    syncCustomOrders();
+    saveState();
+    updateCounts();
+  }
+  return changed;
+}
+function refreshAfterBrowserRestore(){
+  if(!appInitialized)return;
+  const changed=reconcileSelectionsFromRenderedUI();
+  if(changed){
+    renderAllSelections();
+    if(activeMode==='custom')renderOrderView();
+  }
+  recalculate();
+  setOptimizeButtonState();
+}
 
 
 function baseEngineInputs(){const i=modeState().inputs;return{leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,dominance:parseNumber(i.dominance),dominanceFill:parseNumber(i.dominanceFill)/100,arachne:activeMode==='epic'&&!!i.arachne,healthInputs:{MONSTER:parseNumber(i.monsterHealth),HUMAN:parseNumber(i.humanHealth),EPIC_HUNTER:parseNumber(i.epicHunterHealth)},rankSeparation:parseNumber(i.rankSeparation)/100,layerSeparation:parseNumber(i.rankSeparation)/100};}
@@ -1340,11 +1381,9 @@ async function init(){
     // frame, then once more shortly afterward as a defensive fallback.
     requestAnimationFrame(()=>{
       if(!appInitialized)return;
-      refreshActiveMode({save:false});
-      setTimeout(()=>{
-        if(!appInitialized)return;
-        refreshActiveMode({save:false});
-      },120);
+      refreshAfterBrowserRestore();
+      setTimeout(refreshAfterBrowserRestore,150);
+      setTimeout(refreshAfterBrowserRestore,600);
     });
   }catch(error){
     console.error(error);
@@ -1353,4 +1392,13 @@ async function init(){
     showValidation(['The unit database could not be loaded. Refresh the page and try again.']);
   }
 }
+window.addEventListener('pageshow',()=>{
+  requestAnimationFrame(()=>{
+    refreshAfterBrowserRestore();
+    setTimeout(refreshAfterBrowserRestore,150);
+  });
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')setTimeout(refreshAfterBrowserRestore,0);
+});
 init();
