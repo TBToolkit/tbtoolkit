@@ -2714,3 +2714,38 @@ body.battle-mode-active #orderView[hidden]{
 body.battle-mode-active #orderView .topdown-panel-heading p{
   max-width:760px;
 }
+
+
+/* ==========================================================================
+   v121 — vertical Custom Die Order direction labels
+   ========================================================================== */
+.order-group .order-direction{
+  display:block!important;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.order-group .order-direction-top{
+  padding:8px 10px 6px!important;
+  text-align:left!important;
+}
+
+.order-group .order-direction-bottom{
+  padding:6px 10px 9px!important;
+  text-align:left!important;
+}
+
+.order-group .order-direction-top span,
+.order-group .order-direction-bottom span{
+  display:inline-block;
+}
+
+.order-group .order-direction-bottom{
+  border-top:1px solid rgba(255,255,255,.05);
+  margin-top:4px;
+}
+
+/* Empty columns still show the vertical direction clearly. */
+.order-group .order-list:empty{
+  min-height:82px;
+}
