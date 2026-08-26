@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=112" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=113" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=112" type="module"></script>
+<script src="js/epic-stacker.js?v=113" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -41,8 +41,30 @@
 </div>
 
 <div class="validation-box" id="validationBox"></div>
-<div class="battle-beta-panel" hidden id="battleBetaPanel"><section class="topdown-panel battle-config-panel"><div class="topdown-panel-heading"><div><span class="section-kicker">1</span><h2>Battle</h2><p>Choose the battle you want to calculate. The Beta currently uses deterministic stacking only.</p></div><span class="battle-beta-badge">BETA</span></div><div class="battle-beta-grid"><div class="battle-beta-block"><h3>Battle Type</h3><div class="battle-choice-grid" id="battleTypeChoices"><label class="battle-choice"><input checked name="battleType" type="radio" value="epic_standard"/><span><strong>Epic Monster</strong><small>4 enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="epic_arachne"/><span><strong>Epic Arachne</strong><small>8 enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="pvp_unknown"/><span><strong>PvP</strong><small>Unknown enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="pvp_single_cp"/><span><strong>PvP — CP Battle</strong><small>1 enemy squad</small></span></label></div><p class="setting-note battle-context-note" id="battleContextNote"></p></div><div class="battle-beta-block"><h3>Calculation Method</h3><div class="battle-method-grid"><label class="battle-method active"><input checked name="battleMethod" type="radio" value="basic"/><span><strong>Basic</strong><small id="battleBasicMethodText">Automatic deterministic stack</small></span></label><label class="battle-method disabled"><input disabled name="battleMethod" type="radio" value="custom"/><span><strong>Custom Order</strong><small>Planned for the next phase</small></span></label><label class="battle-method disabled"><input disabled name="battleMethod" type="radio" value="optimize"/><span><strong>Optimize</strong><small>Planned after deterministic validation</small></span></label></div></div></div></section></div>
-
+<div class="battle-beta-panel" hidden id="battleBetaPanel">
+<section class="topdown-panel battle-config-panel">
+<div class="topdown-panel-heading battle-config-heading">
+<div><span class="section-kicker">1</span><h2>Battle</h2><p>Choose the battle and calculation method.</p></div>
+<span class="battle-beta-badge">BETA</span>
+</div>
+<div class="battle-select-grid">
+<label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
+<select id="battleTypeSelect">
+<option value="epic_standard">Epic Monster — 4 enemy squads</option>
+<option value="epic_arachne">Epic Arachne — 8 enemy squads</option>
+<option value="pvp_unknown">PvP — Unknown enemy squads</option>
+<option value="pvp_single_cp">PvP — CP Battle — 1 enemy squad</option>
+</select></label>
+<label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
+<select id="battleMethodSelect">
+<option value="basic">Basic</option>
+<option disabled value="custom">Custom Order — Coming soon</option>
+<option disabled value="optimize">Optimize — Coming soon</option>
+</select></label>
+</div>
+<div class="battle-selection-summary"><p id="battleContextNote"></p><p id="battleMethodNote"></p></div>
+</section>
+</div>
 
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">
