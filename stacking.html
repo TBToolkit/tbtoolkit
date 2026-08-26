@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=110" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=111" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=107" type="module"></script>
+<script src="js/epic-stacker.js?v=111" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -79,7 +79,9 @@
 <div class="optimizer-only optimizer-merc-option">
 <label class="checkbox-row compact-option-row"><input id="includeMercenariesInOptimization" type="checkbox"/><span>Include Mercenaries in Optimization</span></label>
 <details class="inline-info-help"><summary aria-label="About mercenary optimization" title="More information">i</summary>
-<div class="inline-info-card"><strong>Include Mercenaries in Optimization</strong>
+<div class="inline-info-card" role="dialog" aria-label="Include Mercenaries in Optimization help">
+<button class="inline-info-close" type="button" aria-label="Close help">×</button>
+<strong>Include Mercenaries in Optimization</strong>
 <p>Leave this off when your mercenary quantities are small and you mainly want to optimize full Leadership and Dominance. Selected mercenaries are ignored by the optimizer and can be added manually in game.</p>
 <p>Turn it on when your mercenary army is large enough to materially affect the battle. Mercenary squads can change death order and attack opportunities, which can also change the optimized Troop and Monster quantities.</p></div></details></div>
 </div>
