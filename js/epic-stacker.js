@@ -285,12 +285,19 @@ function setOptimizeButtonState(){
     els.optimizeHelp.textContent='Loading calculator data…';
     return;
   }
+
+  // Keep the primary action available once initialization is complete.
+  // Mobile browsers can restore checkbox appearance after JavaScript startup;
+  // startEpicOptimization() performs a final DOM-to-state reconciliation
+  // before validation, so button availability must not depend on that race.
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
   const errors=any?validate():[];
-  els.optimizeArmy.disabled=!any||errors.length>0||!!epicWorker;
+  els.optimizeArmy.disabled=!!epicWorker;
   els.optimizeArmy.textContent=epicResultCurrent?'Re-optimize Army':'Optimize Army';
-  if(!any)els.optimizeHelp.textContent='Select the units you want to include.';
-  else if(errors.length)els.optimizeHelp.textContent='Complete the required inputs before optimizing.';
+
+  if(epicWorker)els.optimizeHelp.textContent='Optimization is running.';
+  else if(!any)els.optimizeHelp.textContent='Select units, then click Optimize Army.';
+  else if(errors.length)els.optimizeHelp.textContent='Click Optimize Army to review any required inputs.';
   else if(epicResultCurrent)els.optimizeHelp.textContent='Change any input or selection, then re-optimize when ready.';
   else els.optimizeHelp.textContent='Ready. Click Optimize Army to calculate the best quantities.';
 }
@@ -464,6 +471,10 @@ function renderEpicOptimizedResult(opt){
 }
 function startEpicOptimization(){
   if(activeMode!=='optimizer'||epicWorker)return;
+
+  // Final authoritative reconciliation at user action time. This avoids
+  // Android/Chrome form-restoration timing differences during initial load.
+  reconcileSelectionsFromRenderedUI();
   readInputs();
   syncDerivedEpicBonuses();
   readInputs();
@@ -873,6 +884,15 @@ function reconcileSelectionsFromRenderedUI(){
 }
 function refreshAfterBrowserRestore(){
   if(!appInitialized)return;
+
+  // A visibility/pageshow refresh must never cancel an active optimization.
+  // recalculate() intentionally terminates the worker when inputs change, so
+  // skip restore synchronization until the running job has completed.
+  if(epicWorker){
+    setOptimizeButtonState();
+    return;
+  }
+
   reconcileSelectionsFromRenderedUI();
   recalculate();
   setOptimizeButtonState();
@@ -1470,11 +1490,24 @@ async function init(){
 }
 window.addEventListener('pageshow',()=>{
   requestAnimationFrame(()=>{
+    if(epicWorker){
+      setOptimizeButtonState();
+      return;
+    }
     refreshAfterBrowserRestore();
-    setTimeout(refreshAfterBrowserRestore,150);
+    setTimeout(()=>{
+      if(!epicWorker)refreshAfterBrowserRestore();
+    },150);
   });
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible')setTimeout(refreshAfterBrowserRestore,0);
+  if(document.visibilityState!=='visible')return;
+  if(epicWorker){
+    // Background tabs may be throttled by the browser, but the optimizer
+    // worker should be allowed to continue/resume rather than being replaced.
+    setOptimizeButtonState();
+    return;
+  }
+  setTimeout(refreshAfterBrowserRestore,0);
 });
 init();
