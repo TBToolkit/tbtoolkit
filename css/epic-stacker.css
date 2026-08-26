@@ -2514,3 +2514,189 @@ body:not(.battle-mode-active) .battle-top-layout{
   flex:0 0 22px!important;
   margin:0!important;
 }
+
+
+/* ==========================================================================
+   v118 — authoritative Battle Calculator layout correction
+   ========================================================================== */
+
+@media (min-width:1101px){
+  body.battle-mode-active .battle-top-layout{
+    display:grid!important;
+    grid-template-columns:minmax(250px,.82fr) minmax(330px,1fr) minmax(430px,1.42fr)!important;
+    gap:14px!important;
+    width:100%!important;
+    min-width:0!important;
+    align-items:stretch!important;
+    margin:14px 0 20px!important;
+  }
+  body.battle-mode-active #battleBetaPanel{
+    display:block!important;
+    grid-column:1!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  body.battle-mode-active .battle-top-layout>.setup-panel{
+    display:contents!important;
+  }
+  body.battle-mode-active .battle-top-layout>.setup-panel>.topdown-panel-heading{
+    display:none!important;
+  }
+  body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+    display:contents!important;
+  }
+  body.battle-mode-active .battle-top-layout .setup-block{
+    display:block!important;
+    grid-column:2!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:14px!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .battle-top-layout .advanced-settings-column{
+    display:block!important;
+    grid-column:3!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:14px!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .setup-block .limit-list{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  body.battle-mode-active .setup-block .limit-row{
+    display:grid!important;
+    grid-template-columns:minmax(105px,1fr) minmax(118px,1.18fr) minmax(76px,.72fr)!important;
+    grid-template-areas:
+      "name name name"
+      "maximum autofill fill"!important;
+    column-gap:10px!important;
+    row-gap:5px!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    align-items:end!important;
+  }
+  body.battle-mode-active .setup-block .limit-name{grid-area:name!important;margin:0!important}
+  body.battle-mode-active .setup-block .limit-maximum{grid-area:maximum!important;width:100%!important;min-width:0!important;margin:0!important}
+  body.battle-mode-active .setup-block .auto-fill-toggle{
+    grid-area:autofill!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    align-self:end!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .setup-block .limit-fill{grid-area:fill!important;width:100%!important;min-width:0!important;margin:0!important}
+}
+
+body.battle-mode-active .advanced-settings-column .help-field-heading{
+  display:inline-flex!important;
+  width:max-content!important;
+  max-width:100%!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+}
+body.battle-mode-active .advanced-settings-column .help-field-heading>label{
+  flex:0 1 auto!important;
+  width:auto!important;
+  margin:0!important;
+}
+body.battle-mode-active .advanced-settings-column .help-field-heading>.stat-help-button{
+  position:static!important;
+  flex:0 0 auto!important;
+  margin:0!important;
+  transform:none!important;
+}
+
+body.battle-mode-active .battle-top-layout + .battle-sequenced-section{
+  margin-top:20px!important;
+}
+
+@media (max-width:1100px){
+  body.battle-mode-active .battle-top-layout{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:12px 0 18px!important;
+    overflow:visible!important;
+  }
+  body.battle-mode-active #battleBetaPanel,
+  body.battle-mode-active .battle-top-layout>.setup-panel{
+    display:block!important;
+    position:static!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .battle-top-layout>.setup-panel>.topdown-panel-heading{
+    display:none!important;
+  }
+  body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .battle-top-layout .setup-block,
+  body.battle-mode-active .battle-top-layout .advanced-settings-column{
+    display:block!important;
+    position:static!important;
+    float:none!important;
+    clear:both!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    flex:0 0 auto!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  body.battle-mode-active .setup-block .limit-row{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    grid-template-areas:
+      "name name"
+      "maximum maximum"
+      "autofill fill"!important;
+    gap:7px 9px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.battle-mode-active .setup-block .limit-name{grid-area:name!important}
+  body.battle-mode-active .setup-block .limit-maximum{grid-area:maximum!important;width:100%!important}
+  body.battle-mode-active .setup-block .auto-fill-toggle{grid-area:autofill!important;width:100%!important}
+  body.battle-mode-active .setup-block .limit-fill{grid-area:fill!important;width:100%!important}
+}
+
+@media (max-width:600px){
+  body.battle-mode-active .advanced-settings-column .health-grid,
+  body.battle-mode-active .advanced-settings-column .combat-input-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  body.battle-mode-active .advanced-settings-column .help-input-field,
+  body.battle-mode-active .advanced-settings-column .percent-field{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}
