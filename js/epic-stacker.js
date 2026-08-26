@@ -8,6 +8,32 @@ const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoL
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let appInitialized=false;let optimizerBestEldSoFar=0;
+let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
+function formatElapsed(ms){
+  const total=Math.max(0,Math.floor(Number(ms||0)/1000));
+  const minutes=Math.floor(total/60),seconds=total%60;
+  return `${minutes}:${String(seconds).padStart(2,'0')}`;
+}
+function updateOptimizerElapsed(){
+  if(!optimizerStartedAt)return;
+  const elapsed=performance.now()-optimizerStartedAt;
+  if(els.optimizerElapsedTime)els.optimizerElapsedTime.textContent=formatElapsed(elapsed);
+}
+function startOptimizerElapsedTimer(){
+  if(optimizerElapsedTimer)clearInterval(optimizerElapsedTimer);
+  optimizerStartedAt=performance.now();
+  lastOptimizationElapsedMs=null;
+  updateOptimizerElapsed();
+  optimizerElapsedTimer=setInterval(updateOptimizerElapsed,250);
+}
+function stopOptimizerElapsedTimer(){
+  if(!optimizerStartedAt)return lastOptimizationElapsedMs;
+  lastOptimizationElapsedMs=performance.now()-optimizerStartedAt;
+  if(optimizerElapsedTimer){clearInterval(optimizerElapsedTimer);optimizerElapsedTimer=null;}
+  if(els.optimizerElapsedTime)els.optimizerElapsedTime.textContent=formatElapsed(lastOptimizationElapsedMs);
+  optimizerStartedAt=0;
+  return lastOptimizationElapsedMs;
+}
 function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
@@ -24,7 +50,7 @@ optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('
 custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]}}
 }};
 function modeState(){return state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -362,7 +388,7 @@ function clearPrediction(){
 }
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);els.rawGoldRevival.textContent=Math.round(r.rawGoldRevivalCost).toLocaleString('en-US');const perThousand=r.rawGoldRevivalCost>0?r.expectedTotalLifetimeDamage/r.rawGoldRevivalCost*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;
-  if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${buildText}`;}
+  if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText} · Full battle simulation using the displayed quantities.`;}
   const diagnosticNotes=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[String(n.id),n]));
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
@@ -490,11 +516,13 @@ function startEpicOptimization(){
   els.resultStatus.textContent='Optimizing quantities…';
   els.resultStatus.classList.add('optimizing-status');
   openOptimizerModal();
+  startOptimizerElapsedTimer();
 
   try{
     epicWorker=new Worker('js/epic-optimizer-worker.js?v=104');
   }catch(error){
     console.error(error);
+    stopOptimizerElapsedTimer();
     closeOptimizerModal();
     els.resultStatus.classList.remove('optimizing-status');
     showValidation(['This browser could not start the Epic Optimizer. Refresh the page and try again.']);
@@ -512,6 +540,7 @@ function startEpicOptimization(){
     if(msg.type==='error'){
       console.error(msg.message,msg.stack);
       if(epicWorker){epicWorker.terminate();epicWorker=null;}
+      stopOptimizerElapsedTimer();
       closeOptimizerModal();
       els.resultStatus.classList.remove('optimizing-status');
       showValidation([msg.message||'The Epic optimizer could not complete the stack.']);
@@ -522,7 +551,11 @@ function startEpicOptimization(){
     }
     if(msg.type==='result'){
       try{
-        lastEpicRunDiagnostics=msg.diagnostics??null;
+        const elapsedMs=stopOptimizerElapsedTimer();
+        if(msg.payload){
+          msg.payload.diagnostics={...(msg.payload.diagnostics||{}),optimizationElapsedMs:elapsedMs};
+        }
+        lastEpicRunDiagnostics={...(msg.diagnostics??{}),optimizationElapsedMs:elapsedMs};
         console.info('[TB Toolkit Epic Optimizer]',{
           build:lastEpicRunDiagnostics,
           expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,
@@ -551,6 +584,7 @@ function startEpicOptimization(){
     if(requestId!==epicRequestId)return;
     console.error(event);
     if(epicWorker){epicWorker.terminate();epicWorker=null;}
+    stopOptimizerElapsedTimer();
     closeOptimizerModal();
     els.resultStatus.classList.remove('optimizing-status');
     showValidation(['The Epic optimizer worker encountered an error.']);
@@ -1451,6 +1485,7 @@ function wireEvents(){
   els.optimizeArmy.addEventListener('click',startEpicOptimization);
   els.cancelOptimization.addEventListener('click',()=>{
     if(epicWorker){epicWorker.terminate();epicWorker=null;}
+    stopOptimizerElapsedTimer();
     closeOptimizerModal();
     els.resultStatus.classList.remove('optimizing-status');
     els.resultStatus.textContent='Optimization cancelled.';
