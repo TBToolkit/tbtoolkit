@@ -2370,3 +2370,85 @@ body:not(.battle-mode-active) .battle-top-layout{
     box-sizing:border-box!important;
   }
 }
+
+
+/* ==========================================================================
+   v116 — spacing, dynamic section sequencing, Army Limits alignment,
+          and compact help-icon placement
+   ========================================================================== */
+
+/* Clear separation between the 1–3 desktop row and the next major section. */
+.battle-mode-active .battle-top-layout{
+  margin-bottom:18px!important;
+}
+
+/* Army Limits: the actual DOM uses a primary maximum block plus a fill block.
+   Force those two children onto one row, then make Max Fill + Fill sit together. */
+@media(min-width:1101px){
+  .battle-mode-active .setup-block .limit-card{
+    display:grid!important;
+    grid-template-columns:minmax(105px,1fr) minmax(190px,1.35fr)!important;
+    column-gap:12px!important;
+    align-items:end!important;
+  }
+
+  .battle-mode-active .setup-block .limit-card>.limit-main{
+    grid-column:1!important;
+    min-width:0!important;
+  }
+
+  .battle-mode-active .setup-block .limit-card>.limit-fill-row{
+    grid-column:2!important;
+    display:grid!important;
+    grid-template-columns:minmax(105px,1fr) minmax(70px,.62fr)!important;
+    gap:10px!important;
+    align-items:end!important;
+    margin:0!important;
+    min-width:0!important;
+  }
+
+  .battle-mode-active .setup-block .limit-fill-row>*{
+    margin:0!important;
+    min-width:0!important;
+  }
+
+  .battle-mode-active .setup-block .limit-main input,
+  .battle-mode-active .setup-block .limit-fill-row input,
+  .battle-mode-active .setup-block .limit-fill-row .checkbox-tile{
+    min-height:40px!important;
+    box-sizing:border-box!important;
+  }
+}
+
+/* Health & Combat help icons should sit immediately beside the label instead
+   of being pushed to the far side of the grid cell. */
+.battle-mode-active .advanced-settings-column .help-field-heading{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  width:auto!important;
+}
+
+.battle-mode-active .advanced-settings-column .help-field-heading label{
+  flex:0 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+}
+
+.battle-mode-active .advanced-settings-column .field-help{
+  flex:0 0 auto!important;
+  margin:0!important;
+  position:static!important;
+}
+
+.battle-mode-active .advanced-settings-column .help-field-heading .help-icon,
+.battle-mode-active .advanced-settings-column .help-field-heading summary{
+  margin-left:0!important;
+}
+
+/* Keep the label/icon group tight even when the cell has extra width. */
+.battle-mode-active .advanced-settings-column .help-field{
+  align-items:start!important;
+}
