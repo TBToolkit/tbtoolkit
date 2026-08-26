@@ -2760,3 +2760,5 @@ body.battle-mode-active .selection-optimize-row:not([hidden]){
 body.battle-mode-active .selection-optimize-row .optimize-help{
   max-width:760px;
 }
+
+/* v123 — persistent Battle Calculator workspaces */
