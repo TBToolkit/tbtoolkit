@@ -1113,7 +1113,8 @@ function renderClassicBattleDetails(result){
     <td>${formatInteger(r.totalCapacity??0)}</td>
   </tr>`).join('');
 
-  els.classicBattleMeta.textContent=activeMode==='epic'
+  const battleCustom=activeMode==='battle'&&modeState().inputs.battleMethod==='custom';
+  els.classicBattleMeta.textContent=(activeMode==='epic'||(activeMode==='battle'&&!battleCustom))
     ?'Predicted death order is based on calculated squad health. Attack order is ranked by nominal squad strength.'
     :'Predicted global death order is based on the calculated health produced by your Custom Die Order. Attack order is ranked by nominal squad strength.';
   els.classicBattleDetails.hidden=false;
@@ -1410,7 +1411,18 @@ function recalculate(){
     renderResultRows('mercenary',result.categories.mercenary.results);
     renderResultRows('monster',result.categories.monster.results);
     renderResultRows('troop',result.categories.troop.results);
-    updateCapacity(result);const bt=activeMode==='battle'?modeState().inputs.battleType:null,bm=activeMode==='battle'?modeState().inputs.battleMethod:null,canEpicScore=activeMode!=='battle'||(bm!=='custom'&&(bt==='epic_standard'||bt==='epic_arachne')),scored=canEpicScore?scoreClassicResult(result):null;if(scored){renderLayerHealthChart(convertEpicV2Result(scored));renderPrediction(scored);}else{renderLayerHealthChart(result);clearPrediction();}
+    updateCapacity(result);
+    const bt=activeMode==='battle'?modeState().inputs.battleType:null;
+    const canEpicScore=activeMode!=='battle'||bt==='epic_standard'||bt==='epic_arachne';
+    const scored=canEpicScore?scoreClassicResult(result):null;
+    if(scored){
+      renderLayerHealthChart(convertEpicV2Result(scored));
+      renderPrediction(scored);
+    }else{
+      renderLayerHealthChart(result);
+      clearPrediction();
+    }
+    renderClassicBattleDetails(result);
 
     const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
     els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
