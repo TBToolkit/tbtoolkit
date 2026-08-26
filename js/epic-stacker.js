@@ -602,6 +602,22 @@ function startEpicOptimization(){
     capacityLimits:effectiveEpicCapacityLimits()
   });
 }
+
+function updateVisibleStepNumbers(){
+  if(activeMode!=='battle')return;
+
+  let next=4;
+  const orderedRoles=['selection','order','results'];
+  for(const role of orderedRoles){
+    const badge=document.querySelector(`.dynamic-step-number[data-step-role="${role}"]`);
+    if(!badge)continue;
+    const section=badge.closest('section,.topdown-panel');
+    const visible=section ? !section.hidden && getComputedStyle(section).display!=='none' : true;
+    if(!visible)continue;
+    badge.textContent=String(next++);
+  }
+}
+
 function configureModeUI(){
   const classic=activeMode==='epic';
   const optimizer=activeMode==='optimizer';
@@ -660,6 +676,7 @@ function configureModeUI(){
   if(nums[1])nums[1].textContent=custom?'5':optimizer?'5':'4';
 
   syncDerivedEpicBonuses();
+  updateVisibleStepNumbers();
   setOptimizeButtonState();
 }
 function applyStateToInputs(){
@@ -1434,12 +1451,12 @@ function wireEvents(){
     if(activeMode!=='battle')return;
     modeState().inputs.battleType=els.battleTypeSelect.value;
     modeState().inputs.arachne=els.battleTypeSelect.value==='epic_arachne';
-    saveState();configureModeUI();recalculate();
+    saveState();configureModeUI();updateVisibleStepNumbers();recalculate();
   });
   if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
     modeState().inputs.battleMethod=els.battleMethodSelect.value;
-    saveState();configureModeUI();recalculate();
+    saveState();configureModeUI();updateVisibleStepNumbers();recalculate();
   });
   const advancedIds=['monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'];
   const editableAdvancedOrder=()=>advancedIds.filter(id=>els[id]&&!els[id].disabled&&!els[id].readOnly&&els[id].offsetParent!==null);
