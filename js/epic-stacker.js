@@ -49,7 +49,7 @@ const state={modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
 custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]}},
-battle:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('battle')}
+battle:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('battle'),orders:{troop:[],monster:[],mercenary:[]}}
 }};
 function modeState(){return state.modes[activeMode];}
 function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
@@ -169,6 +169,7 @@ function loadSavedState(){
           for(const c of ['troop','monster','mercenary']){
             if(Array.isArray(saved.modes[mode]?.selectedIds?.[c]))state.modes[mode].selectedIds[c]=saved.modes[mode].selectedIds[c];
             if(mode==='custom'&&Array.isArray(saved.modes.custom?.orders?.[c]))state.modes.custom.orders[c]=saved.modes.custom.orders[c];
+            if(mode==='battle'&&Array.isArray(saved.modes.battle?.orders?.[c]))state.modes.battle.orders[c]=saved.modes.battle.orders[c];
           }
         }
         return;
@@ -635,7 +636,8 @@ function configureModeUI(){
         ?'Battle Calculator Beta lets you choose the battle first, then builds the stack using the rules for that battle. This first version is focused on deterministic calculation and PvP rule validation.'
         :'You choose the death order by level. The calculator automatically orders unit types within each level.';
 
-  els.orderView.hidden=!custom;
+  const battleCustom=battle&&modeState().inputs.battleMethod==='custom';
+  els.orderView.hidden=!(custom||battleCustom);
   els.arachneRow.hidden=custom||battle;
   if(battle)els.arachneRow.style.display='none';
   else els.arachneRow.style.removeProperty('display');
@@ -655,10 +657,14 @@ function configureModeUI(){
       :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
       :'PvP CP Battle: one enemy squad. Higher-value and higher-revival-cost PvP squads are preserved later in the death ladder.';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
-      type==='pvp_single_cp'?'Basic: builds a deterministic CP cost-saving stack.'
-      :'Basic: builds the stack automatically from the selected battle rules.';
+      method==='custom'
+        ?'Custom Order: you choose the planned death order after selecting units.'
+        :type==='pvp_single_cp'
+          ?'Basic: builds a deterministic CP cost-saving stack.'
+          :'Basic: builds the stack automatically from the selected battle rules.';
   }
-  document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!optimizer);
+  if(battleCustom||custom){syncCustomOrders();renderOrderView();}
+    document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!optimizer);
   document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer);
 
 
@@ -720,12 +726,37 @@ function getLevelRows(category){const map=new Map();for(const u of units[categor
 function selectedSet(category){return new Set(modeState().selectedIds[category]);}
 function selectedIdsFor(category){return modeState().selectedIds[category];}
 function selectedLevels(category){const ids=new Set(selectedIdsFor(category)),levels=[];for(const group of getLevelRows(category))if(group.rows.some(u=>ids.has(u.id)))levels.push(group.level);return levels;}
-function syncCustomOrders(){const c=state.modes.custom;for(const category of ['troop','monster','mercenary']){const sel=selectedLevels(category),set=new Set(sel),next=(c.orders[category]||[]).filter(l=>set.has(l));for(const l of sel)if(!next.includes(l))next.push(l);c.orders[category]=next;}}
-function moveOrderItem(category,index,delta){const a=state.modes.custom.orders[category],j=index+delta;if(j<0||j>=a.length)return;[a[index],a[j]]=[a[j],a[index]];saveState();renderOrderView();recalculate();}
-function reorderByDrop(category,from,to){const a=state.modes.custom.orders[category];if(from===to||from<0||to<0)return;const[item]=a.splice(from,1);a.splice(to,0,item);saveState();renderOrderView();recalculate();}
+function activeOrderState(){
+  return activeMode==='battle' ? state.modes.battle : state.modes.custom;
+}
+function isCustomOrderMode(){
+  return activeMode==='custom'||(activeMode==='battle'&&modeState().inputs.battleMethod==='custom');
+}
+function syncCustomOrders(){
+  if(!isCustomOrderMode())return;
+  const c=activeOrderState();
+  for(const category of ['troop','monster','mercenary']){
+    const sel=selectedLevels(category),set=new Set(sel),
+      next=(c.orders[category]||[]).filter(l=>set.has(l));
+    for(const l of sel)if(!next.includes(l))next.push(l);
+    c.orders[category]=next;
+  }
+}
+function moveOrderItem(category,index,delta){
+  const a=activeOrderState().orders[category],j=index+delta;
+  if(j<0||j>=a.length)return;
+  [a[index],a[j]]=[a[j],a[index]];
+  saveState();renderOrderView();recalculate();
+}
+function reorderByDrop(category,from,to){
+  const a=activeOrderState().orders[category];
+  if(from===to||from<0||to<0)return;
+  const[item]=a.splice(from,1);a.splice(to,0,item);
+  saveState();renderOrderView();recalculate();
+}
 function commitOrderFromDom(category,target){
   const levels=[...target.querySelectorAll('.order-item')].map(el=>el.dataset.level);
-  state.modes.custom.orders[category]=levels;
+  activeOrderState().orders[category]=levels;
   saveState();
   recalculate();
 }
@@ -734,10 +765,11 @@ function renderOrderView(){
   syncCustomOrders();
   const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'};
 
+  const orderState=activeOrderState();
   for(const category of ['troop','monster','mercenary']){
     const target=els[ids[category]];
-    const order=state.modes.custom.orders[category];
-    const selected=new Set(state.modes.custom.selectedIds[category]);
+    const order=orderState.orders[category];
+    const selected=new Set(modeState().selectedIds[category]);
     target.innerHTML='';
 
     if(!order.length){
@@ -819,20 +851,22 @@ function setSelection(category,rows,checked){
   for(const unit of rows)checked?set.add(unit.id):set.delete(unit.id);
   modeState().selectedIds[category]=[...set];
   syncCustomOrders();saveState();updateCounts();renderAllSelections();
-  if(activeMode==='custom')renderOrderView();
+  if(isCustomOrderMode())renderOrderView();
   recalculate();
 }
 function setOneSelection(category,id,checked){
   const set=selectedSet(category);checked?set.add(id):set.delete(id);
   modeState().selectedIds[category]=[...set];
   syncCustomOrders();saveState();updateCounts();renderAllSelections();
-  if(activeMode==='custom')renderOrderView();
+  if(isCustomOrderMode())renderOrderView();
   recalculate();
 }
 function clearAllSelections(){
   modeState().selectedIds={troop:[],monster:[],mercenary:[]};
   if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
-  saveState();updateCounts();renderAllSelections();if(activeMode==='custom')renderOrderView();recalculate();
+if(activeMode==='battle')state.modes.battle.orders={troop:[],monster:[],mercenary:[]};
+  if(activeMode==='battle'&&modeState().inputs.battleMethod==='custom')state.modes.battle.orders={troop:[],monster:[],mercenary:[]};
+  saveState();updateCounts();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();
 }
 function checkboxState(input,rows,selected){
   const all=rows.length>0&&rows.every(u=>selected.has(u.id));
@@ -953,7 +987,7 @@ function reconcileSelectionsFromRenderedUI(){
     syncCustomOrders();
     saveState();
     renderAllSelections();
-    if(activeMode==='custom')renderOrderView();
+    if(isCustomOrderMode())renderOrderView();
   }
   return changed;
 }
@@ -975,7 +1009,19 @@ function refreshAfterBrowserRestore(){
 
 
 function baseEngineInputs(){const i=modeState().inputs;return{leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,dominance:parseNumber(i.dominance),dominanceFill:parseNumber(i.dominanceFill)/100,arachne:(activeMode==='epic'&&!!i.arachne)||(activeMode==='battle'&&i.battleType==='epic_arachne'),healthInputs:{MONSTER:parseNumber(i.monsterHealth),HUMAN:parseNumber(i.humanHealth),EPIC_HUNTER:parseNumber(i.epicHunterHealth)},monsterStrengthPct:parseNumber(i.monsterStrength),humanStrengthPct:parseNumber(i.humanStrength),epicHunterStrengthPct:parseNumber(i.epicHunterStrength),rankSeparation:parseNumber(i.rankSeparation)/100,layerSeparation:parseNumber(i.rankSeparation)/100};}
-function categoryProbe(category,fill,inputs){const meta=CAPACITY_META[category],probeInputs={...inputs,[meta.fill]:fill};if(activeMode==='custom'){syncCustomOrders();return calculateCustomCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs,order:state.modes.custom.orders[category]});}if(activeMode==='battle'&&String(modeState().inputs.battleType||'').startsWith('pvp_'))return calculateBattleCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs,battleType:modeState().inputs.battleType});return calculateCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs});}
+function categoryProbe(category,fill,inputs){
+  const meta=CAPACITY_META[category],probeInputs={...inputs,[meta.fill]:fill};
+  if(isCustomOrderMode()){
+    syncCustomOrders();
+    return calculateCustomCategory({
+      category,units:units[category],selectedIds:selectedIdsFor(category),
+      inputs:probeInputs,order:activeOrderState().orders[category]
+    });
+  }
+  if(activeMode==='battle'&&String(modeState().inputs.battleType||'').startsWith('pvp_'))
+    return calculateBattleCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs,battleType:modeState().inputs.battleType});
+  return calculateCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs});
+}
 function findMaxSafeFill(category,inputs){const meta=CAPACITY_META[category],limit=inputs[meta.limit];if(!modeState().selectedIds[category].length||!(limit>0))return 1;const full=categoryProbe(category,1,inputs);if(full.totalCapacity<=limit)return 1;let low=0,high=1;for(let i=0;i<55;i++){const mid=(low+high)/2;const r=categoryProbe(category,mid,inputs);if(r.totalCapacity<=limit)low=mid;else high=mid;}return low;}
 function resolveAutoFills(inputs){
   for(const [cat,meta] of Object.entries(CAPACITY_META)){
@@ -1338,13 +1384,33 @@ function recalculate(){
     let result;
 
     if(activeMode==='epic'){result=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs});}
-    else if(activeMode==='battle'){const battleType=modeState().inputs.battleType||'epic_standard';if(battleType==='epic_standard'||battleType==='epic_arachne')result=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs:{...inputs,arachne:battleType==='epic_arachne'}});else result=calculateBattleStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs,battleType});}
+    else if(activeMode==='battle'){
+      const battleType=modeState().inputs.battleType||'epic_standard';
+      const method=modeState().inputs.battleMethod||'basic';
+      if(method==='custom'){
+        syncCustomOrders();
+        result=calculateCustomStack({
+          troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+          selectedIds:modeState().selectedIds,orders:state.modes.battle.orders,inputs
+        });
+      }else if(battleType==='epic_standard'||battleType==='epic_arachne'){
+        result=calculateEpicStack({
+          troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+          selectedIds:modeState().selectedIds,inputs:{...inputs,arachne:battleType==='epic_arachne'}
+        });
+      }else{
+        result=calculateBattleStack({
+          troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+          selectedIds:modeState().selectedIds,inputs,battleType
+        });
+      }
+    }
     else{syncCustomOrders();result=calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,inputs});}
 
     renderResultRows('mercenary',result.categories.mercenary.results);
     renderResultRows('monster',result.categories.monster.results);
     renderResultRows('troop',result.categories.troop.results);
-    updateCapacity(result);const bt=activeMode==='battle'?modeState().inputs.battleType:null,canEpicScore=activeMode!=='battle'||bt==='epic_standard'||bt==='epic_arachne',scored=canEpicScore?scoreClassicResult(result):null;if(scored){renderLayerHealthChart(convertEpicV2Result(scored));renderPrediction(scored);}else{renderLayerHealthChart(result);clearPrediction();}
+    updateCapacity(result);const bt=activeMode==='battle'?modeState().inputs.battleType:null,bm=activeMode==='battle'?modeState().inputs.battleMethod:null,canEpicScore=activeMode!=='battle'||(bm!=='custom'&&(bt==='epic_standard'||bt==='epic_arachne')),scored=canEpicScore?scoreClassicResult(result):null;if(scored){renderLayerHealthChart(convertEpicV2Result(scored));renderPrediction(scored);}else{renderLayerHealthChart(result);clearPrediction();}
 
     const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
     els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
@@ -1353,13 +1419,14 @@ function recalculate(){
     console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');
   }
 }
-function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(activeMode==='custom')renderOrderView();clearResults();}
+function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
+if(activeMode==='battle')state.modes.battle.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(isCustomOrderMode())renderOrderView();clearResults();}
 function refreshActiveMode({save=true}={}){
   configureModeUI();
   applyStateToInputs();
   syncCustomOrders();
   renderAllSelections();
-  if(activeMode==='custom')renderOrderView();
+  if(isCustomOrderMode())renderOrderView();
   syncDerivedEpicBonuses();
   readInputs();
   if(save)saveState();
@@ -1453,7 +1520,10 @@ function wireEvents(){
   if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
     modeState().inputs.battleMethod=els.battleMethodSelect.value;
-    saveState();configureModeUI();updateVisibleStepNumbers();recalculate();
+    if(modeState().inputs.battleMethod==='custom')syncCustomOrders();
+    saveState();configureModeUI();
+    if(modeState().inputs.battleMethod==='custom')renderOrderView();
+    updateVisibleStepNumbers();recalculate();
   });
   const advancedIds=['monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'];
   const editableAdvancedOrder=()=>advancedIds.filter(id=>els[id]&&!els[id].disabled&&!els[id].readOnly&&els[id].offsetParent!==null);
