@@ -1546,3 +1546,27 @@ document.addEventListener('visibilitychange',()=>{
   setTimeout(refreshAfterBrowserRestore,0);
 });
 init();
+
+
+// v111 — inline help dismissal behavior.
+document.addEventListener('click',(event)=>{
+  const closeButton=event.target.closest('.inline-info-close');
+  if(closeButton){
+    const details=closeButton.closest('.inline-info-help');
+    if(details)details.open=false;
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  document.querySelectorAll('.inline-info-help[open]').forEach(details=>{
+    const card=details.querySelector('.inline-info-card');
+    const summary=details.querySelector('summary');
+    if(card?.contains(event.target)||summary?.contains(event.target))return;
+    details.open=false;
+  });
+});
+document.addEventListener('keydown',(event)=>{
+  if(event.key!=='Escape')return;
+  document.querySelectorAll('.inline-info-help[open]').forEach(details=>details.open=false);
+});
