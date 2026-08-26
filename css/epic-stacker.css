@@ -2700,3 +2700,17 @@ body.battle-mode-active .battle-top-layout + .battle-sequenced-section{
     box-sizing:border-box!important;
   }
 }
+
+
+/* ==========================================================================
+   v119 — Battle Calculator Custom Order phase
+   ========================================================================== */
+body.battle-mode-active #orderView{
+  margin-top:14px;
+}
+body.battle-mode-active #orderView[hidden]{
+  display:none!important;
+}
+body.battle-mode-active #orderView .topdown-panel-heading p{
+  max-width:760px;
+}
