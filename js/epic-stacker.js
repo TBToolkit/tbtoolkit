@@ -1692,6 +1692,40 @@ function wireEvents(){
     setOptimizeButtonState();
   });
 }
+
+function initializeActiveCalculatorAfterData(){
+  try{
+    refreshActiveMode({save:false});
+    return true;
+  }catch(error){
+    console.error('Initial calculator restore failed.',error);
+
+    // A cached optimized result from an older build must never make the whole
+    // calculator unusable. Keep it in storage, but skip rendering it for this
+    // startup pass and restore the live inputs/selections normally.
+    lastOptimizedEpicPayload=null;
+    lastOptimizedEpicSignature='';
+    lastEpicRunDiagnostics=null;
+    epicResultCurrent=false;
+
+    try{
+      configureModeUI();
+      applyStateToInputs();
+      syncCustomOrders();
+      renderAllSelections();
+      if(isCustomOrderMode())renderOrderView();
+      syncDerivedEpicBonuses();
+      readInputs();
+      recalculate();
+      return true;
+    }catch(fallbackError){
+      console.error('Fallback calculator initialization failed.',fallbackError);
+      showValidation(['The calculator interface could not be fully restored. Your saved inputs are still on this device.']);
+      return false;
+    }
+  }
+}
+
 async function init(){
   cacheElements();
   loadSavedState();
@@ -1699,29 +1733,48 @@ async function init(){
   loadSavedOptimizerResult();
   applyStateToInputs();
   wireEvents();
+
+  // Only an actual database request/parse failure should produce the
+  // "unit database could not be loaded" message.
   try{
     await loadData();
-    appInitialized=true;
-
-    // Use the exact same synchronization path on first load that is used
-    // after a calculator-mode change. This prevents startup-only state drift.
-    refreshActiveMode({save:false});
-
-    // Some mobile browsers restore form/control state after the first script
-    // pass. Reassert the active calculator state after the first rendered
-    // frame, then once more shortly afterward as a defensive fallback.
-    requestAnimationFrame(()=>{
-      if(!appInitialized)return;
-      refreshAfterBrowserRestore();
-      setTimeout(refreshAfterBrowserRestore,150);
-      setTimeout(refreshAfterBrowserRestore,600);
-    });
   }catch(error){
-    console.error(error);
+    console.error('Army database load failed.',error);
     appInitialized=false;
     setOptimizeButtonState();
     showValidation(['The unit database could not be loaded. Refresh the page and try again.']);
+    return;
   }
+
+  // From this point forward the calculator data is available. A later UI or
+  // saved-result restore problem must not disable optimization.
+  appInitialized=true;
+  showValidation([]);
+
+  initializeActiveCalculatorAfterData();
+
+  // Re-evaluate the primary action after all units/selections have rendered.
+  setOptimizeButtonState();
+
+  requestAnimationFrame(()=>{
+    if(!appInitialized)return;
+    try{
+      refreshAfterBrowserRestore();
+    }catch(error){
+      console.error('Post-render browser-state restore failed.',error);
+      setOptimizeButtonState();
+    }
+    setTimeout(()=>{
+      if(!appInitialized)return;
+      try{refreshAfterBrowserRestore();}
+      catch(error){console.error('Delayed browser-state restore failed.',error);setOptimizeButtonState();}
+    },150);
+    setTimeout(()=>{
+      if(!appInitialized)return;
+      try{refreshAfterBrowserRestore();}
+      catch(error){console.error('Final browser-state restore failed.',error);setOptimizeButtonState();}
+    },600);
+  });
 }
 window.addEventListener('pageshow',()=>{
   requestAnimationFrame(()=>{
@@ -1729,9 +1782,13 @@ window.addEventListener('pageshow',()=>{
       setOptimizeButtonState();
       return;
     }
-    refreshAfterBrowserRestore();
+    try{refreshAfterBrowserRestore();}
+    catch(error){console.error('pageshow restore failed.',error);setOptimizeButtonState();}
     setTimeout(()=>{
-      if(!epicWorker)refreshAfterBrowserRestore();
+      if(!epicWorker){
+        try{refreshAfterBrowserRestore();}
+        catch(error){console.error('delayed pageshow restore failed.',error);setOptimizeButtonState();}
+      }
     },150);
   });
 });
@@ -1743,7 +1800,10 @@ document.addEventListener('visibilitychange',()=>{
     setOptimizeButtonState();
     return;
   }
-  setTimeout(refreshAfterBrowserRestore,0);
+  setTimeout(()=>{
+    try{refreshAfterBrowserRestore();}
+    catch(error){console.error('visibility restore failed.',error);setOptimizeButtonState();}
+  },0);
 });
 init();
 
