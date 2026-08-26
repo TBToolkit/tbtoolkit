@@ -2093,3 +2093,229 @@ body.sacrifice-help-modal-open{overflow:hidden}
   .battle-select-grid{gap:10px;padding-left:12px;padding-right:12px}
   .battle-selection-summary{gap:4px;padding-left:12px;padding-right:12px}
 }
+
+
+/* ==========================================================================
+   v114 — unified Battle Calculator top layout
+   ========================================================================== */
+
+/* The heading's first column was shrink-wrapping the selector. Give it the
+   available page width, then keep all four calculators in one desktop row. */
+.epic-heading>div:first-child{
+  width:100%;
+  min-width:0;
+}
+.mode-switch.calculator-mode-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  width:100%!important;
+  max-width:1040px!important;
+  min-width:0!important;
+  gap:6px!important;
+  box-sizing:border-box!important;
+}
+.mode-switch.calculator-mode-grid .mode-button{
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  padding:10px 8px!important;
+  text-align:center!important;
+  white-space:normal!important;
+}
+
+/* Battle Calculator desktop: Battle | Army Limits | Health & Combat */
+.battle-mode-active .battle-top-layout{
+  display:grid;
+  grid-template-columns:minmax(230px,.8fr) minmax(300px,1fr) minmax(390px,1.35fr);
+  gap:12px;
+  align-items:stretch;
+  margin-top:14px;
+}
+.battle-mode-active #battleBetaPanel,
+.battle-mode-active .setup-panel{
+  margin:0!important;
+  min-width:0;
+}
+.battle-mode-active #battleBetaPanel{
+  display:block!important;
+}
+.battle-mode-active #battleBetaPanel .battle-config-panel{
+  height:100%;
+  box-sizing:border-box;
+  margin:0!important;
+}
+
+/* The existing setup shell becomes transparent to the outer 3-column grid. */
+.battle-mode-active .setup-panel{
+  display:contents!important;
+}
+.battle-mode-active .setup-panel>.topdown-panel-heading{
+  display:none!important;
+}
+.battle-mode-active .setup-panel>.setup-grid{
+  display:contents!important;
+}
+.battle-mode-active .setup-block,
+.battle-mode-active .advanced-settings-column{
+  min-width:0!important;
+  width:auto!important;
+  margin:0!important;
+  box-sizing:border-box;
+  border:1px solid #304658;
+  border-radius:8px;
+  background:#111e29;
+  padding:14px!important;
+  overflow:visible!important;
+}
+.battle-mode-active .setup-block{grid-column:2}
+.battle-mode-active .advanced-settings-column{grid-column:3}
+
+/* Section headings used only by the new Battle Calculator layout. */
+.battle-only-column-title{display:none}
+.battle-mode-active .battle-only-column-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0 0 12px;
+  padding:0 0 10px;
+  border-bottom:1px solid #2c4151;
+}
+.battle-mode-active .battle-only-column-title h2{
+  margin:0!important;
+  font-family:inherit!important;
+  font-size:.92rem!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  letter-spacing:.015em!important;
+  text-transform:uppercase;
+}
+.battle-mode-active .setup-block>h3{
+  display:none!important;
+}
+
+/* Section 1: vertically stacked, compact controls. */
+.battle-mode-active #battleBetaPanel .battle-config-heading{
+  padding-bottom:8px!important;
+}
+.battle-mode-active #battleBetaPanel .battle-select-grid{
+  grid-template-columns:1fr!important;
+  gap:11px!important;
+  padding:0 14px 10px!important;
+}
+.battle-mode-active #battleBetaPanel .battle-selection-summary{
+  grid-template-columns:1fr!important;
+  gap:5px!important;
+  padding:0 14px 14px!important;
+}
+
+/* Section 2: Leadership, Authority, Dominance stacked vertically. */
+.battle-mode-active .setup-block .limit-list{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:9px!important;
+}
+.battle-mode-active .setup-block .limit-row{
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+.battle-mode-active .setup-block .setting-note{
+  margin-top:10px!important;
+}
+.battle-mode-active #arachneRow{
+  display:none!important;
+}
+
+/* Section 3: Health & Combat uses a compact mixed grid. */
+.battle-mode-active .advanced-settings-column .advanced-settings-panel{
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  padding:0!important;
+}
+.battle-mode-active .advanced-settings-column .advanced-settings-content{
+  padding:0!important;
+}
+.battle-mode-active .advanced-settings-column .health-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:9px!important;
+}
+.battle-mode-active .advanced-settings-column .combat-input-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px 12px!important;
+}
+.battle-mode-active .advanced-settings-column .advanced-divider{
+  margin:13px 0!important;
+}
+
+/* Typography consistency throughout the Battle Calculator's top sections. */
+.battle-mode-active #battleBetaPanel,
+.battle-mode-active .setup-block,
+.battle-mode-active .advanced-settings-column,
+.battle-mode-active #battleBetaPanel *,
+.battle-mode-active .setup-block *,
+.battle-mode-active .advanced-settings-column *{
+  font-family:inherit!important;
+}
+.battle-mode-active .battle-select-field>span,
+.battle-mode-active .field-label,
+.battle-mode-active .help-field-heading label,
+.battle-mode-active .limit-name{
+  letter-spacing:.02em!important;
+}
+.battle-mode-active .battle-select-field select,
+.battle-mode-active input,
+.battle-mode-active button{
+  font-family:inherit!important;
+}
+
+/* When another calculator is active, preserve the original page layout. */
+body:not(.battle-mode-active) .battle-top-layout{
+  display:block;
+}
+
+/* Tablet/mobile: return to a clear vertical 1 → 2 → 3 flow. */
+@media(max-width:1100px){
+  .battle-mode-active .battle-top-layout{
+    display:block;
+  }
+  .battle-mode-active .setup-panel{
+    display:block!important;
+    margin-top:12px!important;
+  }
+  .battle-mode-active .setup-panel>.setup-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+  .battle-mode-active .setup-block,
+  .battle-mode-active .advanced-settings-column{
+    display:block!important;
+    margin:0!important;
+  }
+}
+@media(max-width:760px){
+  .mode-switch.calculator-mode-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    max-width:none!important;
+  }
+  .battle-mode-active .advanced-settings-column .health-grid,
+  .battle-mode-active .advanced-settings-column .combat-input-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:460px){
+  .battle-mode-active .advanced-settings-column .health-grid,
+  .battle-mode-active .advanced-settings-column .combat-input-grid{
+    grid-template-columns:1fr!important;
+  }
+}
