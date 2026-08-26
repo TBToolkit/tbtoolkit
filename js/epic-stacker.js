@@ -627,6 +627,7 @@ function configureModeUI(){
   if(battle)els.arachneRow.style.display='none';
   else els.arachneRow.style.removeProperty('display');
   if(els.battleBetaPanel)els.battleBetaPanel.hidden=!battle;
+  document.body.classList.toggle('battle-mode-active',battle);
   if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
   if(els.selectionStepNumber)els.selectionStepNumber.textContent=battle?'3':'2';
   if(battle){
