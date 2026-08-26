@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=105" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=103" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=104" type="module"></script>
+<script src="js/epic-stacker.js?v=106" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -204,7 +204,7 @@
 <div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
 </div>
 <details class="battle-details">
-<summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
+<summary>Battle Details</summary>
 <div class="prediction-meta" id="predictionMeta"></div>
 <div class="prediction-table-wrap">
 <table class="prediction-table">
@@ -265,11 +265,10 @@
 <div aria-label="Optimization progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="optimizerProgressTrack" role="progressbar"><i id="optimizerProgressBar"></i></div>
 <div class="optimizer-progress-meta"><span id="optimizerProgressPercent">0%</span><span id="optimizerProgressEvaluations"></span></div>
 <div class="optimizer-eld-status" id="optimizerProgressDetail">
-  <div><span>Current Army ELD</span><strong id="optimizerProgressCurrentEld">—</strong></div>
-  <div><span>Best ELD Found</span><strong id="optimizerProgressBestEld">—</strong></div>
+  <div><span>Current candidate ELD</span><strong id="optimizerProgressCurrentEld">—</strong></div>
+  <div><span>Best ELD found so far</span><strong id="optimizerProgressBestEld">—</strong></div>
 </div>
-<p class="optimizer-eld-definition"><strong>ELD = Expected Lifetime Damage.</strong> It is the total damage the army is expected to deal over the full battle.</p>
-<p class="optimizer-progress-note">The current army changes as the optimizer searches. Best ELD Found shows the strongest army discovered so far.</p>
+<p class="optimizer-progress-note">The current candidate can move up or down while the optimizer explores different army structures.</p>
 <button class="toolbar-button optimizer-cancel" id="cancelOptimization" type="button">Cancel</button>
 </div>
 </div>
