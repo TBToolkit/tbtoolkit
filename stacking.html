@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=116" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=117" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=116" type="module"></script>
+<script src="js/epic-stacker.js?v=117" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -176,9 +176,9 @@
 
 </div><!-- /battle-top-layout -->
 
-<section class="topdown-panel selection-area">
+<section class="topdown-panel selection-area battle-sequenced-section">
 <div class="topdown-panel-heading selection-heading">
-<div><span class="section-kicker" id="selectionStepNumber">2</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
+<div><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
 <button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button>
 </div>
 
@@ -207,9 +207,9 @@
 <div class="selection-optimize-row optimizer-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
 </section>
 
-<section class="topdown-panel order-view" hidden id="orderView">
+<section class="topdown-panel order-view battle-sequenced-section" hidden id="orderView">
 <div class="topdown-panel-heading">
-<div><span class="section-kicker">3</span><h2>Custom Die Order</h2><p>Drag selected levels into the order you want them to die. On a phone, use the arrow buttons.</p></div>
+<div><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><p>Drag selected levels into the order you want them to die. On a phone, use the arrow buttons.</p></div>
 </div>
 <div class="order-columns">
 <section class="order-group"><h3>Troops</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="troopOrderList"></div></section>
@@ -219,8 +219,8 @@
 </section>
 
 <div class="output-grid">
-<section class="topdown-panel result-panel" id="resultsView">
-<div class="topdown-panel-heading result-head"><div><span class="section-kicker output-section-number">3</span><h2>Results</h2></div><span class="result-status" id="resultStatus">Enter your values and select units.</span></div>
+<section class="topdown-panel result-panel battle-sequenced-section" id="resultsView">
+<div class="topdown-panel-heading result-head"><div><span class="section-kicker output-section-number managed-step-number">5</span><h2>Results</h2></div><span class="result-status" id="resultStatus">Enter your values and select units.</span></div>
 <div class="capacity-results">
 <h3>Capacity</h3>
 <div class="capacity-grid">
@@ -255,9 +255,9 @@
 <div class="calculator-utility-row result-utility"><div></div><button class="epic-action danger compact-reset" id="resetCalculator" type="button">Reset Calculator</button></div>
 </section>
 
-<section class="topdown-panel layer-chart-panel" id="layerChartPanel">
+<section class="topdown-panel layer-chart-panel battle-sequenced-section" id="layerChartPanel">
 <div class="layer-chart-head">
-<div><div class="section-number"><span class="section-kicker output-section-number">4</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
+<div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
 <div aria-label="Dying order direction" class="die-direction"><span>Dies First</span><b>→</b><span>Dies Last</span></div>
 </div>
 <div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
