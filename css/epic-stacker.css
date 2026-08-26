@@ -2761,4 +2761,9 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   max-width:760px;
 }
 
-/* v123 — persistent Battle Calculator workspaces */
+
+/* v124 — persistent workspace/result state */
+.stale-result-status{
+  color:#e5b44a!important;
+  font-weight:750;
+}
