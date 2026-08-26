@@ -605,17 +605,13 @@ function startEpicOptimization(){
 
 function updateVisibleStepNumbers(){
   if(activeMode!=='battle')return;
-
   let next=4;
-  const orderedRoles=['selection','order','results'];
-  for(const role of orderedRoles){
-    const badge=document.querySelector(`.dynamic-step-number[data-step-role="${role}"]`);
-    if(!badge)continue;
-    const section=badge.closest('section,.topdown-panel');
-    const visible=section ? !section.hidden && getComputedStyle(section).display!=='none' : true;
-    if(!visible)continue;
+  document.querySelectorAll('.battle-sequenced-section').forEach(section=>{
+    if(section.hidden||getComputedStyle(section).display==='none')return;
+    const badge=section.querySelector('.managed-step-number');
+    if(!badge)return;
     badge.textContent=String(next++);
-  }
+  });
 }
 
 function configureModeUI(){
@@ -645,7 +641,7 @@ function configureModeUI(){
   if(els.battleBetaPanel)els.battleBetaPanel.hidden=!battle;
   document.body.classList.toggle('battle-mode-active',battle);
   if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
-  if(els.selectionStepNumber)els.selectionStepNumber.textContent=battle?'3':'2';
+  if(els.selectionStepNumber&&!battle)els.selectionStepNumber.textContent='2';
   if(battle){
     const type=modeState().inputs.battleType||'epic_standard';
     const method=modeState().inputs.battleMethod||'basic';
