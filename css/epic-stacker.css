@@ -2749,3 +2749,14 @@ body.battle-mode-active #orderView .topdown-panel-heading p{
 .order-group .order-list:empty{
   min-height:82px;
 }
+
+
+/* ==========================================================================
+   v122 — Battle Calculator Epic Optimize phase
+   ========================================================================== */
+body.battle-mode-active .selection-optimize-row:not([hidden]){
+  margin-top:14px;
+}
+body.battle-mode-active .selection-optimize-row .optimize-help{
+  max-width:760px;
+}
