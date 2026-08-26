@@ -1802,3 +1802,147 @@ body.sacrifice-help-modal-open{overflow:hidden}
   .battle-details-title{font-size:.8rem}
   .battle-details-subtitle{font-size:.64rem}
 }
+
+
+/* ==========================================================================
+   v108 — viewport-safe info help, no-scroll Battle Details, fuller unit names
+   ========================================================================== */
+
+/* Keep the Mercenary optimization explanation fully inside the viewport on
+   desktop and mobile. A fixed viewport popover is more reliable than an
+   absolutely positioned card near the trigger when the Army Limits panel is
+   close to the bottom of the visible screen. */
+.inline-info-help[open]{
+  z-index:1002;
+}
+.inline-info-card{
+  position:fixed!important;
+  z-index:1003!important;
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:22px!important;
+  transform:translateX(-50%);
+  width:min(430px,calc(100vw - 36px))!important;
+  max-width:calc(100vw - 36px);
+  max-height:min(62vh,480px)!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+  box-sizing:border-box;
+}
+@media(max-width:640px){
+  .inline-info-card{
+    left:18px!important;
+    right:18px!important;
+    bottom:18px!important;
+    transform:none;
+    width:auto!important;
+    max-width:none;
+    max-height:60vh!important;
+  }
+}
+
+/* Battle Details should use the width of the result panel rather than create
+   a horizontal scrollbar. Headers may wrap; data values remain compact. */
+.battle-details>.prediction-table-wrap{
+  overflow-x:hidden!important;
+  width:auto;
+}
+.prediction-table{
+  width:100%!important;
+  min-width:0!important;
+  table-layout:fixed;
+}
+.prediction-table th,
+.prediction-table td{
+  padding:6px 5px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.prediction-table th{
+  white-space:normal!important;
+  line-height:1.18;
+}
+.prediction-table td{
+  white-space:nowrap;
+}
+.prediction-table th:nth-child(1),
+.prediction-table td:nth-child(1){width:31%}
+.prediction-table th:nth-child(2),
+.prediction-table td:nth-child(2){width:10%}
+.prediction-table th:nth-child(3),
+.prediction-table td:nth-child(3){width:8%}
+.prediction-table th:nth-child(4),
+.prediction-table td:nth-child(4){width:10%}
+.prediction-table th:nth-child(5),
+.prediction-table td:nth-child(5){width:21%}
+.prediction-table th:nth-child(6),
+.prediction-table td:nth-child(6){width:20%}
+
+@media(max-width:700px){
+  .battle-details>.prediction-meta,
+  .battle-details>.prediction-table-wrap{
+    margin-left:6px;
+    margin-right:6px;
+  }
+  .prediction-table{
+    font-size:.53rem;
+  }
+  .prediction-table th{
+    font-size:.47rem;
+  }
+  .prediction-table th,
+  .prediction-table td{
+    padding:5px 3px;
+  }
+  .prediction-table th:nth-child(1),
+  .prediction-table td:nth-child(1){width:30%}
+  .prediction-table th:nth-child(2),
+  .prediction-table td:nth-child(2){width:11%}
+  .prediction-table th:nth-child(3),
+  .prediction-table td:nth-child(3){width:9%}
+  .prediction-table th:nth-child(4),
+  .prediction-table td:nth-child(4){width:10%}
+  .prediction-table th:nth-child(5),
+  .prediction-table td:nth-child(5){width:20%}
+  .prediction-table th:nth-child(6),
+  .prediction-table td:nth-child(6){width:20%}
+}
+
+/* Use more of each result card for the unit name. The dotted leader yields
+   space first, and longer names may use a second line instead of being cut
+   down to only a few characters. */
+.result-row.compact-result-row{
+  align-items:center;
+}
+.result-row.compact-result-row .result-label{
+  flex:3 1 0!important;
+  min-width:0;
+}
+.result-row.compact-result-row .result-leader{
+  flex:.45 1 12px!important;
+  min-width:6px!important;
+}
+.result-row.compact-result-row .result-label strong{
+  white-space:normal!important;
+  overflow:hidden;
+  text-overflow:clip;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  line-clamp:2;
+  line-height:1.08;
+}
+@media(max-width:1180px){
+  .result-row.compact-result-row .result-leader{
+    flex:.2 1 6px!important;
+  }
+}
+@media(max-width:760px){
+  .result-row.compact-result-row .result-leader{
+    display:none!important;
+  }
+  .result-row.compact-result-row .result-label{
+    flex:1 1 auto!important;
+  }
+}
