@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=118" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=119" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=118" type="module"></script>
+<script src="js/epic-stacker.js?v=119" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -59,7 +59,7 @@
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
 <select id="battleMethodSelect">
 <option value="basic">Basic</option>
-<option disabled value="custom">Custom Order — Coming soon</option>
+<option value="custom">Custom Order</option>
 <option disabled value="optimize">Optimize — Coming soon</option>
 </select></label>
 </div>
@@ -207,7 +207,7 @@
 <div class="selection-optimize-row optimizer-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
 </section>
 
-<section class="topdown-panel order-view battle-sequenced-section" hidden id="orderView">
+<section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
 <div class="topdown-panel-heading">
 <div><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><p>Drag selected levels into the order you want them to die. On a phone, use the arrow buttons.</p></div>
 </div>
