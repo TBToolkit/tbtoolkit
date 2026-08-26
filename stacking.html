@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=111" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=112" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=111" type="module"></script>
+<script src="js/epic-stacker.js?v=112" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -30,20 +30,23 @@
 <div>
 <div class="breadcrumb">Home / Stacking Calculator</div>
 <h1>Stacking Calculator</h1>
-<div aria-label="Calculator mode" class="mode-switch three-mode-switch" role="group">
+<div aria-label="Calculator mode" class="mode-switch four-mode-switch" role="group">
 <button aria-pressed="true" class="mode-button active" data-mode="epic" type="button">Epic Stacker</button>
 <button aria-pressed="false" class="mode-button" data-mode="custom" type="button">Custom Stacker</button>
 <button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer <span class="beta-tag">Beta</span></button>
+<button aria-pressed="false" class="mode-button" data-mode="battle" type="button">Battle Calculator <span class="beta-tag">Beta</span></button>
 </div>
 <p class="mode-description" id="modeDescription">Automatically orders selected squads for Epic battles.</p>
 </div>
 </div>
 
 <div class="validation-box" id="validationBox"></div>
+<div class="battle-beta-panel" hidden id="battleBetaPanel"><section class="topdown-panel battle-config-panel"><div class="topdown-panel-heading"><div><span class="section-kicker">1</span><h2>Battle</h2><p>Choose the battle you want to calculate. The Beta currently uses deterministic stacking only.</p></div><span class="battle-beta-badge">BETA</span></div><div class="battle-beta-grid"><div class="battle-beta-block"><h3>Battle Type</h3><div class="battle-choice-grid" id="battleTypeChoices"><label class="battle-choice"><input checked name="battleType" type="radio" value="epic_standard"/><span><strong>Epic Monster</strong><small>4 enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="epic_arachne"/><span><strong>Epic Arachne</strong><small>8 enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="pvp_unknown"/><span><strong>PvP</strong><small>Unknown enemy squads</small></span></label><label class="battle-choice"><input name="battleType" type="radio" value="pvp_single_cp"/><span><strong>PvP — CP Battle</strong><small>1 enemy squad</small></span></label></div><p class="setting-note battle-context-note" id="battleContextNote"></p></div><div class="battle-beta-block"><h3>Calculation Method</h3><div class="battle-method-grid"><label class="battle-method active"><input checked name="battleMethod" type="radio" value="basic"/><span><strong>Basic</strong><small id="battleBasicMethodText">Automatic deterministic stack</small></span></label><label class="battle-method disabled"><input disabled name="battleMethod" type="radio" value="custom"/><span><strong>Custom Order</strong><small>Planned for the next phase</small></span></label><label class="battle-method disabled"><input disabled name="battleMethod" type="radio" value="optimize"/><span><strong>Optimize</strong><small>Planned after deterministic validation</small></span></label></div></div></div></section></div>
+
 
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">
-<div><span class="section-kicker">1</span><h2>Army Limits</h2></div>
+<div><span class="section-kicker" id="setupStepNumber">1</span><h2>Army Limits</h2></div>
 <div class="auto-update-note"><span class="live-dot"></span>Inputs saved on this device</div>
 </div>
 
@@ -148,7 +151,7 @@
 
 <section class="topdown-panel selection-area">
 <div class="topdown-panel-heading selection-heading">
-<div><span class="section-kicker">2</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
+<div><span class="section-kicker" id="selectionStepNumber">2</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
 <button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button>
 </div>
 
