@@ -6,7 +6,7 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=119" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=121" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
 <script src="js/epic-stacker.js?v=120" type="module"></script>
 </head>
@@ -212,9 +212,9 @@
 <div><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><p>Drag selected levels into the order you want them to die. On a phone, use the arrow buttons.</p></div>
 </div>
 <div class="order-columns">
-<section class="order-group"><h3>Troops</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="troopOrderList"></div></section>
-<section class="order-group"><h3>Monsters</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="monsterOrderList"></div></section>
-<section class="order-group"><h3>Mercs</h3><div class="order-direction"><span>Dies First</span><span>Dies Last</span></div><div class="order-list" id="mercenaryOrderList"></div></section>
+<section class="order-group"><h3>Troops</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="troopOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
+<section class="order-group"><h3>Monsters</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="monsterOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
+<section class="order-group"><h3>Mercs</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="mercenaryOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
 </div>
 </section>
 
