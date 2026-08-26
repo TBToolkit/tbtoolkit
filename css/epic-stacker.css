@@ -1983,3 +1983,32 @@ body.sacrifice-help-modal-open{overflow:hidden}
     max-height:72vh!important;
   }
 }
+
+
+/* v111 — dismissible inline help */
+.inline-info-card{
+  padding-top:38px!important;
+}
+.inline-info-close{
+  position:absolute;
+  top:9px;
+  right:10px;
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border:1px solid #41586b;
+  border-radius:6px;
+  background:#102231;
+  color:#eef3f6;
+  font-size:1rem;
+  line-height:1;
+  font-weight:800;
+  cursor:pointer;
+}
+.inline-info-close:hover,
+.inline-info-close:focus-visible{
+  background:#173146;
+  border-color:#607b91;
+  outline:none;
+}
