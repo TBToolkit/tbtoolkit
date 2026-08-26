@@ -2319,3 +2319,54 @@ body:not(.battle-mode-active) .battle-top-layout{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* ==========================================================================
+   v115 — Battle header spacing + horizontal Army Limit controls
+   ========================================================================== */
+
+/* Give the first Battle field more breathing room below the section header. */
+.battle-mode-active #battleBetaPanel .battle-select-grid{
+  padding-top:12px!important;
+}
+
+/* In Battle Calculator desktop view, keep each capacity's Maximum / Max Fill /
+   Fill percentage on one horizontal line. */
+@media(min-width:1101px){
+  .battle-mode-active .setup-block .limit-row{
+    display:grid!important;
+    grid-template-columns:minmax(92px,1fr) auto minmax(78px,.72fr)!important;
+    gap:10px!important;
+    align-items:end!important;
+  }
+
+  .battle-mode-active .setup-block .limit-row>.limit-main,
+  .battle-mode-active .setup-block .limit-row>.limit-fill-check,
+  .battle-mode-active .setup-block .limit-row>.limit-fill-input{
+    min-width:0!important;
+    width:auto!important;
+    margin:0!important;
+  }
+
+  .battle-mode-active .setup-block .limit-main{
+    grid-column:1!important;
+  }
+  .battle-mode-active .setup-block .limit-fill-check{
+    grid-column:2!important;
+  }
+  .battle-mode-active .setup-block .limit-fill-input{
+    grid-column:3!important;
+  }
+
+  /* Keep checkbox control and fill value visually aligned with the Maximum input. */
+  .battle-mode-active .setup-block .limit-fill-check,
+  .battle-mode-active .setup-block .limit-fill-input{
+    align-self:end!important;
+  }
+
+  .battle-mode-active .setup-block .limit-fill-check .checkbox-tile,
+  .battle-mode-active .setup-block .limit-fill-input input{
+    min-height:40px!important;
+    box-sizing:border-box!important;
+  }
+}
