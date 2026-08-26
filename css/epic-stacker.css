@@ -1957,3 +1957,29 @@ body.sacrifice-help-modal-open{overflow:hidden}
   -webkit-line-clamp:unset!important;
   line-clamp:unset!important;
 }
+
+
+/* v110 — center viewport-safe inline help instead of bottom anchoring */
+.inline-info-card{
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(430px,calc(100vw - 36px))!important;
+  max-width:calc(100vw - 36px)!important;
+  max-height:min(70vh,480px)!important;
+  overflow:auto!important;
+}
+@media(max-width:640px){
+  .inline-info-card{
+    left:50%!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:calc(100vw - 32px)!important;
+    max-width:calc(100vw - 32px)!important;
+    max-height:72vh!important;
+  }
+}
