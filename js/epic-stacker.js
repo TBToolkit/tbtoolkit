@@ -272,7 +272,7 @@ function cancelEpicOptimization(){
 
 
 function currentEpicEffectiveSignature(){
-  if(activeMode!=='optimizer')return'';
+  if(!isAnyEpicOptimizeMode())return'';
   const i=modeState().inputs;
   const selected={
     troop:[...(modeState().selectedIds.troop||[])].sort(),
@@ -308,7 +308,7 @@ function currentEpicEffectiveSignature(){
   return JSON.stringify(effective);
 }
 function setOptimizeButtonState(){
-  if(!els.optimizeArmy||activeMode!=='optimizer')return;
+  if(!els.optimizeArmy||!isAnyEpicOptimizeMode())return;
   if(!appInitialized){
     els.optimizeArmy.disabled=true;
     els.optimizeArmy.textContent='Optimize Army';
@@ -495,12 +495,14 @@ function renderEpicOptimizedResult(opt){
   renderPrediction(opt);
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
-  els.resultStatus.textContent=`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
+  els.resultStatus.textContent=activeMode==='battle'
+    ?`${count} optimized squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`
+    :`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
 }
 function startEpicOptimization(){
-  if(activeMode!=='optimizer'||epicWorker)return;
+  if(!isAnyEpicOptimizeMode()||epicWorker)return;
 
   // Final authoritative reconciliation at user action time. This avoids
   // Android/Chrome form-restoration timing differences during initial load.
@@ -649,23 +651,34 @@ function configureModeUI(){
     const type=modeState().inputs.battleType||'epic_standard';
     const method=modeState().inputs.battleMethod||'basic';
     if(els.battleTypeSelect)els.battleTypeSelect.value=type;
-    if(els.battleMethodSelect)els.battleMethodSelect.value=method;
+    if(els.battleMethodSelect){
+      const optimizeOption=els.battleMethodSelect.querySelector('option[value="optimize"]');
+      if(optimizeOption)optimizeOption.disabled=type.startsWith('pvp_');
+      if(type.startsWith('pvp_')&&modeState().inputs.battleMethod==='optimize'){
+        modeState().inputs.battleMethod='basic';
+      }
+      els.battleMethodSelect.value=modeState().inputs.battleMethod||'basic';
+    }
     modeState().inputs.arachne=type==='epic_arachne';
     if(els.battleContextNote)els.battleContextNote.textContent=
       type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
       :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
       :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
       :'PvP CP Battle: one enemy squad. Higher-value and higher-revival-cost PvP squads are preserved later in the death ladder.';
+    const activeMethod=modeState().inputs.battleMethod||'basic';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
-      method==='custom'
-        ?'Custom Order: you choose the planned death order after selecting units.'
-        :type==='pvp_single_cp'
-          ?'Basic: builds a deterministic CP cost-saving stack.'
-          :'Basic: builds the stack automatically from the selected battle rules.';
+      activeMethod==='optimize'
+        ?'Optimize: searches many Epic army structures and simulated battles to maximize expected lifetime damage.'
+        :activeMethod==='custom'
+          ?'Custom Order: you choose the planned death order after selecting units.'
+          :type==='pvp_single_cp'
+            ?'Basic: builds a deterministic CP cost-saving stack.'
+            :'Basic: builds the stack automatically from the selected battle rules.';
   }
   if(battleCustom||custom){syncCustomOrders();renderOrderView();}
-    document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!optimizer);
-  document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer);
+  const battleOptimize=isBattleOptimizeMode();
+  document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!(optimizer||battleOptimize));
+  document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer||battleOptimize);
 
 
   if(classic||custom||battle){
@@ -729,6 +742,16 @@ function selectedLevels(category){const ids=new Set(selectedIdsFor(category)),le
 function activeOrderState(){
   return activeMode==='battle' ? state.modes.battle : state.modes.custom;
 }
+function isBattleOptimizeMode(){
+  if(activeMode!=='battle')return false;
+  const type=modeState().inputs.battleType||'epic_standard';
+  return modeState().inputs.battleMethod==='optimize' &&
+    (type==='epic_standard'||type==='epic_arachne');
+}
+function isAnyEpicOptimizeMode(){
+  return activeMode==='optimizer'||isBattleOptimizeMode();
+}
+
 function isCustomOrderMode(){
   return activeMode==='custom'||(activeMode==='battle'&&modeState().inputs.battleMethod==='custom');
 }
@@ -1359,7 +1382,7 @@ function recalculate(){
 
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
 
-  if(activeMode==='optimizer'){
+  if(isAnyEpicOptimizeMode()){
     if(epicWorker){epicWorker.terminate();epicWorker=null;closeOptimizerModal();}
     const errors=any?validate():[];showValidation(errors);const sig=!errors.length&&any?currentEpicEffectiveSignature():'';
     if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){epicResultCurrent=true;renderEpicOptimizedResult(lastOptimizedEpicPayload);setOptimizeButtonState();return;}
@@ -1431,7 +1454,7 @@ function recalculate(){
     console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');
   }
 }
-function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
+function resetCalculator(){if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;if(activeMode==='optimizer')clearSavedOptimizerResult();if(activeMode==='battle'){epicResultCurrent=false;}state.modes[activeMode].selectedIds={troop:[],monster:[],mercenary:[]};state.modes[activeMode].inputs=defaultInputs(activeMode);if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
 if(activeMode==='battle')state.modes.battle.orders={troop:[],monster:[],mercenary:[]};saveState();applyStateToInputs();syncCustomOrders();renderAllSelections();if(isCustomOrderMode())renderOrderView();clearResults();}
 function refreshActiveMode({save=true}={}){
   configureModeUI();
@@ -1443,7 +1466,7 @@ function refreshActiveMode({save=true}={}){
   readInputs();
   if(save)saveState();
 
-  if(activeMode==='optimizer'){
+  if(isAnyEpicOptimizeMode()){
     const sig=currentEpicEffectiveSignature();
     if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){
       epicResultCurrent=true;
@@ -1461,7 +1484,7 @@ function switchMode(mode){
   activeMode=mode;
   refreshActiveMode();
 }
-function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])els[id].value=i[id];if(activeMode!=='optimizer'){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
+function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   monsterHealth:{title:'Monster Health',text:'Open one of your Monster squads, then copy the Health percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-health.webp','2. Copy the Health value.']]},
@@ -1527,14 +1550,20 @@ function wireEvents(){
     if(activeMode!=='battle')return;
     modeState().inputs.battleType=els.battleTypeSelect.value;
     modeState().inputs.arachne=els.battleTypeSelect.value==='epic_arachne';
+    if(els.battleTypeSelect.value.startsWith('pvp_')&&modeState().inputs.battleMethod==='optimize'){
+      modeState().inputs.battleMethod='basic';
+    }
     saveState();configureModeUI();updateVisibleStepNumbers();recalculate();
   });
   if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
-    modeState().inputs.battleMethod=els.battleMethodSelect.value;
-    if(modeState().inputs.battleMethod==='custom')syncCustomOrders();
+    const type=modeState().inputs.battleType||'epic_standard';
+    let method=els.battleMethodSelect.value;
+    if(method==='optimize'&&type.startsWith('pvp_'))method='basic';
+    modeState().inputs.battleMethod=method;
+    if(method==='custom')syncCustomOrders();
     saveState();configureModeUI();
-    if(modeState().inputs.battleMethod==='custom')renderOrderView();
+    if(method==='custom')renderOrderView();
     updateVisibleStepNumbers();recalculate();
   });
   const advancedIds=['monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'];
