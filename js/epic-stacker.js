@@ -52,7 +52,7 @@ custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('cus
 battle:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('battle')}
 }};
 function modeState(){return state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleBasicMethodText','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -624,10 +624,26 @@ function configureModeUI(){
 
   els.orderView.hidden=!custom;
   els.arachneRow.hidden=custom||battle;
+  if(battle)els.arachneRow.style.display='none';
+  else els.arachneRow.style.removeProperty('display');
   if(els.battleBetaPanel)els.battleBetaPanel.hidden=!battle;
   if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
   if(els.selectionStepNumber)els.selectionStepNumber.textContent=battle?'3':'2';
-  if(battle){const type=modeState().inputs.battleType||'epic_standard';const radio=document.querySelector(`input[name="battleType"][value="${type}"]`);if(radio)radio.checked=true;modeState().inputs.arachne=type==='epic_arachne';if(els.battleContextNote)els.battleContextNote.textContent=type==='epic_standard'?'Standard Epic battle with 4 enemy squads.':type==='epic_arachne'?'Arachne Epic battle with 8 enemy squads.':type==='pvp_unknown'?'General PvP stack. Enemy squad count is unknown. Specialist strength is doubled automatically.':'Single-squad CP battle. The stack preserves higher PvP-value and higher-revival-cost squads later in the death ladder.';if(els.battleBasicMethodText)els.battleBasicMethodText.textContent=type==='pvp_single_cp'?'CP cost-saving deterministic stack':'Automatic deterministic stack';}
+  if(battle){
+    const type=modeState().inputs.battleType||'epic_standard';
+    const method=modeState().inputs.battleMethod||'basic';
+    if(els.battleTypeSelect)els.battleTypeSelect.value=type;
+    if(els.battleMethodSelect)els.battleMethodSelect.value=method;
+    modeState().inputs.arachne=type==='epic_arachne';
+    if(els.battleContextNote)els.battleContextNote.textContent=
+      type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
+      :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
+      :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
+      :'PvP CP Battle: one enemy squad. Higher-value and higher-revival-cost PvP squads are preserved later in the death ladder.';
+    if(els.battleMethodNote)els.battleMethodNote.textContent=
+      type==='pvp_single_cp'?'Basic: builds a deterministic CP cost-saving stack.'
+      :'Basic: builds the stack automatically from the selected battle rules.';
+  }
   document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!optimizer);
   document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer);
 
@@ -1413,7 +1429,17 @@ function wireEvents(){
     input.addEventListener('input',recalculate);
   }
 
-  document.querySelectorAll('input[name="battleType"]').forEach(input=>input.addEventListener('change',()=>{if(activeMode!=='battle'||!input.checked)return;modeState().inputs.battleType=input.value;modeState().inputs.arachne=input.value==='epic_arachne';saveState();configureModeUI();recalculate();}));
+  if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
+    if(activeMode!=='battle')return;
+    modeState().inputs.battleType=els.battleTypeSelect.value;
+    modeState().inputs.arachne=els.battleTypeSelect.value==='epic_arachne';
+    saveState();configureModeUI();recalculate();
+  });
+  if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>{
+    if(activeMode!=='battle')return;
+    modeState().inputs.battleMethod=els.battleMethodSelect.value;
+    saveState();configureModeUI();recalculate();
+  });
   const advancedIds=['monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'];
   const editableAdvancedOrder=()=>advancedIds.filter(id=>els[id]&&!els[id].disabled&&!els[id].readOnly&&els[id].offsetParent!==null);
   for(const id of advancedIds){
