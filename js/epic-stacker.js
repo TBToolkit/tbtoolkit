@@ -605,12 +605,13 @@ function startEpicOptimization(){
 
 function updateVisibleStepNumbers(){
   if(activeMode!=='battle')return;
-  let next=4;
+  let step=4;
   document.querySelectorAll('.battle-sequenced-section').forEach(section=>{
-    if(section.hidden||getComputedStyle(section).display==='none')return;
-    const badge=section.querySelector('.managed-step-number');
+    const style=getComputedStyle(section);
+    if(section.hidden||style.display==='none'||style.visibility==='hidden')return;
+    const badge=section.querySelector('.managed-step-number, .section-kicker');
     if(!badge)return;
-    badge.textContent=String(next++);
+    badge.textContent=String(step++);
   });
 }
 
