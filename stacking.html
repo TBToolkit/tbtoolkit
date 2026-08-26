@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=113" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=114" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=113" type="module"></script>
+<script src="js/epic-stacker.js?v=114" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -30,7 +30,7 @@
 <div>
 <div class="breadcrumb">Home / Stacking Calculator</div>
 <h1>Stacking Calculator</h1>
-<div aria-label="Calculator mode" class="mode-switch four-mode-switch" role="group">
+<div aria-label="Calculator mode" class="mode-switch four-mode-switch calculator-mode-grid" role="group">
 <button aria-pressed="true" class="mode-button active" data-mode="epic" type="button">Epic Stacker</button>
 <button aria-pressed="false" class="mode-button" data-mode="custom" type="button">Custom Stacker</button>
 <button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer <span class="beta-tag">Beta</span></button>
@@ -41,6 +41,7 @@
 </div>
 
 <div class="validation-box" id="validationBox"></div>
+<div class="battle-top-layout" id="battleTopLayout">
 <div class="battle-beta-panel" hidden id="battleBetaPanel">
 <section class="topdown-panel battle-config-panel">
 <div class="topdown-panel-heading battle-config-heading">
@@ -74,6 +75,7 @@
 
 <div class="setup-grid">
 <div class="setup-block">
+<div class="battle-only-column-title"><span class="section-kicker">2</span><h2>Army Limits</h2></div>
 <h3>Army Limits</h3>
 <div class="limit-list compact-limit-list">
 
@@ -112,6 +114,7 @@
 </div>
 
 <div class="advanced-settings-column">
+<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Health &amp; Combat</h2></div>
 <section class="advanced advanced-settings-panel always-open">
 <div class="advanced-settings-content">
 
@@ -170,6 +173,8 @@
 </div>
 </div>
 </section>
+
+</div><!-- /battle-top-layout -->
 
 <section class="topdown-panel selection-area">
 <div class="topdown-panel-heading selection-heading">
