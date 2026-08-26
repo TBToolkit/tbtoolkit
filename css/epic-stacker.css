@@ -2452,3 +2452,65 @@ body:not(.battle-mode-active) .battle-top-layout{
 .battle-mode-active .advanced-settings-column .help-field{
   align-items:start!important;
 }
+
+
+/* ==========================================================================\n   v117 — corrected bindings for v116 UX changes\n   ========================================================================== */
+
+/* Direct spacing on the next actual section, rather than relying only on the
+   wrapper margin. */
+.battle-mode-active .selection-area{
+  margin-top:18px!important;
+}
+
+/* Actual Army Limits markup: name above, then Maximum | Max Fill | Fill on one
+   horizontal control row. */
+@media(min-width:1101px){
+  .battle-mode-active .compact-limit-list .limit-row{
+    display:grid!important;
+    grid-template-columns:minmax(108px,1fr) minmax(116px,1.12fr) minmax(76px,.68fr)!important;
+    grid-template-areas:
+      "name name name"
+      "maximum autofill fill"!important;
+    column-gap:10px!important;
+    row-gap:7px!important;
+    align-items:end!important;
+  }
+  .battle-mode-active .compact-limit-list .limit-name{grid-area:name!important}
+  .battle-mode-active .compact-limit-list .limit-maximum{grid-area:maximum!important}
+  .battle-mode-active .compact-limit-list .auto-fill-toggle{grid-area:autofill!important}
+  .battle-mode-active .compact-limit-list .limit-fill{grid-area:fill!important}
+
+  .battle-mode-active .compact-limit-list .limit-maximum .epic-input,
+  .battle-mode-active .compact-limit-list .auto-fill-toggle,
+  .battle-mode-active .compact-limit-list .limit-fill .percent-field{
+    height:42px!important;
+    min-height:42px!important;
+    box-sizing:border-box!important;
+  }
+  .battle-mode-active .compact-limit-list .limit-maximum .epic-input,
+  .battle-mode-active .compact-limit-list .limit-fill .percent-field{
+    width:100%!important;
+    max-width:none!important;
+  }
+}
+
+/* Actual help control class is .stat-help-button. Keep each ? immediately next
+   to the label it explains. */
+.battle-mode-active .advanced-settings-column .help-field-heading{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  width:max-content!important;
+  max-width:100%!important;
+}
+.battle-mode-active .advanced-settings-column .help-field-heading label{
+  flex:0 1 auto!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+}
+.battle-mode-active .advanced-settings-column .help-field-heading .stat-help-button{
+  flex:0 0 22px!important;
+  margin:0!important;
+}
