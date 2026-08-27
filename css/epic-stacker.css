@@ -2761,9 +2761,56 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   max-width:760px;
 }
 
+/* v123 — persistent Battle Calculator workspaces */
 
-/* v124 — persistent workspace/result state */
-.stale-result-status{
-  color:#e5b44a!important;
-  font-weight:750;
+
+/* ==========================================================================
+   v128 — PvP CP Battle
+   ========================================================================== */
+.pvp-enemy-field{
+  grid-column:1 / -1;
+}
+.battle-select-help{
+  color:#8597a7;
+  font-size:.61rem;
+  line-height:1.35;
+  font-weight:600;
+}
+.pvp-cp-details-panel{
+  margin:12px 0 0;
+}
+.pvp-cp-summary{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:8px;
+}
+.pvp-cp-summary>div{
+  display:grid;
+  gap:2px;
+  padding:8px 10px;
+  border:1px solid #2d4355;
+  border-radius:6px;
+  background:#091824;
+}
+.pvp-cp-summary span{
+  color:#8fa1b1;
+  font-size:.58rem;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:850;
+}
+.pvp-cp-summary strong{
+  color:#eef3f6;
+  font-size:.72rem;
+}
+.pvp-cp-table th:nth-child(1),.pvp-cp-table td:nth-child(1){width:27%}
+.pvp-cp-table th:nth-child(2),.pvp-cp-table td:nth-child(2){width:12%}
+.pvp-cp-table th:nth-child(3),.pvp-cp-table td:nth-child(3){width:9%}
+.pvp-cp-table th:nth-child(4),.pvp-cp-table td:nth-child(4){width:17%}
+.pvp-cp-table th:nth-child(5),.pvp-cp-table td:nth-child(5){width:20%}
+.pvp-cp-table th:nth-child(6),.pvp-cp-table td:nth-child(6){width:15%}
+@media(max-width:700px){
+  .pvp-cp-summary{grid-template-columns:1fr}
+  .pvp-cp-table{font-size:.5rem}
 }
