@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=151';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=152';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -539,7 +539,7 @@ function effectiveEpicCapacityLimits(){
   };
   return{
     LEADERSHIP:limit('leadership','leadershipFill','autoLeadership'),
-    AUTHORITY:limit('authority','authorityFill','autoAuthority'),
+    AUTHORITY:i.includeMercenariesInOptimization?limit('authority','authorityFill','autoAuthority'):0,
     DOMINANCE:limit('dominance','dominanceFill','autoDominance')
   };
 }
@@ -694,6 +694,17 @@ function renderPrediction(opt){
   for(const type of ['LEADERSHIP','DOMINANCE','AUTHORITY']){const a=productive.filter(s=>s.capacityType===type).map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((x,y)=>x-y);familyMedian.set(type,a.length?a[Math.floor(a.length/2)]:0);}
   const unusualMap=new Map();
   if(optimizerContext){
+    // Counterfactual notes describe decisions made by the optimizer itself.
+    // When Standard mercenaries are added after ADS, their presence can shift
+    // the displayed global death positions. Keep the optimizer flags attached
+    // to the affected Troop/Monster squads even after that final merge.
+    if(opt.diagnostics?.mercenaryOptimizationMode==='standard-postprocess'){
+      for(const s of rows){
+        if(s.category==='mercenary')continue;
+        const diagnostic=diagnosticNotes.get(String(s.id));
+        if(diagnostic)unusualMap.set(String(s.id),diagnostic);
+      }
+    }
     for(const s of rows){
       const death=Number(s.predictedDeathPosition??999);
       const productiveEarly=death<=enemySquadCount&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0;
@@ -749,6 +760,9 @@ function openSacrificeHelp(note){
 
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
+  if(lastOptimizedEpicPayload?.diagnostics?.mercenaryOptimizationMode==='standard-postprocess'){
+    text+=' This optimizer decision was evaluated before the fixed Standard mercenary stack was added to the final battle result, so the displayed global death position can be later than the optimizer position described below.';
+  }
 
   if(note.reason==='top-tier-first-cycle'){
     text+=' This squad is flagged because it is a top-tier squad dying during the first Arachne cycle while lower-tier squads from the same army capacity survive beyond that cycle.';
@@ -852,7 +866,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=151');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=152');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

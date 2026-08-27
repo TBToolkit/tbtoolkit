@@ -247,12 +247,7 @@ function measuredHealthSeparations(squads) {
   return rows;
 }
 
-let ACTIVE_FIXED_QUANTITIES=Object.freeze({});
-
 function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }) {
-  // Fixed squads participate in every simulated battle but are not mutable
-  // optimizer variables. Fixed values win if a key is ever duplicated.
-  quantities={...(quantities||{}),...ACTIVE_FIXED_QUANTITIES};
   const resolvedBonuses = deriveBonusInputs(bonuses);
   const byId = new Map(units.map(u => [u.id,u]));
   const byUnitId = new Map(units.map(u => [u.unitId,u]));
@@ -1751,7 +1746,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=151',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=152',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
@@ -1760,18 +1755,14 @@ self.onmessage=async(event)=>{
  try{
   const army=await loadArmy();
   self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
-  ACTIVE_FIXED_QUANTITIES=Object.freeze({...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})});
-  const fixedUsage=fixedCapacityUsage(army,ACTIVE_FIXED_QUANTITIES);
+  const fixedQuantities={...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})};
+  const fixedUsage=fixedCapacityUsage(army,fixedQuantities);
   const capacityLimits={...(msg.capacityLimits||{})};
-  if(Object.keys(ACTIVE_FIXED_QUANTITIES).length){
+  if(Object.keys(fixedQuantities).length){
     const authorityMaximum=Math.max(0,Math.floor(Number(msg.fixedAuthorityMaximum)||0));
     if(authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9){
       throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
     }
-    // Frozen mercenaries are not optimizer variables. Their deterministic,
-    // rounded Standard usage is therefore the Authority feasibility boundary,
-    // even if rounding places it slightly above the requested fill percentage.
-    capacityLimits.AUTHORITY=Math.max(Number(capacityLimits.AUTHORITY||0),Math.ceil(fixedUsage.AUTHORITY));
   }
   const result=optimizeEpicQuantities({
    units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits,
@@ -1791,11 +1782,22 @@ self.onmessage=async(event)=>{
    }
   });
   if(result){
-    result.quantities={...(result.quantities||{}),...ACTIVE_FIXED_QUANTITIES};
+    const coreQuantities={...(result.quantities||{})};
+    const coreResult=result.result;
+    const hasFixedMercs=Object.keys(fixedQuantities).length>0;
+    const combinedQuantities=hasFixedMercs?{...coreQuantities,...fixedQuantities}:coreQuantities;
+    const combinedResult=hasFixedMercs
+      ?scoreEpicArmy({units:army,quantities:combinedQuantities,bonuses:msg.bonuses})
+      :coreResult;
+
+    result.quantities=combinedQuantities;
+    result.result=combinedResult;
     result.diagnostics={
       ...(result.diagnostics||{}),
-      fixedMercenaries:Object.keys(ACTIVE_FIXED_QUANTITIES).length,
-      mercenaryOptimizationMode:Object.keys(ACTIVE_FIXED_QUANTITIES).length?'standard-fixed':'optimized'
+      fixedMercenaries:Object.keys(fixedQuantities).length,
+      mercenaryOptimizationMode:hasFixedMercs?'standard-postprocess':'optimized',
+      optimizerCoreExpectedLifetimeDamage:Number(coreResult?.expectedTotalLifetimeDamage||0),
+      combinedExpectedLifetimeDamage:Number(combinedResult?.expectedTotalLifetimeDamage||0)
     };
   }
   self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
