@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=155';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack } from './battle-engine.mjs?v=156';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -1070,7 +1070,7 @@ function configureModeUI(){
     if(els.battleContextNote)els.battleContextNote.textContent=
       type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
       :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
-      :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
+      :type==='pvp_unknown'?'PvP: enemy squad count and composition are unknown. Damage value is averaged across valid PvP target archetypes.'
       :'PvP — 1 enemy squad: the calculator builds a stack for a battle against one selected enemy squad.';
     const activeMethod=state.modes.battle.activeBattleMethod||'basic';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
@@ -1080,7 +1080,9 @@ function configureModeUI(){
           ?'Custom Order: you choose the death order. The calculator determines the squad quantities needed for that order.'
           :type==='pvp_single_cp'
             ?'Standard: calculates squad quantities and death order automatically. Lower revival cost is prioritized, while stronger squads are preserved when revival costs are similar.'
-            :'Standard: calculates squad quantities using the selected Squad Separation. The death order generally preserves squads with greater damage potential for later attacks.';
+            :type==='pvp_unknown'
+              ?'Standard: calculates squad quantities and death order automatically. Lower revival cost is prioritized, while stronger average PvP damage across possible enemy types is preserved when revival costs are similar.'
+              :'Standard: calculates squad quantities using the selected Squad Separation. The death order generally preserves squads with greater damage potential for later attacks.';
   }
   if(!battle){
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=false;
@@ -1875,17 +1877,24 @@ function compactNumber(value){
   return new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(n);
 }
 function renderPvpCpDetails(result){
+  if(!els.pvpEnemySummaryLabel)els.pvpEnemySummaryLabel=document.getElementById('pvpEnemySummaryLabel');
   if(!els.pvpCpDetailsPanel||!els.pvpCpDetailsRows)return;
-  if(activeMode!=='battle'||state.modes.battle.activeBattleType!=='pvp_single_cp'||!result?.pvpCp){
+  const battleType=state.modes.battle.activeBattleType;
+  if(activeMode!=='battle'||!['pvp_single_cp','pvp_unknown'].includes(battleType)||!result?.pvpCp){
     clearPvpCpDetails();return;
   }
 
   const enemy=result.enemy;
+  const unknown=battleType==='pvp_unknown';
   els.pvpCpDetailsPanel.hidden=false;
   if(els.pvpCpLifetimeDamage)els.pvpCpLifetimeDamage.textContent=compactNumber(result.projectedLifetimeDamage);
-  els.pvpCpEnemyName.textContent=enemy?`${enemy.level} · ${enemy.name} · ${enemy.type}`:'Selected enemy';
-  els.pvpCpDetailsMeta.textContent=
-    `Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Gold and Silver revival costs use Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Basic treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.`;
+  if(els.pvpEnemySummaryLabel)els.pvpEnemySummaryLabel.textContent=unknown?'Enemy Model':'Selected Enemy';
+  els.pvpCpEnemyName.textContent=unknown
+    ?`Unknown enemy squads · ${Number(enemy?.archetypes?.length||0)} target archetypes`
+    :(enemy?`${enemy.level} · ${enemy.name} · ${enemy.type}`:'Selected enemy');
+  els.pvpCpDetailsMeta.textContent=unknown
+    ?`Projected Lifetime Damage is a comparison metric that assumes every friendly squad receives its predicted attack opportunities. Unknown-enemy damage gives equal weight to each valid combat-type and species archetype found in the army database. Flying, Mounted, Melee, and Ranged bonuses can stack with Human, Beast, Dragon, Giant, or Elemental bonuses when both apply. Gold and Silver revival costs use Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Standard treats revival costs within 5% as economically equivalent and preserves stronger average PvP damage.`
+    :`Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Gold and Silver revival costs use Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Standard treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.`;
 
   const rows=[
     ...result.categories.troop.results,
@@ -1900,7 +1909,7 @@ function renderPvpCpDetails(result){
   const reasonFor=r=>{
     const parts=[];
     if(r.specialistPvpMultiplier===2)parts.push('2× Specialist');
-    if(Number(r.pvpMatchupBonus||0)>0)parts.push(`Matchup +${Math.round(Number(r.pvpMatchupBonus||0)*100)}%`);
+    if(Number(r.pvpMatchupBonus||0)>0)parts.push(`${unknown?'Avg matchup':'Matchup'} +${Math.round(Number(r.pvpMatchupBonus||0)*100)}%`);
     return parts.length?parts.join(' · '):'Lower-cost exposure';
   };
 
@@ -1957,6 +1966,11 @@ function recalculate(){
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
             selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,inputs,enemy:selectedPvpEnemy()
           });
+        }else if(battleType==='pvp_unknown'){
+          result=calculatePvpUnknownCustomStack({
+            troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,inputs
+          });
         }else{
           result=calculateCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
@@ -1967,6 +1981,11 @@ function recalculate(){
         result=calculatePvpCpStack({
           troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
           selectedIds:modeState().selectedIds,inputs,enemy:selectedPvpEnemy()
+        });
+      }else if(battleType==='pvp_unknown'){
+        result=calculatePvpUnknownStack({
+          troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+          selectedIds:modeState().selectedIds,inputs
         });
       }else if(battleType==='epic_standard'||battleType==='epic_arachne'){
         result=calculateEpicStack({

@@ -54,7 +54,7 @@ function pvpMatchupBonus(u,enemy){
   const species=bonusValue(u,enemy.species);
   return combat+species;
 }
-export function pvpDamageProfile(u,i,enemy){
+function singlePvpDamageProfile(u,i,enemy){
   const strengthBonus=familyStrengthPct(u,i)/100;
   const matchup=pvpMatchupBonus(u,enemy);
   const specialistMultiplier=specialist(u)?2:1;
@@ -64,6 +64,19 @@ export function pvpDamageProfile(u,i,enemy){
   const deterministicEach=Number(u.strengthEach||0)*(1+strengthBonus+matchup)*specialistMultiplier;
   const expectedEach=deterministicEach*(1+pDD)*(1+pST);
   return{strengthBonus,matchup,specialistMultiplier,pDD,pST,deterministicEach,expectedEach};
+}
+export function pvpDamageProfile(u,i,enemy){
+  const archetypes=Array.isArray(enemy?.archetypes)?enemy.archetypes.filter(Boolean):[];
+  if(!archetypes.length)return singlePvpDamageProfile(u,i,enemy);
+  const profiles=archetypes.map(target=>singlePvpDamageProfile(u,i,target));
+  const base=profiles[0]??singlePvpDamageProfile(u,i,null);
+  return{
+    ...base,
+    matchup:mean(profiles.map(p=>p.matchup)),
+    deterministicEach:mean(profiles.map(p=>p.deterministicEach)),
+    expectedEach:mean(profiles.map(p=>p.expectedEach)),
+    unknownArchetypeCount:profiles.length
+  };
 }
 export function pvpEffectiveStrengthEach(u,i,enemy=null){
   return pvpDamageProfile(u,i,enemy).expectedEach;
@@ -86,6 +99,34 @@ function mean(values){
 function orderKey(order){return order.map(u=>u.id).join('|');}
 
 const COST_EQUIVALENCE_BAND=0.05;
+
+const UNKNOWN_PVP_COMBAT_TYPES=new Set(['FLYING','MOUNTED','MELEE','RANGED']);
+const UNKNOWN_PVP_SPECIES=new Set(['HUMAN','BEAST','DRAGON','GIANT','ELEMENTAL']);
+
+function buildUnknownPvpArchetypes({troops=[],monsters=[],mercenaries=[]}={}){
+  const unique=new Map();
+  for(const unit of [...troops,...monsters,...mercenaries]){
+    const type=String(unit?.type||'').toUpperCase();
+    const species=String(unit?.species||'').toUpperCase();
+    if(!UNKNOWN_PVP_COMBAT_TYPES.has(type)||!UNKNOWN_PVP_SPECIES.has(species))continue;
+    const key=`${type}|${species}`;
+    if(!unique.has(key))unique.set(key,{type,species});
+  }
+  return [...unique.values()].sort((a,b)=>
+    a.type.localeCompare(b.type)||a.species.localeCompare(b.species)
+  );
+}
+
+function unknownPvpEnemyModel(source){
+  return{
+    unknown:true,
+    name:'Unknown enemy squads',
+    level:'PvP',
+    type:'Mixed',
+    species:'Mixed',
+    archetypes:buildUnknownPvpArchetypes(source)
+  };
+}
 
 function mercenaryLevel(level){
   const raw=String(level||'').toUpperCase();
@@ -278,14 +319,14 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
   return categories;
 }
 
-export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy}){
+export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType='pvp_single_cp'}){
   const allSelected=[
     ...categorySelectedMap(troops,selectedIds.troop),
     ...categorySelectedMap(monsters,selectedIds.monster),
     ...categorySelectedMap(mercenaries,selectedIds.mercenary)
   ];
   if(!allSelected.length){
-    return{inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,categories:{
+    return{inputs:structuredClone(inputs),battleType,enemy,categories:{
       troop:categoryEmpty('troop'),monster:categoryEmpty('monster'),mercenary:categoryEmpty('mercenary')
     },totals:{leadership:0,dominance:0,authority:0},pvpCp:true};
   }
@@ -344,7 +385,7 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
   const fullAttritionGold=actual.reduce((s,r)=>s+Number(r.fullSquadGoldRevival||0),0);
 
   return{
-    inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,pvpCp:true,
+    inputs:structuredClone(inputs),battleType,enemy,pvpCp:true,pvpUnknown:battleType==='pvp_unknown',
     plannedOrder:order.map(u=>u.id),
     projectedLifetimeDamage,fullAttritionGold,
     costEquivalenceBand:COST_EQUIVALENCE_BAND,
@@ -459,7 +500,7 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   return calculateForOrder(ordered);
 }
 
-export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs,enemy}){
+export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs,enemy,battleType='pvp_single_cp'}){
   const troop=calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,enemy});
   const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,enemy});
   const mercenary=calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,enemy});
@@ -471,10 +512,24 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
   });
   const projectedLifetimeDamage=all.reduce((s,r)=>s+Number(r.projectedLifetimeDamage||0),0);
   const fullAttritionGold=all.reduce((s,r)=>s+Number(r.fullSquadGoldRevival||0),0);
-  return{inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,pvpCp:true,
+  return{inputs:structuredClone(inputs),battleType,enemy,pvpCp:true,pvpUnknown:battleType==='pvp_unknown',
     projectedLifetimeDamage,fullAttritionGold,costEquivalenceBand:COST_EQUIVALENCE_BAND,
     categories:{troop,monster,mercenary},
     totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
+}
+
+export function calculatePvpUnknownStack({troops,monsters,mercenaries,selectedIds,inputs}){
+  const enemy=unknownPvpEnemyModel({troops,monsters,mercenaries});
+  return calculatePvpCpStack({
+    troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType:'pvp_unknown'
+  });
+}
+
+export function calculatePvpUnknownCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs}){
+  const enemy=unknownPvpEnemyModel({troops,monsters,mercenaries});
+  return calculatePvpCustomStack({
+    troops,monsters,mercenaries,selectedIds,orders,inputs,enemy,battleType:'pvp_unknown'
+  });
 }
 
 export function calculateBattleCategory({category,units,selectedIds,inputs,battleType='pvp_unknown'}){
