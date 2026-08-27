@@ -25,15 +25,6 @@ function familyStrengthPct(u,i){
   const k=familyKey(u);
   return Number(i[`${k}StrengthPct`]??0);
 }
-function familyHealthPct(u,i){
-  const k=familyKey(u);
-  if(k==='monster')return Number(i.healthInputs?.MONSTER??0);
-  if(k==='human')return Number(i.healthInputs?.HUMAN??0);
-  return Number(i.healthInputs?.EPIC_HUNTER??0);
-}
-function pvpEffectiveHealthEach(u,i){
-  return Number(u.healthEach||0)*(1+familyHealthPct(u,i)/100);
-}
 function familyDdPct(u,i){
   const k=familyKey(u);
   return Number(i[`${k}DDPct`]??0);
@@ -223,22 +214,20 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
     const selected=byCategory[category];
     if(!selected.length){categories[category]=categoryEmpty(category);continue;}
     const cfg=CATEGORY_CONFIG[category];
-    const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs)));
+    const maxHealthEach=Math.max(...selected.map(u=>Number(u.healthEach||0)));
     const limit=Number(inputs[cfg.capacityInput]||0);
     const fill=Number(inputs[cfg.fillInput]||0);
     const sep=Number(inputs.rankSeparation||0);
 
     const interim=selected.map(u=>{
       const deathIndex=globalIndex.get(u.id)??0;
-      const effectiveHealthEach=pvpEffectiveHealthEach(u,inputs);
+      const adj=speciesAdjustment(u.species,inputs.healthInputs);
       const squadModifier=1+(count-1-deathIndex)*sep;
-      const modifier=squadModifier;
+      const modifier=squadModifier+adj;
       const capEach=Number(u[cfg.capacityEach]||0);
-      // Quantity is inversely proportional to actual effective health per unit,
-      // so the completed squads follow the requested health ladder directly.
-      const C=modifier*maxHealthEach/Math.max(effectiveHealthEach,1e-12);
+      const C=modifier*maxHealthEach/Number(u.healthEach||1);
       const D=C*capEach;
-      return{u,deathIndex,effectiveHealthEach,squadModifier,modifier,capEach,C,D};
+      return{u,deathIndex,adj,squadModifier,modifier,capEach,C,D};
     });
     const sumD=interim.reduce((s,r)=>s+r.D,0);
 
@@ -252,9 +241,8 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
         level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,
         qty,rawQty,roundTo:1,rank:r.deathIndex+1,deathIndex:r.deathIndex,
         plannedDeathIndex:r.deathIndex,
-        speciesAdjustment:0,modifier:r.modifier,
-        effectiveHealthEach:r.effectiveHealthEach,
-        squadHealth:qty*r.effectiveHealthEach,
+        speciesAdjustment:r.adj,modifier:r.modifier,
+        squadHealth:(qty*Number(r.u.healthEach||0))/(1+r.adj),
         squadStrength:Number(r.u.strengthEach||0)*qty,
         expectedPvpDamage:p.expectedEach*qty,
         deterministicPvpDamage:p.deterministicEach*qty,
@@ -375,7 +363,7 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   }
 
   const count=selected.length;
-  const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs)));
+  const maxHealthEach=Math.max(...selected.map(u=>Number(u.healthEach||0)));
   const limit=Number(inputs[cfg.capacityInput]||0);
   const fill=Number(inputs[cfg.fillInput]||0);
   const sep=Number(inputs.rankSeparation||0);
@@ -384,11 +372,11 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
     const deathIndex=new Map(ordered.map((u,k)=>[u.id,k]));
     const interim=selected.map(u=>{
       const idx=deathIndex.get(u.id)??0;
-      const effectiveHealthEach=pvpEffectiveHealthEach(u,inputs);
-      const modifier=1+(count-1-idx)*sep;
+      const adj=speciesAdjustment(u.species,inputs.healthInputs);
+      const modifier=1+(count-1-idx)*sep+adj;
       const capEach=Number(u[cfg.capacityEach]||0);
-      const D=(modifier*maxHealthEach/Math.max(effectiveHealthEach,1e-12))*capEach;
-      return{u,idx,effectiveHealthEach,modifier,capEach,D};
+      const D=(modifier*maxHealthEach/Number(u.healthEach||1))*capEach;
+      return{u,idx,adj,modifier,capEach,D};
     });
     const sumD=interim.reduce((s,r)=>s+r.D,0);
 
@@ -400,9 +388,8 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
         id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,
         level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,qty,rawQty,roundTo:1,
         rank:r.idx+1,deathIndex:r.idx,plannedDeathIndex:r.idx,
-        speciesAdjustment:0,modifier:r.modifier,
-        effectiveHealthEach:r.effectiveHealthEach,
-        squadHealth:qty*r.effectiveHealthEach,
+        speciesAdjustment:r.adj,modifier:r.modifier,
+        squadHealth:(qty*Number(r.u.healthEach||0))/(1+r.adj),
         squadStrength:Number(r.u.strengthEach||0)*qty,
         expectedPvpDamage:p.expectedEach*qty,
         deterministicPvpDamage:p.deterministicEach*qty,
@@ -480,7 +467,7 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
 export function calculateBattleCategory({category,units,selectedIds,inputs,battleType='pvp_unknown'}){
   const cfg=CATEGORY_CONFIG[category],selected=selectedUnits(units,selectedIds);
   if(!selected.length)return categoryEmpty(category);
-  const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs))),limit=Number(inputs[cfg.capacityInput]||0),
+  const maxHealthEach=Math.max(...selected.map(u=>Number(u.healthEach||0))),limit=Number(inputs[cfg.capacityInput]||0),
     fill=Number(inputs[cfg.fillInput]||0),sep=Number(inputs.rankSeparation||0);
   // General unknown-enemy PvP remains deterministic. Specialist 2x is included,
   // but no target-specific matchup can be assumed.
@@ -490,16 +477,16 @@ export function calculateBattleCategory({category,units,selectedIds,inputs,battl
   );
   const death=new Map(ordered.map((u,k)=>[u.id,k])),count=ordered.length;
   const interim=selected.map(u=>{
-    const idx=death.get(u.id)??0,effectiveHealthEach=pvpEffectiveHealthEach(u,inputs),
-      modifier=1+(count-1-idx)*sep,cap=Number(u[cfg.capacityEach]||0),
-      D=(modifier*maxHealthEach/Math.max(effectiveHealthEach,1e-12))*cap;
-    return{u,idx,effectiveHealthEach,modifier,cap,D};
+    const idx=death.get(u.id)??0,adj=speciesAdjustment(u.species,inputs.healthInputs),
+      modifier=1+(count-1-idx)*sep+adj,cap=Number(u[cfg.capacityEach]||0),
+      D=(modifier*maxHealthEach/Number(u.healthEach||1))*cap;
+    return{u,idx,adj,modifier,cap,D};
   });
   const sumD=interim.reduce((s,r)=>s+r.D,0);
   const results=interim.map(r=>{
     const raw=sumD>0?(r.D/sumD)*(limit/r.cap)*fill:0,qty=mroundPositive(Math.max(0,raw),1);
     return{id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,
-      qty,rawQty:raw,roundTo:1,rank:r.idx+1,deathIndex:r.idx,effectiveHealthEach:r.effectiveHealthEach,squadHealth:qty*r.effectiveHealthEach,
+      qty,rawQty:raw,roundTo:1,rank:r.idx+1,deathIndex:r.idx,squadHealth:(qty*r.u.healthEach)/(1+r.adj),
       squadStrength:pvpEffectiveStrengthEach(r.u,inputs)*qty,pvpStrengthEach:pvpEffectiveStrengthEach(r.u,inputs),
       specialistPvpMultiplier:specialist(r.u)?2:1,totalCapacity:r.cap*qty};
   });
