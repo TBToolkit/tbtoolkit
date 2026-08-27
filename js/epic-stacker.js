@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=146';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=147';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -971,16 +971,16 @@ function configureModeUI(){
       type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
       :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
       :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
-      :'PvP — 1 enemy squad: Basic prioritizes lower full-squad Gold revival cost first. Costs within 5% are treated as equivalent so stronger PvP damage is preserved later.';
+      :'PvP — 1 enemy squad: the calculator builds a stack for a battle against one selected enemy squad.';
     const activeMethod=state.modes.battle.activeBattleMethod||'basic';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
       activeMethod==='optimize'
-        ?'Optimize: searches many Epic army structures and simulated battles to maximize expected lifetime damage.'
+        ?'Optimize: searches many possible army structures and death orders. It uses simulated battles to find the army with the highest expected lifetime damage.'
         :activeMethod==='custom'
-          ?'Custom Order: you choose the planned death order after selecting units.'
+          ?'Custom Order: you choose the death order. The calculator determines the squad quantities needed for that order.'
           :type==='pvp_single_cp'
-            ?'Basic: builds a deterministic cost-saving stack for one enemy squad.'
-            :'Basic: builds the stack automatically from the selected battle rules.';
+            ?'Standard: calculates squad quantities and death order automatically. Lower revival cost is prioritized, while stronger squads are preserved when revival costs are similar.'
+            :'Standard: calculates squad quantities using the selected Squad Separation. The death order generally preserves squads with greater damage potential for later attacks.';
   }
   if(!battle){
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=false;
