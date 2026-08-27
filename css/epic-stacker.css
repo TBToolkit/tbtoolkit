@@ -2933,3 +2933,34 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   .global-player-setting.temple-setting{align-items:stretch}
   .temple-setting label,.temple-level-select{width:100%;min-width:0}
 }
+
+
+/* ==========================================================================
+   v134 — Battle controls / translation-safe PvP wording
+   ========================================================================== */
+.battle-select-field>span{
+  color:#fff;
+  font-size:.82rem;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  line-height:1.2;
+}
+.battle-select-field select{
+  width:100%;
+  min-height:43px;
+  box-sizing:border-box;
+  border:1px solid #3b5063;
+  border-radius:7px;
+  padding:9px 34px 9px 10px;
+  background:#020b13;
+  color:#fff;
+  font:inherit;
+  font-size:inherit;
+  font-weight:inherit;
+}
+.battle-select-field select:focus{
+  outline:2px solid rgba(86,185,255,.30);
+  outline-offset:0;
+  border-color:var(--epic-blue);
+}
