@@ -2975,3 +2975,28 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   display:none!important;
 }
 .pvp-only-stat-field{min-width:0}
+
+
+/* ==========================================================================
+   v146 — Battle Calculator assumptions
+   ========================================================================== */
+.battle-calculator-notes{
+  margin-top:7px;
+  max-width:920px;
+  color:#8fa3b5;
+  font-size:.72rem;
+  line-height:1.45;
+}
+.battle-calculator-notes p{
+  margin:2px 0;
+}
+.battle-calculator-notes strong{
+  color:#aebdca;
+  font-weight:800;
+}
+@media(max-width:700px){
+  .battle-calculator-notes{
+    font-size:.70rem;
+    line-height:1.42;
+  }
+}
