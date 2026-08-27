@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=139';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=140';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -134,7 +134,7 @@ function populateTempleLevel(){
     for(let level=1;level<=45;level++){
       const option=document.createElement('option');
       option.value=String(level);
-      option.textContent=`${level} · ${TEMPLE_REVIVAL_DIVISORS[level].toFixed(2)}×`;
+      option.textContent=`${level}`;
       els.templeLevel.append(option);
     }
   }
@@ -1870,8 +1870,8 @@ const STAT_HELP={
   epicHunterHealth:{title:'Epic Hunter Health',text:'Open your Superior Epic Monster Hunter, then copy the Health percentage shown in the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-health.webp','2. Copy the Health value.']]},
   monsterStrength:{title:'Monster Strength',text:'Open one of your Monster squads, then copy the Strength percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-strength.webp','2. Copy the Strength value.']]},
   strengthAgainstEpic:{title:'Strength PvE',text:'Copy “Strength of your entire army against epic monsters.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-epic-strength.webp','Monster example'],['human-epic-strength.webp','Human example'],['epic-hunter-epic-strength.webp','Epic Hunter example']]},
-  pvpHealth:{title:'Health PvP',text:'Enter your entire-army Health bonus that applies in battles against other players. This value is added equally to Monster, Human, and Epic Hunter Health.',images:[]},
-  pvpStrength:{title:'Strength PvP',text:'Enter your entire-army Strength bonus that applies in battles against other players. This value is added equally to Monster, Human, and Epic Hunter Strength.',images:[]},
+  pvpHealth:{title:'Health PvP',text:'Copy “Health in a battle against another player.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-health-pvp.png','Monster example'],['human-health-pvp.png','Human example'],['epic-hunter-health-pvp.png','Epic Hunter example']]},
+  pvpStrength:{title:'Strength PvP',text:'Copy “Strength in a battle against another player.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-strength-pvp.png','Monster example'],['human-strength-pvp.png','Human example'],['epic-hunter-strength-pvp.png','Epic Hunter example']]},
   monsterDD:{title:'Monster Double Damage',text:'Open one of your Monster squads, then copy “Chance to deal double damage” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-dd.webp','2. Copy Double Damage.']]},
   monsterST:{title:'Monster Strike Twice',text:'Open one of your Monster squads, then copy “Chance to strike two squads” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-st.webp','2. Copy Strike Twice.']]},
   humanStrength:{title:'Human Strength',text:'Open one of your Human troops, then copy the Strength percentage shown in the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-strength.webp','2. Copy the Strength value.']]},
