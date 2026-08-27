@@ -3000,3 +3000,13 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
     line-height:1.42;
   }
 }
+
+
+/* ==========================================================================
+   v149 — Battle Calculator introduction readability
+   ========================================================================== */
+.battle-page-description,
+.battle-calculator-notes{
+  width:100%;
+  max-width:1120px;
+}
