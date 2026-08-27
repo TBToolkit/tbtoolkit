@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=150';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=151';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -852,7 +852,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=150');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=151');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -936,6 +936,7 @@ function startEpicOptimization(){
     ],
     fixedQuantities:fixedMercenaryQuantities,
     fixedMercenaryIds:includeMercs?[]:[...(modeState().selectedIds.mercenary||[])],
+    fixedAuthorityMaximum:Math.max(0,Math.floor(parseNumber(modeState().inputs.authority))),
     bonuses:epicBonusPayload(),
     capacityLimits:effectiveEpicCapacityLimits()
   });

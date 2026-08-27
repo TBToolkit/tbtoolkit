@@ -354,6 +354,19 @@ function normalizedLimits(limits) {
   return out;
 }
 
+function fixedCapacityUsage(units,fixedQuantities){
+  const totals={LEADERSHIP:0,DOMINANCE:0,AUTHORITY:0};
+  const byId=new Map(units.map(u=>[u.id,u]));
+  const byName=new Map(units.map(u=>[u.name,u]));
+  for(const [key,value] of Object.entries(fixedQuantities||{})){
+    const unit=byId.get(key)||byName.get(key);
+    const qty=Math.max(0,Number(value)||0);
+    if(!unit||!(qty>0))continue;
+    totals[unit.capacityType]+=qty*Number(unit.capacityCost||0);
+  }
+  return totals;
+}
+
 /**
  * Generic deterministic seed that intentionally resembles the legacy fixed-health-ladder
  * calculator, but is used only as a starting point for the new optimizer.
@@ -1738,7 +1751,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=150',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=151',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
@@ -1748,8 +1761,20 @@ self.onmessage=async(event)=>{
   const army=await loadArmy();
   self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
   ACTIVE_FIXED_QUANTITIES=Object.freeze({...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})});
+  const fixedUsage=fixedCapacityUsage(army,ACTIVE_FIXED_QUANTITIES);
+  const capacityLimits={...(msg.capacityLimits||{})};
+  if(Object.keys(ACTIVE_FIXED_QUANTITIES).length){
+    const authorityMaximum=Math.max(0,Math.floor(Number(msg.fixedAuthorityMaximum)||0));
+    if(authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9){
+      throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
+    }
+    // Frozen mercenaries are not optimizer variables. Their deterministic,
+    // rounded Standard usage is therefore the Authority feasibility boundary,
+    // even if rounding places it slightly above the requested fill percentage.
+    capacityLimits.AUTHORITY=Math.max(Number(capacityLimits.AUTHORITY||0),Math.ceil(fixedUsage.AUTHORITY));
+  }
   const result=optimizeEpicQuantities({
-   units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,
+   units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits,
    minimumHealthSeparationPct:.01,minimumQuantity:1,
    onProgress:(progress)=>{
     let progressPct=10;
@@ -1777,7 +1802,9 @@ self.onmessage=async(event)=>{
   self.postMessage({type:'result',requestId,payload:result,diagnostics:{
    optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v72',
    armyCount:army.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,
-   inputPayload:msg.bonuses,capacityLimits:msg.capacityLimits
+   inputPayload:msg.bonuses,capacityLimits,
+   requestedCapacityLimits:msg.capacityLimits,
+   fixedCapacityUsage:fixedUsage
   }});
  }catch(error){self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});}
 };
