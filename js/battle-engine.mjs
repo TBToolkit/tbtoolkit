@@ -91,6 +91,26 @@ function economicTierKey(u){
   return u.category==='mercenary'?`MERC-${mercenaryLevel(u.level)}`:String(u.level||'');
 }
 
+function comparePvpInternalRows(a,b){
+  const goldA=Math.max(0,Number(a.fullGold||0));
+  const goldB=Math.max(0,Number(b.fullGold||0));
+  const low=Math.min(goldA,goldB);
+  const relativeGap=low>0?Math.abs(goldA-goldB)/low:Math.abs(goldA-goldB);
+
+  // Material cost difference: cheaper squad dies first.
+  if(relativeGap>COST_EQUIVALENCE_BAND){
+    return goldA-goldB ||
+      Number(a.expectedDamage||0)-Number(b.expectedDamage||0) ||
+      Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
+  }
+
+  // Economically equivalent: preserve the stronger PvP squad.
+  // Expected damage already includes matchup bonuses, Specialist 2×, DD and ST.
+  return Number(a.expectedDamage||0)-Number(b.expectedDamage||0) ||
+    goldA-goldB ||
+    Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
+}
+
 function buildGlobalOrderFromMetrics(rows){
   // CP Basic is cost-first, but it should not sacrifice a much stronger tier
   // merely to save a trivial amount of Gold. Tier groups whose average
@@ -118,33 +138,7 @@ function buildGlobalOrderFromMetrics(rows){
 
   const result=[];
   for(const group of orderedGroups){
-    const items=group.items.slice().sort((a,b)=>{
-      const sameMercLevel=
-        a.u.category==='mercenary' &&
-        b.u.category==='mercenary' &&
-        mercenaryLevel(a.u.level)===mercenaryLevel(b.u.level);
-
-      // Within one mercenary level, preserve offensive value first. This is
-      // especially important for Specialist mercenaries because their 2× PvP
-      // strength can make them far more valuable than a cheaper sacrificial
-      // Guardsman/Common/Epic Hunter squad.
-      if(sameMercLevel){
-        return a.expectedDamage-b.expectedDamage ||
-          a.fullGold-b.fullGold ||
-          Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
-      }
-
-      const low=Math.min(a.fullGold,b.fullGold);
-      const relativeGap=low>0?Math.abs(a.fullGold-b.fullGold)/low:Math.abs(a.fullGold-b.fullGold);
-      if(relativeGap<=COST_EQUIVALENCE_BAND){
-        return a.expectedDamage-b.expectedDamage ||
-          a.fullGold-b.fullGold ||
-          Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
-      }
-      return a.fullGold-b.fullGold ||
-        a.expectedDamage-b.expectedDamage ||
-        Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
-    });
+    const items=group.items.slice().sort(comparePvpInternalRows);
     result.push(...items.map(x=>x.u));
   }
   return result;
@@ -351,21 +345,10 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
   };
 }
 
-function customLevelInternalOrder(unit,allSelected,inputs,enemy){
-  const key=economicTierKey(unit);
-  const same=allSelected.filter(x=>economicTierKey(x)===key);
-  return same.slice().sort((a,b)=>{
-    const da=pvpDamageProfile(a,inputs,enemy).expectedEach;
-    const db=pvpDamageProfile(b,inputs,enemy).expectedEach;
-    // Within a user-selected tier/mercenary level, lower expected PvP damage
-    // dies first and higher offensive value is preserved later.
-    return da-db||Number(a.displayOrder||0)-Number(b.displayOrder||0);
-  }).findIndex(x=>x.id===unit.id);
-}
-
-export function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,enemy}){
+function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,enemy}){
   const cfg=CATEGORY_CONFIG[category],selected=selectedUnits(units,selectedIds);
   if(!selected.length)return categoryEmpty(category);
+
   const normalizeOrderLevel=level=>{
     const raw=String(level||'').toUpperCase();
     if(category!=='mercenary')return raw;
@@ -379,44 +362,88 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
     if(!orderMap.has(key))throw new Error(`Add ${mercenaryLevel(unit.level)} to the ${category} die order.`);
   }
 
-  const ordered=selected.slice().sort((a,b)=>
+  const count=selected.length;
+  const maxHealthEach=Math.max(...selected.map(u=>Number(u.healthEach||0)));
+  const limit=Number(inputs[cfg.capacityInput]||0);
+  const fill=Number(inputs[cfg.fillInput]||0);
+  const sep=Number(inputs.rankSeparation||0);
+
+  const calculateForOrder=ordered=>{
+    const deathIndex=new Map(ordered.map((u,k)=>[u.id,k]));
+    const interim=selected.map(u=>{
+      const idx=deathIndex.get(u.id)??0;
+      const adj=speciesAdjustment(u.species,inputs.healthInputs);
+      const modifier=1+(count-1-idx)*sep+adj;
+      const capEach=Number(u[cfg.capacityEach]||0);
+      const D=(modifier*maxHealthEach/Number(u.healthEach||1))*capEach;
+      return{u,idx,adj,modifier,capEach,D};
+    });
+    const sumD=interim.reduce((s,r)=>s+r.D,0);
+
+    const results=interim.map(r=>{
+      const rawQty=sumD>0?(r.D/sumD)*(limit/r.capEach)*fill:0;
+      const qty=mroundPositive(Math.max(0,rawQty),1);
+      const p=pvpDamageProfile(r.u,inputs,enemy);
+      return{
+        id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,
+        level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,qty,rawQty,roundTo:1,
+        rank:r.idx+1,deathIndex:r.idx,plannedDeathIndex:r.idx,
+        speciesAdjustment:r.adj,modifier:r.modifier,
+        squadHealth:(qty*Number(r.u.healthEach||0))/(1+r.adj),
+        squadStrength:Number(r.u.strengthEach||0)*qty,
+        expectedPvpDamage:p.expectedEach*qty,
+        deterministicPvpDamage:p.deterministicEach*qty,
+        pvpMatchupBonus:p.matchup,specialistPvpMultiplier:p.specialistMultiplier,pDD:p.pDD,pST:p.pST,
+        fullSquadGoldRevival:qty*Number(r.u.goldRevivalCost||0),
+        goldRevivalCostEach:Number(r.u.goldRevivalCost||0),
+        capacityEach:r.capEach,totalCapacity:r.capEach*qty
+      };
+    });
+
+    const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
+    const categoryResult={
+      category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,
+      totalCapacity,capacityPercent:limit?totalCapacity/limit:0,
+      results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)
+    };
+    enforceCapacityLimit(categoryResult,limit);
+    return categoryResult;
+  };
+
+  // User fixes the tier order. The calculator iterates only the units *within*
+  // each tier using the exact same revival-cost / expected-damage comparator
+  // used by Basic.
+  let ordered=selected.slice().sort((a,b)=>
     orderMap.get(unitOrderKey(a))-orderMap.get(unitOrderKey(b)) ||
-    customLevelInternalOrder(a,selected,inputs,enemy)-customLevelInternalOrder(b,selected,inputs,enemy) ||
     Number(a.displayOrder||0)-Number(b.displayOrder||0)
   );
-  const deathIndex=new Map(ordered.map((u,k)=>[u.id,k]));
-  const count=ordered.length,maxHealthEach=Math.max(...selected.map(u=>Number(u.healthEach||0)));
-  const limit=Number(inputs[cfg.capacityInput]||0),fill=Number(inputs[cfg.fillInput]||0),sep=Number(inputs.rankSeparation||0);
-  const interim=selected.map(u=>{
-    const idx=deathIndex.get(u.id)??0,adj=speciesAdjustment(u.species,inputs.healthInputs);
-    const modifier=1+(count-1-idx)*sep+adj,capEach=Number(u[cfg.capacityEach]||0);
-    const D=(modifier*maxHealthEach/Number(u.healthEach||1))*capEach;
-    return{u,idx,adj,modifier,capEach,D};
-  });
-  const sumD=interim.reduce((s,r)=>s+r.D,0);
-  const results=interim.map(r=>{
-    const rawQty=sumD>0?(r.D/sumD)*(limit/r.capEach)*fill:0,qty=mroundPositive(Math.max(0,rawQty),1);
-    const p=pvpDamageProfile(r.u,inputs,enemy);
-    return{
-      id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,
-      level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,qty,rawQty,roundTo:1,
-      rank:r.idx+1,deathIndex:r.idx,plannedDeathIndex:r.idx,
-      speciesAdjustment:r.adj,modifier:r.modifier,
-      squadHealth:(qty*Number(r.u.healthEach||0))/(1+r.adj),
-      squadStrength:Number(r.u.strengthEach||0)*qty,
-      expectedPvpDamage:p.expectedEach*qty,deterministicPvpDamage:p.deterministicEach*qty,
-      pvpMatchupBonus:p.matchup,specialistPvpMultiplier:p.specialistMultiplier,pDD:p.pDD,pST:p.pST,
-      fullSquadGoldRevival:qty*Number(r.u.goldRevivalCost||0),
-      goldRevivalCostEach:Number(r.u.goldRevivalCost||0),
-      capacityEach:r.capEach,
-      totalCapacity:r.capEach*qty
-    };
-  });
-  const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
-  const categoryResult={category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,totalCapacity,
-    capacityPercent:limit?totalCapacity/limit:0,results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)};
-  enforceCapacityLimit(categoryResult,limit);
-  return categoryResult;
+  const seen=new Set();
+
+  for(let iteration=0;iteration<16;iteration++){
+    const key=ordered.map(u=>u.id).join('|');
+    if(seen.has(key))break;
+    seen.add(key);
+
+    const calculated=calculateForOrder(ordered);
+    const rowById=new Map(calculated.results.map(r=>[r.id,r]));
+
+    const next=ordered.slice().sort((a,b)=>{
+      const groupDelta=orderMap.get(unitOrderKey(a))-orderMap.get(unitOrderKey(b));
+      if(groupDelta)return groupDelta;
+
+      const ra=rowById.get(a.id),rb=rowById.get(b.id);
+      return comparePvpInternalRows(
+        {u:a,fullGold:ra?.fullSquadGoldRevival??0,expectedDamage:ra?.expectedPvpDamage??0},
+        {u:b,fullGold:rb?.fullSquadGoldRevival??0,expectedDamage:rb?.expectedPvpDamage??0}
+      );
+    });
+
+    const nextKey=next.map(u=>u.id).join('|');
+    ordered=next;
+    if(nextKey===key)break;
+  }
+
+  return calculateForOrder(ordered);
 }
 
 export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs,enemy}){

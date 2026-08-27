@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=130';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=131';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
