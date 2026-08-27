@@ -3105,3 +3105,11 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
     line-height:1.3;
   }
 }
+
+
+/* ==========================================================================
+   v158 — match PvP Battle Details spacing to Epic results
+   ========================================================================== */
+.pvp-cp-details-panel{
+  margin-bottom:10px;
+}
