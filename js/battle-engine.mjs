@@ -78,6 +78,19 @@ function orderKey(order){return order.map(u=>u.id).join('|');}
 
 const COST_EQUIVALENCE_BAND=0.05;
 
+function mercenaryLevel(level){
+  const raw=String(level||'').toUpperCase();
+  const first=raw.split('-')[0];
+  return first;
+}
+function economicTierKey(u){
+  // Normal troops/monsters already use G9/S9/E9/M9-style tiers.
+  // Mercenary canonical levels include a subtype (2-SPCL, 2-GRD, etc.).
+  // CP ordering should compare all mercenaries of the same Roman level
+  // together rather than treating each subtype as a separate economic tier.
+  return u.category==='mercenary'?`MERC-${mercenaryLevel(u.level)}`:String(u.level||'');
+}
+
 function buildGlobalOrderFromMetrics(rows){
   // CP Basic is cost-first, but it should not sacrifice a much stronger tier
   // merely to save a trivial amount of Gold. Tier groups whose average
@@ -85,8 +98,9 @@ function buildGlobalOrderFromMetrics(rows){
   // equivalent; the lower expected PvP damage group dies first.
   const groups=new Map();
   for(const row of rows){
-    if(!groups.has(row.u.level))groups.set(row.u.level,[]);
-    groups.get(row.u.level).push(row);
+    const tierKey=economicTierKey(row.u);
+    if(!groups.has(tierKey))groups.set(tierKey,[]);
+    groups.get(tierKey).push(row);
   }
   const orderedGroups=[...groups.entries()].map(([level,items])=>({
     level,items,
@@ -105,6 +119,21 @@ function buildGlobalOrderFromMetrics(rows){
   const result=[];
   for(const group of orderedGroups){
     const items=group.items.slice().sort((a,b)=>{
+      const sameMercLevel=
+        a.u.category==='mercenary' &&
+        b.u.category==='mercenary' &&
+        mercenaryLevel(a.u.level)===mercenaryLevel(b.u.level);
+
+      // Within one mercenary level, preserve offensive value first. This is
+      // especially important for Specialist mercenaries because their 2× PvP
+      // strength can make them far more valuable than a cheaper sacrificial
+      // Guardsman/Common/Epic Hunter squad.
+      if(sameMercLevel){
+        return a.expectedDamage-b.expectedDamage ||
+          a.fullGold-b.fullGold ||
+          Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
+      }
+
       const low=Math.min(a.fullGold,b.fullGold);
       const relativeGap=low>0?Math.abs(a.fullGold-b.fullGold)/low:Math.abs(a.fullGold-b.fullGold);
       if(relativeGap<=COST_EQUIVALENCE_BAND){
@@ -323,11 +352,13 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
 }
 
 function customLevelInternalOrder(unit,allSelected,inputs,enemy){
-  const same=allSelected.filter(x=>x.level===unit.level);
+  const key=economicTierKey(unit);
+  const same=allSelected.filter(x=>economicTierKey(x)===key);
   return same.slice().sort((a,b)=>{
     const da=pvpDamageProfile(a,inputs,enemy).expectedEach;
     const db=pvpDamageProfile(b,inputs,enemy).expectedEach;
-    // Lower damage is sacrificed first; higher matchup value is preserved.
+    // Within a user-selected tier/mercenary level, lower expected PvP damage
+    // dies first and higher offensive value is preserved later.
     return da-db||Number(a.displayOrder||0)-Number(b.displayOrder||0);
   }).findIndex(x=>x.id===unit.id);
 }
@@ -335,11 +366,21 @@ function customLevelInternalOrder(unit,allSelected,inputs,enemy){
 export function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,enemy}){
   const cfg=CATEGORY_CONFIG[category],selected=selectedUnits(units,selectedIds);
   if(!selected.length)return categoryEmpty(category);
-  const orderMap=new Map((order||[]).map((level,index)=>[level,index]));
-  for(const unit of selected)if(!orderMap.has(unit.level))throw new Error(`Add ${unit.level} to the ${category} die order.`);
+  const normalizeOrderLevel=level=>{
+    const raw=String(level||'').toUpperCase();
+    if(category!=='mercenary')return raw;
+    return `MERC-${mercenaryLevel(raw)}`;
+  };
+  const orderMap=new Map((order||[]).map((level,index)=>[normalizeOrderLevel(level),index]));
+  const unitOrderKey=unit=>category==='mercenary'?economicTierKey(unit):String(unit.level||'').toUpperCase();
+
+  for(const unit of selected){
+    const key=unitOrderKey(unit);
+    if(!orderMap.has(key))throw new Error(`Add ${mercenaryLevel(unit.level)} to the ${category} die order.`);
+  }
 
   const ordered=selected.slice().sort((a,b)=>
-    orderMap.get(a.level)-orderMap.get(b.level) ||
+    orderMap.get(unitOrderKey(a))-orderMap.get(unitOrderKey(b)) ||
     customLevelInternalOrder(a,selected,inputs,enemy)-customLevelInternalOrder(b,selected,inputs,enemy) ||
     Number(a.displayOrder||0)-Number(b.displayOrder||0)
   );

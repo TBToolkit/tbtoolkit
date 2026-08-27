@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=129';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=130';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -220,7 +220,12 @@ function populatePvpEnemyOptions(){
   const addOption=(group,unit)=>{
     const option=document.createElement('option');
     option.value=unit.id;
-    option.textContent=`${unit.tier} · ${unit.name} · ${unit.combatType}`;
+    let tierLabel=unit.tier;
+    if(unit.category==='mercenary'){
+      const level=Number(String(unit.tier||'').split('-')[0]);
+      tierLabel=({2:'II',7:'VII',6:'VI',5:'V'})[level]||String(unit.tier||'');
+    }
+    option.textContent=`${tierLabel} · ${unit.name} · ${unit.combatType}`;
     group.append(option);
   };
 
@@ -232,35 +237,46 @@ function populatePvpEnemyOptions(){
     els.pvpEnemyUnitSelect.append(common);
   }
 
+  const nonMercs=armyV2.filter(u=>u.category!=='mercenary');
   const familyOrder={G:0,S:1,E:2,M:3};
-  const tierSortKey=unit=>{
-    const tier=String(unit.tier||'').toUpperCase();
-    const match=tier.match(/^([GSEM])(\d+)$/);
-    if(match){
+  nonMercs.sort((a,b)=>{
+    const parse=u=>{
+      const match=String(u.tier||'').toUpperCase().match(/^([GSEM])(\d+)$/);
+      if(!match)return[9,0,9,Number(u.displayOrder||0)];
       const family=match[1],level=Number(match[2]);
-      return [family==='M'?1:0,-level,familyOrder[family]??9,Number(unit.displayOrder||0)];
-    }
-    // Mercenary Roman-numeral tiers remain at the end.
-    return [2,0,0,Number(unit.displayOrder||0)];
-  };
-  const compare=(a,b)=>{
-    const A=tierSortKey(a),B=tierSortKey(b);
+      return[family==='M'?1:0,-level,familyOrder[family]??9,Number(u.displayOrder||0)];
+    };
+    const A=parse(a),B=parse(b);
     for(let i=0;i<A.length;i++)if(A[i]!==B[i])return A[i]-B[i];
-    return String(a.name||'').localeCompare(String(b.name||''));
-  };
+    return 0;
+  });
 
-  const ordered=armyV2.slice().sort(compare);
-  let currentTier=null,currentGroup=null;
-  for(const unit of ordered){
+  let currentTier='',group=null;
+  for(const unit of nonMercs){
     const tier=String(unit.tier||'').toUpperCase();
-    const label=/^[GSEM]\d+$/.test(tier)?tier:(unit.category==='mercenary'?'Mercenaries':tier||'Other');
-    if(label!==currentTier){
-      currentTier=label;
-      currentGroup=document.createElement('optgroup');
-      currentGroup.label=label;
-      els.pvpEnemyUnitSelect.append(currentGroup);
+    if(tier!==currentTier){
+      currentTier=tier;
+      group=document.createElement('optgroup');
+      group.label=tier;
+      els.pvpEnemyUnitSelect.append(group);
     }
-    addOption(currentGroup,unit);
+    addOption(group,unit);
+  }
+
+  // Mercenary enemy list: II, VII, VI, V. Within each level, preserve the
+  // canonical army database display order exactly.
+  const mercLevelOrder=['2','7','6','5'];
+  const roman={2:'II',7:'VII',6:'VI',5:'V'};
+  const mercs=armyV2.filter(u=>u.category==='mercenary');
+  for(const level of mercLevelOrder){
+    const list=mercs
+      .filter(u=>String(u.tier||'').split('-')[0]===level)
+      .sort((a,b)=>Number(a.displayOrder||0)-Number(b.displayOrder||0));
+    if(!list.length)continue;
+    const mercGroup=document.createElement('optgroup');
+    mercGroup.label=`Mercenaries ${roman[Number(level)]||level}`;
+    for(const unit of list)addOption(mercGroup,unit);
+    els.pvpEnemyUnitSelect.append(mercGroup);
   }
 
   els.pvpEnemyUnitSelect.value=armyV2.some(u=>u.id===previous)?previous:'troop-g9-flying-corax-2';
@@ -274,7 +290,7 @@ async function loadData(){
   // Use a root-relative URL first so the database loads correctly even when
   // the calculator is reached through a clean/mobile route. Fall back to the
   // document-relative URL for static/local hosting.
-  const sources=['/data/army-v2.json?v=129','data/army-v2.json?v=129'];
+  const sources=['/data/army-v2.json?v=130','data/army-v2.json?v=130'];
   let lastError=null;
   for(const source of sources){
     try{
