@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=128';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=129';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -126,7 +126,7 @@ function currentBattleWorkspace(){
   );
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpCpDetailsPanel','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -216,20 +216,53 @@ function populatePvpEnemyOptions(){
   if(!els.pvpEnemyUnitSelect||!armyV2.length)return;
   const previous=modeState().inputs.enemyUnitId||'troop-g9-flying-corax-2';
   els.pvpEnemyUnitSelect.innerHTML='';
-  const groups=new Map([['troop',[]],['monster',[]],['mercenary',[]]]);
-  for(const unit of armyV2)if(groups.has(unit.category))groups.get(unit.category).push(unit);
-  const labels={troop:'Troops',monster:'Monsters',mercenary:'Mercenaries'};
-  for(const [category,list] of groups){
-    const group=document.createElement('optgroup');
-    group.label=labels[category];
-    list.slice().sort((a,b)=>Number(a.displayOrder||0)-Number(b.displayOrder||0)).forEach(unit=>{
-      const option=document.createElement('option');
-      option.value=unit.id;
-      option.textContent=`${unit.tier} · ${unit.name} · ${unit.combatType}`;
-      group.append(option);
-    });
-    els.pvpEnemyUnitSelect.append(group);
+
+  const addOption=(group,unit)=>{
+    const option=document.createElement('option');
+    option.value=unit.id;
+    option.textContent=`${unit.tier} · ${unit.name} · ${unit.combatType}`;
+    group.append(option);
+  };
+
+  const corax=armyV2.find(u=>u.id==='troop-g9-flying-corax-2');
+  if(corax){
+    const common=document.createElement('optgroup');
+    common.label='Common CP Enemy';
+    addOption(common,corax);
+    els.pvpEnemyUnitSelect.append(common);
   }
+
+  const familyOrder={G:0,S:1,E:2,M:3};
+  const tierSortKey=unit=>{
+    const tier=String(unit.tier||'').toUpperCase();
+    const match=tier.match(/^([GSEM])(\d+)$/);
+    if(match){
+      const family=match[1],level=Number(match[2]);
+      return [family==='M'?1:0,-level,familyOrder[family]??9,Number(unit.displayOrder||0)];
+    }
+    // Mercenary Roman-numeral tiers remain at the end.
+    return [2,0,0,Number(unit.displayOrder||0)];
+  };
+  const compare=(a,b)=>{
+    const A=tierSortKey(a),B=tierSortKey(b);
+    for(let i=0;i<A.length;i++)if(A[i]!==B[i])return A[i]-B[i];
+    return String(a.name||'').localeCompare(String(b.name||''));
+  };
+
+  const ordered=armyV2.slice().sort(compare);
+  let currentTier=null,currentGroup=null;
+  for(const unit of ordered){
+    const tier=String(unit.tier||'').toUpperCase();
+    const label=/^[GSEM]\d+$/.test(tier)?tier:(unit.category==='mercenary'?'Mercenaries':tier||'Other');
+    if(label!==currentTier){
+      currentTier=label;
+      currentGroup=document.createElement('optgroup');
+      currentGroup.label=label;
+      els.pvpEnemyUnitSelect.append(currentGroup);
+    }
+    addOption(currentGroup,unit);
+  }
+
   els.pvpEnemyUnitSelect.value=armyV2.some(u=>u.id===previous)?previous:'troop-g9-flying-corax-2';
 }
 function selectedPvpEnemy(){
@@ -241,7 +274,7 @@ async function loadData(){
   // Use a root-relative URL first so the database loads correctly even when
   // the calculator is reached through a clean/mobile route. Fall back to the
   // document-relative URL for static/local hosting.
-  const sources=['/data/army-v2.json?v=128','data/army-v2.json?v=128'];
+  const sources=['/data/army-v2.json?v=129','data/army-v2.json?v=129'];
   let lastError=null;
   for(const source of sources){
     try{
@@ -829,7 +862,7 @@ function configureModeUI(){
       type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
       :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
       :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
-      :'PvP CP Battle: one enemy squad. Basic prioritizes lower full-squad Gold revival cost first, then preserves stronger PvP damage within each tier.';
+      :'PvP CP Battle: one enemy squad. Basic prioritizes lower full-squad Gold revival cost first. Costs within 5% are treated as equivalent so stronger PvP damage is preserved later.';
     const activeMethod=state.modes.battle.activeBattleMethod||'basic';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
       activeMethod==='optimize'
@@ -1584,27 +1617,36 @@ function renderPvpCpDetails(result){
   if(activeMode!=='battle'||state.modes.battle.activeBattleType!=='pvp_single_cp'||!result?.pvpCp){
     clearPvpCpDetails();return;
   }
+
   const enemy=result.enemy;
   els.pvpCpDetailsPanel.hidden=false;
+  if(els.pvpCpLifetimeDamage)els.pvpCpLifetimeDamage.textContent=compactNumber(result.projectedLifetimeDamage);
+  if(els.pvpCpFullGold)els.pvpCpFullGold.textContent=Math.round(Number(result.fullAttritionGold||0)).toLocaleString('en-US');
   els.pvpCpEnemyName.textContent=enemy?`${enemy.level} · ${enemy.name} · ${enemy.type}`:'Selected enemy';
-  els.pvpCpDetailsMeta.textContent='Predicted death is based on calculated squad health. Gold if Lost is the raw full-squad revival cost. Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice.';
+  els.pvpCpDetailsMeta.textContent=
+    'Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Each squad receives an average of death position minus 0.5 attack opportunities. Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Basic treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.';
+
   const rows=[
     ...result.categories.troop.results,
     ...result.categories.monster.results,
     ...result.categories.mercenary.results
   ].slice().sort((a,b)=>(a.predictedDeathIndex??999)-(b.predictedDeathIndex??999)||a.displayOrder-b.displayOrder);
 
-  els.pvpCpDetailsRows.innerHTML=rows.map(r=>{
-    const specialist=r.specialistPvpMultiplier===2?'2× Specialist':'—';
-    return `<tr>
+  const reasonFor=r=>{
+    const parts=[];
+    if(r.specialistPvpMultiplier===2)parts.push('2× Specialist');
+    if(Number(r.pvpMatchupBonus||0)>0)parts.push(`Matchup +${Math.round(Number(r.pvpMatchupBonus||0)*100)}%`);
+    return parts.length?parts.join(' · '):'Lower-cost exposure';
+  };
+
+  els.pvpCpDetailsRows.innerHTML=rows.map(r=>`<tr>
       <td>${escapeHtml(`${r.level} · ${r.name}`)}</td>
       <td>${Number(r.qty||0).toLocaleString('en-US')}</td>
       <td>${(r.predictedDeathIndex??0)+1}</td>
       <td>${Math.round(Number(r.fullSquadGoldRevival||0)).toLocaleString('en-US')}</td>
       <td>${compactNumber(r.expectedPvpDamage)}</td>
-      <td>${specialist}</td>
-    </tr>`;
-  }).join('');
+      <td>${escapeHtml(reasonFor(r))}</td>
+    </tr>`).join('');
 }
 function recalculate(){
   readInputs();

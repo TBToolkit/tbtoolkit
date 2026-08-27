@@ -76,10 +76,13 @@ function mean(values){
 }
 function orderKey(order){return order.map(u=>u.id).join('|');}
 
+const COST_EQUIVALENCE_BAND=0.05;
+
 function buildGlobalOrderFromMetrics(rows){
-  // The player's practical CP decision is usually made by tier/family (E9,
-  // G9, S8, M9...). Order tier groups primarily by the average full-squad
-  // Gold cost. Within a tier, preserve the higher expected PvP damage squad.
+  // CP Basic is cost-first, but it should not sacrifice a much stronger tier
+  // merely to save a trivial amount of Gold. Tier groups whose average
+  // full-squad revival cost is within 5% are treated as economically
+  // equivalent; the lower expected PvP damage group dies first.
   const groups=new Map();
   for(const row of rows){
     if(!groups.has(row.u.level))groups.set(row.u.level,[]);
@@ -88,19 +91,93 @@ function buildGlobalOrderFromMetrics(rows){
   const orderedGroups=[...groups.entries()].map(([level,items])=>({
     level,items,
     avgGold:mean(items.map(x=>x.fullGold)),
+    avgDamage:mean(items.map(x=>x.expectedDamage)),
     minDisplay:Math.min(...items.map(x=>Number(x.u.displayOrder||0)))
-  })).sort((a,b)=>a.avgGold-b.avgGold||a.minDisplay-b.minDisplay);
+  })).sort((a,b)=>{
+    const low=Math.min(a.avgGold,b.avgGold);
+    const relativeGap=low>0?Math.abs(a.avgGold-b.avgGold)/low:Math.abs(a.avgGold-b.avgGold);
+    if(relativeGap<=COST_EQUIVALENCE_BAND){
+      return a.avgDamage-b.avgDamage || a.avgGold-b.avgGold || a.minDisplay-b.minDisplay;
+    }
+    return a.avgGold-b.avgGold || a.minDisplay-b.minDisplay;
+  });
 
   const result=[];
   for(const group of orderedGroups){
-    const items=group.items.slice().sort((a,b)=>
-      a.expectedDamage-b.expectedDamage ||
-      a.fullGold-b.fullGold ||
-      Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0)
-    );
+    const items=group.items.slice().sort((a,b)=>{
+      const low=Math.min(a.fullGold,b.fullGold);
+      const relativeGap=low>0?Math.abs(a.fullGold-b.fullGold)/low:Math.abs(a.fullGold-b.fullGold);
+      if(relativeGap<=COST_EQUIVALENCE_BAND){
+        return a.expectedDamage-b.expectedDamage ||
+          a.fullGold-b.fullGold ||
+          Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
+      }
+      return a.fullGold-b.fullGold ||
+        a.expectedDamage-b.expectedDamage ||
+        Number(a.u.displayOrder||0)-Number(b.u.displayOrder||0);
+    });
     result.push(...items.map(x=>x.u));
   }
   return result;
+}
+
+
+function refreshRowAfterQtyChange(row,newQty){
+  const oldQty=Math.max(0,Number(row.qty||0));
+  const ratio=oldQty>0?newQty/oldQty:0;
+  row.qty=newQty;
+  row.squadHealth*=ratio;
+  row.squadStrength*=ratio;
+  row.expectedPvpDamage*=ratio;
+  row.deterministicPvpDamage*=ratio;
+  row.fullSquadGoldRevival*=ratio;
+  row.totalCapacity*=ratio;
+}
+
+function enforceCapacityLimit(categoryResult,limit){
+  const safeLimit=Math.max(0,Number(limit||0));
+  let total=categoryResult.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+  if(total<=safeLimit+1e-9){
+    categoryResult.totalCapacity=total;
+    categoryResult.capacityPercent=safeLimit?total/safeLimit:0;
+    return;
+  }
+
+  // Integer rounding can put the final stack a few capacity points over the
+  // requested maximum. Remove the minimum practical number of units, starting
+  // with squads planned to die latest so early sacrificial spacing is not
+  // weakened. Recompute all quantity-dependent metrics proportionally.
+  const rows=categoryResult.results.slice().sort((a,b)=>
+    Number(b.deathIndex??0)-Number(a.deathIndex??0) ||
+    Number(b.displayOrder||0)-Number(a.displayOrder||0)
+  );
+
+  let guard=0;
+  while(total>safeLimit+1e-9&&guard<100000){
+    guard++;
+    const over=total-safeLimit;
+    const candidates=rows.filter(r=>Number(r.qty||0)>0&&Number(r.totalCapacity||0)>0);
+    if(!candidates.length)break;
+
+    // Prefer one decrement that removes the smallest amount of excess
+    // capacity; use later death position as the tie-breaker.
+    let best=candidates[0],bestCap=Number(best.totalCapacity||0)/Number(best.qty||1);
+    let bestPenalty=bestCap>=over?bestCap-over:over-bestCap+1e6;
+    for(const r of candidates.slice(1)){
+      const cap=Number(r.totalCapacity||0)/Number(r.qty||1);
+      const penalty=cap>=over?cap-over:over-cap+1e6;
+      if(penalty<bestPenalty-1e-9||
+         (Math.abs(penalty-bestPenalty)<1e-9&&Number(r.deathIndex??0)>Number(best.deathIndex??0))){
+        best=r;bestCap=cap;bestPenalty=penalty;
+      }
+    }
+    const oldQty=Number(best.qty||0);
+    refreshRowAfterQtyChange(best,Math.max(0,oldQty-1));
+    total-=bestCap;
+  }
+
+  categoryResult.totalCapacity=categoryResult.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+  categoryResult.capacityPercent=safeLimit?categoryResult.totalCapacity/safeLimit:0;
 }
 
 function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
@@ -151,6 +228,7 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
         pDD:p.pDD,pST:p.pST,
         fullSquadGoldRevival:fullGold,
         goldRevivalCostEach:Number(r.u.goldRevivalCost||0),
+        capacityEach:r.capEach,
         totalCapacity:r.capEach*qty
       };
     });
@@ -160,6 +238,7 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
       totalCapacity,capacityPercent:limit?totalCapacity/limit:0,
       results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)
     };
+    enforceCapacityLimit(categories[category],limit);
   }
   return categories;
 }
@@ -221,11 +300,19 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
   // Actual predicted death sequence follows calculated effective squad health:
   // the game's enemy target selects the healthiest surviving squad first.
   const actual=allRows.slice().sort((a,b)=>b.squadHealth-a.squadHealth||a.plannedDeathIndex-b.plannedDeathIndex);
-  actual.forEach((r,k)=>{r.predictedDeathIndex=k;});
+  actual.forEach((r,k)=>{
+    r.predictedDeathIndex=k;
+    r.averageAttackOpportunities=(k+1)-0.5;
+    r.projectedLifetimeDamage=r.expectedPvpDamage*r.averageAttackOpportunities;
+  });
+  const projectedLifetimeDamage=actual.reduce((s,r)=>s+Number(r.projectedLifetimeDamage||0),0);
+  const fullAttritionGold=actual.reduce((s,r)=>s+Number(r.fullSquadGoldRevival||0),0);
 
   return{
     inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,pvpCp:true,
     plannedOrder:order.map(u=>u.id),
+    projectedLifetimeDamage,fullAttritionGold,
+    costEquivalenceBand:COST_EQUIVALENCE_BAND,
     categories,
     totals:{
       leadership:categories.troop.totalCapacity,
@@ -280,12 +367,15 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
       pvpMatchupBonus:p.matchup,specialistPvpMultiplier:p.specialistMultiplier,pDD:p.pDD,pST:p.pST,
       fullSquadGoldRevival:qty*Number(r.u.goldRevivalCost||0),
       goldRevivalCostEach:Number(r.u.goldRevivalCost||0),
+      capacityEach:r.capEach,
       totalCapacity:r.capEach*qty
     };
   });
   const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
-  return{category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,totalCapacity,
+  const categoryResult={category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,totalCapacity,
     capacityPercent:limit?totalCapacity/limit:0,results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)};
+  enforceCapacityLimit(categoryResult,limit);
+  return categoryResult;
 }
 
 export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,inputs,enemy}){
@@ -293,8 +383,16 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
   const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,enemy});
   const mercenary=calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,enemy});
   const all=[...troop.results,...monster.results,...mercenary.results].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
-  all.forEach((r,k)=>{r.predictedDeathIndex=k;});
-  return{inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,pvpCp:true,categories:{troop,monster,mercenary},
+  all.forEach((r,k)=>{
+    r.predictedDeathIndex=k;
+    r.averageAttackOpportunities=(k+1)-0.5;
+    r.projectedLifetimeDamage=r.expectedPvpDamage*r.averageAttackOpportunities;
+  });
+  const projectedLifetimeDamage=all.reduce((s,r)=>s+Number(r.projectedLifetimeDamage||0),0);
+  const fullAttritionGold=all.reduce((s,r)=>s+Number(r.fullSquadGoldRevival||0),0);
+  return{inputs:structuredClone(inputs),battleType:'pvp_single_cp',enemy,pvpCp:true,
+    projectedLifetimeDamage,fullAttritionGold,costEquivalenceBand:COST_EQUIVALENCE_BAND,
+    categories:{troop,monster,mercenary},
     totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
 }
 
