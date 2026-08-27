@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=134" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=135" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=134" type="module"></script>
+<script src="js/epic-stacker.js?v=135" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -133,6 +133,7 @@
 <div class="help-input-field"><div class="help-field-heading"><label for="monsterHealth">Monster Health</label><button aria-label="Show where to find Monster Health" class="stat-help-button" data-stat-help="monsterHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div></div>
 <div class="help-input-field"><div class="help-field-heading"><label for="humanHealth">Human Health</label><button aria-label="Show where to find Human Health" class="stat-help-button" data-stat-help="humanHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="humanHealth" inputmode="decimal" type="text" value="1500"/><span>%</span></div></div>
 <div class="help-input-field"><div class="help-field-heading"><label for="epicHunterHealth">Epic Hunter Health</label><button aria-label="Show where to find Epic Hunter Health" class="stat-help-button" data-stat-help="epicHunterHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text" value="859"/><span>%</span></div></div>
+<div class="help-input-field pvp-only-stat-field" hidden id="pvpHealthField"><div class="help-field-heading"><label for="pvpHealth">Health PvP</label><button aria-label="Show where to find Health PvP" class="stat-help-button" data-stat-help="pvpHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field health-percent-field"><input class="epic-input formatted-number" id="pvpHealth" inputmode="decimal" type="text" value="0"/><span>%</span></div></div>
 </div>
 
 </div>
@@ -142,7 +143,8 @@
 <h3>Strength &amp; Combat</h3>
 <div class="combat-input-grid">
 <div class="help-input-field"><div class="help-field-heading"><label for="monsterStrength">Monster Strength</label><button aria-label="Show where to find Monster Strength" class="stat-help-button" data-stat-help="monsterStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div></div>
-<div class="help-input-field" id="strengthAgainstEpicField"><div class="help-field-heading"><label for="strengthAgainstEpic">Strength Against Epic</label><button aria-label="Show where to find Strength Against Epic" class="stat-help-button" data-stat-help="strengthAgainstEpic" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></div>
+<div class="help-input-field" id="strengthAgainstEpicField"><div class="help-field-heading"><label for="strengthAgainstEpic">Strength PvE</label><button aria-label="Show where to find Strength PvE" class="stat-help-button" data-stat-help="strengthAgainstEpic" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></div>
+<div class="help-input-field pvp-only-stat-field" hidden id="pvpStrengthField"><div class="help-field-heading"><label for="pvpStrength">Strength PvP</label><button aria-label="Show where to find Strength PvP" class="stat-help-button" data-stat-help="pvpStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="pvpStrength" inputmode="decimal" type="text" value="0"/><span>%</span></div></div>
 <div class="help-input-field"><div class="help-field-heading"><label for="monsterDD">Monster Double Damage</label><button aria-label="Show where to find Monster Double Damage" class="stat-help-button" data-stat-help="monsterDD" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div></div>
 <div class="help-input-field"><div class="help-field-heading"><label for="monsterST">Monster Strike Twice</label><button aria-label="Show where to find Monster Strike Twice" class="stat-help-button" data-stat-help="monsterST" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div></div>
 </div>
