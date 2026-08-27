@@ -2877,3 +2877,59 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 @media(max-width:700px){
   .pvp-cp-metrics{grid-template-columns:1fr}
 }
+
+
+/* ==========================================================================
+   v133 — shared Temple level / actual revival costs
+   ========================================================================== */
+.global-player-setting.temple-setting{
+  display:flex;
+  align-items:end;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  padding:10px 12px;
+  border:1px solid #31485b;
+  border-radius:8px;
+  background:#101d28;
+}
+.temple-setting label{
+  display:grid;
+  gap:5px;
+  min-width:180px;
+}
+.temple-level-select{
+  min-width:180px;
+}
+.temple-bonus-copy{
+  display:grid;
+  gap:4px;
+  padding-bottom:3px;
+}
+.temple-bonus-copy span{
+  color:#8ea0af;
+  font-size:.65rem;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.temple-bonus-copy strong{
+  font-size:1rem;
+}
+.temple-setting-note{
+  margin-top:6px!important;
+}
+.pvp-cp-metrics{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.pvp-cp-table th:nth-child(1),.pvp-cp-table td:nth-child(1){width:23%}
+.pvp-cp-table th:nth-child(2),.pvp-cp-table td:nth-child(2){width:9%}
+.pvp-cp-table th:nth-child(3),.pvp-cp-table td:nth-child(3){width:8%}
+.pvp-cp-table th:nth-child(4),.pvp-cp-table td:nth-child(4){width:13%}
+.pvp-cp-table th:nth-child(5),.pvp-cp-table td:nth-child(5){width:14%}
+.pvp-cp-table th:nth-child(6),.pvp-cp-table td:nth-child(6){width:15%}
+.pvp-cp-table th:nth-child(7),.pvp-cp-table td:nth-child(7){width:18%;white-space:normal}
+@media(max-width:700px){
+  .pvp-cp-metrics{grid-template-columns:1fr}
+  .global-player-setting.temple-setting{align-items:stretch}
+  .temple-setting label,.temple-level-select{width:100%;min-width:0}
+}
