@@ -1,12 +1,12 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=144';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=145';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
-const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='epic';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
+const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let appInitialized=false;let optimizerBestEldSoFar=0;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
@@ -354,7 +354,9 @@ function loadSavedState(){
       if(saved.preferences&&Number.isFinite(Number(saved.preferences.templeLevel))){
         state.preferences.templeLevel=Math.max(1,Math.min(45,Number(saved.preferences.templeLevel)||45));
       }
-      activeMode=['epic','optimizer','custom','battle'].includes(saved.activeMode)?saved.activeMode:'epic';
+      // Battle Calculator is now the public interface. Legacy calculator
+      // workspaces remain stored and fully intact for rollback/testing.
+      activeMode='battle';
 
       for(const mode of ['epic','optimizer','custom']){
         Object.assign(state.modes[mode].inputs,saved.modes[mode]?.inputs||{});
@@ -926,12 +928,12 @@ function configureModeUI(){
     b.setAttribute('aria-pressed',String(on));
   });
 
-  els.modeDescription.textContent=classic
-    ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
-    : optimizer
-      ?'Epic Optimizer calculates stack quantities for the units you select. It searches many possible army structures and uses simulated Epic battles to find the army with the highest expected lifetime damage. The optimizer considers unit health, strength, combat bonuses, Double Damage, Strike Twice, death order, attack order, and available army capacity.'
-      : battle
-        ?'Battle Calculator Beta lets you choose the battle first, then builds the stack using the rules for that battle. This first version is focused on deterministic calculation and PvP rule validation.'
+  els.modeDescription.textContent=battle
+    ?'Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can build a basic stack, follow a custom death order, or optimize supported Epic battles. PvP calculations use PvP health, strength, matchup bonuses, and revival costs when they apply.'
+    : classic
+      ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
+      : optimizer
+        ?'Epic Optimizer calculates stack quantities for the units you select. It searches many possible army structures and uses simulated Epic battles to find the army with the highest expected lifetime damage.'
         :'You choose the death order by level. The calculator automatically orders unit types within each level.';
 
   const battleCustom=battle&&state.modes.battle.activeBattleMethod==='custom';
