@@ -2822,7 +2822,13 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 
 /* Some existing grid rules explicitly set display:grid. These selectors must
    win whenever a battle-dependent field is hidden. */
-#strengthAgainstEpicField[hidden],
+/* PvP keeps the Strength Against Epic grid cell in place so DD and ST do not
+   shift when the Epic-only field is unavailable. */
+#strengthAgainstEpicField[hidden]{
+  display:grid!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
 #pvpEnemyUnitField[hidden],
 #pvpCpDetailsPanel[hidden]{
   display:none!important;
