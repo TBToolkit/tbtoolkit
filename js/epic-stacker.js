@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=137';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=138';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -961,7 +961,7 @@ function configureModeUI(){
 }
 function applyStateToInputs(){
   const i=modeState().inputs;
-  for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST']){
+  for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST']){
     if(!els[id])continue;
     els[id].value=i[id]??defaultInputs(activeMode)[id]??'';
   }
@@ -970,7 +970,7 @@ function applyStateToInputs(){
     els[id].value=i[id]??'';
     formatFillPercent(els[id]);
   }
-  els.rankSeparation.value=String(Math.min(.5,Math.max(0,parseNumber(i.rankSeparation??'0.05'))));
+  els.rankSeparation.value=String(Math.min(1,Math.max(0,parseNumber(i.rankSeparation??'0.05'))));
   for(const id of ['autoLeadership','autoAuthority','autoDominance'])els[id].checked=!!i[id];
   els.arachne.checked=!!i.arachne;
   els.useCustomFamilyBonuses.checked=!!i.useCustomFamilyBonuses;
@@ -986,7 +986,7 @@ function applyStateToInputs(){
 }
 function readInputs(){
   const i=modeState().inputs;
-  for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST']){
+  for(const id of ['leadership','authority','dominance','monsterHealth','humanHealth','epicHunterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST']){
     if(els[id])i[id]=String(parseNumber(els[id].value));
   }
   i.rankSeparation=String(parseNumber(els.rankSeparation.value));
