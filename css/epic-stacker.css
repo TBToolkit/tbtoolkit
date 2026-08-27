@@ -2814,3 +2814,60 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   .pvp-cp-summary{grid-template-columns:1fr}
   .pvp-cp-table{font-size:.5rem}
 }
+
+
+/* ==========================================================================
+   v129 — PvP CP refinements
+   ========================================================================== */
+
+/* Some existing grid rules explicitly set display:grid. These selectors must
+   win whenever a battle-dependent field is hidden. */
+#strengthAgainstEpicField[hidden],
+#pvpEnemyUnitField[hidden],
+#pvpCpDetailsPanel[hidden]{
+  display:none!important;
+}
+
+.pvp-cp-metrics{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:8px;
+}
+.pvp-cp-metrics>div{
+  display:grid;
+  gap:2px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid #2d4355;
+  border-radius:6px;
+  background:#091824;
+}
+.pvp-cp-metrics span{
+  color:#8fa1b1;
+  font-size:.58rem;
+  line-height:1.25;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:850;
+}
+.pvp-cp-metrics strong{
+  color:#eef3f6;
+  font-size:1rem;
+  line-height:1.15;
+}
+.pvp-cp-metrics small{
+  color:#7f92a2;
+  font-size:.56rem;
+  line-height:1.3;
+}
+
+.pvp-cp-table th:nth-child(6),
+.pvp-cp-table td:nth-child(6){
+  width:19%;
+  white-space:normal;
+}
+
+@media(max-width:700px){
+  .pvp-cp-metrics{grid-template-columns:1fr}
+}
