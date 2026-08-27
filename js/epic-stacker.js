@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=148';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=149';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -929,7 +929,7 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=battle
-    ?'Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can build a basic stack, follow a custom death order, or optimize supported Epic battles. PvP calculations use PvP health, strength, matchup bonuses, and revival costs when they apply.'
+    ?'Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can calculate a standard stack, follow a custom death order, or optimize supported Epic battles. PvP calculations include PvP health, strength, matchup bonuses, and revival costs when they apply.'
     : classic
       ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
       : optimizer
