@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=128" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=129" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=128" type="module"></script>
+<script src="js/epic-stacker.js?v=129" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -251,6 +251,10 @@
 </details>
 </section>
 <section class="pvp-cp-details-panel" hidden id="pvpCpDetailsPanel">
+<div class="pvp-cp-metrics">
+<div><span>Projected Lifetime Damage</span><strong id="pvpCpLifetimeDamage">—</strong><small>Expected full-attrition comparison metric</small></div>
+<div><span>Full-Attrition Gold Exposure</span><strong id="pvpCpFullGold">—</strong><small>Raw Gold if every friendly squad dies</small></div>
+</div>
 <div class="pvp-cp-summary">
 <div><span>Selected Enemy</span><strong id="pvpCpEnemyName">—</strong></div>
 <div><span>Calculation Goal</span><strong>Lower Revival Cost First</strong></div>
@@ -260,7 +264,7 @@
 <div class="prediction-meta" id="pvpCpDetailsMeta"></div>
 <div class="prediction-table-wrap">
 <table class="prediction-table pvp-cp-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Gold if Lost</th><th>Expected Damage</th><th>PvP Value</th></tr></thead>
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Gold if Lost</th><th>Expected Damage</th><th>Reason</th></tr></thead>
 <tbody id="pvpCpDetailsRows"></tbody>
 </table>
 </div>
