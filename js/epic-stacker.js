@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=132';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=135';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -39,8 +39,8 @@ function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
 dominance:'',dominanceFill:'99.99',autoDominance:true,
-monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',
-monsterStrength:'2299.5',strengthAgainstEpic:'3225',monsterDD:'12',monsterST:'12',
+monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'0',
+monsterStrength:'2299.5',strengthAgainstEpic:'3225',pvpStrength:'0',monsterDD:'12',monsterST:'12',
 humanStrength:'2199.5',epicHunterStrength:'1558.5',
 humanDD:'12',epicHunterDD:'12',humanST:'7',epicHunterST:'7',
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
@@ -165,7 +165,7 @@ function currentBattleWorkspace(){
   );
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -911,6 +911,8 @@ function configureModeUI(){
     modeState().inputs.arachne=type==='epic_arachne';
     const isPvp=type.startsWith('pvp_');
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=isPvp;
+    if(els.pvpHealthField)els.pvpHealthField.hidden=!isPvp;
+    if(els.pvpStrengthField)els.pvpStrengthField.hidden=!isPvp;
     if(els.pvpEnemyUnitField)els.pvpEnemyUnitField.hidden=type!=='pvp_single_cp';
     if(type==='pvp_single_cp'&&els.pvpEnemyUnitSelect&&armyV2.length){
       const enemyId=modeState().inputs.enemyUnitId||'troop-g9-flying-corax-2';
@@ -933,6 +935,8 @@ function configureModeUI(){
   }
   if(!battle){
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=false;
+    if(els.pvpHealthField)els.pvpHealthField.hidden=true;
+    if(els.pvpStrengthField)els.pvpStrengthField.hidden=true;
     if(els.pvpEnemyUnitField)els.pvpEnemyUnitField.hidden=true;
   }
   if(battleCustom||custom){syncCustomOrders();renderOrderView();}
@@ -1299,13 +1303,23 @@ function refreshAfterBrowserRestore(){
 
 function baseEngineInputs(){
   const i=modeState().inputs;
+  const isPvp=activeMode==='battle'&&String(i.battleType||state.modes.battle.activeBattleType||'').startsWith('pvp_');
+  const pvpHealth=isPvp?parseNumber(i.pvpHealth):0;
+  const pvpStrength=isPvp?parseNumber(i.pvpStrength):0;
   return{
     leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,
     authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,
     dominance:parseNumber(i.dominance),dominanceFill:parseNumber(i.dominanceFill)/100,
     arachne:(activeMode==='epic'&&!!i.arachne)||(activeMode==='battle'&&i.battleType==='epic_arachne'),
-    healthInputs:{MONSTER:parseNumber(i.monsterHealth),HUMAN:parseNumber(i.humanHealth),EPIC_HUNTER:parseNumber(i.epicHunterHealth)},
-    monsterStrengthPct:parseNumber(i.monsterStrength),humanStrengthPct:parseNumber(i.humanStrength),epicHunterStrengthPct:parseNumber(i.epicHunterStrength),
+    healthInputs:{
+      MONSTER:parseNumber(i.monsterHealth)+pvpHealth,
+      HUMAN:parseNumber(i.humanHealth)+pvpHealth,
+      EPIC_HUNTER:parseNumber(i.epicHunterHealth)+pvpHealth
+    },
+    monsterStrengthPct:parseNumber(i.monsterStrength)+pvpStrength,
+    humanStrengthPct:parseNumber(i.humanStrength)+pvpStrength,
+    epicHunterStrengthPct:parseNumber(i.epicHunterStrength)+pvpStrength,
+    pvpHealthPct:pvpHealth,pvpStrengthPct:pvpStrength,
     monsterDDPct:parseNumber(i.monsterDD),humanDDPct:parseNumber(i.humanDD),epicHunterDDPct:parseNumber(i.epicHunterDD),
     monsterSTPct:parseNumber(i.monsterST),humanSTPct:parseNumber(i.humanST),epicHunterSTPct:parseNumber(i.epicHunterST),
     enemyUnitId:i.enemyUnitId||'troop-g9-flying-corax-2',
@@ -1355,7 +1369,7 @@ function validate(){
 
   {
     if(parseNumber(modeState().inputs.monsterHealth)<0)errors.push('Enter Monster Health.');
-    for(const [key,label] of [['monsterStrength','Monster Strength'],['strengthAgainstEpic','Strength Against Epic']]){
+    for(const [key,label] of [['monsterStrength','Monster Strength'],['strengthAgainstEpic','Strength PvE']]){
       if(parseNumber(modeState().inputs[key])<0)errors.push(`${label} cannot be negative.`);
     }
     for(const [key,label] of [['monsterDD','Monster Double Damage'],['monsterST','Monster Strike Twice']]){
@@ -1848,14 +1862,16 @@ function switchMode(mode){
   loadSavedOptimizerResult();
   refreshActiveMode();
 }
-function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','monsterStrength','strengthAgainstEpic','monsterDD','monsterST'])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
+function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];i.useCustomFamilyBonuses=false;els.useCustomFamilyBonuses.checked=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   monsterHealth:{title:'Monster Health',text:'Open one of your Monster squads, then copy the Health percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-health.webp','2. Copy the Health value.']]},
   humanHealth:{title:'Human Health',text:'Open one of your Human troops, then copy the Health percentage shown in the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-health.webp','2. Copy the Health value.']]},
   epicHunterHealth:{title:'Epic Hunter Health',text:'Open your Superior Epic Monster Hunter, then copy the Health percentage shown in the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-health.webp','2. Copy the Health value.']]},
   monsterStrength:{title:'Monster Strength',text:'Open one of your Monster squads, then copy the Strength percentage shown in the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-strength.webp','2. Copy the Strength value.']]},
-  strengthAgainstEpic:{title:'Strength Against Epic',text:'Copy “Strength of your entire army against epic monsters.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-epic-strength.webp','Monster example'],['human-epic-strength.webp','Human example'],['epic-hunter-epic-strength.webp','Epic Hunter example']]},
+  strengthAgainstEpic:{title:'Strength PvE',text:'Copy “Strength of your entire army against epic monsters.” It is an entire-army bonus, so the same value appears on Monster, Human, and Epic Hunter detail screens.',images:[['monster-epic-strength.webp','Monster example'],['human-epic-strength.webp','Human example'],['epic-hunter-epic-strength.webp','Epic Hunter example']]},
+  pvpHealth:{title:'Health PvP',text:'Enter your entire-army Health bonus that applies in battles against other players. This value is added equally to Monster, Human, and Epic Hunter Health.',images:[]},
+  pvpStrength:{title:'Strength PvP',text:'Enter your entire-army Strength bonus that applies in battles against other players. This value is added equally to Monster, Human, and Epic Hunter Strength.',images:[]},
   monsterDD:{title:'Monster Double Damage',text:'Open one of your Monster squads, then copy “Chance to deal double damage” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-dd.webp','2. Copy Double Damage.']]},
   monsterST:{title:'Monster Strike Twice',text:'Open one of your Monster squads, then copy “Chance to strike two squads” from the Bonuses section.',images:[['monster-click.webp','1. Open a Monster squad.'],['monster-st.webp','2. Copy Strike Twice.']]},
   humanStrength:{title:'Human Strength',text:'Open one of your Human troops, then copy the Strength percentage shown in the Bonuses section.',images:[['human-click.webp','1. Open a Human troop.'],['human-strength.webp','2. Copy the Strength value.']]},
@@ -1910,6 +1926,11 @@ function wireEvents(){
     input.addEventListener('input',recalculate);
   }
 
+  for(const id of ['pvpHealth','pvpStrength']){
+    if(!els[id])continue;
+    els[id].addEventListener('input',()=>{readInputs();saveState();recalculate();});
+    els[id].addEventListener('blur',()=>{els[id].value=String(parseNumber(els[id].value));readInputs();saveState();recalculate();});
+  }
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
     readInputs();saveState();
