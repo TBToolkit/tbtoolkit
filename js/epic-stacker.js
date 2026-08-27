@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=153';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=154';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -552,23 +552,24 @@ function cancelEpicOptimization(){
 function currentEpicEffectiveSignature(){
   if(!isAnyEpicOptimizeMode())return'';
   const i=modeState().inputs;
+  const includeMercs=!!i.includeMercenariesInOptimization;
   const selected={
     troop:[...(modeState().selectedIds.troop||[])].sort(),
     monster:[...(modeState().selectedIds.monster||[])].sort(),
-    mercenary:[...(modeState().selectedIds.mercenary||[])].sort()
+    mercenary:includeMercs?[...(modeState().selectedIds.mercenary||[])].sort():[]
   };
   const effective={
     selected,
     leadership:parseNumber(i.leadership),
-    authority:parseNumber(i.authority),
+    authority:includeMercs?parseNumber(i.authority):null,
     dominance:parseNumber(i.dominance),
     autoLeadership:!!i.autoLeadership,
-    autoAuthority:!!i.autoAuthority,
+    autoAuthority:includeMercs?!!i.autoAuthority:null,
     autoDominance:!!i.autoDominance,
     leadershipFill:parseNumber(i.leadershipFill),
-    authorityFill:parseNumber(i.authorityFill),
+    authorityFill:includeMercs?parseNumber(i.authorityFill):null,
     dominanceFill:parseNumber(i.dominanceFill),
-    includeMercenariesInOptimization:!!i.includeMercenariesInOptimization,
+    includeMercenariesInOptimization:includeMercs,
     rankSeparation:parseNumber(i.rankSeparation),
     arachne:activeMode!=='custom'&&!!i.arachne,
     monsterHealth:parseNumber(i.monsterHealth),
@@ -698,7 +699,7 @@ function renderPrediction(opt){
     // When Standard mercenaries are added after ADS, their presence can shift
     // the displayed global death positions. Keep the optimizer flags attached
     // to the affected Troop/Monster squads even after that final merge.
-    if(opt.diagnostics?.mercenaryOptimizationMode==='standard-postprocess'){
+    if(['standard-postprocess','standard-live'].includes(opt.diagnostics?.mercenaryOptimizationMode)){
       for(const s of rows){
         if(s.category==='mercenary')continue;
         const diagnostic=diagnosticNotes.get(String(s.id));
@@ -760,7 +761,7 @@ function openSacrificeHelp(note){
 
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
-  if(lastOptimizedEpicPayload?.diagnostics?.mercenaryOptimizationMode==='standard-postprocess'){
+  if(['standard-postprocess','standard-live'].includes(lastOptimizedEpicPayload?.diagnostics?.mercenaryOptimizationMode)){
     text+=' This optimizer decision was evaluated before the fixed Standard mercenary stack was added to the final battle result, so the displayed global death position can be later than the optimizer position described below.';
   }
 
@@ -826,7 +827,38 @@ function convertEpicV2Result(opt){
     epicV2:opt
   };
 }
+function liveStandardMercenaryOptimizerPayload(opt){
+  if(!opt?.result||modeState().inputs.includeMercenariesInOptimization)return opt;
+  const fixedMercs=fixedStandardMercenaryQuantitiesForOptimizer();
+
+  // The saved optimizer payload contains the last combined result. Strip any
+  // mercenary quantities from it to recover the persistent optimized core.
+  const coreQuantities={};
+  for(const s of opt.result.squads||[]){
+    if(s.category!=='mercenary')coreQuantities[s.name]=Number(s.quantity)||0;
+  }
+  const combinedQuantities={...coreQuantities,...fixedMercs};
+  const combinedResult=scoreEpicArmy({
+    units:armyV2,
+    quantities:combinedQuantities,
+    bonuses:epicBonusPayload()
+  });
+
+  return{
+    ...opt,
+    quantities:combinedQuantities,
+    result:combinedResult,
+    diagnostics:{
+      ...(opt.diagnostics||{}),
+      fixedMercenaries:Object.keys(fixedMercs).length,
+      mercenaryOptimizationMode:'standard-live',
+      combinedExpectedLifetimeDamage:Number(combinedResult.expectedTotalLifetimeDamage||0)
+    }
+  };
+}
+
 function renderEpicOptimizedResult(opt){
+  opt=liveStandardMercenaryOptimizerPayload(opt);
   const result=convertEpicV2Result(opt);
   renderResultRows('mercenary',result.categories.mercenary.results);
   renderResultRows('monster',result.categories.monster.results);
@@ -866,7 +898,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=153');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=154');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
