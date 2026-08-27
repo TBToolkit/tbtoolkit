@@ -345,7 +345,7 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
   };
 }
 
-function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,enemy}){
+export function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,enemy}){
   const cfg=CATEGORY_CONFIG[category],selected=selectedUnits(units,selectedIds);
   if(!selected.length)return categoryEmpty(category);
 
