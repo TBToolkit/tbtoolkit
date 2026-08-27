@@ -2964,3 +2964,14 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   outline-offset:0;
   border-color:var(--epic-blue);
 }
+
+
+/* ==========================================================================
+   v135 — PvP-specific Health and Strength bonuses
+   ========================================================================== */
+#strengthAgainstEpicField[hidden],
+#pvpHealthField[hidden],
+#pvpStrengthField[hidden]{
+  display:none!important;
+}
+.pvp-only-stat-field{min-width:0}
