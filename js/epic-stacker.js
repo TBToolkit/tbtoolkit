@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=149';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=150';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -503,6 +503,33 @@ function epicBonusPayload(){
     }
   };
 }
+function fixedStandardMercenaryQuantitiesForOptimizer(){
+  const i=modeState().inputs;
+  if(i.includeMercenariesInOptimization)return {};
+  const selected=[...(modeState().selectedIds.mercenary||[])];
+  if(!selected.length)return {};
+
+  const inputs=baseEngineInputs();
+  // resolveAutoFills() has already established the authoritative fill used by
+  // the current workspace. Preserve a manual fill exactly; Max Fill uses the
+  // safe Standard fill found for the mercenary category.
+  inputs.authorityFill=i.autoAuthority
+    ?Number(resolvedFills.mercenary??1)
+    :Math.max(0,Math.min(1,parseNumber(i.authorityFill)/100));
+
+  const standard=calculateCategory({
+    category:'mercenary',
+    units:units.mercenary,
+    selectedIds:selected,
+    inputs
+  });
+  return Object.fromEntries(
+    (standard.results||[])
+      .filter(row=>Number(row.qty)>0)
+      .map(row=>[row.name,Number(row.qty)])
+  );
+}
+
 function effectiveEpicCapacityLimits(){
   const i=modeState().inputs;
   const limit=(key,fillKey,autoKey)=>{
@@ -512,7 +539,7 @@ function effectiveEpicCapacityLimits(){
   };
   return{
     LEADERSHIP:limit('leadership','leadershipFill','autoLeadership'),
-    AUTHORITY:i.includeMercenariesInOptimization?limit('authority','authorityFill','autoAuthority'):0,
+    AUTHORITY:limit('authority','authorityFill','autoAuthority'),
     DOMINANCE:limit('dominance','dominanceFill','autoDominance')
   };
 }
@@ -528,7 +555,7 @@ function currentEpicEffectiveSignature(){
   const selected={
     troop:[...(modeState().selectedIds.troop||[])].sort(),
     monster:[...(modeState().selectedIds.monster||[])].sort(),
-    mercenary:i.includeMercenariesInOptimization?[...(modeState().selectedIds.mercenary||[])].sort():[]
+    mercenary:[...(modeState().selectedIds.mercenary||[])].sort()
   };
   const effective={
     selected,
@@ -541,6 +568,8 @@ function currentEpicEffectiveSignature(){
     leadershipFill:parseNumber(i.leadershipFill),
     authorityFill:parseNumber(i.authorityFill),
     dominanceFill:parseNumber(i.dominanceFill),
+    includeMercenariesInOptimization:!!i.includeMercenariesInOptimization,
+    rankSeparation:parseNumber(i.rankSeparation),
     arachne:activeMode!=='custom'&&!!i.arachne,
     monsterHealth:parseNumber(i.monsterHealth),
     humanHealth:parseNumber(i.humanHealth),
@@ -823,7 +852,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=144');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=150');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -896,9 +925,17 @@ function startEpicOptimization(){
     epicResultCurrent=false;
     setOptimizeButtonState();
   };
+  const includeMercs=!!modeState().inputs.includeMercenariesInOptimization;
+  const fixedMercenaryQuantities=includeMercs?{}:fixedStandardMercenaryQuantitiesForOptimizer();
   epicWorker.postMessage({
     type:'optimize',requestId,
-    selectedIds:[...modeState().selectedIds.troop,...modeState().selectedIds.monster,...(modeState().inputs.includeMercenariesInOptimization?modeState().selectedIds.mercenary:[])],
+    selectedIds:[
+      ...modeState().selectedIds.troop,
+      ...modeState().selectedIds.monster,
+      ...(includeMercs?modeState().selectedIds.mercenary:[])
+    ],
+    fixedQuantities:fixedMercenaryQuantities,
+    fixedMercenaryIds:includeMercs?[]:[...(modeState().selectedIds.mercenary||[])],
     bonuses:epicBonusPayload(),
     capacityLimits:effectiveEpicCapacityLimits()
   });
@@ -1407,7 +1444,8 @@ function findMaxSafeFill(category,inputs){const meta=CAPACITY_META[category],lim
 function resolveAutoFills(inputs){
   for(const [cat,meta] of Object.entries(CAPACITY_META)){
     if(modeState().inputs[meta.auto]){
-      if(activeMode==='optimizer'){
+      const fixedMercenaryGroup=isAnyEpicOptimizeMode()&&cat==='mercenary'&&!modeState().inputs.includeMercenariesInOptimization;
+      if(activeMode==='optimizer'&&!fixedMercenaryGroup){
         resolvedFills[cat]=1;
         inputs[meta.fill]=1;
         els[meta.fill].value='100.00';
@@ -1446,7 +1484,7 @@ function validate(){
 
   if(modeState().selectedIds.troop.length&&!(inp.leadership>0))errors.push('Enter Leadership for selected Troops.');
   if(modeState().selectedIds.monster.length&&!(inp.dominance>0))errors.push('Enter Dominance for selected Monsters.');
-  if(modeState().selectedIds.mercenary.length&&(activeMode!=='optimizer'||modeState().inputs.includeMercenariesInOptimization)&&!(inp.authority>0))errors.push('Enter Authority for selected Mercenaries.');
+  if(modeState().selectedIds.mercenary.length&&!(inp.authority>0))errors.push('Enter Authority for selected Mercenaries.');
 
   for(const [cat,meta] of Object.entries(CAPACITY_META)){
     if(!modeState().inputs[meta.auto]){

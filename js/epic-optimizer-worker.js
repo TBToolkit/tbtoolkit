@@ -247,7 +247,12 @@ function measuredHealthSeparations(squads) {
   return rows;
 }
 
+let ACTIVE_FIXED_QUANTITIES=Object.freeze({});
+
 function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }) {
+  // Fixed squads participate in every simulated battle but are not mutable
+  // optimizer variables. Fixed values win if a key is ever duplicated.
+  quantities={...(quantities||{}),...ACTIVE_FIXED_QUANTITIES};
   const resolvedBonuses = deriveBonusInputs(bonuses);
   const byId = new Map(units.map(u => [u.id,u]));
   const byUnitId = new Map(units.map(u => [u.unitId,u]));
@@ -1733,7 +1738,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=104',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=150',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
@@ -1742,6 +1747,7 @@ self.onmessage=async(event)=>{
  try{
   const army=await loadArmy();
   self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
+  ACTIVE_FIXED_QUANTITIES=Object.freeze({...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})});
   const result=optimizeEpicQuantities({
    units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits:msg.capacityLimits,
    minimumHealthSeparationPct:.01,minimumQuantity:1,
@@ -1759,6 +1765,14 @@ self.onmessage=async(event)=>{
     self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
    }
   });
+  if(result){
+    result.quantities={...(result.quantities||{}),...ACTIVE_FIXED_QUANTITIES};
+    result.diagnostics={
+      ...(result.diagnostics||{}),
+      fixedMercenaries:Object.keys(ACTIVE_FIXED_QUANTITIES).length,
+      mercenaryOptimizationMode:Object.keys(ACTIVE_FIXED_QUANTITIES).length?'standard-fixed':'optimized'
+    };
+  }
   self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
   self.postMessage({type:'result',requestId,payload:result,diagnostics:{
    optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,armyDatabase:'ARMY9-v72',
