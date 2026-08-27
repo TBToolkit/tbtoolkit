@@ -3010,3 +3010,98 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   width:100%;
   max-width:1120px;
 }
+
+
+/* ==========================================================================
+   v157 — make all Battle Details disclosure bars clearly interactive
+   ========================================================================== */
+.battle-details>summary{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  min-height:52px;
+  padding:10px 50px;
+  cursor:pointer;
+  list-style:none;
+  text-align:center;
+  color:#eef3f6;
+  background:#102432;
+  border-bottom:1px solid transparent;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease;
+  user-select:none;
+}
+.battle-details>summary::-webkit-details-marker{display:none}
+
+/* Matching left/right disclosure chevrons. */
+.battle-details>summary::before,
+.battle-details>summary::after{
+  content:"›";
+  position:absolute;
+  top:50%;
+  color:#f0aa28;
+  font-size:1.28rem;
+  line-height:1;
+  font-weight:900;
+  transform:translateY(-50%) rotate(90deg);
+  transition:transform .15s ease,color .15s ease;
+}
+.battle-details>summary::before{left:15px}
+.battle-details>summary::after{right:15px}
+
+/* Both arrows point upward while expanded. */
+.battle-details[open]>summary{
+  border-bottom-color:#2d4355;
+}
+.battle-details[open]>summary::before,
+.battle-details[open]>summary::after{
+  transform:translateY(-50%) rotate(-90deg);
+}
+
+.battle-details-title{
+  text-align:center;
+}
+.battle-details-subtitle{
+  max-width:760px;
+  text-align:center;
+}
+
+@media (hover:hover) and (pointer:fine){
+  .battle-details>summary:hover{
+    background:#163042;
+    box-shadow:inset 0 0 0 1px rgba(240,170,40,.13);
+  }
+  .battle-details>summary:hover::before,
+  .battle-details>summary:hover::after{
+    color:#ffc24f;
+  }
+}
+.battle-details>summary:focus-visible{
+  outline:2px solid #f0aa28;
+  outline-offset:-2px;
+  background:#163042;
+}
+
+@media(max-width:520px){
+  .battle-details>summary{
+    align-items:center;
+    flex-direction:column;
+    justify-content:center;
+    gap:3px;
+    min-height:54px;
+    padding:9px 40px;
+    text-align:center;
+  }
+  .battle-details>summary::before{left:11px}
+  .battle-details>summary::after{right:11px}
+  .battle-details-title{font-size:.78rem}
+  .battle-details-subtitle{
+    font-size:.61rem;
+    line-height:1.3;
+  }
+}
