@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=141';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=142';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -641,7 +641,11 @@ function clearPrediction(){
 }
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const actualGold=actualRevivalCost(r.rawGoldRevivalCost);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
-  if(activeMode==='optimizer'){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
+  const optimizerContext=isAnyEpicOptimizeMode();
+  const isArachneBattle=activeMode==='battle'
+    ? state.modes.battle.activeBattleType==='epic_arachne'
+    : !!modeState().inputs.arachne;
+  if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText}${templeText} · Full battle simulation using the displayed quantities.`;}
   const diagnosticNotes=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[String(n.id),n]));
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
@@ -652,13 +656,13 @@ function renderPrediction(opt){
   const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
   const damageValues=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);
   const upperQuartile=damageValues.length?damageValues[Math.floor((damageValues.length-1)*.75)]:0;
-  const enemySquadCount=modeState().inputs.arachne?8:4;
+  const enemySquadCount=isArachneBattle?8:4;
   const selectedTierMax=new Map();
   for(const s of rows){const tierNum=Number((String(s.tier||'').match(/\d+/)||[0])[0]);selectedTierMax.set(s.capacityType,Math.max(selectedTierMax.get(s.capacityType)||0,tierNum));}
   const familyMedian=new Map();
   for(const type of ['LEADERSHIP','DOMINANCE','AUTHORITY']){const a=productive.filter(s=>s.capacityType===type).map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((x,y)=>x-y);familyMedian.set(type,a.length?a[Math.floor(a.length/2)]:0);}
   const unusualMap=new Map();
-  if(activeMode==='optimizer'){
+  if(optimizerContext){
     for(const s of rows){
       const death=Number(s.predictedDeathPosition??999);
       const productiveEarly=death<=enemySquadCount&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0;
@@ -673,11 +677,11 @@ function renderPrediction(opt){
   }
 
   els.predictionRows.innerHTML=rows.map(s=>{
-    const note=activeMode==='optimizer'?unusualMap.get(String(s.id)):null;
+    const note=optimizerContext?unusualMap.get(String(s.id)):null;
     const flag=note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
     return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
-  if(activeMode==='optimizer'&&unusualMap.size){
+  if(optimizerContext&&unusualMap.size){
     els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(String(button.dataset.sacrificeId)))));
   }
 }
