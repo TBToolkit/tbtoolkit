@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=142';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=143';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -670,9 +670,26 @@ function renderPrediction(opt){
       const damage=Number(s.expectedDamagePerOpportunity||0),tierNum=Number((String(s.tier||'').match(/\d+/)||[0])[0]);
       const topTier=tierNum>0&&tierNum>=Number(selectedTierMax.get(s.capacityType)||0);
       const meaningfulDamage=(topTier&&damage>=Number(familyMedian.get(s.capacityType)||0))||damage>=upperQuartile;
-      if(!productiveEarly||!meaningfulDamage||normalSacrifice)continue;
+
+      // Arachne has eight enemy attacks in the first cycle, so a top-tier
+      // squad can be strategically unusual even when its raw damage falls
+      // just below the global damage threshold. Flag it when lower-tier
+      // squads using the same army capacity survive beyond the first cycle.
+      const lowerTierSurvivesLater=isArachneBattle&&topTier&&rows.some(other=>{
+        if(other===s||other.capacityType!==s.capacityType)return false;
+        const otherTier=Number((String(other.tier||'').match(/\d+/)||[0])[0]);
+        const otherDeath=Number(other.predictedDeathPosition??999);
+        return otherTier>0&&otherTier<tierNum&&otherDeath>enemySquadCount;
+      });
+      const unusualByArachneStructure=isArachneBattle&&topTier&&lowerTierSurvivesLater;
+
+      if(!productiveEarly||(!meaningfulDamage&&!unusualByArachneStructure)||normalSacrifice)continue;
       const diagnostic=diagnosticNotes.get(String(s.id));
-      unusualMap.set(String(s.id),diagnostic??{id:String(s.id),name:s.name,tier:s.tier,originalDeath:death,penaltyPct:null,classification:'unknown'});
+      unusualMap.set(String(s.id),diagnostic??{
+        id:String(s.id),name:s.name,tier:s.tier,originalDeath:death,
+        penaltyPct:null,classification:unusualByArachneStructure?'arachne-structure':'unknown',
+        reason:unusualByArachneStructure?'top-tier-first-cycle':''
+      });
     }
   }
 
@@ -692,6 +709,9 @@ function openSacrificeHelp(note){
   const penalty=Number(note.penaltyPct);
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
+  if(note.reason==='top-tier-first-cycle'){
+    text+=' This squad is flagged because it is a top-tier squad dying during the first Arachne cycle while lower-tier squads from the same army capacity survive beyond that cycle.';
+  }
   if(Number.isFinite(penalty)){
     const prefix=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath}`;
     if(penalty<=0){
