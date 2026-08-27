@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=135';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=136';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -1904,8 +1904,69 @@ function wireStatHelp(){
   document.getElementById('sacrificeHelpModal')?.querySelector('.sacrifice-help-backdrop')?.addEventListener('click',closeSacrificeHelp);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('sacrificeHelpModal')?.hidden)closeSacrificeHelp();});
 }
+
+function isVisibleEditableStatInput(input){
+  if(!input||input.disabled||input.readOnly||input.tabIndex<0)return false;
+  const field=input.closest('.help-input-field');
+  if(field?.hidden)return false;
+  if(field&&getComputedStyle(field).display==='none')return false;
+  if(getComputedStyle(input).display==='none'||getComputedStyle(input).visibility==='hidden')return false;
+  return true;
+}
+function visibleStatInputOrder(){
+  // DOM order follows the Health & Combat layout. Hidden PvP/PvE fields and
+  // derived read-only family values are skipped automatically.
+  const ids=[
+    'monsterHealth','humanHealth','epicHunterHealth','pvpHealth',
+    'monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
+    'humanStrength','humanDD','humanST',
+    'epicHunterStrength','epicHunterDD','epicHunterST'
+  ];
+  return ids.map(id=>els[id]).filter(isVisibleEditableStatInput);
+}
+function wireStatInputKeyboardNavigation(){
+  const ids=[
+    'monsterHealth','humanHealth','epicHunterHealth','pvpHealth',
+    'monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
+    'humanStrength','humanDD','humanST',
+    'epicHunterStrength','epicHunterDD','epicHunterST'
+  ];
+  for(const id of ids){
+    const input=els[id];
+    if(!input)continue;
+
+    input.addEventListener('focus',()=>{
+      requestAnimationFrame(()=>input.select());
+    });
+    input.addEventListener('pointerup',e=>{
+      // Keep the entire value selected on click/tap focus so replacement is immediate.
+      if(document.activeElement===input){
+        e.preventDefault();
+        input.select();
+      }
+    });
+    input.addEventListener('keydown',e=>{
+      if(e.key!=='Tab'&&e.key!=='Enter')return;
+      const order=visibleStatInputOrder();
+      const index=order.indexOf(input);
+      if(index<0||order.length<2)return;
+
+      e.preventDefault();
+      const step=(e.key==='Tab'&&e.shiftKey)?-1:1;
+      const next=order[(index+step+order.length)%order.length];
+
+      // Commit the current value before moving, then highlight the next input.
+      readInputs();
+      saveState();
+      recalculate();
+      next.focus();
+      requestAnimationFrame(()=>next.select());
+    });
+  }
+}
 function wireEvents(){
   wireStatHelp();
+  wireStatInputKeyboardNavigation();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
   els.clearAllSelections.addEventListener('click',clearAllSelections);
   els.resetCalculator.addEventListener('click',resetCalculator);
