@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=154';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=155';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -834,8 +834,15 @@ function liveStandardMercenaryOptimizerPayload(opt){
   // The saved optimizer payload contains the last combined result. Strip any
   // mercenary quantities from it to recover the persistent optimized core.
   const coreQuantities={};
-  for(const s of opt.result.squads||[]){
-    if(s.category!=='mercenary')coreQuantities[s.name]=Number(s.quantity)||0;
+  const mercNames=new Set((units.mercenary||[]).map(u=>u.name));
+  for(const [name,qty] of Object.entries(opt.quantities||{})){
+    if(!mercNames.has(name))coreQuantities[name]=Number(qty)||0;
+  }
+  // Compatibility fallback for older cached optimizer payloads.
+  if(!Object.keys(coreQuantities).length){
+    for(const s of opt.result.squads||[]){
+      if(s.category!=='mercenary')coreQuantities[s.name]=Number(s.quantity)||0;
+    }
   }
   const combinedQuantities={...coreQuantities,...fixedMercs};
   const combinedResult=scoreEpicArmy({
@@ -898,7 +905,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=154');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=155');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1281,12 +1288,47 @@ const MERC_LEVEL_LABEL={2:'II',7:'VII',6:'VI',5:'V'};
 const MERC_GROUP_ORDER=['COMMON','MONSTER','SPECIALIST','GUARDSMAN','EPIC - HUNTER','EPIC - EVENT','ARACHNE','ENGINEER'];
 const MERC_GROUP_LABEL={'COMMON':'Common','MONSTER':'Monsters','SPECIALIST':'Specialists','GUARDSMAN':'Guardsmen','EPIC - HUNTER':'Epic Hunters','EPIC - EVENT':'Epic Event','ARACHNE':'Arachne','ENGINEER':'Engineers'};
 
+function liveStandardMercenaryRefreshAvailable(){
+  return isAnyEpicOptimizeMode()
+    && !modeState().inputs.includeMercenariesInOptimization
+    && !!lastOptimizedEpicPayload
+    && !!lastOptimizedEpicSignature
+    && currentEpicEffectiveSignature()===lastOptimizedEpicSignature;
+}
+
+function refreshLiveStandardMercenaries(){
+  readInputs();
+  syncDerivedEpicBonuses();
+  readInputs();
+
+  if(!liveStandardMercenaryRefreshAvailable())return false;
+
+  const errors=validate();
+  showValidation(errors);
+  if(errors.length)return false;
+
+  epicResultCurrent=true;
+  renderEpicOptimizedResult(lastOptimizedEpicPayload);
+  setOptimizeButtonState();
+  return true;
+}
+
+function recalculateAfterMercenaryOnlyChange(){
+  saveState();
+  if(refreshLiveStandardMercenaries())return;
+  recalculate();
+}
+
 function setSelection(category,rows,checked){
   const set=selectedSet(category);
   for(const unit of rows)checked?set.add(unit.id):set.delete(unit.id);
   modeState().selectedIds[category]=[...set];
   syncCustomOrders();saveState();updateCounts();renderAllSelections();
   if(isCustomOrderMode())renderOrderView();
+  if(category==='mercenary'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+    recalculateAfterMercenaryOnlyChange();
+    return;
+  }
   recalculate();
 }
 function setOneSelection(category,id,checked){
@@ -1294,6 +1336,10 @@ function setOneSelection(category,id,checked){
   modeState().selectedIds[category]=[...set];
   syncCustomOrders();saveState();updateCounts();renderAllSelections();
   if(isCustomOrderMode())renderOrderView();
+  if(category==='mercenary'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+    recalculateAfterMercenaryOnlyChange();
+    return;
+  }
   recalculate();
 }
 function clearAllSelections(){
@@ -2067,7 +2113,14 @@ function wireEvents(){
       next.focus();requestAnimationFrame(()=>next.select());
     });
     input.addEventListener('blur',()=>formatFieldInteger(input));
-    input.addEventListener('input',recalculate);
+    input.addEventListener('input',()=>{
+      if(id==='authority'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+        readInputs();
+        recalculateAfterMercenaryOnlyChange();
+        return;
+      }
+      recalculate();
+    });
   }
 
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
@@ -2186,13 +2239,34 @@ function wireEvents(){
   });
 
   for(const id of ['leadershipFill','authorityFill','dominanceFill']){
-    els[id].addEventListener('input',recalculate);
-    els[id].addEventListener('blur',()=>{formatFillPercent(els[id]);readInputs();recalculate();});
+    els[id].addEventListener('input',()=>{
+      if(id==='authorityFill'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+        readInputs();
+        recalculateAfterMercenaryOnlyChange();
+        return;
+      }
+      recalculate();
+    });
+    els[id].addEventListener('blur',()=>{
+      formatFillPercent(els[id]);readInputs();
+      if(id==='authorityFill'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+        recalculateAfterMercenaryOnlyChange();
+        return;
+      }
+      recalculate();
+    });
   }
   els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});
   els.resetAdvancedSettings.addEventListener('click',resetAdvancedSettings);
   for(const id of ['autoLeadership','autoAuthority','autoDominance']){
-    els[id].addEventListener('change',()=>{readInputs();updateFillFieldStates();recalculate();});
+    els[id].addEventListener('change',()=>{
+      readInputs();updateFillFieldStates();
+      if(id==='autoAuthority'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
+        recalculateAfterMercenaryOnlyChange();
+        return;
+      }
+      recalculate();
+    });
   }
   els.arachne.addEventListener('change',recalculate);
   els.includeMercenariesInOptimization.addEventListener('change',()=>{
