@@ -617,7 +617,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.0-adaptive-death-search';
+const EPIC_OPTIMIZER_BUILD = '2.1-budgeted-adaptive-search';
 
 
 function finite(v, label) {
@@ -1145,7 +1145,7 @@ function counterfactualAnneal({units,selected,bonuses,limits,seed,targetId,mode,
   return {quantities:bestQ,result:bestResult,evaluations,accepted};
 }
 
-function counterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,onProgress=null,maxBasins=8}){
+function counterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,onProgress=null,maxBasins=8,annealIterations=900,localMaxRounds=3,minContinueImprovementPct=.01}){
   const limits=limitsOf(capacityLimits);
   const selectedById=new Map(selected.map(u=>[u.id,u]));
   const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
@@ -1219,12 +1219,15 @@ function counterfactualBasinRefine({units,selected,bonuses,capacityLimits,start,
   const basinResults=[];
   for(let i=0;i<chosen.length;i++){
     const seed=chosen[i];
-    const anneal=counterfactualAnneal({units,selected,bonuses,limits,seed,targetId:seed.target,mode:seed.mode,beforeOpp:seed.beforeOpp,beforeDeath:seed.beforeDeath,minimumQuantity,iterations:3500,salt:(i+1)*7919});
+    const anneal=counterfactualAnneal({units,selected,bonuses,limits,seed,targetId:seed.target,mode:seed.mode,beforeOpp:seed.beforeOpp,beforeDeath:seed.beforeDeath,minimumQuantity,iterations:annealIterations,salt:(i+1)*7919});
     evaluations+=anneal.evaluations;
-    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:anneal.quantities,minimumQuantity,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:6,onProgress:typeof onProgress==='function'?p=>onProgress({...p,phase:'counterfactual',basinIndex:i,basinCount:chosen.length,counterfactualMode:seed.mode,counterfactualTarget:seed.target}):null});
+    const local=optimizeFromSeed({units,selectedIds:selected.map(u=>u.id),bonuses,capacityLimits:limits,initialQuantities:anneal.quantities,minimumQuantity,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:localMaxRounds,onProgress:typeof onProgress==='function'?p=>onProgress({...p,phase:'counterfactual',basinIndex:i,basinCount:chosen.length,counterfactualMode:seed.mode,counterfactualTarget:seed.target}):null});
     evaluations+=Number(local.diagnostics?.evaluations??0);
     basinResults.push({target:seed.target,mode:seed.mode,rawEld:seed.result.expectedTotalLifetimeDamage,annealEld:anneal.result.expectedTotalLifetimeDamage,eld:local.result.expectedTotalLifetimeDamage,beforeOpp:seed.beforeOpp,afterOpp:seed.afterOpp,beforeDeath:seed.beforeDeath,afterDeath:seed.afterDeath});
-    if(local.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-9)best={quantities:local.quantities,result:local.result,source:`counterfactual-${seed.mode}-${seed.target}`};
+    const beforeBest=Number(best.result.expectedTotalLifetimeDamage||0);
+    if(local.result.expectedTotalLifetimeDamage>beforeBest+1e-9)best={quantities:local.quantities,result:local.result,source:`counterfactual-${seed.mode}-${seed.target}`};
+    const basinGainPct=beforeBest>0?(Number(best.result.expectedTotalLifetimeDamage||0)/beforeBest-1)*100:0;
+    if(basinGainPct<Number(minContinueImprovementPct||0))break;
   }
   return {best,evaluations,basinResults,basinCount:chosen.length};
 }
@@ -1660,15 +1663,21 @@ function optimizeEpicQuantities(args) {
 
   // Counterfactual basin search: deliberately cross promising structural boundaries even when the first move is worse,
   // then re-optimize inside each alternate basin. This is generic and contains no unit-specific rules.
-  const counterfactual=counterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:threshold.quantities,result:threshold.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxBasins:4});
+  const counterfactual=counterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:threshold.quantities,result:threshold.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxBasins:1,annealIterations:900,localMaxRounds:3,minContinueImprovementPct:.01});
   totalEvaluations+=counterfactual.evaluations;
 
   // Paired counterfactual search can cross wider valleys where two coordinated structural changes are required.
-  const paired=pairedCounterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPairs:4});
+  const counterfactualGainPct=Number(threshold.result.expectedTotalLifetimeDamage||0)>0?(Number(counterfactual.best.result.expectedTotalLifetimeDamage||0)/Number(threshold.result.expectedTotalLifetimeDamage||0)-1)*100:0;
+  const paired=counterfactualGainPct>=.01
+    ?pairedCounterfactualBasinRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:counterfactual.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPairs:1})
+    :{best:counterfactual.best,evaluations:0,pairResults:[],pairCount:0};
   totalEvaluations+=paired.evaluations;
 
   // Coordinated capacity-group redistribution explores multi-unit valleys inside tier/capacity families.
-  const groupRedistribution=groupRedistributionRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:1,maxSeeds:3});
+  const pairedGainPct=Number(counterfactual.best.result.expectedTotalLifetimeDamage||0)>0?(Number(paired.best.result.expectedTotalLifetimeDamage||0)/Number(counterfactual.best.result.expectedTotalLifetimeDamage||0)-1)*100:0;
+  const groupRedistribution=pairedGainPct>=.01
+    ?groupRedistributionRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:paired.best,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxRounds:1,maxSeeds:2})
+    :{best:paired.best,evaluations:0,acceptedMoves:0,summaries:[]};
   totalEvaluations+=groupRedistribution.evaluations;
 
   // Re-run threshold refinement from the best redistributed basin, then do a final fine deterministic polish.
@@ -1677,12 +1686,21 @@ function optimizeEpicQuantities(args) {
   const polish=optimizeFromSeed({...args,initialQuantities:threshold2.quantities,structureValidator,stageFractions:[.001,.0005,.0002,.0001,.00005],maxRoundsPerStage:12,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'polish',seedIndex:0,seedCount:1,seedName:'group-redistribution-best'}):null});
   totalEvaluations+=polish.diagnostics.evaluations;
 
-  const adaptive=adaptiveDeathPositionRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:polish.quantities,result:polish.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPasses:2,maxPolishSeeds:10});
+  const adaptive=adaptiveDeathPositionRefine({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:polish.quantities,result:polish.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),onProgress:args.onProgress,maxPasses:1,maxPolishSeeds:3});
   totalEvaluations+=adaptive.evaluations;
 
   const start=seedScores[0].result;
   const out=adaptive.best.source==='adaptive-death-position'?{quantities:{...adaptive.best.quantities},result:adaptive.best.result,diagnostics:{...polish.diagnostics}}:polish;
   out.initialResult=start;
+  out.diagnostics.searchPolicy={
+    diminishingReturnPct:.01,
+    counterfactualBasinsMax:1,
+    counterfactualAnnealIterations:900,
+    counterfactualLocalMaxRounds:3,
+    pairedCounterfactualPairsMax:1,
+    adaptiveDeathPassesMax:1,
+    adaptiveDeathPolishSeedsMax:3
+  };
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
   out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
@@ -1746,7 +1764,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=152',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=153',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
