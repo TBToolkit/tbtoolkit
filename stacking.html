@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Stacking Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=131" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=133" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=132" type="module"></script>
+<script src="js/epic-stacker.js?v=133a" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -105,7 +105,12 @@
 </div>
 
 </div>
-<p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p>
+<p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p><div class="global-player-setting temple-setting">
+<label for="templeLevel"><span class="field-label">Temple Level</span>
+<select class="epic-input temple-level-select" id="templeLevel"></select></label>
+<div class="temple-bonus-copy"><span>Revival cost divisor</span><strong id="templeMultiplier">1.00×</strong></div>
+</div>
+<p class="setting-note temple-setting-note">Temple Level is shared across all calculators and battle types. Actual revival cost = raw revival cost ÷ Temple bonus.</p>
 <div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
 <div class="optimizer-only optimizer-merc-option">
 <label class="checkbox-row compact-option-row"><input id="includeMercenariesInOptimization" type="checkbox"/><span>Include Mercenaries in Optimization</span></label>
@@ -236,15 +241,15 @@
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
-<div><span>Raw Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
-<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong></div>
+<div><span>Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong><small>Uses Temple-adjusted Gold revival</small></div>
 </div>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
 <div class="prediction-meta" id="predictionMeta"></div>
 <div class="prediction-table-wrap">
 <table class="prediction-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Gold Revival</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
 <tbody id="predictionRows"></tbody>
 </table>
 </div>
@@ -253,7 +258,8 @@
 <section class="pvp-cp-details-panel" hidden id="pvpCpDetailsPanel">
 <div class="pvp-cp-metrics">
 <div><span>Projected Lifetime Damage</span><strong id="pvpCpLifetimeDamage">—</strong><small>Expected full-attrition comparison metric</small></div>
-<div><span>Full-Attrition Gold Exposure</span><strong id="pvpCpFullGold">—</strong><small>Raw Gold if every friendly squad dies</small></div>
+<div><span>Full-Attrition Gold Revival</span><strong id="pvpCpFullGold">—</strong><small>Temple-adjusted Gold if every friendly squad dies</small></div>
+<div><span>Full-Attrition Silver Revival</span><strong id="pvpCpFullSilver">—</strong><small>Temple-adjusted Silver if every friendly squad dies</small></div>
 </div>
 <div class="pvp-cp-summary">
 <div><span>Selected Enemy</span><strong id="pvpCpEnemyName">—</strong></div>
@@ -264,7 +270,7 @@
 <div class="prediction-meta" id="pvpCpDetailsMeta"></div>
 <div class="prediction-table-wrap">
 <table class="prediction-table pvp-cp-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Gold if Lost</th><th>Expected Damage</th><th>Reason</th></tr></thead>
+<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Gold Revival</th><th>Silver Revival</th><th>Expected Damage</th><th>Reason</th></tr></thead>
 <tbody id="pvpCpDetailsRows"></tbody>
 </table>
 </div>
