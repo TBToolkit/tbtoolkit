@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=138';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=139';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -461,7 +461,7 @@ function clearSavedOptimizerResult(){
   localStorage.removeItem(optimizerResultStorageKey());
   if(activeMode==='battle')currentBattleWorkspace().resultCache=null;
 }
-function updateRankSeparationDisplay(){const max=.5;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
+function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
 function setDerivedField(id,value,readonly=true){
   if(!els[id])return;
@@ -1993,6 +1993,11 @@ function wireEvents(){
     input.addEventListener('input',()=>{
       if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
       recalculate();
+      // Persist the battle-type workspace immediately. This is especially
+      // important for PvP-only fields because the browser may close without
+      // ever firing blur/change.
+      readInputs();
+      saveState();
     });
     if(['pvpHealth','pvpStrength'].includes(id)){
       input.addEventListener('blur',()=>{
@@ -2095,7 +2100,22 @@ function initializeActiveCalculatorAfterData(){
   }
 }
 
-async function init(){
+async 
+function persistCurrentWorkspace(){
+  try{
+    if(!appInitialized)return;
+    readInputs();
+    saveState();
+  }catch(error){
+    console.warn('Could not persist current calculator workspace.',error);
+  }
+}
+window.addEventListener('pagehide',persistCurrentWorkspace);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden')persistCurrentWorkspace();
+});
+
+function init(){
   cacheElements();
   loadSavedState();
   if(activeMode==='battle')ensureBattleWorkspace();
