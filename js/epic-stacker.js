@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=143';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=144';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -706,24 +706,47 @@ function renderPrediction(opt){
 function openSacrificeHelp(note){
   if(!note)return;
   const modal=document.getElementById('sacrificeHelpModal');if(!modal)return;
-  const penalty=Number(note.penaltyPct);
+
+  const hasPenalty=note.penaltyPct!==null&&note.penaltyPct!==undefined&&Number.isFinite(Number(note.penaltyPct));
+  const penalty=hasPenalty?Number(note.penaltyPct):null;
+  const originalDeath=Number(note.originalDeath);
+  const alternativeDeath=Number(note.alternativeDeath);
+  const hasAlternativeDeath=Number.isFinite(alternativeDeath)&&alternativeDeath>0;
+  const originalEld=Number(note.originalEld);
+  const alternativeEld=Number(note.alternativeEld);
+  const hasEldPair=Number.isFinite(originalEld)&&originalEld>0&&Number.isFinite(alternativeEld)&&alternativeEld>0;
+
   document.getElementById('sacrificeHelpTitle').textContent=`Why does ${note.tier} ${note.name} die early?`;
   let text='The optimizer compares expected damage from the whole army, not the survival of each squad by itself. Keeping this squad alive longer changes the death order and can reduce attack opportunities for other squads.';
+
   if(note.reason==='top-tier-first-cycle'){
     text+=' This squad is flagged because it is a top-tier squad dying during the first Arachne cycle while lower-tier squads from the same army capacity survive beyond that cycle.';
   }
-  if(Number.isFinite(penalty)){
-    const prefix=` A later death position was also tested. Moving this squad from death #${note.originalDeath} to about #${note.alternativeDeath}`;
-    if(penalty<=0){
+
+  if(hasAlternativeDeath&&hasPenalty){
+    const fromDeath=Number.isFinite(originalDeath)&&originalDeath>0?`death #${originalDeath}`:'its current death position';
+    const prefix=` A later death position was also tested. Moving this squad from ${fromDeath} to about #${alternativeDeath}`;
+
+    if(hasEldPair){
+      const deltaPct=(alternativeEld/originalEld-1)*100;
+      const absPct=Math.abs(deltaPct);
+      const pctText=absPct<.001?'<0.001':absPct<.01?absPct.toFixed(3):absPct<.1?absPct.toFixed(2):absPct.toFixed(1);
+      const direction=deltaPct>1e-12?'increased':deltaPct<-1e-12?'decreased':'changed';
+      text+=`${prefix} changed expected lifetime damage from ${formatDamage(originalEld)} to ${formatDamage(alternativeEld)}`;
+      if(direction==='changed')text+=' with no measurable percentage change.';
+      else text+=`, which ${direction} ELD by ${pctText}%.`;
+    }else if(penalty<=0){
       text+=`${prefix} produced no measurable change in total expected lifetime damage.`;
     }else if(penalty<.001){
       text+=`${prefix} reduced total expected lifetime damage by less than 0.001%.`;
     }else{
       const pct=penalty<.01?penalty.toFixed(3):penalty<.1?penalty.toFixed(2):penalty.toFixed(1);
-      if(note.classification==='marginal')text+=`${prefix} reduced total expected lifetime damage by only ${pct}%.`;
-      else text+=`${prefix} reduced total expected lifetime damage by about ${pct}%.`;
+      text+=`${prefix} reduced total expected lifetime damage by ${pct}%.`;
     }
+  }else if(note.reason==='top-tier-first-cycle'){
+    text+=' The diagnostic search did not find a feasible later-position comparison for this squad, so no alternative position or ELD change is reported.';
   }
+
   document.getElementById('sacrificeHelpText').textContent=text;
   modal.hidden=false;document.body.classList.add('sacrifice-help-modal-open');
 }
@@ -798,7 +821,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=104');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=144');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

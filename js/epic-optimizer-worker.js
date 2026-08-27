@@ -1540,7 +1540,20 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
     if(!(Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0))return false;
     const damage=Number(s.expectedDamagePerOpportunity||0),tierNum=Number((String(u.tier||'').match(/\d+/)||[0])[0]);
     const topTier=tierNum>0&&tierNum>=Number(maxTierByCapacity.get(u.capacityType)||0);
-    return (topTier&&damage>=Number(familyMedian.get(u.capacityType)||0))||damage>=upperQuartile;
+    const meaningfulDamage=(topTier&&damage>=Number(familyMedian.get(u.capacityType)||0))||damage>=upperQuartile;
+
+    // For Arachne, also analyze a top-tier first-cycle sacrifice when a
+    // lower-tier squad using the same capacity type survives beyond the
+    // eight-enemy opening cycle. This mirrors the UI diagnostic flag rule so
+    // every flagged squad can receive a real counterfactual when feasible.
+    const lowerTierSurvivesLater=!!bonuses?.arachne&&topTier&&ordered.some(other=>{
+      if(other.id===s.id||other.capacityType!==s.capacityType)return false;
+      const otherUnit=selectedById.get(other.id);
+      const otherTier=Number((String(otherUnit?.tier||other.tier||'').match(/\d+/)||[0])[0]);
+      const otherDeath=Number(other.predictedDeathPosition??999);
+      return otherTier>0&&otherTier<tierNum&&otherDeath>enemySquadCount;
+    });
+    return meaningfulDamage||lowerTierSurvivesLater;
   }).slice(0,maxFlags);
   const notes=[];const alternatives=[];let evaluations=0;
 
