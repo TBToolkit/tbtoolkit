@@ -1,6 +1,6 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=147';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory } from './battle-engine.mjs?v=148';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -959,6 +959,15 @@ function configureModeUI(){
     }
     modeState().inputs.arachne=type==='epic_arachne';
     const isPvp=type.startsWith('pvp_');
+    const optimizeOption=document.getElementById('battleMethodOptimizeOption');
+    if(optimizeOption){
+      optimizeOption.hidden=isPvp;
+      optimizeOption.disabled=isPvp;
+    }
+    if(isPvp&&state.modes.battle.activeBattleMethod==='optimize'){
+      state.modes.battle.activeBattleMethod='basic';
+      if(els.battleMethodSelect)els.battleMethodSelect.value='basic';
+    }
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=isPvp;
     if(els.pvpHealthField)els.pvpHealthField.hidden=!isPvp;
     if(els.pvpStrengthField)els.pvpStrengthField.hidden=!isPvp;
@@ -2009,6 +2018,7 @@ function wireEvents(){
     let method=els.battleMethodSelect.value;
     if(method==='optimize'&&type.startsWith('pvp_'))method='basic';
     state.modes.battle.activeBattleMethod=method;
+    els.battleMethodSelect.value=method;
     ensureBattleWorkspace(type,method);
     loadSavedOptimizerResult();
     refreshActiveMode();
