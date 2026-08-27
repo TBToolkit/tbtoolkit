@@ -4,11 +4,11 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
-<title>Stacking Calculator | TB Toolkit</title>
+<title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
 <link href="css/epic-stacker.css?v=135" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=144" type="module"></script>
+<script src="js/epic-stacker.js?v=145" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -19,7 +19,7 @@
 </a>
 <button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle type="button"><span></span><span></span><span></span></button>
 <nav aria-label="Main navigation" class="nav" data-nav>
-<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Stacking Calculators</a><a href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
+<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Battle Calculator</a><a href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
 </nav>
 </div>
 </header>
@@ -28,15 +28,10 @@
 <div class="container wide-container">
 <div class="epic-heading">
 <div>
-<div class="breadcrumb">Home / Stacking Calculator</div>
-<h1>Stacking Calculator</h1>
-<div aria-label="Calculator mode" class="mode-switch four-mode-switch calculator-mode-grid" role="group">
-<button aria-pressed="true" class="mode-button active" data-mode="epic" type="button">Epic Stacker</button>
-<button aria-pressed="false" class="mode-button" data-mode="custom" type="button">Custom Stacker</button>
-<button aria-pressed="false" class="mode-button" data-mode="optimizer" type="button">Epic Optimizer <span class="beta-tag">Beta</span></button>
-<button aria-pressed="false" class="mode-button" data-mode="battle" type="button">Battle Calculator <span class="beta-tag">Beta</span></button>
-</div>
-<p class="mode-description" id="modeDescription">Automatically orders selected squads for Epic battles.</p>
+<div class="breadcrumb">Home / Battle Calculator</div>
+<h1>Battle Calculator</h1>
+
+<p class="mode-description battle-page-description" id="modeDescription">Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can build a basic stack, follow a custom death order, or optimize supported Epic battles. PvP calculations use PvP health, strength, matchup bonuses, and revival costs when they apply.</p>
 </div>
 </div>
 
@@ -46,7 +41,7 @@
 <section class="topdown-panel battle-config-panel">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">1</span><h2>Battle</h2><p>Choose the battle and calculation method.</p></div>
-<span class="battle-beta-badge">BETA</span>
+
 </div>
 <div class="battle-select-grid">
 <label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
