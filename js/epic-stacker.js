@@ -271,7 +271,7 @@ function populatePvpEnemyOptions(){
   const corax=armyV2.find(u=>u.id==='troop-g9-flying-corax-2');
   if(corax){
     const common=document.createElement('optgroup');
-    common.label='Common CP Enemy';
+    common.label='Common 1-Squad PvP Enemy';
     addOption(common,corax);
     els.pvpEnemyUnitSelect.append(common);
   }
@@ -920,7 +920,7 @@ function configureModeUI(){
       type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
       :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
       :type==='pvp_unknown'?'PvP: enemy squad count is unknown. Specialist strength is doubled automatically.'
-      :'PvP CP Battle: one enemy squad. Basic prioritizes lower full-squad Gold revival cost first. Costs within 5% are treated as equivalent so stronger PvP damage is preserved later.';
+      :'PvP — 1 enemy squad: Basic prioritizes lower full-squad Gold revival cost first. Costs within 5% are treated as equivalent so stronger PvP damage is preserved later.';
     const activeMethod=state.modes.battle.activeBattleMethod||'basic';
     if(els.battleMethodNote)els.battleMethodNote.textContent=
       activeMethod==='optimize'
@@ -928,7 +928,7 @@ function configureModeUI(){
         :activeMethod==='custom'
           ?'Custom Order: you choose the planned death order after selecting units.'
           :type==='pvp_single_cp'
-            ?'Basic: builds a deterministic CP cost-saving stack.'
+            ?'Basic: builds a deterministic cost-saving stack for one enemy squad.'
             :'Basic: builds the stack automatically from the selected battle rules.';
   }
   if(!battle){
@@ -943,8 +943,8 @@ function configureModeUI(){
 
   if(classic||custom||battle){
     els.separationLabel.textContent='Squad Separation';
-    els.rankSeparation.min='0';els.rankSeparation.max='0.5';els.rankSeparation.step='0.01';
-    els.separationMin.textContent='0%';els.separationMid.textContent='0.25%';els.separationMax.textContent='0.50%';
+    els.rankSeparation.min='0';els.rankSeparation.max='1';els.rankSeparation.step='0.01';
+    els.separationMin.textContent='0%';els.separationMid.textContent='0.50%';els.separationMax.textContent='1.00%';
   }
 
   const nums=document.querySelectorAll('.output-section-number');
