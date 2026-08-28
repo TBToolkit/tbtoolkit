@@ -308,7 +308,7 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
         totalCapacity:r.capEach*qty
       };
     });
-    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of ordered){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.floor((prev.squadHealth-1e-9)/each));if(q<row.qty){row.qty=q;row.totalCapacity=Number(u[cfg.capacityEach]||0)*q;row.squadHealth=q*each;row.squadStrength=pvpEffectiveStrengthEach(u,inputs)*q;}}prev=row;}}
+    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of order){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.ceil(prev.squadHealth/each)-1);if(q<row.qty){row.qty=q;row.totalCapacity=Number(u[cfg.capacityEach]||0)*q;row.squadHealth=q*each;row.squadStrength=pvpEffectiveStrengthEach(u,inputs)*q;}}prev=row;}}
   const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
     categories[category]={
       category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,
@@ -455,7 +455,7 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
       };
     });
 
-    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of ordered){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.floor((prev.squadHealth-1e-9)/each));if(q<row.qty){row.qty=q;row.totalCapacity=row.capacityEach*q;row.squadHealth=q*each;row.squadStrength=Number(u.strengthEach||0)*q;const p=pvpDamageProfile(u,inputs,enemy);row.expectedPvpDamage=p.expectedEach*q;row.deterministicPvpDamage=p.deterministicEach*q;row.fullSquadGoldRevival=q*Number(u.goldRevivalCost||0);}}prev=row;}}
+    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of ordered){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.ceil(prev.squadHealth/each)-1);if(q<row.qty){row.qty=q;row.totalCapacity=row.capacityEach*q;row.squadHealth=q*each;row.squadStrength=Number(u.strengthEach||0)*q;const p=pvpDamageProfile(u,inputs,enemy);row.expectedPvpDamage=p.expectedEach*q;row.deterministicPvpDamage=p.deterministicEach*q;row.fullSquadGoldRevival=q*Number(u.goldRevivalCost||0);}}prev=row;}}
     const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
     const categoryResult={
       category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,

@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=171';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=173';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=169';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=173';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -1950,7 +1950,7 @@ function updateLiveDamageMetric(value,isPvp){
  const slots=document.querySelectorAll('.live-damage-slot'),method=activeMode==='battle'?state.modes.battle.activeBattleMethod:'';
  if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){slots.forEach(x=>x.innerHTML='');return;}
  const key=liveDamageKey(),n=Number(value),prev=liveDamagePrevious.get(key);let delta='';
- if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<1e-9?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
+ if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<0.0005?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
  liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>${delta}`;slots.forEach(x=>x.innerHTML=markup);
 }
 function recalculate(){
