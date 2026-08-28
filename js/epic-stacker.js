@@ -193,7 +193,7 @@ function currentBattleWorkspace(){
   );
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','resetCustomOrderDefault'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -1338,8 +1338,31 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
    return Number(a.displayOrder||0)-Number(b.displayOrder||0);
  }).map(u=>u.id);
 }
+
+let customOrderFloatObserver=null;
+function updateCustomOrderFloatingMetric(){
+  const bar=els.customOrderFloatingMetric||document.getElementById('customOrderFloatingMetric');
+  const panel=els.orderView||document.getElementById('orderView');
+  if(!bar||!panel){return;}
+  const active=isCustomOrderMode()&&!panel.hidden;
+  if(!active){bar.hidden=true;return;}
+  const r=panel.getBoundingClientRect();
+  const visible=r.bottom>80&&r.top<window.innerHeight-40;
+  // Show the compact floating metric after the normal heading has scrolled
+  // out of view, and hide it again when the Custom Order section leaves view.
+  bar.hidden=!(visible&&r.top<70);
+}
+function wireCustomOrderFloatingMetric(){
+  if(customOrderFloatObserver)return;
+  const panel=els.orderView||document.getElementById('orderView');
+  if(!panel)return;
+  customOrderFloatObserver=new IntersectionObserver(()=>updateCustomOrderFloatingMetric(),{threshold:[0,0.01,0.2,1]});
+  customOrderFloatObserver.observe(panel);
+  window.addEventListener('scroll',updateCustomOrderFloatingMetric,{passive:true});
+  window.addEventListener('resize',updateCustomOrderFloatingMetric,{passive:true});
+}
 function renderOrderView(){
- syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
+ syncCustomOrders();updateCustomOrderFloatingMetric();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
  for(const category of ['troop','monster','mercenary']){
   const target=els[ids[category]],order=st.squadOrder?.[category]||[],selected=new Set(selectedIdsFor(category)),unitMap=new Map(units[category].filter(u=>selected.has(u.id)).map(u=>[u.id,u]));
   target.innerHTML='';
@@ -2471,6 +2494,7 @@ async function init(){
   loadSavedOptimizerResult();
   applyStateToInputs();
   wireEvents();
+  wireCustomOrderFloatingMetric();
 
   // Only an actual database request/parse failure should produce the
   // "unit database could not be loaded" message.
