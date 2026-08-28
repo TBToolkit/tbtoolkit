@@ -1328,8 +1328,44 @@ function customOrderTierNumber(unit){
 function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
  const selected=new Set(selectedIdsFor(category));
  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
- // PvP keeps the established battle-specific default generator.
- if(String(battleType).startsWith('pvp_'))return legacyDefaultFlatOrder(category,stateRef);
+
+ // PvP Custom Order starts from the exact Standard-method ordering model.
+ // Standard builds a global PvP death order using revival-cost exposure and
+ // expected PvP damage (including matchup, Specialist 2x, DD and ST). The V2
+ // UI keeps separate capacity columns, so preserve Standard's relative order
+ // by filtering that global planned order to the requested category.
+ if(String(battleType).startsWith('pvp_')){
+   const selectedIds={
+     troop:[...selectedIdsFor('troop')],
+     monster:[...selectedIdsFor('monster')],
+     mercenary:[...selectedIdsFor('mercenary')]
+   };
+   const inputs=baseEngineInputs();
+   let standard=null;
+   if(battleType==='pvp_unknown'){
+     standard=calculatePvpUnknownStack({
+       troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+       selectedIds,inputs
+     });
+   }else{
+     standard=calculatePvpCpStack({
+       troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+       selectedIds,inputs,enemy:selectedPvpEnemy(),battleType:'pvp_single_cp'
+     });
+   }
+   const planned=Array.isArray(standard?.plannedOrder)?standard.plannedOrder:[];
+   const filtered=planned.filter(id=>selected.has(id));
+   if(filtered.length===selected.size)return filtered;
+
+   // Defensive fallback if a future PvP result omits plannedOrder.
+   const rows=standard?.categories?.[category]?.results||[];
+   const fallback=rows.slice().sort((a,b)=>
+     Number(a.plannedDeathIndex??a.deathIndex??0)-Number(b.plannedDeathIndex??b.deathIndex??0)
+   ).map(r=>r.id).filter(id=>selected.has(id));
+   for(const id of selected)if(!fallback.includes(id))fallback.push(id);
+   return fallback;
+ }
+
  return units[category].filter(u=>selected.has(u.id)).slice().sort((a,b)=>{
    const av=customOrderMatchupValue(a),bv=customOrderMatchupValue(b);
    if(Math.abs(av-bv)>1e-12)return av-bv;
