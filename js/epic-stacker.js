@@ -922,6 +922,7 @@ function renderEpicOptimizedResult(opt){
   updateCapacity(result);
   renderLayerHealthChart(result);
   renderPrediction(opt);
+  updateLiveDamageMetric(Number(opt?.result?.expectedTotalLifetimeDamage||0),false,true);
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
   els.resultStatus.textContent=activeMode==='battle'
@@ -2093,9 +2094,9 @@ function clearLiveDamageMetrics(){
 }
 const liveDamagePrevious=new Map();
 function liveDamageKey(){return activeMode==='battle'?`${state.modes.battle.activeBattleType}|${state.modes.battle.activeBattleMethod}`:activeMode;}
-function updateLiveDamageMetric(value,isPvp){
+function updateLiveDamageMetric(value,isPvp,allowOptimize=false){
  const slots=document.querySelectorAll('.live-damage-slot'),method=activeMode==='battle'?state.modes.battle.activeBattleMethod:'';
- if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){clearLiveDamageMetrics();return;}
+ if((method==='optimize'&&!allowOptimize)||!Number.isFinite(Number(value))||Number(value)<=0){clearLiveDamageMetrics();return;}
  const key=liveDamageKey(),n=Number(value),prev=liveDamagePrevious.get(key);let delta='';
  if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<0.0005?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
  liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>${delta}`;slots.forEach(x=>x.innerHTML=markup);
