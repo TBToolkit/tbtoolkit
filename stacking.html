@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=170" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=175" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=174" type="module"></script>
+<script src="js/epic-stacker.js?v=175" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -219,10 +219,11 @@
 </section>
 
 <section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
-<div class="topdown-panel-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div></div><p>Drag tiers into the order you want them to die. Expand a tier to set the death order of its selected units. On a phone, use the arrow buttons.</p></div>
+<div class="topdown-panel-heading custom-order-v2-heading">
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div><button class="toolbar-button custom-order-reset" id="resetCustomOrderDefault" type="button">Reset to Default Order</button></div><p>Drag individual squads into the order you want them to die. Units can be mixed between tiers within Troops, Monsters, or Mercs. On a phone, use the arrow buttons.</p></div>
 </div>
-<div class="order-columns">
+<div class="custom-order-sticky-metric"><span>Live Result</span><div class="live-damage-slot" data-live-damage="order-sticky"></div></div>
+<div class="order-columns custom-order-v2-columns">
 <section class="order-group"><h3>Troops</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="troopOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
 <section class="order-group"><h3>Monsters</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="monsterOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
 <section class="order-group"><h3>Mercs</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="mercenaryOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
