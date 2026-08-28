@@ -3125,3 +3125,14 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .unit-drag-handle{color:#718797;cursor:grab;text-align:center}
 .unit-order-copy strong{display:block;color:#e7edf1;font-size:.7rem}.unit-order-copy span{display:block;color:#8294a3;font-size:.56rem;margin-top:2px}
 .unit-order-move{width:28px;height:28px;border:1px solid #344b5d;border-radius:5px;background:#07131d;color:#dbe3ea;cursor:pointer;font-weight:900}
+
+/* v163 — internal Custom Order tiles inherit their tier color */
+.unit-order-item{
+  background:
+    linear-gradient(90deg,
+      var(--unit-order-row-color,#0a1b27) 0%,
+      var(--unit-order-row-color,#0a1b27) 70%,
+      #081b29 100%);
+  box-shadow:inset 3px 0 0 var(--unit-order-accent,#415467);
+  border-color:var(--unit-order-accent,#2c4050);
+}
