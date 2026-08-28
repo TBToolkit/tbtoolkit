@@ -289,7 +289,7 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
       const p=pvpDamageProfile(r.u,inputs,enemy);
       const fullGold=qty*Math.max(0,Number(r.u.goldRevivalCost||0));
       return{
-        id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,
+        u:r.u,id:r.u.id,category,displayOrder:r.u.displayOrder,selectionKey:r.u.selectionKey,
         level:r.u.level,type:r.u.type,name:r.u.name,icon:r.u.icon,
         qty,rawQty,roundTo:1,rank:r.deathIndex+1,deathIndex:r.deathIndex,
         plannedDeathIndex:r.deathIndex,
@@ -454,6 +454,23 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
       };
     });
 
+    const orderedResults=results.slice().sort((a,b)=>a.plannedDeathIndex-b.plannedDeathIndex);
+    for(let i=1;i<orderedResults.length;i++){
+      const previous=orderedResults[i-1],current=orderedResults[i];
+      const eh=Number(current.effectiveHealthEach||0),factor=1+Math.max(0,Number(sep)||0);
+      if(!(eh>0))continue;
+      const maxHealth=Number(previous.squadHealth||0)/factor;
+      if(Number(current.squadHealth||0)>=maxHealth){
+        const q=Math.max(1,Math.floor(maxHealth/eh));
+        if(q<current.qty){
+          current.qty=q; current.totalCapacity=current.capacityEach*q; current.squadHealth=q*eh;
+          current.squadStrength=Number(current.u?.strengthEach||0)*q;
+          const p=pvpDamageProfile(current.u,inputs,enemy);
+          current.expectedPvpDamage=p.expectedEach*q; current.deterministicPvpDamage=p.deterministicEach*q;
+          current.fullSquadGoldRevival=q*Number(current.goldRevivalCostEach||0);
+        }
+      }
+    }
     const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
     const categoryResult={
       category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,

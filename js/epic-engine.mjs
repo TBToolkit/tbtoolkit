@@ -308,6 +308,7 @@ export function calculateCustomCategory({
     const qty = mroundPositive(rawQty, roundTo);
     const totalCapacity = row.capEach * qty;
     return {
+      unit:row.unit,
       id:row.unit.id,category,displayOrder:row.unit.displayOrder,selectionKey:row.unit.selectionKey,
       level:row.unit.level,type:row.unit.type,name:row.unit.name,icon:row.unit.icon,
       qty,rawQty,roundTo,rank:row.rank,orderIndex:row.orderIndex,deathIndex:row.deathIndex,
@@ -318,6 +319,22 @@ export function calculateCustomCategory({
     };
   });
 
+  const orderedResults=results.slice().sort((a,b)=>a.deathIndex-b.deathIndex);
+  for(let i=1;i<orderedResults.length;i++){
+    const previous=orderedResults[i-1],current=orderedResults[i];
+    const eh=Number(current.unit?.healthEach||0)/(1+Number(current.speciesAdjustment||0));
+    const factor=1+Math.max(0,Number(separation)||0);
+    if(!(eh>0))continue;
+    const maxHealth=Number(previous.squadHealth||0)/factor;
+    if(Number(current.squadHealth||0)>=maxHealth){
+      const step=Math.max(1,Number(current.roundTo)||1);
+      const q=Math.max(step,Math.floor((maxHealth/eh)/step)*step);
+      if(q<current.qty){
+        current.qty=q; current.totalCapacity=current.capEach*q;
+        current.squadHealth=q*eh; current.squadStrength=current.unit.strengthEach*q;
+      }
+    }
+  }
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
