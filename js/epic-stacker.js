@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=91';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=161';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack } from './battle-engine.mjs?v=156';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack } from './battle-engine.mjs?v=161';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -59,11 +59,13 @@ function cloneOrders(source){
     mercenary:[...(source?.mercenary||[])]
   };
 }
+function cloneUnitOrders(source){const out={troop:{},monster:{},mercenary:{}};for(const c of ['troop','monster','mercenary'])for(const [l,ids] of Object.entries(source?.[c]||{}))out[c][l]=[...(ids||[])];return out;}
 function makeBattleWorkspace(type='epic_standard',seed=null){
   const customOrders=cloneOrders(
     seed?.methods?.custom?.orders ??
     seed?.orders
   );
+  const customUnitOrders=cloneUnitOrders(seed?.methods?.custom?.unitOrders??seed?.unitOrders);
   const optimizeResult=
     seed?.methods?.optimize?.resultCache ??
     seed?.resultCache ??
@@ -79,7 +81,7 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
     selectedIds:cloneIds(seed?.selectedIds),
     methods:{
       basic:{},
-      custom:{orders:customOrders},
+      custom:{orders:customOrders,unitOrders:customUnitOrders},
       optimize:{resultCache:optimizeResult}
     }
   };
@@ -149,7 +151,7 @@ function populateTempleLevel(){
 const state={preferences:{templeLevel:45},modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
-custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]}},
+custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}}},
 battle:{activeBattleType:'epic_standard',activeBattleMethod:'basic',workspaces:{}}
 }};
 function ensureBattleWorkspace(type=state.modes.battle.activeBattleType,method=state.modes.battle.activeBattleMethod,seed=null){
@@ -1182,14 +1184,12 @@ function isCustomOrderMode(){
   return activeMode==='custom'||(activeMode==='battle'&&state.modes.battle.activeBattleMethod==='custom');
 }
 function syncCustomOrders(){
-  if(!isCustomOrderMode())return;
-  const c=activeOrderState();
-  for(const category of ['troop','monster','mercenary']){
-    const sel=selectedLevels(category),set=new Set(sel),
-      next=(c.orders[category]||[]).filter(l=>set.has(l));
-    for(const l of sel)if(!next.includes(l))next.push(l);
-    c.orders[category]=next;
-  }
+ if(!isCustomOrderMode())return;const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};
+ for(const c of ['troop','monster','mercenary']){
+  const levels=selectedLevels(c),set=new Set(levels),next=(s.orders[c]||[]).filter(x=>set.has(x));for(const l of levels)if(!next.includes(l))next.push(l);s.orders[c]=next;s.unitOrders[c]=s.unitOrders[c]||{};
+  for(const l of levels){const chosen=units[c].filter(u=>u.level===l&&selectedIdsFor(c).includes(u.id)),ids=new Set(chosen.map(u=>u.id)),saved=(s.unitOrders[c][l]||[]).filter(id=>ids.has(id));for(const u of chosen.sort((a,b)=>a.displayOrder-b.displayOrder))if(!saved.includes(u.id))saved.push(u.id);s.unitOrders[c][l]=saved;}
+  for(const l of Object.keys(s.unitOrders[c]))if(!set.has(l))delete s.unitOrders[c][l];
+ }
 }
 function moveOrderItem(category,index,delta){
   const a=activeOrderState().orders[category],j=index+delta;
@@ -1204,92 +1204,28 @@ function reorderByDrop(category,from,to){
   saveState();renderOrderView();recalculate();
 }
 function commitOrderFromDom(category,target){
-  const levels=[...target.querySelectorAll('.order-item')].map(el=>el.dataset.level);
+  const levels=[...target.querySelectorAll(':scope > .order-tier-card')].map(el=>el.dataset.level);
   activeOrderState().orders[category]=levels;
   saveState();
   recalculate();
 }
 
+function moveUnitOrderItem(c,l,i,d){const a=activeOrderState().unitOrders?.[c]?.[l]||[],n=i+d;if(n<0||n>=a.length)return;[a[i],a[n]]=[a[n],a[i]];saveState();renderOrderView();recalculate();}
+function commitUnitOrderFromDom(c,l,t){activeOrderState().unitOrders[c][l]=[...t.querySelectorAll('.unit-order-item')].map(x=>x.dataset.unitId);saveState();recalculate();}
+const expandedCustomOrderTiers=new Set();
 function renderOrderView(){
-  syncCustomOrders();
-  const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'};
+ syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
+ for(const c of ['troop','monster','mercenary']){const t=els[ids[c]],order=st.orders[c],sel=new Set(modeState().selectedIds[c]);t.innerHTML='';if(!order.length){t.innerHTML='<div class="order-empty">Select units to create an order.</div>';continue;}
+ order.forEach((l,i)=>{const chosen=units[c].filter(u=>u.level===l&&sel.has(u.id)),card=document.createElement('div');card.className='order-tier-card';card.dataset.level=l;
+ const row=document.createElement('div');row.className='order-item';row.draggable=true;row.dataset.level=l;const col=orderRowColors(c,l);row.style.setProperty('--order-row-color',col.rowColor);row.style.setProperty('--order-accent',col.accent);const key=c+'|'+l,ex=expandedCustomOrderTiers.has(key);
+ row.innerHTML=`<div class="drag-handle">☰</div><button class="order-expand" type="button">${ex?'⌃':'⌄'}</button><div class="order-copy"><strong>${escapeHtml(l)}</strong><span>${chosen.length} selected unit${chosen.length===1?'':'s'}</span></div><button class="order-move" type="button">↑</button><button class="order-move" type="button">↓</button>`;
+ row.querySelector('.order-expand').onclick=e=>{e.stopPropagation();ex?expandedCustomOrderTiers.delete(key):expandedCustomOrderTiers.add(key);renderOrderView();};const mb=row.querySelectorAll('.order-move');mb[0].onclick=()=>moveOrderItem(c,i,-1);mb[1].onclick=()=>moveOrderItem(c,i,1);
+ row.ondragstart=e=>{row.classList.add('dragging');e.dataTransfer.setData('text/plain',l)};row.ondragend=()=>{row.classList.remove('dragging');commitOrderFromDom(c,t)};card.append(row);
+ const inner=document.createElement('div');inner.className='unit-order-list';inner.hidden=!ex;const map=new Map(chosen.map(u=>[u.id,u]));(st.unitOrders?.[c]?.[l]||[]).filter(id=>map.has(id)).forEach((id,k)=>{const u=map.get(id),ur=document.createElement('div');ur.className='unit-order-item';ur.draggable=true;ur.dataset.unitId=id;ur.innerHTML=`<div class="unit-drag-handle">☰</div><div class="unit-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.type)}</span></div><button class="unit-order-move" type="button">↑</button><button class="unit-order-move" type="button">↓</button>`;const bs=ur.querySelectorAll('.unit-order-move');bs[0].onclick=()=>moveUnitOrderItem(c,l,k,-1);bs[1].onclick=()=>moveUnitOrderItem(c,l,k,1);ur.ondragstart=e=>{e.stopPropagation();ur.classList.add('dragging')};ur.ondragend=e=>{e.stopPropagation();ur.classList.remove('dragging');commitUnitOrderFromDom(c,l,inner)};inner.append(ur)});
+ inner.ondragover=e=>{const d=inner.querySelector('.unit-order-item.dragging');if(!d)return;e.preventDefault();e.stopPropagation();let before=null;for(const x of inner.querySelectorAll('.unit-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=x;break}}before?inner.insertBefore(d,before):inner.append(d)};card.append(inner);t.append(card)});
+ t.ondragover=e=>{if(e.target.closest('.unit-order-list'))return;const d=t.querySelector('.order-item.dragging');if(!d)return;e.preventDefault();const dc=d.closest('.order-tier-card');let before=null;for(const x of t.querySelectorAll(':scope > .order-tier-card')){if(x===dc)continue;const r=x.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=x;break}}before?t.insertBefore(dc,before):t.append(dc)};
+ }}
 
-  const orderState=activeOrderState();
-  for(const category of ['troop','monster','mercenary']){
-    const target=els[ids[category]];
-    const order=orderState.orders[category];
-    const selected=new Set(modeState().selectedIds[category]);
-    target.innerHTML='';
-
-    if(!order.length){
-      target.innerHTML='<div class="order-empty">Select units to create an order.</div>';
-      continue;
-    }
-
-    order.forEach((level,index)=>{
-      const count=units[category].filter(u=>u.level===level&&selected.has(u.id)).length;
-      const row=document.createElement('div');
-      row.className='order-item';
-      row.draggable=true;
-      row.dataset.level=level;
-
-      const colors=orderRowColors(category,level);
-      row.style.setProperty('--order-row-color',colors.rowColor);
-      row.style.setProperty('--order-accent',colors.accent);
-
-      row.innerHTML=`<div class="drag-handle" title="Drag to reorder">☰</div>
-        <div class="order-copy"><strong>${escapeHtml(level)}</strong><span>${count} selected unit${count===1?'':'s'}</span></div>
-        <button class="order-move" type="button" aria-label="Move ${escapeHtml(level)} up">↑</button>
-        <button class="order-move" type="button" aria-label="Move ${escapeHtml(level)} down">↓</button>`;
-
-      const btn=row.querySelectorAll('button');
-      btn[0].addEventListener('click',()=>moveOrderItem(category,index,-1));
-      btn[1].addEventListener('click',()=>moveOrderItem(category,index,1));
-
-      row.addEventListener('dragstart',e=>{
-        row.classList.add('dragging');
-        target.classList.add('drag-active');
-        e.dataTransfer.effectAllowed='move';
-        e.dataTransfer.setData('text/plain',level);
-      });
-
-      row.addEventListener('dragend',()=>{
-        row.classList.remove('dragging');
-        target.classList.remove('drag-active');
-        target.querySelectorAll('.order-item').forEach(el=>el.classList.remove('drag-over'));
-        commitOrderFromDom(category,target);
-      });
-
-      target.appendChild(row);
-    });
-
-    target.addEventListener('dragover',e=>{
-      e.preventDefault();
-      const dragging=target.querySelector('.order-item.dragging');
-      if(!dragging)return;
-
-      const siblings=[...target.querySelectorAll('.order-item:not(.dragging)')];
-      siblings.forEach(el=>el.classList.remove('drag-over'));
-
-      let insertBefore=null;
-      for(const sibling of siblings){
-        const rect=sibling.getBoundingClientRect();
-        const midpoint=rect.top+rect.height/2;
-        if(e.clientY<midpoint){
-          insertBefore=sibling;
-          sibling.classList.add('drag-over');
-          break;
-        }
-      }
-
-      if(insertBefore){
-        if(dragging.nextSibling!==insertBefore)target.insertBefore(dragging,insertBefore);
-      }else{
-        target.appendChild(dragging);
-      }
-    });
-  }
-}
 const expandedSelectionSections=new Set();
 const MERC_LEVEL_LABEL={2:'II',7:'VII',6:'VI',5:'V'};
 const MERC_GROUP_ORDER=['COMMON','MONSTER','SPECIALIST','GUARDSMAN','EPIC - HUNTER','EPIC - EVENT','ARACHNE','ENGINEER'];
@@ -1969,17 +1905,17 @@ function recalculate(){
         if(battleType==='pvp_single_cp'){
           result=calculatePvpCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,inputs,enemy:selectedPvpEnemy()
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs,enemy:selectedPvpEnemy()
           });
         }else if(battleType==='pvp_unknown'){
           result=calculatePvpUnknownCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,inputs
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs
           });
         }else{
           result=calculateCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,inputs
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs
           });
         }
       }else if(battleType==='pvp_single_cp'){
@@ -2004,7 +1940,7 @@ function recalculate(){
         });
       }
     }
-    else{syncCustomOrders();result=calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,inputs});}
+    else{syncCustomOrders();result=calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,unitOrders:state.modes.custom.unitOrders,inputs});}
 
     renderResultRows('mercenary',result.categories.mercenary.results);
     renderResultRows('monster',result.categories.monster.results);
