@@ -682,9 +682,9 @@ function updateOptimizerProgress(progress={}){
 }
 function formatDamage(value){
   const n=Number(value)||0;
-  if(n>=1e12)return`${(n/1e12).toFixed(2)}T`;
-  if(n>=1e9)return`${(n/1e9).toFixed(2)}B`;
-  if(n>=1e6)return`${(n/1e6).toFixed(2)}M`;
+  if(n>=1e12)return`${(n/1e12).toFixed(3)}T`;
+  if(n>=1e9)return`${(n/1e9).toFixed(3)}B`;
+  if(n>=1e6)return`${(n/1e6).toFixed(3)}M`;
   return Math.round(n).toLocaleString('en-US');
 }
 function clearPrediction(){
@@ -1865,7 +1865,7 @@ function clearPvpCpDetails(){
 }
 function compactNumber(value){
   const n=Number(value||0);
-  return new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(n);
+  return new Intl.NumberFormat('en-US',{notation:'compact',minimumFractionDigits:3,maximumFractionDigits:3}).format(n);
 }
 function renderPvpCpDetails(result){
   if(!els.pvpEnemySummaryLabel)els.pvpEnemySummaryLabel=document.getElementById('pvpEnemySummaryLabel');
