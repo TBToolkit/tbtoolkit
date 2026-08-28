@@ -3361,3 +3361,161 @@ html,body{overflow-x:hidden}
   .squad-order-copy strong{font-size:.64rem!important}
   .squad-order-bonus{justify-self:start!important;max-width:100%!important}
 }
+
+/* v178 — readability + reliable floating Custom Order live result */
+.custom-order-sticky-metric{display:none!important}
+
+.custom-order-floating-metric{
+  position:fixed;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:260px;
+  max-width:min(520px,calc(100vw - 24px));
+  padding:7px 12px;
+  border:1px solid #405a70;
+  border-radius:8px;
+  background:rgba(7,20,30,.97);
+  box-shadow:0 8px 24px rgba(0,0,0,.42);
+  backdrop-filter:blur(6px);
+  pointer-events:none;
+}
+.custom-order-floating-metric[hidden]{display:none!important}
+.custom-order-floating-metric>span{
+  font-size:.61rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#9fb2c2;
+}
+.custom-order-floating-metric .live-damage-slot{
+  min-height:0;
+  gap:6px;
+}
+.custom-order-floating-metric .live-damage-label{font-size:.58rem}
+.custom-order-floating-metric .live-damage-slot strong{font-size:.82rem}
+.custom-order-floating-metric .live-damage-change{font-size:.60rem}
+
+.custom-order-v2-columns .order-list{
+  gap:4px!important;
+  padding:7px!important;
+  overflow:hidden!important;
+}
+.squad-order-item{
+  grid-template-areas:"icon copy bonus up down"!important;
+  grid-template-columns:36px minmax(0,1fr) 126px 29px 29px!important;
+  column-gap:6px!important;
+  min-height:44px!important;
+  padding:4px 5px!important;
+}
+.squad-order-icon-wrap{
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+}
+.squad-order-copy strong{
+  font-size:.72rem!important;
+  line-height:1.12!important;
+}
+.squad-order-copy span{
+  margin-top:2px!important;
+  font-size:.56rem!important;
+  line-height:1.08!important;
+  color:#eef3f6!important;
+  opacity:.92!important;
+}
+.squad-order-bonus{
+  width:126px!important;
+  max-width:126px!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+  font-size:.52rem!important;
+  text-align:right!important;
+  justify-self:end!important;
+}
+.squad-order-move{
+  width:28px!important;
+  height:30px!important;
+  min-width:28px!important;
+}
+
+@media(max-width:1250px){
+  .squad-order-item{
+    grid-template-areas:
+      "icon copy up down"
+      "icon bonus up down"!important;
+    grid-template-columns:34px minmax(0,1fr) 28px 28px!important;
+    min-height:46px!important;
+  }
+  .squad-order-icon-wrap{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+  }
+  .squad-order-bonus{
+    width:auto!important;
+    max-width:100%!important;
+    justify-self:start!important;
+    text-align:left!important;
+    font-size:.51rem!important;
+  }
+}
+
+@media(max-width:900px){
+  .custom-order-floating-metric{
+    top:8px;
+    min-width:230px;
+    padding:6px 10px;
+  }
+  .squad-order-item{
+    grid-template-areas:"icon copy bonus up down"!important;
+    grid-template-columns:36px minmax(0,1fr) 116px 30px 30px!important;
+    min-height:45px!important;
+  }
+  .squad-order-icon-wrap{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+  }
+  .squad-order-copy strong{font-size:.72rem!important}
+  .squad-order-copy span{font-size:.56rem!important}
+  .squad-order-bonus{
+    width:116px!important;
+    max-width:116px!important;
+    justify-self:end!important;
+    text-align:right!important;
+  }
+}
+
+@media(max-width:620px){
+  .custom-order-floating-metric{
+    top:6px;
+    min-width:0;
+    width:auto;
+    max-width:calc(100vw - 16px);
+  }
+  .squad-order-item{
+    grid-template-areas:
+      "icon copy up down"
+      "icon bonus up down"!important;
+    grid-template-columns:34px minmax(0,1fr) 29px 29px!important;
+    min-height:47px!important;
+  }
+  .squad-order-icon-wrap{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+  }
+  .squad-order-bonus{
+    width:auto!important;
+    max-width:100%!important;
+    justify-self:start!important;
+    text-align:left!important;
+    font-size:.51rem!important;
+  }
+}
