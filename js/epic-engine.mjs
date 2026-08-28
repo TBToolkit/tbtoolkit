@@ -198,9 +198,10 @@ export function calculateCategory({
       prev=row;}
   }
   if(inputs.minimumSeparation&&capacityLimit>0){
+    const targetCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
     for(let pass=0;pass<5;pass++){
-      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=capacityLimit*.9995)break;
-      const scale=capacityLimit/used;
+      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=targetCapacity*.9995)break;
+      const scale=targetCapacity/used;
       for(const row of results){const step=Math.max(1,row.roundTo||1),q=Math.max(step,Math.floor((row.qty*scale)/step)*step);row.qty=q;row.totalCapacity=row.unitCapacityEach*q;const each=row.unitEffectiveHealthEach;row.squadHealth=each*q;row.squadStrength=row.unitStrengthEach*q;}
       const byId=new Map(results.map(r=>[r.id,r])),deathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);let prev=null;
       for(const id of deathIds){const row=byId.get(id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.unitCapacityEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
@@ -351,8 +352,9 @@ export function calculateCustomCategory({
       prev=row;}
   }
   if(inputs.minimumSeparation&&capacityLimit>0){
+    const targetCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
     for(let pass=0;pass<5;pass++){
-      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=capacityLimit*.9995)break;const scale=capacityLimit/used;
+      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=targetCapacity*.9995)break;const scale=targetCapacity/used;
       for(const row of results){const step=Math.max(1,row.roundTo||1),q=Math.max(step,Math.floor((row.qty*scale)/step)*step);row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=row.effectiveEach*q;row.squadStrength=row.unitStrengthEach*q;}
       const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const entry of ordered){const row=byId.get(entry.unit.id);if(!row)continue;const each=row.effectiveEach,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
     }
