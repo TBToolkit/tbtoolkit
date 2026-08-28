@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=163" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=169" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=168" type="module"></script>
+<script src="js/epic-stacker.js?v=169" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -72,7 +72,7 @@
 
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">
-<div><span class="section-kicker" id="setupStepNumber">1</span><h2>Army Limits</h2></div>
+<div><span class="section-kicker" id="setupStepNumber">1</span><h2>Army Limits</h2></div><div class="live-damage-slot" data-live-damage="limits"></div>
 <div class="auto-update-note"><span class="live-dot"></span>Inputs saved on this device</div>
 </div>
 
@@ -122,7 +122,7 @@
 </div>
 
 <div class="advanced-settings-column">
-<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Health &amp; Combat</h2></div>
+<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Health &amp; Combat</h2><div class="live-damage-slot" data-live-damage="combat"></div></div>
 <section class="advanced advanced-settings-panel always-open">
 <div class="advanced-settings-content">
 
@@ -169,7 +169,8 @@
 
 <div class="separation-mode-only">
 <div class="advanced-divider"></div>
-<div class="advanced-row layer-separation-control">
+<label class="minimum-separation-toggle"><input id="minimumSeparation" type="checkbox" checked/><span><strong>Use Minimum Separation</strong><small>Use the smallest achievable health gaps that preserve the planned death order.</small></span></label>
+<div class="advanced-row layer-separation-control" id="fixedSeparationControl">
 <div class="slider-heading"><label for="rankSeparation" id="separationLabel">Squad Separation</label><output for="rankSeparation" id="rankSeparationValue">0.05%</output></div>
 <input class="separation-slider" id="rankSeparation" max="1" min="0" step="0.01" type="range" value="0.05"/>
 <div aria-hidden="true" class="slider-scale"><span id="separationMin">0%</span><span id="separationMid">0.50%</span><span id="separationMax">1.00%</span></div>
@@ -189,7 +190,7 @@
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
 <div><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
-<button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button>
+<div class="selection-heading-actions"><div class="live-damage-slot" data-live-damage="selection"></div><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
 
 <div class="selection-card-grid">
@@ -220,7 +221,7 @@
 <section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
 <div class="topdown-panel-heading">
 <div><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><p>Drag tiers into the order you want them to die. Expand a tier to set the death order of its selected units. On a phone, use the arrow buttons.</p></div>
-</div>
+</div><div class="live-damage-slot live-damage-order" data-live-damage="order"></div>
 <div class="order-columns">
 <section class="order-group"><h3>Troops</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="troopOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
 <section class="order-group"><h3>Monsters</h3><div class="order-direction order-direction-top"><span>Dies First</span></div><div class="order-list" id="monsterOrderList"></div><div class="order-direction order-direction-bottom"><span>Dies Last</span></div></section>
