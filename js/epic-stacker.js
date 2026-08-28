@@ -1127,7 +1127,7 @@ function configureModeUI(){
     if(els.pvpStrengthField)els.pvpStrengthField.hidden=true;
     if(els.pvpEnemyUnitField)els.pvpEnemyUnitField.hidden=true;
   }
-  if(battleCustom||custom){syncCustomOrders();renderOrderView();}
+  if((battleCustom||custom)&&armyV2.length){syncCustomOrders();renderOrderView();}
   const battleOptimize=isBattleOptimizeMode();
   document.querySelectorAll('.optimizer-only').forEach(el=>el.hidden=!(optimizer||battleOptimize));
   document.querySelectorAll('.separation-mode-only').forEach(el=>el.hidden=optimizer||battleOptimize);
@@ -1237,7 +1237,12 @@ function defaultCustomUnitIds(category,level){
   return chosen.slice().sort((a,b)=>customInternalRank(a,units[category])-customInternalRank(b,units[category])||a.displayOrder-b.displayOrder).map(u=>u.id);
 }
 function syncCustomOrders(){
- if(!isCustomOrderMode())return;const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};s.unitOrderManual=s.unitOrderManual||{troop:{},monster:{},mercenary:{}};
+ // During initial page startup configureModeUI() runs before loadData().
+ // Never reconcile a saved Custom Order against an empty unit database:
+ // selectedLevels() would be empty and would erase the active workspace's
+ // persisted tier/unit order before the database finishes loading.
+ if(!isCustomOrderMode()||!armyV2.length)return;
+ const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};s.unitOrderManual=s.unitOrderManual||{troop:{},monster:{},mercenary:{}};
  for(const c of ['troop','monster','mercenary']){
   const levels=selectedLevels(c),set=new Set(levels),next=(s.orders[c]||[]).filter(x=>set.has(x));for(const l of levels)if(!next.includes(l))next.push(l);s.orders[c]=next;s.unitOrders[c]=s.unitOrders[c]||{};s.unitOrderManual[c]=s.unitOrderManual[c]||{};
   for(const l of levels){
