@@ -617,7 +617,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.1-budgeted-adaptive-search';
+const EPIC_OPTIMIZER_BUILD = '2.2-final-convergence-polish';
 
 
 function finite(v, label) {
@@ -1620,6 +1620,73 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   return {notes,alternatives,evaluations};
 }
 
+
+function finalConvergencePolish({
+  units,
+  selectedIds,
+  selectedNames,
+  bonuses,
+  capacityLimits,
+  start,
+  structureValidator,
+  minimumQuantity=1,
+  onProgress=null,
+  maxPasses=3,
+  continueImprovementPct=.01
+}){
+  let best={quantities:{...(start?.quantities||{})},result:start?.result};
+  const candidates=[];
+  const passes=[];
+  let evaluations=0;
+
+  if(!best.result)return{best,candidates,passes,evaluations};
+
+  for(let pass=0;pass<Math.max(1,Number(maxPasses)||1);pass++){
+    const beforeEld=Number(best.result.expectedTotalLifetimeDamage||0);
+    const local=optimizeFromSeed({
+      units,
+      selectedIds,
+      selectedNames,
+      bonuses,
+      capacityLimits,
+      initialQuantities:best.quantities,
+      minimumHealthSeparationPct:.01,
+      stageFractions:[.002,.001,.0005,.0002,.0001,.00005],
+      maxRoundsPerStage:6,
+      minimumQuantity,
+      structureValidator,
+      onProgress:typeof onProgress==='function'
+        ?p=>onProgress({...p,phase:'convergence-polish',passIndex:pass,passCount:maxPasses})
+        :null
+    });
+
+    evaluations+=Number(local.diagnostics?.evaluations||0);
+    const afterEld=Number(local.result?.expectedTotalLifetimeDamage||0);
+    const gainPct=beforeEld>0?(afterEld/beforeEld-1)*100:0;
+
+    const candidate={
+      quantities:{...local.quantities},
+      result:local.result,
+      source:`final-convergence-${pass+1}`
+    };
+    candidates.push(candidate);
+    passes.push({
+      pass:pass+1,
+      beforeEld,
+      afterEld,
+      gainPct,
+      evaluations:Number(local.diagnostics?.evaluations||0)
+    });
+
+    if(afterEld>beforeEld+1e-6)best=candidate;
+
+    // Continue only while the previous pass produced a meaningful gain.
+    if(gainPct<Number(continueImprovementPct||0))break;
+  }
+
+  return{best,candidates,passes,evaluations};
+}
+
 function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
@@ -1699,10 +1766,13 @@ function optimizeEpicQuantities(args) {
     counterfactualLocalMaxRounds:3,
     pairedCounterfactualPairsMax:1,
     adaptiveDeathPassesMax:1,
-    adaptiveDeathPolishSeedsMax:3
+    adaptiveDeathPolishSeedsMax:3,
+    finalConvergencePassesMax:3,
+    finalConvergenceContinuePct:.01,
+    finalConvergenceFractions:[.002,.001,.0005,.0002,.0001,.00005]
   };
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish + final convergence polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
@@ -1738,18 +1808,54 @@ function optimizeEpicQuantities(args) {
     mathematicalMaximum=improved;
   }
 
-  // Among armies within 0.05% of the true maximum discovered by the final
-  // counterfactual passes, prefer the more practical opening structure.
-  const practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.05});
+  // First apply the existing practical tie-break. Optimizer 2.2 then performs a
+  // very fine convergence search from the army we would otherwise return.
+  let practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.05});
   out.quantities={...practicalChoice.chosen.quantities};
   out.result=practicalChoice.chosen.result;
 
-  // Explain the army actually returned.
+  const convergence=finalConvergencePolish({
+    units:args.units,
+    selectedIds:args.selectedIds,
+    selectedNames:args.selectedNames,
+    bonuses:args.bonuses,
+    capacityLimits:limits,
+    start:{quantities:out.quantities,result:out.result},
+    structureValidator,
+    minimumQuantity:Number(args.minimumQuantity??1),
+    onProgress:args.onProgress,
+    maxPasses:3,
+    continueImprovementPct:.01
+  });
+  totalEvaluations+=convergence.evaluations;
+
+  // Every convergence result participates in the same near-optimal practical
+  // decision as the rest of the optimizer. A polished result may also establish
+  // a new mathematical maximum.
+  practicalPool.push(...convergence.candidates);
+  for(const candidate of convergence.candidates){
+    if(Number(candidate.result?.expectedTotalLifetimeDamage||0)>Number(mathematicalMaximum.result?.expectedTotalLifetimeDamage||0)+1e-6){
+      mathematicalMaximum=candidate;
+    }
+  }
+  practicalChoice=chooseNearOptimalPractical({
+    maximum:mathematicalMaximum,
+    candidates:practicalPool,
+    tolerancePct:.05
+  });
+  out.quantities={...practicalChoice.chosen.quantities};
+  out.result=practicalChoice.chosen.result;
+
+  // Explain the final polished/practical army actually returned so the unusual
+  // death-order flags always correspond to the displayed result.
   const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
   totalEvaluations+=unusualFinal.evaluations;finalSearchEvaluations+=unusualFinal.evaluations;
   out.diagnostics.unusualSacrifices=unusualFinal.notes;
   out.diagnostics.unusualSacrificeEvaluations=finalSearchEvaluations;
   out.diagnostics.finalCounterfactualPasses=searchPasses;
+  out.diagnostics.finalConvergencePasses=convergence.passes;
+  out.diagnostics.finalConvergenceEvaluations=convergence.evaluations;
+  out.diagnostics.finalConvergenceBest=Number(convergence.best?.result?.expectedTotalLifetimeDamage||0);
   out.diagnostics.maximumExpectedLifetimeDamage=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
   out.diagnostics.nearOptimalTolerancePct=.05;
   out.diagnostics.practicalTieBreakApplied=out.result!==practicalChoice.mathematicalMaximum.result;
@@ -1764,7 +1870,7 @@ function optimizeEpicQuantities(args) {
 
 let armyPromise=null;
 async function loadArmy(){
- if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=155',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
+ if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=159',self.location.href),{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error(`Unable to load canonical army database (${r.status}).`);return r.json();});
  return armyPromise;
 }
 
@@ -1796,7 +1902,8 @@ self.onmessage=async(event)=>{
     else if(progress.phase==='group-redistribution') progressPct=92+Math.round(((Number(progress.groupIndex||0)+1)/Math.max(1,Number(progress.groupCount||1)))*2);
     else if(progress.phase==='polish') progressPct=94+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*1);
     else if(progress.phase==='death-position') progressPct=95+Math.round(((Number(progress.passIndex||0)+(Number(progress.seedIndex||0)+1)/Math.max(1,Number(progress.seedCount||1)))/Math.max(1,Number(progress.passCount||1)))*1);
-    self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
+    else if(progress.phase==='convergence-polish') progressPct=96+Math.round(((Number(progress.passIndex||0)+(Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))/Math.max(1,Number(progress.passCount||1)))*1);
+    self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(97,progressPct)}});
    }
   });
   if(result){

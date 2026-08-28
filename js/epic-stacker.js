@@ -905,7 +905,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=155');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=159');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
