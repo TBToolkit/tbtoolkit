@@ -1860,6 +1860,16 @@ function renderLayerHealthChart(result){
     wrap.dataset.tooltipLeaveBound='1';
   }
 }
+function syncAutoFillDisplayToActual(result){
+  if(!result||!modeState().inputs.minimumSeparation||isAnyEpicOptimizeMode())return;
+  const map={troop:'leadershipFill',mercenary:'authorityFill',monster:'dominanceFill'};
+  for(const [category,fieldId] of Object.entries(map)){
+    const meta=CAPACITY_META[category];
+    if(!modeState().inputs[meta.auto])continue;
+    const pct=Number(result?.categories?.[category]?.capacityPercent);
+    if(Number.isFinite(pct)&&els[fieldId])els[fieldId].value=(pct*100).toFixed(2);
+  }
+}
 function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(modeState().inputs.leadership)],['authority',result?.totals.authority,parseNumber(modeState().inputs.authority)],['dominance',result?.totals.dominance,parseNumber(modeState().inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
 
 function clearPvpCpDetails(){
@@ -2008,6 +2018,7 @@ function recalculate(){
     renderResultRows('monster',result.categories.monster.results);
     renderResultRows('troop',result.categories.troop.results);
     updateCapacity(result);
+    syncAutoFillDisplayToActual(result);
     const bt=activeMode==='battle'?state.modes.battle.activeBattleType:null;
     const canEpicScore=activeMode!=='battle'||bt==='epic_standard'||bt==='epic_arachne';
     const scored=canEpicScore?scoreClassicResult(result):null;
