@@ -3519,3 +3519,19 @@ html,body{overflow-x:hidden}
     font-size:.51rem!important;
   }
 }
+
+/* v179 — final Custom Order tile readability */
+.squad-order-bonus{
+  font-size:.58rem!important;
+  font-weight:900!important;
+  letter-spacing:.005em;
+}
+@media(max-width:1250px){
+  .squad-order-bonus{font-size:.56rem!important}
+}
+@media(max-width:900px){
+  .squad-order-bonus{font-size:.57rem!important}
+}
+@media(max-width:620px){
+  .squad-order-bonus{font-size:.55rem!important}
+}
