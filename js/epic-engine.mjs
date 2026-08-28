@@ -141,7 +141,7 @@ export function calculateCategory({
   const maxHealthEach = Math.max(...selected.map((u) => u.healthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];
-  const rankSeparation = inputs.rankSeparation;
+  const rankSeparation = inputs.minimumSeparation ? 0 : inputs.rankSeparation;
 
   const interim = ranked.map(({ unit, pve, rank }) => {
     const adj = speciesAdjustment(unit.species, inputs.healthInputs);
@@ -186,11 +186,26 @@ export function calculateCategory({
       D: row.D,
       squadHealth,
       squadStrength,
-      totalCapacity,
+      totalCapacity,unitCapacityEach:row.capEach,unitStrengthEach:row.unit.strengthEach,unitEffectiveHealthEach:squadHealth/Math.max(1,qty),
       nominalHealth,
     };
   });
 
+  if(inputs.minimumSeparation){
+    const byId=new Map(results.map(r=>[r.id,r])),deathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);let prev=null;
+    for(const id of deathIds){const row=byId.get(id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);
+      if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.unitCapacityEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}
+      prev=row;}
+  }
+  if(inputs.minimumSeparation&&capacityLimit>0){
+    for(let pass=0;pass<5;pass++){
+      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=capacityLimit*.9995)break;
+      const scale=capacityLimit/used;
+      for(const row of results){const step=Math.max(1,row.roundTo||1),q=Math.max(step,Math.floor((row.qty*scale)/step)*step);row.qty=q;row.totalCapacity=row.unitCapacityEach*q;const each=row.unitEffectiveHealthEach;row.squadHealth=each*q;row.squadStrength=row.unitStrengthEach*q;}
+      const byId=new Map(results.map(r=>[r.id,r])),deathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);let prev=null;
+      for(const id of deathIds){const row=byId.get(id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.unitCapacityEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
+    }
+  }
   const totalCapacity = results.reduce((sum, row) => sum + row.totalCapacity, 0);
   const displayResults = [...results].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -284,7 +299,7 @@ export function calculateCustomCategory({
   const maxHealthEach = Math.max(...selected.map(effectiveHealthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];
-  const separation = Number.isFinite(inputs.rankSeparation) ? inputs.rankSeparation : inputs.layerSeparation;
+  const separation = inputs.minimumSeparation ? 0 : (Number.isFinite(inputs.rankSeparation) ? inputs.rankSeparation : inputs.layerSeparation);
 
   // Custom Stacker uses the player's level order to define the death ladder.
   // Within each level, the existing matchup ranking remains automatic: weaker
@@ -324,11 +339,24 @@ export function calculateCustomCategory({
       qty,rawQty,roundTo,rank:row.rank,orderIndex:row.orderIndex,deathIndex:row.deathIndex,
       squadModifier:row.squadModifier,speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
       squadHealth:qty*row.effectiveEach,
-      squadStrength:row.unit.strengthEach*qty,totalCapacity,
+      squadStrength:row.unit.strengthEach*qty,totalCapacity,capEach:row.capEach,unitStrengthEach:row.unit.strengthEach,effectiveEach:row.effectiveEach,
       nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.effectiveEach
     };
   });
 
+  if(inputs.minimumSeparation){
+    const byId=new Map(results.map(r=>[r.id,r]));let prev=null;
+    for(const entry of ordered){const row=byId.get(entry.unit.id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);
+      if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}
+      prev=row;}
+  }
+  if(inputs.minimumSeparation&&capacityLimit>0){
+    for(let pass=0;pass<5;pass++){
+      const used=results.reduce((s,r)=>s+r.totalCapacity,0);if(!(used>0)||used>=capacityLimit*.9995)break;const scale=capacityLimit/used;
+      for(const row of results){const step=Math.max(1,row.roundTo||1),q=Math.max(step,Math.floor((row.qty*scale)/step)*step);row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=row.effectiveEach*q;row.squadStrength=row.unitStrengthEach*q;}
+      const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const entry of ordered){const row=byId.get(entry.unit.id);if(!row)continue;const each=row.effectiveEach,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor(((prev.squadHealth-1e-9)/each)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
+    }
+  }
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,

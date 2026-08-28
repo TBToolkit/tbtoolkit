@@ -267,7 +267,7 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
     const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs)));
     const limit=Number(inputs[cfg.capacityInput]||0);
     const fill=Number(inputs[cfg.fillInput]||0);
-    const sep=Number(inputs.rankSeparation||0);
+    const sep=inputs.minimumSeparation?0:Number(inputs.rankSeparation||0);
 
     const interim=selected.map(u=>{
       const deathIndex=globalIndex.get(u.id)??0;
@@ -308,7 +308,8 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
         totalCapacity:r.capEach*qty
       };
     });
-    const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
+    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of ordered){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.floor((prev.squadHealth-1e-9)/each));if(q<row.qty){row.qty=q;row.totalCapacity=Number(u[cfg.capacityEach]||0)*q;row.squadHealth=q*each;row.squadStrength=pvpEffectiveStrengthEach(u,inputs)*q;}}prev=row;}}
+  const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
     categories[category]={
       category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,
       totalCapacity,capacityPercent:limit?totalCapacity/limit:0,
@@ -454,6 +455,7 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
       };
     });
 
+    if(inputs.minimumSeparation){const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const u of ordered){const row=byId.get(u.id);if(!row)continue;const each=Number(row.effectiveHealthEach||0);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(1,Math.floor((prev.squadHealth-1e-9)/each));if(q<row.qty){row.qty=q;row.totalCapacity=row.capacityEach*q;row.squadHealth=q*each;row.squadStrength=Number(u.strengthEach||0)*q;const p=pvpDamageProfile(u,inputs,enemy);row.expectedPvpDamage=p.expectedEach*q;row.deterministicPvpDamage=p.deterministicEach*q;row.fullSquadGoldRevival=q*Number(u.goldRevivalCost||0);}}prev=row;}}
     const totalCapacity=results.reduce((s,r)=>s+r.totalCapacity,0);
     const categoryResult={
       category,selectedCount:selected.length,maxHealthEach,capacityLimit:limit,requestedFill:fill,
@@ -540,7 +542,7 @@ export function calculateBattleCategory({category,units,selectedIds,inputs,battl
   const cfg=CATEGORY_CONFIG[category],selected=selectedUnits(units,selectedIds);
   if(!selected.length)return categoryEmpty(category);
   const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs))),limit=Number(inputs[cfg.capacityInput]||0),
-    fill=Number(inputs[cfg.fillInput]||0),sep=Number(inputs.rankSeparation||0);
+    fill=Number(inputs[cfg.fillInput]||0),sep=inputs.minimumSeparation?0:Number(inputs.rankSeparation||0);
   // General unknown-enemy PvP remains deterministic. Specialist 2x is included,
   // but no target-specific matchup can be assumed.
   const ordered=selected.slice().sort((a,b)=>
