@@ -285,9 +285,7 @@ export function calculateCustomCategory({
   if (!selected.length) return {category,selectedCount:0,maxHealthEach:0,sumD:0,totalCapacity:0,capacityPercent:0,results:[]};
 
   const orderMap = new Map((order || []).map((level,index)=>[level,index]));
-  const explicitRank=new Map((unitOrder||[]).map((id,index)=>[id,index]));
-  const explicitComplete=selected.every(unit=>explicitRank.has(unit.id));
-  if(!explicitComplete)for (const unit of selected) if (!orderMap.has(unit.level)) throw new Error(`Add ${unit.level} to the ${category} die order.`);
+  for (const unit of selected) if (!orderMap.has(unit.level)) throw new Error(`Add ${unit.level} to the ${category} die order.`);
 
   // Custom Order must use the same effective-health model as the battle
   // simulator. The previous relative species adjustment was only an
@@ -309,9 +307,10 @@ export function calculateCustomCategory({
   // matchup squads die earlier and stronger matchup squads die later. Squad
   // Separation is then applied between every adjacent squad in that full order,
   // matching the health-ladder concept used by Epic Stacker.
+  const explicitRank=new Map((unitOrder||[]).map((id,index)=>[id,index]));
   const ordered = selected
-    .map(unit=>({unit,orderIndex:orderMap.get(unit.level)??0,rank:explicitRank.has(unit.id)?explicitRank.get(unit.id):customInternalRank(unit,units)}))
-    .sort((a,b)=>explicitComplete?(a.rank-b.rank||a.unit.displayOrder-b.unit.displayOrder):(a.orderIndex-b.orderIndex||a.rank-b.rank||a.unit.displayOrder-b.unit.displayOrder));
+    .map(unit=>({unit,orderIndex:orderMap.get(unit.level),rank:explicitRank.has(unit.id)?explicitRank.get(unit.id):customInternalRank(unit,units)}))
+    .sort((a,b)=>a.orderIndex-b.orderIndex || a.rank-b.rank || a.unit.displayOrder-b.unit.displayOrder);
   const deathIndexById = new Map(ordered.map((row,index)=>[row.unit.id,index]));
   const squadCount = ordered.length;
 
@@ -368,8 +367,8 @@ export function calculateCustomCategory({
   };
 }
 
-export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,squadOrders=null,inputs,roundingTable}) {
-  const flat=c=>squadOrders?.[c]?.length?squadOrders[c]:(orders[c]||[]).flatMap(l=>unitOrders?.[c]?.[l]||[]);
+export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,inputs,roundingTable}) {
+  const flat=c=>(orders[c]||[]).flatMap(l=>unitOrders?.[c]?.[l]||[]);
   const troop=calculateCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:flat('troop'),roundingTable});
   const monster=calculateCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:flat('monster'),roundingTable});
   const mercenary=calculateCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),roundingTable});
