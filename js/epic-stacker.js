@@ -913,6 +913,7 @@ function liveStandardMercenaryOptimizerPayload(opt){
 }
 
 function renderEpicOptimizedResult(opt){
+  clearLiveDamageMetrics();
   opt=liveStandardMercenaryOptimizerPayload(opt);
   const result=convertEpicV2Result(opt);
   renderResultRows('mercenary',result.categories.mercenary.results);
@@ -2081,11 +2082,16 @@ function renderPvpCpDetails(result){
       <td>${escapeHtml(reasonFor(r))}</td>
     </tr>`).join('');
 }
+function clearLiveDamageMetrics(){
+ document.querySelectorAll('.live-damage-slot').forEach(x=>x.innerHTML='');
+ const floating=els.customOrderFloatingMetric||document.getElementById('customOrderFloatingMetric');
+ if(floating)floating.hidden=true;
+}
 const liveDamagePrevious=new Map();
 function liveDamageKey(){return activeMode==='battle'?`${state.modes.battle.activeBattleType}|${state.modes.battle.activeBattleMethod}`:activeMode;}
 function updateLiveDamageMetric(value,isPvp){
  const slots=document.querySelectorAll('.live-damage-slot'),method=activeMode==='battle'?state.modes.battle.activeBattleMethod:'';
- if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){slots.forEach(x=>x.innerHTML='');return;}
+ if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){clearLiveDamageMetrics();return;}
  const key=liveDamageKey(),n=Number(value),prev=liveDamagePrevious.get(key);let delta='';
  if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<0.0005?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
  liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>${delta}`;slots.forEach(x=>x.innerHTML=markup);
@@ -2098,6 +2104,7 @@ function recalculate(){
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
 
   if(isAnyEpicOptimizeMode()){
+    clearLiveDamageMetrics();
     if(epicWorker){epicWorker.terminate();epicWorker=null;closeOptimizerModal();}
     const errors=any?validate():[];showValidation(errors);const sig=!errors.length&&any?currentEpicEffectiveSignature():'';
     if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){epicResultCurrent=true;renderEpicOptimizedResult(lastOptimizedEpicPayload);setOptimizeButtonState();return;}
