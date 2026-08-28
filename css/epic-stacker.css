@@ -3160,3 +3160,23 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   .section-heading-copy>p{padding-left:0!important}
   .section-title-line{gap:7px}
 }
+
+/* v175 — Custom Order V2 flat cross-tier squad ladder */
+.custom-order-v2-heading .section-title-line{align-items:center}
+.custom-order-reset{margin-left:8px;min-height:30px;padding:0 10px;font-size:.58rem}
+.custom-order-sticky-metric{position:sticky;top:66px;z-index:18;display:flex;align-items:center;gap:9px;margin:0 0 10px;padding:7px 12px;border:1px solid #334a5d;border-radius:7px;background:rgba(7,20,30,.96);box-shadow:0 5px 14px rgba(0,0,0,.2);backdrop-filter:blur(5px)}
+.custom-order-sticky-metric>span{font-size:.57rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#8295a5}
+.custom-order-v2-columns .order-list{gap:6px}
+.squad-order-item{display:grid;grid-template-columns:28px 42px 25px minmax(125px,1fr) minmax(120px,auto) 32px 32px;gap:6px;align-items:center;min-height:54px;padding:5px 7px;border:1px solid #344a5d;border-radius:7px;background:linear-gradient(90deg,var(--order-row-color,#10202c) 0%,var(--order-row-color,#10202c) 56%,#081b29 100%);box-shadow:inset 4px 0 0 var(--order-accent,#415467);user-select:none;transition:transform .12s ease,opacity .12s ease,box-shadow .12s ease}
+.squad-order-item.dragging{opacity:.65;transform:scale(1.01);box-shadow:inset 4px 0 0 var(--order-accent,#415467),0 8px 20px rgba(0,0,0,.28)}
+.squad-order-rank{font-size:.73rem;font-weight:950;text-align:center;color:#f4b632;font-variant-numeric:tabular-nums}
+.squad-order-icon-wrap{width:40px;height:40px;border:1px solid rgba(255,255,255,.18);border-radius:6px;overflow:hidden;background:#07131d;display:grid;place-items:center}
+.squad-order-icon{width:100%;height:100%;object-fit:cover}
+.squad-order-drag{font-size:1rem;color:#8ca0b0;cursor:grab;text-align:center}.squad-order-item.dragging .squad-order-drag{cursor:grabbing}
+.squad-order-copy{min-width:0}.squad-order-copy strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-size:.72rem}.squad-order-copy span{display:block;margin-top:2px;color:#a5b4c0;font-size:.57rem;text-transform:uppercase}
+.squad-order-bonus{justify-self:end;color:#cbd6de;font-size:.57rem;font-weight:900;white-space:nowrap;text-transform:uppercase}
+.squad-order-move{width:30px;height:32px;border:1px solid #3d5365;border-radius:6px;background:#06121d;color:#dbe3ea;cursor:pointer;font-weight:950}
+.order-list.drag-active{outline:1px dashed rgba(244,182,50,.35);outline-offset:3px;border-radius:7px}
+@media(max-width:1100px){.squad-order-item{grid-template-columns:26px 38px 22px minmax(105px,1fr) 32px 32px}.squad-order-icon-wrap{width:36px;height:36px}.squad-order-bonus{grid-column:4/5;justify-self:start;margin-top:-3px}.squad-order-copy{align-self:end}}
+@media(max-width:900px){.custom-order-sticky-metric{top:58px}.squad-order-item{grid-template-columns:28px 42px 25px minmax(0,1fr) 34px 34px}.squad-order-bonus{grid-column:4/5;justify-self:start}.custom-order-reset{margin-left:0}}
+@media(max-width:520px){.squad-order-item{grid-template-columns:24px 38px 20px minmax(0,1fr) 32px 32px;padding:5px}.squad-order-icon-wrap{width:36px;height:36px}.squad-order-copy strong{font-size:.68rem}.squad-order-bonus{font-size:.53rem}.custom-order-sticky-metric{top:52px}}
