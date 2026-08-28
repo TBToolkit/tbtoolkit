@@ -123,10 +123,15 @@ function findUnitById(id){
   }
   return null;
 }
+const ATTACKING_REVIVABLE_FRACTION=0.90;
+function attackingRevivableQuantity(row){
+  const qty=Math.max(0,Math.floor(Number(row?.qty??row?.quantity??0)||0));
+  return Math.floor(qty*ATTACKING_REVIVABLE_FRACTION);
+}
 function rawSquadRevival(row,currency='gold'){
   const unit=findUnitById(row?.id);
   const each=currency==='silver'?Number(unit?.silverRevivalCost||0):Number(unit?.goldRevivalCost||0);
-  return Math.max(0,Number(row?.qty??row?.quantity??0))*each;
+  return attackingRevivableQuantity(row)*each;
 }
 function populateTempleLevel(){
   if(!els.templeLevel)return;
@@ -672,7 +677,7 @@ function clearPrediction(){
   if(els.predictionRows)els.predictionRows.innerHTML='';
 }
 function renderPrediction(opt){
-  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const actualGold=actualRevivalCost(r.rawGoldRevivalCost);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
+  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
     ? state.modes.battle.activeBattleType==='epic_arachne'
@@ -1893,8 +1898,8 @@ function renderPvpCpDetails(result){
     ?`Unknown enemy squads · ${Number(enemy?.archetypes?.length||0)} target archetypes`
     :(enemy?`${enemy.level} · ${enemy.name} · ${enemy.type}`:'Selected enemy');
   els.pvpCpDetailsMeta.textContent=unknown
-    ?`Projected Lifetime Damage is a comparison metric that assumes every friendly squad receives its predicted attack opportunities. Unknown-enemy damage gives equal weight to each valid combat-type and species archetype found in the army database. Flying, Mounted, Melee, and Ranged bonuses can stack with Human, Beast, Dragon, Giant, or Elemental bonuses when both apply. Gold and Silver revival costs use Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Standard treats revival costs within 5% as economically equivalent and preserves stronger average PvP damage.`
-    :`Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Gold and Silver revival costs use Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Standard treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.`;
+    ?`Projected Lifetime Damage is a comparison metric that assumes every friendly squad receives its predicted attack opportunities. Unknown-enemy damage gives equal weight to each valid combat-type and species archetype found in the army database. Flying, Mounted, Melee, and Ranged bonuses can stack with Human, Beast, Dragon, Giant, or Elemental bonuses when both apply. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Standard treats revival costs within 5% as economically equivalent and preserves stronger average PvP damage.`
+    :`Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Standard treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.`;
 
   const rows=[
     ...result.categories.troop.results,
