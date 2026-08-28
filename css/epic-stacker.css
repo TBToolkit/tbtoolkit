@@ -3146,3 +3146,17 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .live-damage-change{font-size:.60rem;font-weight:900}.live-damage-change.up{color:#55d982}.live-damage-change.down{color:#ff6b6b}.live-damage-change.neutral{color:#8495a4}
 .selection-heading-actions{display:flex;align-items:center;gap:12px}.live-damage-order{justify-content:flex-end;padding:0 12px 7px}
 @media(max-width:620px){.live-damage-slot{gap:4px}.live-damage-slot strong{font-size:.75rem}.live-damage-change{font-size:.56rem}.selection-heading-actions{gap:7px}}
+
+/* v170 — compact live metric placement beside section titles */
+.section-heading-copy{display:block!important;min-width:0}
+.section-title-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.section-heading-copy>p{margin:5px 0 0!important;padding-left:34px!important;color:#9fb0c0;font-size:12px}
+.battle-only-column-title .live-damage-slot{margin-left:2px}
+.selection-heading .section-heading-copy{flex:1 1 auto}
+.selection-heading-actions{margin-left:auto}
+.live-damage-slot{justify-content:flex-start!important}
+.live-damage-order{padding:0!important}
+@media(max-width:700px){
+  .section-heading-copy>p{padding-left:0!important}
+  .section-title-line{gap:7px}
+}
