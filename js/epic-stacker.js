@@ -95,6 +95,18 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
     get(){return workspace.methods.custom.orders;},
     set(value){workspace.methods.custom.orders=cloneOrders(value);}
   });
+  Object.defineProperty(workspace,'unitOrders',{
+    enumerable:false,
+    configurable:true,
+    get(){return workspace.methods.custom.unitOrders;},
+    set(value){workspace.methods.custom.unitOrders=cloneUnitOrders(value);}
+  });
+  Object.defineProperty(workspace,'unitOrderManual',{
+    enumerable:false,
+    configurable:true,
+    get(){return workspace.methods.custom.unitOrderManual;},
+    set(value){workspace.methods.custom.unitOrderManual=cloneUnitOrderManual(value);}
+  });
   Object.defineProperty(workspace,'resultCache',{
     enumerable:false,
     configurable:true,
@@ -1314,9 +1326,17 @@ function setOneSelection(category,id,checked){
 }
 function clearAllSelections(){
   modeState().selectedIds={troop:[],monster:[],mercenary:[]};
-  if(activeMode==='custom')state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
-if(activeMode==='battle')currentBattleWorkspace().orders={troop:[],monster:[],mercenary:[]};
-  if(activeMode==='battle'&&state.modes.battle.activeBattleMethod==='custom')currentBattleWorkspace().orders={troop:[],monster:[],mercenary:[]};
+  if(activeMode==='custom'){
+    state.modes.custom.orders={troop:[],monster:[],mercenary:[]};
+    state.modes.custom.unitOrders={troop:{},monster:{},mercenary:{}};
+    state.modes.custom.unitOrderManual={troop:{},monster:{},mercenary:{}};
+  }
+  if(activeMode==='battle'){
+    const workspace=currentBattleWorkspace();
+    workspace.orders={troop:[],monster:[],mercenary:[]};
+    workspace.unitOrders={troop:{},monster:{},mercenary:{}};
+    workspace.unitOrderManual={troop:{},monster:{},mercenary:{}};
+  }
   saveState();updateCounts();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();
 }
 function checkboxState(input,rows,selected){
@@ -1544,8 +1564,8 @@ function validate(){
     if(!(inp.healthInputs.HUMAN>0))errors.push('Enter Human Health.');
     if(!(inp.healthInputs.EPIC_HUNTER>0))errors.push('Enter Epic Hunter Health.');
     const sep=parseNumber(modeState().inputs.rankSeparation);
-    const maxSep=.5;
-    if(sep<0||sep>maxSep)errors.push(`Squad separation must be between 0% and ${maxSep}%.`);
+    const maxSep=1;
+    if(sep<0||sep>maxSep)errors.push(`Squad separation must be between 0% and ${maxSep.toFixed(2)}%.`);
   }
 
   if(modeState().selectedIds.troop.length&&!(inp.leadership>0))errors.push('Enter Leadership for selected Troops.');
