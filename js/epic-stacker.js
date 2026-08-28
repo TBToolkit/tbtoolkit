@@ -394,45 +394,62 @@ function loadSavedState(){
         state.modes.battle.activeBattleMethod=b.activeBattleMethod||'basic';
 
         const entries=Object.entries(b.workspaces);
-        const oldComboFormat=entries.some(([key])=>key.includes('.'));
 
-        if(oldComboFormat){
-          const grouped={};
-          for(const [key,ws] of entries){
-            const split=key.split('.');
-            const type=split[0]||ws?.inputs?.battleType||'epic_standard';
-            const method=split[1]||ws?.inputs?.battleMethod||'basic';
-            if(!grouped[type])grouped[type]={};
+        // Saved calculator data can contain a mixture of legacy method-keyed
+        // workspaces (for example "epic_standard.custom") and current
+        // battle-type workspaces ("epic_standard"). Restore each entry by its
+        // own shape instead of treating every workspace as legacy when any old
+        // key exists.
+        const legacyGrouped={};
+        const restoredTypes=new Set();
 
-            grouped[type][method]=ws;
-          }
-
-          for(const [type,methods] of Object.entries(grouped)){
-            // Prefer the workspace the user was actively using for this battle
-            // type; otherwise Basic, then Custom, then Optimize.
-            let sharedSeed=null;
-            if(type===state.modes.battle.activeBattleType){
-              sharedSeed=methods[state.modes.battle.activeBattleMethod]||null;
-            }
-            sharedSeed=sharedSeed||methods.basic||methods.custom||methods.optimize||Object.values(methods)[0]||null;
-
-            const merged={
-              inputs:{...(sharedSeed?.inputs||{})},
-              selectedIds:cloneIds(sharedSeed?.selectedIds),
-              methods:{
-                basic:{},
-                custom:{orders:cloneOrders(methods.custom?.orders)},
-                optimize:{resultCache:methods.optimize?.resultCache||null}
-              }
-            };
-
-            state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type,merged);
-          }
-        }else{
-          // v127+ type-keyed format.
-          for(const [type,ws] of entries){
+        for(const [key,ws] of entries){
+          const isCurrentTypeWorkspace=!!ws?.methods&&!key.includes('.');
+          if(isCurrentTypeWorkspace){
+            const type=key||ws?.inputs?.battleType||'epic_standard';
             state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type,ws);
+            restoredTypes.add(type);
+            continue;
           }
+
+          // Legacy method-keyed workspace.
+          const split=key.split('.');
+          const type=split[0]||ws?.inputs?.battleType||'epic_standard';
+          const method=split[1]||ws?.inputs?.battleMethod||'basic';
+          if(!legacyGrouped[type])legacyGrouped[type]={};
+          legacyGrouped[type][method]=ws;
+        }
+
+        for(const [type,methods] of Object.entries(legacyGrouped)){
+          // A current type-keyed workspace is authoritative if both formats
+          // are present. This prevents stale legacy keys from resetting a
+          // newer Custom Order after a browser restart.
+          if(restoredTypes.has(type))continue;
+
+          let sharedSeed=null;
+          if(type===state.modes.battle.activeBattleType){
+            sharedSeed=methods[state.modes.battle.activeBattleMethod]||null;
+          }
+          sharedSeed=sharedSeed||methods.basic||methods.custom||methods.optimize||Object.values(methods)[0]||null;
+
+          const legacyCustom=methods.custom||{};
+          const merged={
+            inputs:{...(sharedSeed?.inputs||{})},
+            selectedIds:cloneIds(sharedSeed?.selectedIds),
+            methods:{
+              basic:{},
+              custom:{
+                orders:cloneOrders(legacyCustom?.methods?.custom?.orders??legacyCustom?.orders),
+                unitOrders:cloneUnitOrders(legacyCustom?.methods?.custom?.unitOrders??legacyCustom?.unitOrders),
+                unitOrderManual:cloneUnitOrderManual(legacyCustom?.methods?.custom?.unitOrderManual??legacyCustom?.unitOrderManual)
+              },
+              optimize:{
+                resultCache:methods.optimize?.methods?.optimize?.resultCache??methods.optimize?.resultCache??null
+              }
+            }
+          };
+
+          state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type,merged);
         }
       }else if(b){
         // Older single Battle Calculator workspace.
