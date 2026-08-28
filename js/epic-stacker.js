@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=164';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=165';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=164';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=162';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -1491,12 +1491,15 @@ function categoryProbe(category,fill,inputs){
     if(activeMode==='battle'&&state.modes.battle.activeBattleType==='pvp_single_cp'){
       return calculatePvpCustomCategory({
         category,units:units[category],selectedIds:selectedIdsFor(category),
-        inputs:probeInputs,order:activeOrderState().orders[category],enemy:selectedPvpEnemy()
+        inputs:probeInputs,order:activeOrderState().orders[category],
+        unitOrder:(activeOrderState().orders[category]||[]).flatMap(level=>activeOrderState().unitOrders?.[category]?.[level]||[]),
+        enemy:selectedPvpEnemy()
       });
     }
     return calculateCustomCategory({
       category,units:units[category],selectedIds:selectedIdsFor(category),
-      inputs:probeInputs,order:activeOrderState().orders[category]
+      inputs:probeInputs,order:activeOrderState().orders[category],
+      unitOrder:(activeOrderState().orders[category]||[]).flatMap(level=>activeOrderState().unitOrders?.[category]?.[level]||[])
     });
   }
   if(activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_'))

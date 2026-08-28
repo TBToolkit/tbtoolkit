@@ -271,7 +271,17 @@ export function calculateCustomCategory({
   const orderMap = new Map((order || []).map((level,index)=>[level,index]));
   for (const unit of selected) if (!orderMap.has(unit.level)) throw new Error(`Add ${unit.level} to the ${category} die order.`);
 
-  const maxHealthEach = Math.max(...selected.map(u=>u.healthEach));
+  // Custom Order must use the same effective-health model as the battle
+  // simulator. The previous relative species adjustment was only an
+  // approximation and could invert manually ordered units from different
+  // health families (for example Human vs Beast inside the same tier).
+  const effectiveHealthEach = unit=>{
+    const group=SPECIES_GROUP[unit.species];
+    if(!group)throw new Error(`Unknown species: ${unit.species}`);
+    const pct=Number(inputs.healthInputs?.[group]||0);
+    return Number(unit.healthEach||0)*(1+pct/100);
+  };
+  const maxHealthEach = Math.max(...selected.map(effectiveHealthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];
   const separation = Number.isFinite(inputs.rankSeparation) ? inputs.rankSeparation : inputs.layerSeparation;
@@ -293,12 +303,13 @@ export function calculateCustomCategory({
     const rank = customInternalRank(unit, units);
     const deathIndex = deathIndexById.get(unit.id) ?? 0;
     const squadModifier = 1 + (squadCount - 1 - deathIndex) * separation;
-    const adj = speciesAdjustment(unit.species, inputs.healthInputs);
-    const modifier = squadModifier + adj;
+    const adj = 0;
+    const modifier = squadModifier;
     const capEach = unit[config.capacityEach];
-    const C = modifier * maxHealthEach / unit.healthEach;
+    const effectiveEach=effectiveHealthEach(unit);
+    const C = modifier * maxHealthEach / effectiveEach;
     const D = C * capEach;
-    return {unit,rank,orderIndex,deathIndex,squadModifier,speciesAdjustment:adj,modifier,C,D,capEach};
+    return {unit,rank,orderIndex,deathIndex,squadModifier,speciesAdjustment:adj,modifier,C,D,capEach,effectiveEach};
   });
 
   const sumD = interim.reduce((s,r)=>s+r.D,0);
@@ -308,33 +319,16 @@ export function calculateCustomCategory({
     const qty = mroundPositive(rawQty, roundTo);
     const totalCapacity = row.capEach * qty;
     return {
-      unit:row.unit,
       id:row.unit.id,category,displayOrder:row.unit.displayOrder,selectionKey:row.unit.selectionKey,
       level:row.unit.level,type:row.unit.type,name:row.unit.name,icon:row.unit.icon,
       qty,rawQty,roundTo,rank:row.rank,orderIndex:row.orderIndex,deathIndex:row.deathIndex,
       squadModifier:row.squadModifier,speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
-      squadHealth:(qty*row.unit.healthEach)/(1+row.speciesAdjustment),
+      squadHealth:qty*row.effectiveEach,
       squadStrength:row.unit.strengthEach*qty,totalCapacity,
-      nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.unit.healthEach
+      nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.effectiveEach
     };
   });
 
-  const orderedResults=results.slice().sort((a,b)=>a.deathIndex-b.deathIndex);
-  for(let i=1;i<orderedResults.length;i++){
-    const previous=orderedResults[i-1],current=orderedResults[i];
-    const eh=Number(current.unit?.healthEach||0)/(1+Number(current.speciesAdjustment||0));
-    const factor=1+Math.max(0,Number(separation)||0);
-    if(!(eh>0))continue;
-    const maxHealth=Number(previous.squadHealth||0)/factor;
-    if(Number(current.squadHealth||0)>=maxHealth){
-      const step=Math.max(1,Number(current.roundTo)||1);
-      const q=Math.max(step,Math.floor((maxHealth/eh)/step)*step);
-      if(q<current.qty){
-        current.qty=q; current.totalCapacity=current.capEach*q;
-        current.squadHealth=q*eh; current.squadStrength=current.unit.strengthEach*q;
-      }
-    }
-  }
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
