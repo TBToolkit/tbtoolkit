@@ -3113,3 +3113,15 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .pvp-cp-details-panel{
   margin-bottom:10px;
 }
+
+/* v161 nested Custom Die Order */
+.order-tier-card{display:grid}
+.order-item{grid-template-columns:30px 30px minmax(0,1fr) 34px 34px}
+.order-expand{width:28px;height:28px;border:0;background:transparent;color:#f0aa28;font-size:1.05rem;font-weight:900;cursor:pointer}
+.unit-order-list{display:grid;gap:5px;margin:0 8px 7px 28px;padding:7px;border:1px solid rgba(255,255,255,.08);border-top:0;border-radius:0 0 7px 7px;background:#06141f}
+.unit-order-list[hidden]{display:none!important}
+.unit-order-item{display:grid;grid-template-columns:25px minmax(0,1fr) 30px 30px;gap:5px;align-items:center;min-height:40px;padding:5px 6px;border:1px solid #2c4050;border-radius:6px;background:#0a1b27;user-select:none}
+.unit-order-item.dragging{opacity:.6}
+.unit-drag-handle{color:#718797;cursor:grab;text-align:center}
+.unit-order-copy strong{display:block;color:#e7edf1;font-size:.7rem}.unit-order-copy span{display:block;color:#8294a3;font-size:.56rem;margin-top:2px}
+.unit-order-move{width:28px;height:28px;border:1px solid #344b5d;border-radius:5px;background:#07131d;color:#dbe3ea;cursor:pointer;font-weight:900}
