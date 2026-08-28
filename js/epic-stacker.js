@@ -1277,7 +1277,7 @@ function syncCustomOrders(){
   for(const l of Object.keys(s.unitOrders[c]))if(!set.has(l)){delete s.unitOrders[c][l];delete s.unitOrderManual[c][l];}
 
   const selected=new Set(selectedIdsFor(c));
-  const defaults=legacyDefaultFlatOrder(c,s);
+  const defaults=customOrderV2DefaultFlatOrder(c,s);
   let flat=(s.squadOrder[c]||[]).filter(id=>selected.has(id));
   // First v175 load migrates the exact v174 tier + internal order into one list.
   if(!flat.length&&selected.size)flat=[...defaults];
@@ -1291,28 +1291,58 @@ function moveSquadOrderItem(category,index,delta){
  [a[index],a[next]]=[a[next],a[index]];saveState();renderOrderView();recalculate();
 }
 function commitSquadOrderFromDom(category,target){
+ updateSquadOrderRanks(target);
  activeOrderState().squadOrder[category]=[...target.querySelectorAll(':scope > .squad-order-item')].map(x=>x.dataset.unitId);
  saveState();recalculate();
 }
 function resetCustomOrderToDefault(){
  if(!isCustomOrderMode())return;const s=activeOrderState();
  s.orders={troop:[],monster:[],mercenary:[]};s.unitOrders={troop:{},monster:{},mercenary:{}};s.unitOrderManual={troop:{},monster:{},mercenary:{}};s.squadOrder={troop:[],monster:[],mercenary:[]};
- syncCustomOrders();saveState();renderOrderView();recalculate();
+ syncCustomOrders();
+ for(const category of ['troop','monster','mercenary'])s.squadOrder[category]=customOrderV2DefaultFlatOrder(category,s);
+ saveState();renderOrderView();recalculate();
 }
-function customOrderMatchupText(unit){
- const b=unit?.bonuses||{},pct=x=>Math.round((Number(x)||0)*100),bonus=k=>Number(b[String(k||'').toLowerCase()]||0);
+function customOrderMatchupValue(unit){
+ const b=unit?.bonuses||{},bonus=k=>Number(b[String(k||'').toLowerCase()]||0);
  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
  if(battleType==='pvp_single_cp'){
-  const enemy=selectedPvpEnemy();const total=bonus(enemy?.type)+bonus(enemy?.species);return `MATCHUP +${pct(total)}%`;
+  const enemy=selectedPvpEnemy();return bonus(enemy?.type)+bonus(enemy?.species);
  }
  if(battleType==='pvp_unknown'){
   const combat=['flying','mounted','melee','ranged'].reduce((s,k)=>s+bonus(k),0)/4;
   const species=['human','beast','dragon','giant','elemental'].reduce((s,k)=>s+bonus(k),0)/5;
-  return `AVG MATCHUP +${pct(combat+species)}%`;
+  return combat+species;
  }
  const bestCombat=Math.max(...['flying','mounted','melee','ranged'].map(bonus));
- const epic=bonus('epic'),arachne=battleType==='epic_arachne'?bonus('arachne'):0;
- return `BEST MATCHUP +${pct(bestCombat+epic+arachne)}%`;
+ return bestCombat+bonus('epic')+(battleType==='epic_arachne'?bonus('arachne'):0);
+}
+function customOrderMatchupText(unit){
+ const pct=Math.round(customOrderMatchupValue(unit)*100);
+ const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
+ if(battleType==='pvp_single_cp')return `MATCHUP +${pct}%`;
+ if(battleType==='pvp_unknown')return `AVG MATCHUP +${pct}%`;
+ return `BEST MATCHUP +${pct}%`;
+}
+function customOrderTierNumber(unit){
+ const match=String(unit?.level||'').match(/\d+/);return match?Number(match[0]):999;
+}
+function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
+ const selected=new Set(selectedIdsFor(category));
+ const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
+ // PvP keeps the established battle-specific default generator.
+ if(String(battleType).startsWith('pvp_'))return legacyDefaultFlatOrder(category,stateRef);
+ return units[category].filter(u=>selected.has(u.id)).slice().sort((a,b)=>{
+   const av=customOrderMatchupValue(a),bv=customOrderMatchupValue(b);
+   if(Math.abs(av-bv)>1e-12)return av-bv;
+   const at=customOrderTierNumber(a),bt=customOrderTierNumber(b);
+   if(at!==bt)return at-bt;
+   return Number(a.displayOrder||0)-Number(b.displayOrder||0);
+ }).map(u=>u.id);
+}
+function updateSquadOrderRanks(target){
+ [...target.querySelectorAll(':scope > .squad-order-item')].forEach((row,index)=>{
+   const rank=row.querySelector('.squad-order-rank');if(rank)rank.textContent=String(index+1);
+ });
 }
 function renderOrderView(){
  syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
@@ -1323,14 +1353,14 @@ function renderOrderView(){
   order.filter(id=>unitMap.has(id)).forEach((id,index)=>{
    const u=unitMap.get(id),row=document.createElement('div'),col=orderRowColors(category,u.level);row.className='squad-order-item';row.draggable=true;row.dataset.unitId=id;
    row.style.setProperty('--order-row-color',col.rowColor);row.style.setProperty('--order-accent',col.accent);
-   row.innerHTML=`<div class="squad-order-rank" title="Death order">${index+1}</div><div class="squad-order-icon-wrap"><img class="squad-order-icon" src="${escapeHtml(u.icon||'assets/unit-icons/missing-icon.svg')}" alt=""/></div><div class="squad-order-drag" title="Drag to reorder">☰</div><div class="squad-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.level)} · ${escapeHtml(u.type)}</span></div><div class="squad-order-bonus">${escapeHtml(customOrderMatchupText(u))}</div><button class="squad-order-move" type="button" aria-label="Move up">↑</button><button class="squad-order-move" type="button" aria-label="Move down">↓</button>`;
+   row.innerHTML=`<div class="squad-order-drag" title="Drag to reorder">☰</div><div class="squad-order-rank" title="Death order">${index+1}</div><div class="squad-order-icon-wrap"><img class="squad-order-icon" src="${escapeHtml(u.icon||'assets/unit-icons/missing-icon.svg')}" alt=""/></div><div class="squad-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.level)} · ${escapeHtml(u.type)}</span></div><div class="squad-order-bonus">${escapeHtml(customOrderMatchupText(u))}</div><button class="squad-order-move" type="button" aria-label="Move up">↑</button><button class="squad-order-move" type="button" aria-label="Move down">↓</button>`;
    const img=row.querySelector('.squad-order-icon');if(img)iconFallback(img);
    const buttons=row.querySelectorAll('.squad-order-move');buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
    row.ondragstart=ev=>{row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id)};
-   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');commitSquadOrderFromDom(category,target)};
+   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');updateSquadOrderRanks(target);commitSquadOrderFromDom(category,target)};
    target.append(row);
   });
-  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
+  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging);updateSquadOrderRanks(target)};
  }
 }
 
