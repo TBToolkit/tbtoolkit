@@ -410,10 +410,8 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   };
   const orderMap=new Map((order||[]).map((level,index)=>[normalizeOrderLevel(level),index]));
   const unitOrderKey=unit=>category==='mercenary'?economicTierKey(unit):String(unit.level||'').toUpperCase();
-  const explicitRank=new Map((unitOrder||[]).map((id,index)=>[id,index]));
-  const explicitComplete=selected.every(unit=>explicitRank.has(unit.id));
 
-  if(!explicitComplete)for(const unit of selected){
+  for(const unit of selected){
     const key=unitOrderKey(unit);
     if(!orderMap.has(key))throw new Error(`Add ${mercenaryLevel(unit.level)} to the ${category} die order.`);
   }
@@ -471,8 +469,9 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   // User fixes the tier order. The calculator iterates only the units *within*
   // each tier using the exact same revival-cost / expected-damage comparator
   // used by Basic.
-  let ordered=selected.slice().sort((a,b)=>explicitComplete?(explicitRank.get(a.id)-explicitRank.get(b.id)||Number(a.displayOrder||0)-Number(b.displayOrder||0)):(orderMap.get(unitOrderKey(a))-orderMap.get(unitOrderKey(b)) || (explicitRank.has(a.id)&&explicitRank.has(b.id)?explicitRank.get(a.id)-explicitRank.get(b.id):Number(a.displayOrder||0)-Number(b.displayOrder||0))));
-  if(explicitComplete)return calculateForOrder(ordered);
+  const explicitRank=new Map((unitOrder||[]).map((id,index)=>[id,index]));
+  let ordered=selected.slice().sort((a,b)=>orderMap.get(unitOrderKey(a))-orderMap.get(unitOrderKey(b)) || (explicitRank.has(a.id)&&explicitRank.has(b.id)?explicitRank.get(a.id)-explicitRank.get(b.id):Number(a.displayOrder||0)-Number(b.displayOrder||0)));
+  if(explicitRank.size)return calculateForOrder(ordered);
   const seen=new Set();
 
   for(let iteration=0;iteration<16;iteration++){
@@ -507,11 +506,10 @@ export function defaultPvpInternalOrder({category,units,selectedIds,inputs,order
   return result.results.slice().sort((a,b)=>Number(a.plannedDeathIndex??a.deathIndex??0)-Number(b.plannedDeathIndex??b.deathIndex??0)).map(r=>r.id);
 }
 
-export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,squadOrders=null,inputs,enemy,battleType='pvp_single_cp'}){
-  const flat=c=>squadOrders?.[c]?.length?squadOrders[c]:(orders[c]||[]).flatMap(l=>unitOrders?.[c]?.[l]||[]);
-  const troop=calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:flat('troop'),enemy});
-  const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:flat('monster'),enemy});
-  const mercenary=calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),enemy});
+export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,inputs,enemy,battleType='pvp_single_cp'}){
+  const troop=calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:(orders.troop||[]).flatMap(l=>unitOrders?.troop?.[l]||[]),enemy});
+  const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:(orders.monster||[]).flatMap(l=>unitOrders?.monster?.[l]||[]),enemy});
+  const mercenary=calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:(orders.mercenary||[]).flatMap(l=>unitOrders?.mercenary?.[l]||[]),enemy});
   const all=[...troop.results,...monster.results,...mercenary.results].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
   all.forEach((r,k)=>{
     r.predictedDeathIndex=k;
@@ -533,10 +531,10 @@ export function calculatePvpUnknownStack({troops,monsters,mercenaries,selectedId
   });
 }
 
-export function calculatePvpUnknownCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,squadOrders=null,inputs}){
+export function calculatePvpUnknownCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,inputs}){
   const enemy=unknownPvpEnemyModel({troops,monsters,mercenaries});
   return calculatePvpCustomStack({
-    troops,monsters,mercenaries,selectedIds,orders,unitOrders,squadOrders,inputs,enemy,battleType:'pvp_unknown'
+    troops,monsters,mercenaries,selectedIds,orders,unitOrders,inputs,enemy,battleType:'pvp_unknown'
   });
 }
 

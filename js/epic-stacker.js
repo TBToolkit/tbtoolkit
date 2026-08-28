@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=175';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=173';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=175';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=173';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -61,14 +61,12 @@ function cloneOrders(source){
 }
 function cloneUnitOrders(source){const out={troop:{},monster:{},mercenary:{}};for(const c of ['troop','monster','mercenary'])for(const [l,ids] of Object.entries(source?.[c]||{}))out[c][l]=[...(ids||[])];return out;}
 function cloneUnitOrderManual(source){const out={troop:{},monster:{},mercenary:{}};for(const c of ['troop','monster','mercenary'])for(const [l,v] of Object.entries(source?.[c]||{}))out[c][l]=!!v;return out;}
-function cloneSquadOrder(source){return cloneOrders(source);}
 function makeBattleWorkspace(type='epic_standard',seed=null){
   const customOrders=cloneOrders(
     seed?.methods?.custom?.orders ??
     seed?.orders
   );
   const customUnitOrders=cloneUnitOrders(seed?.methods?.custom?.unitOrders??seed?.unitOrders);const customUnitOrderManual=cloneUnitOrderManual(seed?.methods?.custom?.unitOrderManual??seed?.unitOrderManual);
-  const customSquadOrder=cloneSquadOrder(seed?.methods?.custom?.squadOrder??seed?.squadOrder);
   const optimizeResult=
     seed?.methods?.optimize?.resultCache ??
     seed?.resultCache ??
@@ -84,7 +82,7 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
     selectedIds:cloneIds(seed?.selectedIds),
     methods:{
       basic:{},
-      custom:{orders:customOrders,unitOrders:customUnitOrders,unitOrderManual:customUnitOrderManual,squadOrder:customSquadOrder},
+      custom:{orders:customOrders,unitOrders:customUnitOrders,unitOrderManual:customUnitOrderManual},
       optimize:{resultCache:optimizeResult}
     }
   };
@@ -108,12 +106,6 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
     configurable:true,
     get(){return workspace.methods.custom.unitOrderManual;},
     set(value){workspace.methods.custom.unitOrderManual=cloneUnitOrderManual(value);}
-  });
-  Object.defineProperty(workspace,'squadOrder',{
-    enumerable:false,
-    configurable:true,
-    get(){return workspace.methods.custom.squadOrder;},
-    set(value){workspace.methods.custom.squadOrder=cloneSquadOrder(value);}
   });
   Object.defineProperty(workspace,'resultCache',{
     enumerable:false,
@@ -172,7 +164,7 @@ function populateTempleLevel(){
 const state={preferences:{templeLevel:45},modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
-custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}},squadOrder:{troop:[],monster:[],mercenary:[]}},
+custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}}},
 battle:{activeBattleType:'epic_standard',activeBattleMethod:'basic',workspaces:{}}
 }};
 function ensureBattleWorkspace(type=state.modes.battle.activeBattleType,method=state.modes.battle.activeBattleMethod,seed=null){
@@ -193,7 +185,7 @@ function currentBattleWorkspace(){
   );
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -393,8 +385,6 @@ function loadSavedState(){
             state.modes[mode].selectedIds[c]=[...saved.modes[mode].selectedIds[c]];
           if(mode==='custom'&&Array.isArray(saved.modes.custom?.orders?.[c]))
             state.modes.custom.orders[c]=[...saved.modes.custom.orders[c]];
-          if(mode==='custom'&&Array.isArray(saved.modes.custom?.squadOrder?.[c]))
-            state.modes.custom.squadOrder[c]=[...saved.modes.custom.squadOrder[c]];
         }
       }
 
@@ -451,8 +441,7 @@ function loadSavedState(){
               custom:{
                 orders:cloneOrders(legacyCustom?.methods?.custom?.orders??legacyCustom?.orders),
                 unitOrders:cloneUnitOrders(legacyCustom?.methods?.custom?.unitOrders??legacyCustom?.unitOrders),
-                unitOrderManual:cloneUnitOrderManual(legacyCustom?.methods?.custom?.unitOrderManual??legacyCustom?.unitOrderManual),
-                squadOrder:cloneSquadOrder(legacyCustom?.methods?.custom?.squadOrder??legacyCustom?.squadOrder)
+                unitOrderManual:cloneUnitOrderManual(legacyCustom?.methods?.custom?.unitOrderManual??legacyCustom?.unitOrderManual)
               },
               optimize:{
                 resultCache:methods.optimize?.methods?.optimize?.resultCache??methods.optimize?.resultCache??null
@@ -913,7 +902,6 @@ function liveStandardMercenaryOptimizerPayload(opt){
 }
 
 function renderEpicOptimizedResult(opt){
-  clearLiveDamageMetrics();
   opt=liveStandardMercenaryOptimizerPayload(opt);
   const result=convertEpicV2Result(opt);
   renderResultRows('mercenary',result.categories.mercenary.results);
@@ -1248,180 +1236,60 @@ function defaultCustomUnitIds(category,level){
   }
   return chosen.slice().sort((a,b)=>customInternalRank(a,units[category])-customInternalRank(b,units[category])||a.displayOrder-b.displayOrder).map(u=>u.id);
 }
-function legacyDefaultFlatOrder(category,stateRef=activeOrderState()){
-  const selected=new Set(selectedIdsFor(category));
-  return (stateRef.orders?.[category]||[]).flatMap(level=>stateRef.unitOrders?.[category]?.[level]||[]).filter(id=>selected.has(id));
-}
-function insertMissingByDefault(existing,defaultOrder,missingId){
-  const target=defaultOrder.indexOf(missingId);
-  if(target<0)return [...existing,missingId];
-  for(let i=target-1;i>=0;i--){const id=defaultOrder[i],at=existing.indexOf(id);if(at>=0){const next=[...existing];next.splice(at+1,0,missingId);return next;}}
-  for(let i=target+1;i<defaultOrder.length;i++){const id=defaultOrder[i],at=existing.indexOf(id);if(at>=0){const next=[...existing];next.splice(at,0,missingId);return next;}}
-  return [...existing,missingId];
-}
 function syncCustomOrders(){
- // Never reconcile persisted order against an empty database during startup.
+ // During initial page startup configureModeUI() runs before loadData().
+ // Never reconcile a saved Custom Order against an empty unit database:
+ // selectedLevels() would be empty and would erase the active workspace's
+ // persisted tier/unit order before the database finishes loading.
  if(!isCustomOrderMode()||!armyV2.length)return;
- const s=activeOrderState();
- s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};
- s.unitOrderManual=s.unitOrderManual||{troop:{},monster:{},mercenary:{}};
- s.squadOrder=s.squadOrder||{troop:[],monster:[],mercenary:[]};
- // Keep the v174 nested model alive only as the trusted default-order generator
- // and as a migration source for existing saved workspaces.
+ const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};s.unitOrderManual=s.unitOrderManual||{troop:{},monster:{},mercenary:{}};
  for(const c of ['troop','monster','mercenary']){
   const levels=selectedLevels(c),set=new Set(levels),next=(s.orders[c]||[]).filter(x=>set.has(x));for(const l of levels)if(!next.includes(l))next.push(l);s.orders[c]=next;s.unitOrders[c]=s.unitOrders[c]||{};s.unitOrderManual[c]=s.unitOrderManual[c]||{};
   for(const l of levels){
    const chosen=units[c].filter(u=>u.level===l&&selectedIdsFor(c).includes(u.id)),ids=new Set(chosen.map(u=>u.id));
-   if(s.unitOrderManual[c][l]){const saved=(s.unitOrders[c][l]||[]).filter(id=>ids.has(id));for(const id of defaultCustomUnitIds(c,l))if(!saved.includes(id))saved.push(id);s.unitOrders[c][l]=saved;}
-   else s.unitOrders[c][l]=defaultCustomUnitIds(c,l);
+   if(s.unitOrderManual[c][l]){
+    const saved=(s.unitOrders[c][l]||[]).filter(id=>ids.has(id));for(const id of defaultCustomUnitIds(c,l))if(!saved.includes(id))saved.push(id);s.unitOrders[c][l]=saved;
+   }else s.unitOrders[c][l]=defaultCustomUnitIds(c,l);
   }
   for(const l of Object.keys(s.unitOrders[c]))if(!set.has(l)){delete s.unitOrders[c][l];delete s.unitOrderManual[c][l];}
-
-  const selected=new Set(selectedIdsFor(c));
-  const defaults=customOrderV2DefaultFlatOrder(c,s);
-  let flat=(s.squadOrder[c]||[]).filter(id=>selected.has(id));
-  // First v175 load migrates the exact v174 tier + internal order into one list.
-  if(!flat.length&&selected.size)flat=[...defaults];
-  for(const id of defaults)if(selected.has(id)&&!flat.includes(id))flat=insertMissingByDefault(flat,defaults,id);
-  for(const id of selected)if(!flat.includes(id))flat.push(id);
-  s.squadOrder[c]=flat;
  }
 }
-function moveSquadOrderItem(category,index,delta){
- const a=activeOrderState().squadOrder?.[category]||[],next=index+delta;if(next<0||next>=a.length)return;
- [a[index],a[next]]=[a[next],a[index]];saveState();renderOrderView();recalculate();
+function moveOrderItem(category,index,delta){
+  const a=activeOrderState().orders[category],j=index+delta;
+  if(j<0||j>=a.length)return;
+  [a[index],a[j]]=[a[j],a[index]];
+  saveState();renderOrderView();recalculate();
 }
-function commitSquadOrderFromDom(category,target){
- activeOrderState().squadOrder[category]=[...target.querySelectorAll(':scope > .squad-order-item')].map(x=>x.dataset.unitId);
- saveState();recalculate();
+function reorderByDrop(category,from,to){
+  const a=activeOrderState().orders[category];
+  if(from===to||from<0||to<0)return;
+  const[item]=a.splice(from,1);a.splice(to,0,item);
+  saveState();renderOrderView();recalculate();
 }
-function resetCustomOrderToDefault(){
- if(!isCustomOrderMode())return;const s=activeOrderState();
- s.orders={troop:[],monster:[],mercenary:[]};s.unitOrders={troop:{},monster:{},mercenary:{}};s.unitOrderManual={troop:{},monster:{},mercenary:{}};s.squadOrder={troop:[],monster:[],mercenary:[]};
- syncCustomOrders();
- for(const category of ['troop','monster','mercenary'])s.squadOrder[category]=customOrderV2DefaultFlatOrder(category,s);
- saveState();renderOrderView();recalculate();
-}
-function customOrderMatchupValue(unit){
- const b=unit?.bonuses||{},bonus=k=>Number(b[String(k||'').toLowerCase()]||0);
- const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
- if(battleType==='pvp_single_cp'){
-  const enemy=selectedPvpEnemy();return bonus(enemy?.type)+bonus(enemy?.species);
- }
- if(battleType==='pvp_unknown'){
-  const combat=['flying','mounted','melee','ranged'].reduce((s,k)=>s+bonus(k),0)/4;
-  const species=['human','beast','dragon','giant','elemental'].reduce((s,k)=>s+bonus(k),0)/5;
-  return combat+species;
- }
- const bestCombat=Math.max(...['flying','mounted','melee','ranged'].map(bonus));
- return bestCombat+bonus('epic')+(battleType==='epic_arachne'?bonus('arachne'):0);
-}
-function customOrderMatchupText(unit){
- const pct=Math.round(customOrderMatchupValue(unit)*100);
- const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
- if(battleType==='pvp_single_cp')return `MATCHUP +${pct}%`;
- if(battleType==='pvp_unknown')return `AVG MATCHUP +${pct}%`;
- return `BEST MATCHUP +${pct}%`;
-}
-function customOrderTierNumber(unit){
- const match=String(unit?.level||'').match(/\d+/);return match?Number(match[0]):999;
-}
-function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
- const selected=new Set(selectedIdsFor(category));
- const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
-
- // PvP Custom Order starts from the exact Standard-method ordering model.
- // Standard builds a global PvP death order using revival-cost exposure and
- // expected PvP damage (including matchup, Specialist 2x, DD and ST). The V2
- // UI keeps separate capacity columns, so preserve Standard's relative order
- // by filtering that global planned order to the requested category.
- if(String(battleType).startsWith('pvp_')){
-   const selectedIds={
-     troop:[...selectedIdsFor('troop')],
-     monster:[...selectedIdsFor('monster')],
-     mercenary:[...selectedIdsFor('mercenary')]
-   };
-   const inputs=baseEngineInputs();
-   let standard=null;
-   if(battleType==='pvp_unknown'){
-     standard=calculatePvpUnknownStack({
-       troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-       selectedIds,inputs
-     });
-   }else{
-     standard=calculatePvpCpStack({
-       troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-       selectedIds,inputs,enemy:selectedPvpEnemy(),battleType:'pvp_single_cp'
-     });
-   }
-   const planned=Array.isArray(standard?.plannedOrder)?standard.plannedOrder:[];
-   const filtered=planned.filter(id=>selected.has(id));
-   if(filtered.length===selected.size)return filtered;
-
-   // Defensive fallback if a future PvP result omits plannedOrder.
-   const rows=standard?.categories?.[category]?.results||[];
-   const fallback=rows.slice().sort((a,b)=>
-     Number(a.plannedDeathIndex??a.deathIndex??0)-Number(b.plannedDeathIndex??b.deathIndex??0)
-   ).map(r=>r.id).filter(id=>selected.has(id));
-   for(const id of selected)if(!fallback.includes(id))fallback.push(id);
-   return fallback;
- }
-
- return units[category].filter(u=>selected.has(u.id)).slice().sort((a,b)=>{
-   const av=customOrderMatchupValue(a),bv=customOrderMatchupValue(b);
-   if(Math.abs(av-bv)>1e-12)return av-bv;
-   const at=customOrderTierNumber(a),bt=customOrderTierNumber(b);
-   if(at!==bt)return at-bt;
-   return Number(a.displayOrder||0)-Number(b.displayOrder||0);
- }).map(u=>u.id);
+function commitOrderFromDom(category,target){
+  const levels=[...target.querySelectorAll(':scope > .order-tier-card')].map(el=>el.dataset.level);
+  activeOrderState().orders[category]=levels;
+  saveState();
+  recalculate();
 }
 
-let customOrderFloatObserver=null;
-function updateCustomOrderFloatingMetric(){
-  const bar=els.customOrderFloatingMetric||document.getElementById('customOrderFloatingMetric');
-  const panel=els.orderView||document.getElementById('orderView');
-  if(!bar||!panel){return;}
-  const active=isCustomOrderMode()&&!panel.hidden;
-  if(!active){bar.hidden=true;return;}
-  const r=panel.getBoundingClientRect();
-  const visible=r.bottom>80&&r.top<window.innerHeight-40;
-  // Show the compact floating metric after the normal heading has scrolled
-  // out of view, and hide it again when the Custom Order section leaves view.
-  bar.hidden=!(visible&&r.top<70);
-}
-function wireCustomOrderFloatingMetric(){
-  if(customOrderFloatObserver)return;
-  const panel=els.orderView||document.getElementById('orderView');
-  if(!panel)return;
-  customOrderFloatObserver=new IntersectionObserver(()=>updateCustomOrderFloatingMetric(),{threshold:[0,0.01,0.2,1]});
-  customOrderFloatObserver.observe(panel);
-  window.addEventListener('scroll',updateCustomOrderFloatingMetric,{passive:true});
-  window.addEventListener('resize',updateCustomOrderFloatingMetric,{passive:true});
-}
+function moveUnitOrderItem(c,l,i,d){activeOrderState().unitOrderManual[c][l]=true;const a=activeOrderState().unitOrders?.[c]?.[l]||[],n=i+d;if(n<0||n>=a.length)return;[a[i],a[n]]=[a[n],a[i]];saveState();renderOrderView();recalculate();}
+function commitUnitOrderFromDom(c,l,t){activeOrderState().unitOrderManual[c][l]=true;activeOrderState().unitOrders[c][l]=[...t.querySelectorAll('.unit-order-item')].map(x=>x.dataset.unitId);saveState();recalculate();}
+const expandedCustomOrderTiers=new Set();
 function renderOrderView(){
- syncCustomOrders();updateCustomOrderFloatingMetric();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
- for(const category of ['troop','monster','mercenary']){
-  const target=els[ids[category]],order=st.squadOrder?.[category]||[],selected=new Set(selectedIdsFor(category)),unitMap=new Map(units[category].filter(u=>selected.has(u.id)).map(u=>[u.id,u]));
-  target.innerHTML='';
-  if(!order.length){target.innerHTML='<div class="order-empty">Select units to create an order.</div>';continue;}
-  order.filter(id=>unitMap.has(id)).forEach((id,index)=>{
-   const u=unitMap.get(id),row=document.createElement('div'),col=orderRowColors(category,u.level);row.className='squad-order-item';row.draggable=true;row.dataset.unitId=id;
-   row.style.setProperty('--order-row-color',col.rowColor);row.style.setProperty('--order-accent',col.accent);
-   row.innerHTML=`<div class="squad-order-icon-wrap"><img class="squad-order-icon" src="${escapeHtml(u.icon||'assets/unit-icons/missing-icon.svg')}" alt=""/></div><div class="squad-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.level)} · ${escapeHtml(u.type)}</span></div><div class="squad-order-bonus">${escapeHtml(customOrderMatchupText(u))}</div><button class="squad-order-move" type="button" aria-label="Move up">↑</button><button class="squad-order-move" type="button" aria-label="Move down">↓</button>`;
-   const img=row.querySelector('.squad-order-icon');if(img)iconFallback(img);
-   const buttons=row.querySelectorAll('.squad-order-move');
-   buttons.forEach(btn=>{btn.draggable=false;btn.onpointerdown=ev=>ev.stopPropagation();});
-   buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
-   row.ondragstart=ev=>{
-     if(ev.target?.closest?.('.squad-order-move')){ev.preventDefault();return;}
-     row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
-   };
-   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');commitSquadOrderFromDom(category,target)};
-   target.append(row);
-  });
-  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
- }
-}
+ syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
+ for(const c of ['troop','monster','mercenary']){const t=els[ids[c]],order=st.orders[c],sel=new Set(modeState().selectedIds[c]);t.innerHTML='';if(!order.length){t.innerHTML='<div class="order-empty">Select units to create an order.</div>';continue;}
+ order.forEach((l,i)=>{const chosen=units[c].filter(u=>u.level===l&&sel.has(u.id)),card=document.createElement('div');card.className='order-tier-card';card.dataset.level=l;
+ const row=document.createElement('div');row.className='order-item';row.draggable=true;row.dataset.level=l;const col=orderRowColors(c,l);row.style.setProperty('--order-row-color',col.rowColor);row.style.setProperty('--order-accent',col.accent);const key=c+'|'+l,ex=expandedCustomOrderTiers.has(key);
+ row.innerHTML=`<div class="drag-handle">☰</div><button class="order-expand" type="button">${ex?'⌃':'⌄'}</button><div class="order-copy"><strong>${escapeHtml(l)}</strong><span>${chosen.length} selected unit${chosen.length===1?'':'s'}</span></div><button class="order-move" type="button">↑</button><button class="order-move" type="button">↓</button>`;
+ row.querySelector('.order-expand').onclick=e=>{e.stopPropagation();ex?expandedCustomOrderTiers.delete(key):expandedCustomOrderTiers.add(key);renderOrderView();};const mb=row.querySelectorAll('.order-move');mb[0].onclick=()=>moveOrderItem(c,i,-1);mb[1].onclick=()=>moveOrderItem(c,i,1);
+ row.ondragstart=e=>{row.classList.add('dragging');e.dataTransfer.setData('text/plain',l)};row.ondragend=()=>{row.classList.remove('dragging');commitOrderFromDom(c,t)};card.append(row);
+ const inner=document.createElement('div');inner.className='unit-order-list';inner.hidden=!ex;const map=new Map(chosen.map(u=>[u.id,u]));(st.unitOrders?.[c]?.[l]||[]).filter(id=>map.has(id)).forEach((id,k)=>{const u=map.get(id),ur=document.createElement('div');ur.className='unit-order-item';ur.draggable=true;ur.dataset.unitId=id;
+        ur.style.setProperty('--unit-order-row-color',col.rowColor);
+        ur.style.setProperty('--unit-order-accent',col.accent);ur.innerHTML=`<div class="unit-drag-handle">☰</div><div class="unit-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.type)}</span></div><button class="unit-order-move" type="button">↑</button><button class="unit-order-move" type="button">↓</button>`;const bs=ur.querySelectorAll('.unit-order-move');bs[0].onclick=()=>moveUnitOrderItem(c,l,k,-1);bs[1].onclick=()=>moveUnitOrderItem(c,l,k,1);ur.ondragstart=e=>{e.stopPropagation();ur.classList.add('dragging')};ur.ondragend=e=>{e.stopPropagation();ur.classList.remove('dragging');commitUnitOrderFromDom(c,l,inner)};inner.append(ur)});
+ inner.ondragover=e=>{const d=inner.querySelector('.unit-order-item.dragging');if(!d)return;e.preventDefault();e.stopPropagation();let before=null;for(const x of inner.querySelectorAll('.unit-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=x;break}}before?inner.insertBefore(d,before):inner.append(d)};card.append(inner);t.append(card)});
+ t.ondragover=e=>{if(e.target.closest('.unit-order-list'))return;const d=t.querySelector('.order-item.dragging');if(!d)return;e.preventDefault();const dc=d.closest('.order-tier-card');let before=null;for(const x of t.querySelectorAll(':scope > .order-tier-card')){if(x===dc)continue;const r=x.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=x;break}}before?t.insertBefore(dc,before):t.append(dc)};
+ }}
 
 const expandedSelectionSections=new Set();
 const MERC_LEVEL_LABEL={2:'II',7:'VII',6:'VI',5:'V'};
@@ -1494,7 +1362,6 @@ function clearAllSelections(){
     workspace.orders={troop:[],monster:[],mercenary:[]};
     workspace.unitOrders={troop:{},monster:{},mercenary:{}};
     workspace.unitOrderManual={troop:{},monster:{},mercenary:{}};
-    workspace.squadOrder={troop:[],monster:[],mercenary:[]};
   }
   saveState();updateCounts();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();
 }
@@ -1672,7 +1539,7 @@ function categoryProbe(category,fill,inputs){
       return calculatePvpCustomCategory({
         category,units:units[category],selectedIds:selectedIdsFor(category),
         inputs:probeInputs,order:activeOrderState().orders[category],
-        unitOrder:activeOrderState().squadOrder?.[category]||[],
+        unitOrder:(activeOrderState().orders[category]||[]).flatMap(level=>activeOrderState().unitOrders?.[category]?.[level]||[]),
         enemy:selectedPvpEnemy()
       });
     }
@@ -2082,16 +1949,11 @@ function renderPvpCpDetails(result){
       <td>${escapeHtml(reasonFor(r))}</td>
     </tr>`).join('');
 }
-function clearLiveDamageMetrics(){
- document.querySelectorAll('.live-damage-slot').forEach(x=>x.innerHTML='');
- const floating=els.customOrderFloatingMetric||document.getElementById('customOrderFloatingMetric');
- if(floating)floating.hidden=true;
-}
 const liveDamagePrevious=new Map();
 function liveDamageKey(){return activeMode==='battle'?`${state.modes.battle.activeBattleType}|${state.modes.battle.activeBattleMethod}`:activeMode;}
 function updateLiveDamageMetric(value,isPvp){
  const slots=document.querySelectorAll('.live-damage-slot'),method=activeMode==='battle'?state.modes.battle.activeBattleMethod:'';
- if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){clearLiveDamageMetrics();return;}
+ if(method==='optimize'||!Number.isFinite(Number(value))||Number(value)<=0){slots.forEach(x=>x.innerHTML='');return;}
  const key=liveDamageKey(),n=Number(value),prev=liveDamagePrevious.get(key);let delta='';
  if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<0.0005?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
  liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>${delta}`;slots.forEach(x=>x.innerHTML=markup);
@@ -2104,7 +1966,6 @@ function recalculate(){
   const any=Object.values(modeState().selectedIds).some(a=>a.length);
 
   if(isAnyEpicOptimizeMode()){
-    clearLiveDamageMetrics();
     if(epicWorker){epicWorker.terminate();epicWorker=null;closeOptimizerModal();}
     const errors=any?validate():[];showValidation(errors);const sig=!errors.length&&any?currentEpicEffectiveSignature():'';
     if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature&&sig===lastOptimizedEpicSignature){epicResultCurrent=true;renderEpicOptimizedResult(lastOptimizedEpicPayload);setOptimizeButtonState();return;}
@@ -2138,17 +1999,17 @@ function recalculate(){
         if(battleType==='pvp_single_cp'){
           result=calculatePvpCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs,enemy:selectedPvpEnemy()
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs,enemy:selectedPvpEnemy()
           });
         }else if(battleType==='pvp_unknown'){
           result=calculatePvpUnknownCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs
           });
         }else{
           result=calculateCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs
+            selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,inputs
           });
         }
       }else if(battleType==='pvp_single_cp'){
@@ -2173,7 +2034,7 @@ function recalculate(){
         });
       }
     }
-    else{syncCustomOrders();result=calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,unitOrders:state.modes.custom.unitOrders,squadOrders:state.modes.custom.squadOrder,inputs});}
+    else{syncCustomOrders();result=calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:state.modes.custom.orders,unitOrders:state.modes.custom.unitOrders,inputs});}
 
     renderResultRows('mercenary',result.categories.mercenary.results);
     renderResultRows('monster',result.categories.monster.results);
@@ -2452,7 +2313,6 @@ function wireEvents(){
       recalculate();
     });
   }
-  els.resetCustomOrderDefault?.addEventListener('click',resetCustomOrderToDefault);
   els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});
   els.minimumSeparation?.addEventListener('change',()=>{modeState().inputs.minimumSeparation=els.minimumSeparation.checked;updateSeparationModeUI();saveState();recalculate();});
   els.resetAdvancedSettings.addEventListener('click',resetAdvancedSettings);
@@ -2537,7 +2397,6 @@ async function init(){
   loadSavedOptimizerResult();
   applyStateToInputs();
   wireEvents();
-  wireCustomOrderFloatingMetric();
 
   // Only an actual database request/parse failure should produce the
   // "unit database could not be loaded" message.
