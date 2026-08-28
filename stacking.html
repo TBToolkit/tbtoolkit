@@ -8,7 +8,7 @@
 <link href="css/styles.css?v=32" rel="stylesheet"/>
 <link href="css/epic-stacker.css?v=158" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=159" type="module"></script>
+<script src="js/epic-stacker.js?v=160" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -242,8 +242,8 @@
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
-<div><span>Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
-<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong><small>Uses Temple-adjusted Gold revival</small></div>
+<div><span>Gold Revival</span><strong id="rawGoldRevival">—</strong><small>90% revivable attacking losses · Temple-adjusted</small></div>
+<div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong><small>Uses 90% revivable · Temple-adjusted Gold</small></div>
 </div>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
@@ -259,15 +259,15 @@
 <section class="pvp-cp-details-panel" hidden id="pvpCpDetailsPanel">
 <div class="pvp-cp-metrics">
 <div><span>Projected Lifetime Damage</span><strong id="pvpCpLifetimeDamage">—</strong><small>Expected full-attrition comparison metric</small></div>
-<div><span>Full-Attrition Gold Revival</span><strong id="pvpCpFullGold">—</strong><small>Temple-adjusted Gold if every friendly squad dies</small></div>
-<div><span>Full-Attrition Silver Revival</span><strong id="pvpCpFullSilver">—</strong><small>Temple-adjusted Silver if every friendly squad dies</small></div>
+<div><span>Gold Revival</span><strong id="pvpCpFullGold">—</strong><small>90% revivable attacking losses · Temple-adjusted</small></div>
+<div><span>Silver Revival</span><strong id="pvpCpFullSilver">—</strong><small>90% revivable attacking losses · Temple-adjusted</small></div>
 </div>
 <div class="pvp-cp-summary">
 <div><span id="pvpEnemySummaryLabel">Selected Enemy</span><strong id="pvpCpEnemyName">—</strong></div>
 <div><span>Calculation Goal</span><strong>Lower Revival Cost First</strong></div>
 </div>
 <details class="battle-details">
-<summary><span class="battle-details-title">PvP Battle Details</span><span class="battle-details-subtitle">View predicted death order, full-squad revival cost, and expected PvP damage</span></summary>
+<summary><span class="battle-details-title">PvP Battle Details</span><span class="battle-details-subtitle">View predicted death order, revival cost, and expected PvP damage</span></summary>
 <div class="prediction-meta" id="pvpCpDetailsMeta"></div>
 <div class="prediction-table-wrap">
 <table class="prediction-table pvp-cp-table">
