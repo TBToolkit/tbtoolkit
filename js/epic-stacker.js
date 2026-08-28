@@ -1291,7 +1291,6 @@ function moveSquadOrderItem(category,index,delta){
  [a[index],a[next]]=[a[next],a[index]];saveState();renderOrderView();recalculate();
 }
 function commitSquadOrderFromDom(category,target){
- updateSquadOrderRanks(target);
  activeOrderState().squadOrder[category]=[...target.querySelectorAll(':scope > .squad-order-item')].map(x=>x.dataset.unitId);
  saveState();recalculate();
 }
@@ -1339,11 +1338,6 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
    return Number(a.displayOrder||0)-Number(b.displayOrder||0);
  }).map(u=>u.id);
 }
-function updateSquadOrderRanks(target){
- [...target.querySelectorAll(':scope > .squad-order-item')].forEach((row,index)=>{
-   const rank=row.querySelector('.squad-order-rank');if(rank)rank.textContent=String(index+1);
- });
-}
 function renderOrderView(){
  syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
  for(const category of ['troop','monster','mercenary']){
@@ -1353,14 +1347,19 @@ function renderOrderView(){
   order.filter(id=>unitMap.has(id)).forEach((id,index)=>{
    const u=unitMap.get(id),row=document.createElement('div'),col=orderRowColors(category,u.level);row.className='squad-order-item';row.draggable=true;row.dataset.unitId=id;
    row.style.setProperty('--order-row-color',col.rowColor);row.style.setProperty('--order-accent',col.accent);
-   row.innerHTML=`<div class="squad-order-drag" title="Drag to reorder">☰</div><div class="squad-order-rank" title="Death order">${index+1}</div><div class="squad-order-icon-wrap"><img class="squad-order-icon" src="${escapeHtml(u.icon||'assets/unit-icons/missing-icon.svg')}" alt=""/></div><div class="squad-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.level)} · ${escapeHtml(u.type)}</span></div><div class="squad-order-bonus">${escapeHtml(customOrderMatchupText(u))}</div><button class="squad-order-move" type="button" aria-label="Move up">↑</button><button class="squad-order-move" type="button" aria-label="Move down">↓</button>`;
+   row.innerHTML=`<div class="squad-order-icon-wrap"><img class="squad-order-icon" src="${escapeHtml(u.icon||'assets/unit-icons/missing-icon.svg')}" alt=""/></div><div class="squad-order-copy"><strong>${escapeHtml(u.name)}</strong><span>${escapeHtml(u.level)} · ${escapeHtml(u.type)}</span></div><div class="squad-order-bonus">${escapeHtml(customOrderMatchupText(u))}</div><button class="squad-order-move" type="button" aria-label="Move up">↑</button><button class="squad-order-move" type="button" aria-label="Move down">↓</button>`;
    const img=row.querySelector('.squad-order-icon');if(img)iconFallback(img);
-   const buttons=row.querySelectorAll('.squad-order-move');buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
-   row.ondragstart=ev=>{row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id)};
-   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');updateSquadOrderRanks(target);commitSquadOrderFromDom(category,target)};
+   const buttons=row.querySelectorAll('.squad-order-move');
+   buttons.forEach(btn=>{btn.draggable=false;btn.onpointerdown=ev=>ev.stopPropagation();});
+   buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
+   row.ondragstart=ev=>{
+     if(ev.target?.closest?.('.squad-order-move')){ev.preventDefault();return;}
+     row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
+   };
+   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');commitSquadOrderFromDom(category,target)};
    target.append(row);
   });
-  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging);updateSquadOrderRanks(target)};
+  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
  }
 }
 
