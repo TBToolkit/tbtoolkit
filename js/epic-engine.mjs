@@ -247,7 +247,7 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
 
 function customScore(unit) { return pveScore(unit, false); }
 
-function customInternalRank(unit, allUnits) {
+export function customInternalRank(unit, allUnits) {
   const score = customScore(unit);
   let lower = 0;
   for (const other of allUnits) {

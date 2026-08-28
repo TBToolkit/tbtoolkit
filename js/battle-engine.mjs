@@ -499,6 +499,11 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   return calculateForOrder(ordered);
 }
 
+export function defaultPvpInternalOrder({category,units,selectedIds,inputs,order,enemy}){
+  const result=calculatePvpCustomCategory({category,units,selectedIds,inputs,order,unitOrder:null,enemy});
+  return result.results.slice().sort((a,b)=>Number(a.plannedDeathIndex??a.deathIndex??0)-Number(b.plannedDeathIndex??b.deathIndex??0)).map(r=>r.id);
+}
+
 export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders,unitOrders=null,inputs,enemy,battleType='pvp_single_cp'}){
   const troop=calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:(orders.troop||[]).flatMap(l=>unitOrders?.troop?.[l]||[]),enemy});
   const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:(orders.monster||[]).flatMap(l=>unitOrders?.monster?.[l]||[]),enemy});

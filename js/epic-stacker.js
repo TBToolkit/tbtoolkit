@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory } from './epic-engine.mjs?v=161';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=162';
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack } from './battle-engine.mjs?v=161';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=162';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -60,12 +60,13 @@ function cloneOrders(source){
   };
 }
 function cloneUnitOrders(source){const out={troop:{},monster:{},mercenary:{}};for(const c of ['troop','monster','mercenary'])for(const [l,ids] of Object.entries(source?.[c]||{}))out[c][l]=[...(ids||[])];return out;}
+function cloneUnitOrderManual(source){const out={troop:{},monster:{},mercenary:{}};for(const c of ['troop','monster','mercenary'])for(const [l,v] of Object.entries(source?.[c]||{}))out[c][l]=!!v;return out;}
 function makeBattleWorkspace(type='epic_standard',seed=null){
   const customOrders=cloneOrders(
     seed?.methods?.custom?.orders ??
     seed?.orders
   );
-  const customUnitOrders=cloneUnitOrders(seed?.methods?.custom?.unitOrders??seed?.unitOrders);
+  const customUnitOrders=cloneUnitOrders(seed?.methods?.custom?.unitOrders??seed?.unitOrders);const customUnitOrderManual=cloneUnitOrderManual(seed?.methods?.custom?.unitOrderManual??seed?.unitOrderManual);
   const optimizeResult=
     seed?.methods?.optimize?.resultCache ??
     seed?.resultCache ??
@@ -81,7 +82,7 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
     selectedIds:cloneIds(seed?.selectedIds),
     methods:{
       basic:{},
-      custom:{orders:customOrders,unitOrders:customUnitOrders},
+      custom:{orders:customOrders,unitOrders:customUnitOrders,unitOrderManual:customUnitOrderManual},
       optimize:{resultCache:optimizeResult}
     }
   };
@@ -151,7 +152,7 @@ function populateTempleLevel(){
 const state={preferences:{templeLevel:45},modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
-custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}}},
+custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}}},
 battle:{activeBattleType:'epic_standard',activeBattleMethod:'basic',workspaces:{}}
 }};
 function ensureBattleWorkspace(type=state.modes.battle.activeBattleType,method=state.modes.battle.activeBattleMethod,seed=null){
@@ -1183,12 +1184,36 @@ function isAnyEpicOptimizeMode(){
 function isCustomOrderMode(){
   return activeMode==='custom'||(activeMode==='battle'&&state.modes.battle.activeBattleMethod==='custom');
 }
+function defaultCustomUnitIds(category,level){
+  const chosen=units[category].filter(u=>u.level===level&&selectedIdsFor(category).includes(u.id));
+  if(!chosen.length)return[];
+  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
+  if(String(battleType).startsWith('pvp_')){
+    const inputs=baseEngineInputs();
+    const enemy=battleType==='pvp_single_cp'?selectedPvpEnemy():null;
+    if(battleType==='pvp_unknown'){
+      // Let the unknown PvP wrapper's existing archetype model establish its
+      // automatic order by calculating this tier with no explicit override.
+      const selectedIds={troop:[],monster:[],mercenary:[]};selectedIds[category]=chosen.map(u=>u.id);
+      const orders={troop:[],monster:[],mercenary:[]};orders[category]=[level];
+      const result=calculatePvpUnknownCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,orders,unitOrders:null,inputs});
+      return result.categories[category].results.slice().sort((a,b)=>a.plannedDeathIndex-b.plannedDeathIndex).map(r=>r.id);
+    }
+    return defaultPvpInternalOrder({category,units:units[category],selectedIds:chosen.map(u=>u.id),inputs,order:[level],enemy});
+  }
+  return chosen.slice().sort((a,b)=>customInternalRank(a,units[category])-customInternalRank(b,units[category])||a.displayOrder-b.displayOrder).map(u=>u.id);
+}
 function syncCustomOrders(){
- if(!isCustomOrderMode())return;const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};
+ if(!isCustomOrderMode())return;const s=activeOrderState();s.unitOrders=s.unitOrders||{troop:{},monster:{},mercenary:{}};s.unitOrderManual=s.unitOrderManual||{troop:{},monster:{},mercenary:{}};
  for(const c of ['troop','monster','mercenary']){
-  const levels=selectedLevels(c),set=new Set(levels),next=(s.orders[c]||[]).filter(x=>set.has(x));for(const l of levels)if(!next.includes(l))next.push(l);s.orders[c]=next;s.unitOrders[c]=s.unitOrders[c]||{};
-  for(const l of levels){const chosen=units[c].filter(u=>u.level===l&&selectedIdsFor(c).includes(u.id)),ids=new Set(chosen.map(u=>u.id)),saved=(s.unitOrders[c][l]||[]).filter(id=>ids.has(id));for(const u of chosen.sort((a,b)=>a.displayOrder-b.displayOrder))if(!saved.includes(u.id))saved.push(u.id);s.unitOrders[c][l]=saved;}
-  for(const l of Object.keys(s.unitOrders[c]))if(!set.has(l))delete s.unitOrders[c][l];
+  const levels=selectedLevels(c),set=new Set(levels),next=(s.orders[c]||[]).filter(x=>set.has(x));for(const l of levels)if(!next.includes(l))next.push(l);s.orders[c]=next;s.unitOrders[c]=s.unitOrders[c]||{};s.unitOrderManual[c]=s.unitOrderManual[c]||{};
+  for(const l of levels){
+   const chosen=units[c].filter(u=>u.level===l&&selectedIdsFor(c).includes(u.id)),ids=new Set(chosen.map(u=>u.id));
+   if(s.unitOrderManual[c][l]){
+    const saved=(s.unitOrders[c][l]||[]).filter(id=>ids.has(id));for(const id of defaultCustomUnitIds(c,l))if(!saved.includes(id))saved.push(id);s.unitOrders[c][l]=saved;
+   }else s.unitOrders[c][l]=defaultCustomUnitIds(c,l);
+  }
+  for(const l of Object.keys(s.unitOrders[c]))if(!set.has(l)){delete s.unitOrders[c][l];delete s.unitOrderManual[c][l];}
  }
 }
 function moveOrderItem(category,index,delta){
@@ -1210,8 +1235,8 @@ function commitOrderFromDom(category,target){
   recalculate();
 }
 
-function moveUnitOrderItem(c,l,i,d){const a=activeOrderState().unitOrders?.[c]?.[l]||[],n=i+d;if(n<0||n>=a.length)return;[a[i],a[n]]=[a[n],a[i]];saveState();renderOrderView();recalculate();}
-function commitUnitOrderFromDom(c,l,t){activeOrderState().unitOrders[c][l]=[...t.querySelectorAll('.unit-order-item')].map(x=>x.dataset.unitId);saveState();recalculate();}
+function moveUnitOrderItem(c,l,i,d){activeOrderState().unitOrderManual[c][l]=true;const a=activeOrderState().unitOrders?.[c]?.[l]||[],n=i+d;if(n<0||n>=a.length)return;[a[i],a[n]]=[a[n],a[i]];saveState();renderOrderView();recalculate();}
+function commitUnitOrderFromDom(c,l,t){activeOrderState().unitOrderManual[c][l]=true;activeOrderState().unitOrders[c][l]=[...t.querySelectorAll('.unit-order-item')].map(x=>x.dataset.unitId);saveState();recalculate();}
 const expandedCustomOrderTiers=new Set();
 function renderOrderView(){
  syncCustomOrders();const ids={troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'},st=activeOrderState();
