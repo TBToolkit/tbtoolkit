@@ -1193,7 +1193,9 @@ function readInputs(){
     if(els[id])i[id]=String(parseNumber(els[id].value));
   }
   i.rankSeparation=String(parseNumber(els.rankSeparation.value));
-  i.minimumSeparation=!!els.minimumSeparation?.checked;
+  if(!isAnyEpicOptimizeMode()){
+    i.minimumSeparation=!!els.minimumSeparation?.checked;
+  }
   if(activeMode==='battle'&&els.pvpEnemyUnitSelect)i.enemyUnitId=els.pvpEnemyUnitSelect.value||'troop-g9-flying-corax-2';
   for(const id of ['autoLeadership','autoAuthority','autoDominance'])i[id]=els[id].checked;
   for(const [cat,meta] of Object.entries(CAPACITY_META)){
@@ -1204,7 +1206,14 @@ function readInputs(){
   i.includeMercenariesInOptimization=!!els.includeMercenariesInOptimization?.checked;
   saveState();
 }
-function updateSeparationModeUI(){const minimum=!isAnyEpicOptimizeMode()&&modeState().inputs.minimumSeparation!==false;if(els.minimumSeparation)els.minimumSeparation.checked=minimum;if(els.fixedSeparationControl)els.fixedSeparationControl.hidden=minimum;const t=els.minimumSeparation?.closest('.minimum-separation-toggle');if(t)t.hidden=isAnyEpicOptimizeMode();}
+function updateSeparationModeUI(){
+  const optimizing=isAnyEpicOptimizeMode();
+  const minimum=modeState().inputs.minimumSeparation!==false;
+  if(els.minimumSeparation)els.minimumSeparation.checked=minimum;
+  if(els.fixedSeparationControl)els.fixedSeparationControl.hidden=optimizing||minimum;
+  const t=els.minimumSeparation?.closest('.minimum-separation-toggle');
+  if(t)t.hidden=optimizing;
+}
 function updateFillFieldStates(){for(const [cat,meta] of Object.entries(CAPACITY_META)){const auto=!!modeState().inputs[meta.auto];els[meta.fill].disabled=auto;if(!auto)els[meta.fill].value=modeState().inputs[meta.fill]??'99.99';}}
 
 function troopLevelCompare(a,b){const ma=/^([GSE])(\d+)$/.exec(a),mb=/^([GSE])(\d+)$/.exec(b);if(!ma||!mb)return a.localeCompare(b);const tier=Number(mb[2])-Number(ma[2]);if(tier)return tier;return({G:0,S:1,E:2}[ma[1]]??9)-({G:0,S:1,E:2}[mb[1]]??9);}
