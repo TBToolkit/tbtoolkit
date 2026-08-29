@@ -2325,6 +2325,58 @@ function selectWholeFieldOnFocus(input){
   });
 }
 
+
+function calculatorNumericNavigationOrder(){
+  const battleType=activeMode==='battle'
+    ? String(state.modes.battle.activeBattleType||'')
+    : '';
+  const isPvp=battleType.startsWith('pvp_');
+
+  // Deliberately excludes Fill %, checkboxes, dropdowns, help buttons and
+  // derived/custom-family combat fields. Hidden/read-only fields are skipped.
+  const ids=[
+    'leadership','authority','dominance',
+    'monsterHealth','humanHealth','epicHunterHealth',
+    'monsterStrength',
+    isPvp?'pvpStrength':'strengthAgainstEpic',
+    'monsterDD','monsterST'
+  ];
+
+  return ids.filter(id=>{
+    const input=els[id];
+    if(!input||input.disabled||input.readOnly)return false;
+    const field=input.closest('.help-input-field');
+    if(field?.hidden)return false;
+    if(input.offsetParent===null)return false;
+    return true;
+  });
+}
+function handleCalculatorNumericNavigation(id,input,e){
+  if((e.key!=='Tab'&&e.key!=='Enter')||input.disabled||input.readOnly)return false;
+  const order=calculatorNumericNavigationOrder();
+  const index=order.indexOf(id);
+  if(index<0||order.length<2)return false;
+
+  // Own both Tab and Enter so native browser focus cannot jump to a checkbox,
+  // Fill field, help icon, or other non-calculator control.
+  e.preventDefault();
+  cancelNumericEditTimer();
+
+  if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id)){
+    syncDerivedEpicBonuses();
+  }
+  readInputs();
+  saveState();
+
+  const step=e.shiftKey&&e.key==='Tab'?-1:1;
+  const nextId=order[(index+step+order.length)%order.length];
+  const next=els[nextId];
+  recalculate();
+  next.focus();
+  selectWholeFieldOnFocus(next);
+  return true;
+}
+
 function wireEvents(){
   wireStatHelp();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
@@ -2335,16 +2387,7 @@ function wireEvents(){
   for(const id of armyGroup){
     const input=els[id];
     input.addEventListener('focus',()=>{input.value=String(parseNumber(input.value)||'');selectWholeFieldOnFocus(input);});
-    input.addEventListener('keydown',e=>{
-      if(e.key!=='Tab'&&e.key!=='Enter')return;
-      cancelNumericEditTimer();
-      readInputs();saveState();
-      const index=armyGroup.indexOf(id),step=e.shiftKey&&e.key==='Tab'?-1:1;
-      const next=els[armyGroup[(index+step+armyGroup.length)%armyGroup.length]];
-      if(e.key==='Enter')e.preventDefault();
-      next.focus();selectWholeFieldOnFocus(next);
-      recalculate();
-    });
+    input.addEventListener('keydown',e=>handleCalculatorNumericNavigation(id,input,e));
     input.addEventListener('blur',()=>{formatFieldInteger(input);commitNumericEdit();});
     input.addEventListener('input',()=>scheduleNumericEdit());
   }
@@ -2392,30 +2435,10 @@ function wireEvents(){
     'monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
     'humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST'
   ];
-  const editableAdvancedOrder=()=>advancedIds.filter(id=>{
-    const input=els[id];
-    if(!input||input.disabled||input.readOnly||input.tabIndex<0)return false;
-    const field=input.closest('.help-input-field');
-    if(field?.hidden)return false;
-    return input.offsetParent!==null;
-  });
   for(const id of advancedIds){
     const input=els[id];if(!input)continue;
     input.addEventListener('focus',()=>selectWholeFieldOnFocus(input));
-    input.addEventListener('keydown',e=>{
-      if((e.key!=='Tab'&&e.key!=='Enter')||input.disabled||input.readOnly)return;
-      const order=editableAdvancedOrder();
-      const index=order.indexOf(id);
-      if(index<0||order.length<2)return;
-      cancelNumericEditTimer();
-      if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
-      readInputs();saveState();
-      if(e.key==='Enter')e.preventDefault();
-      const step=e.shiftKey&&e.key==='Tab'?-1:1;
-      const next=els[order[(index+step+order.length)%order.length]];
-      next.focus();selectWholeFieldOnFocus(next);
-      recalculate();
-    });
+    input.addEventListener('keydown',e=>handleCalculatorNumericNavigation(id,input,e));
     input.addEventListener('input',()=>{
       if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
       scheduleNumericEdit();
