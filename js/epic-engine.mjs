@@ -207,11 +207,12 @@ export function calculateCategory({
       for(const id of deathIds){const row=byId.get(id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor((Math.ceil(prev.squadHealth/each)-1)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.unitCapacityEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
     }
   }
+  const standardDeathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);
   if(!inputs._skipHardCapacity){
     const requestedCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
-    const standardDeathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);
     enforceRequestedCapacity(results,requestedCapacity,standardDeathIds);
   }
+  const strictHealth=enforceStrictHealthOrder(results,standardDeathIds);
   const totalCapacity = results.reduce((sum, row) => sum + row.totalCapacity, 0);
   const displayResults = [...results].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -224,6 +225,8 @@ export function calculateCategory({
     requestedFill: fill,
     totalCapacity,
     capacityPercent: capacityLimit ? totalCapacity / capacityLimit : 0,
+    strictHealthAdjustments:strictHealth.adjustments,
+    strictHealthUnresolved:strictHealth.unresolved,
     results: displayResults,
   };
 }
@@ -254,9 +257,17 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     roundingTable,
   });
 
+  const categories={troop,monster,mercenary};
+  const globalStrictHealth=enforceDistinctGlobalHealth(categories);
+  for(const cat of [troop,monster,mercenary]){
+    cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    cat.capacityPercent=cat.capacityLimit?cat.totalCapacity/cat.capacityLimit:0;
+  }
   return {
     inputs: structuredClone(inputs),
-    categories: { troop, monster, mercenary },
+    categories,
+    strictHealthAdjustments:globalStrictHealth.adjustments,
+    strictHealthUnresolved:globalStrictHealth.unresolved,
     totals: {
       leadership: troop.totalCapacity,
       dominance: monster.totalCapacity,
@@ -308,6 +319,79 @@ function enforceRequestedCapacity(results,targetCapacity,deathOrderIds=null){
     }
     if(!changed)break;
   }
+}
+
+
+function enforceStrictHealthOrder(results,deathOrderIds,minimumQuantity=1){
+  const byId=new Map(results.map(r=>[r.id,r]));
+  const ordered=(deathOrderIds||[]).map(id=>byId.get(id)).filter(Boolean);
+  let adjustments=0,unresolved=0;
+  let prev=null;
+
+  for(const row of ordered){
+    if(!(Number(row.qty)>0)){continue;}
+    const each=Number(
+      row.effectiveEach ??
+      row.unitEffectiveHealthEach ??
+      (Number(row.qty)>0?Number(row.squadHealth||0)/Number(row.qty):0)
+    );
+    const step=Math.max(1,Number(row.roundTo||1));
+
+    const strictThreshold=prev?Number(prev.squadHealth)-Math.max(1e-6,Math.abs(Number(prev.squadHealth))*1e-10):null;
+    if(prev&&each>0&&Number(row.squadHealth)>=strictThreshold){
+      // Largest legal quantity whose health is strictly below the preceding
+      // intended death. For the normal step=1 case, an exact tie becomes q-1.
+      const minQty=Math.max(step,Math.ceil(Number(minimumQuantity||1)/step)*step);
+      let maxQty=Math.floor((strictThreshold/each)/step)*step;
+      while(maxQty>=minQty&&maxQty*each>=strictThreshold)maxQty-=step;
+      const nextQty=Math.max(minQty,Math.min(Number(row.qty),maxQty));
+
+      if(nextQty<Number(row.qty)){
+        row.qty=nextQty;
+        const capEach=Number(row.capEach??row.unitCapacityEach??0);
+        row.totalCapacity=capEach*nextQty;
+        row.squadHealth=each*nextQty;
+        row.squadStrength=Number(row.unitStrengthEach||0)*nextQty;
+        adjustments++;
+      }
+      if(Number(row.squadHealth)>=strictThreshold)unresolved++;
+    }
+    prev=row;
+  }
+  return{adjustments,unresolved};
+}
+
+function enforceDistinctGlobalHealth(categories){
+  const rows=['troop','monster','mercenary'].flatMap(cat=>categories?.[cat]?.results||[])
+    .filter(r=>Number(r.qty)>0)
+    .sort((a,b)=>Number(b.squadHealth)-Number(a.squadHealth)||
+      Number(a.deathIndex??a.rank??999)-Number(b.deathIndex??b.rank??999)||
+      Number(a.displayOrder||0)-Number(b.displayOrder||0));
+  let adjustments=0,unresolved=0,prev=null;
+  for(const row of rows){
+    if(!prev){prev=row;continue;}
+    const strictThreshold=Number(prev.squadHealth)-Math.max(1e-6,Math.abs(Number(prev.squadHealth))*1e-10);
+    if(Number(row.squadHealth)>=strictThreshold){
+      const qty=Number(row.qty||0),step=Math.max(1,Number(row.roundTo||1));
+      const each=Number(row.effectiveEach??row.unitEffectiveHealthEach??(qty>0?Number(row.squadHealth||0)/qty:0));
+      if(each>0){
+        let maxQty=Math.floor((strictThreshold/each)/step)*step;
+        while(maxQty>=step&&maxQty*each>=strictThreshold)maxQty-=step;
+        const nextQty=Math.max(step,Math.min(qty,maxQty));
+        if(nextQty<qty){
+          row.qty=nextQty;
+          const capEach=Number(row.capEach??row.unitCapacityEach??0);
+          row.totalCapacity=capEach*nextQty;
+          row.squadHealth=each*nextQty;
+          row.squadStrength=Number(row.unitStrengthEach||0)*nextQty;
+          adjustments++;
+        }
+      }
+      if(Number(row.squadHealth)>=strictThreshold)unresolved++;
+    }
+    prev=row;
+  }
+  return{adjustments,unresolved};
 }
 
 function customScore(unit) { return pveScore(unit, false); }
@@ -409,14 +493,18 @@ export function calculateCustomCategory({
       const byId=new Map(results.map(r=>[r.id,r]));let prev=null;for(const entry of ordered){const row=byId.get(entry.unit.id);if(!row)continue;const each=row.effectiveEach,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor((Math.ceil(prev.squadHealth/each)-1)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.capEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
     }
   }
+  const customDeathIds=ordered.map(x=>x.unit.id);
   if(!inputs._skipHardCapacity){
     const requestedCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
-    enforceRequestedCapacity(results,requestedCapacity,ordered.map(x=>x.unit.id));
+    enforceRequestedCapacity(results,requestedCapacity,customDeathIds);
   }
+  const strictHealth=enforceStrictHealthOrder(results,customDeathIds);
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
     totalCapacity,capacityPercent:capacityLimit?totalCapacity/capacityLimit:0,
+    strictHealthAdjustments:strictHealth.adjustments,
+    strictHealthUnresolved:strictHealth.unresolved,
     results:[...results].sort((a,b)=>a.displayOrder-b.displayOrder)
   };
 }
@@ -426,6 +514,14 @@ export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,or
   const troop=calculateCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:flat('troop'),roundingTable});
   const monster=calculateCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:flat('monster'),roundingTable});
   const mercenary=calculateCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),roundingTable});
-  return {inputs:structuredClone(inputs),orders:structuredClone(orders),categories:{troop,monster,mercenary},
+  const categories={troop,monster,mercenary};
+  const globalStrictHealth=enforceDistinctGlobalHealth(categories);
+  for(const cat of [troop,monster,mercenary]){
+    cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    cat.capacityPercent=cat.capacityLimit?cat.totalCapacity/cat.capacityLimit:0;
+  }
+  return {inputs:structuredClone(inputs),orders:structuredClone(orders),categories,
+    strictHealthAdjustments:globalStrictHealth.adjustments,
+    strictHealthUnresolved:globalStrictHealth.unresolved,
     totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
 }

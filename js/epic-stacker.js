@@ -1,6 +1,6 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=181';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=74';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=181';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=188';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=188';
+import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=188';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -898,10 +898,11 @@ function liveStandardMercenaryOptimizerPayload(opt){
     quantities:combinedQuantities,
     bonuses:epicBonusPayload()
   });
+  const normalizedQuantities=Object.fromEntries((combinedResult?.squads||[]).map(s=>[s.name,s.quantity]));
 
   return{
     ...opt,
-    quantities:combinedQuantities,
+    quantities:normalizedQuantities,
     result:combinedResult,
     diagnostics:{
       ...(opt.diagnostics||{}),
@@ -955,7 +956,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=159');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=188');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

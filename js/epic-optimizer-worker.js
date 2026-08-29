@@ -155,6 +155,36 @@ function buildSquad(unit, quantity, bonusInputs) {
   };
 }
 
+
+function enforceDistinctSquadHealth(squads,byId,resolvedBonuses){
+  let adjustments=0,unresolved=0;
+  for(let pass=0;pass<Math.max(2,squads.length);pass++){
+    squads.sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId);
+    let changed=false;
+    for(let i=1;i<squads.length;i++){
+      const prev=squads[i-1],row=squads[i];
+      if(row.quantity<=0)continue;
+      // Treat numerically indistinguishable health as a tie so the optimizer
+      // never relies on an implementation-specific tie-break.
+      const strictThreshold=prev.effectiveHealth-Math.max(1e-6,Math.abs(prev.effectiveHealth)*1e-10);
+      if(row.effectiveHealth<strictThreshold)continue;
+      const unit=byId.get(row.id);
+      if(!unit)continue;
+      const perUnit=row.effectiveHealth/Math.max(1,row.quantity);
+      let maxQty=Math.floor(strictThreshold/perUnit);
+      while(maxQty>=1&&maxQty*perUnit>=strictThreshold)maxQty--;
+      const nextQty=Math.max(1,Math.min(row.quantity,maxQty));
+      if(nextQty<row.quantity){
+        squads[i]=buildSquad(unit,nextQty,resolvedBonuses);
+        adjustments++;changed=true;
+      }else unresolved++;
+    }
+    if(!changed)break;
+  }
+  squads.sort((a,b)=>a.displayOrder-b.displayOrder);
+  return{adjustments,unresolved};
+}
+
 function chooseFriendlyAttacker(squads, alive, attackedThisCycle) {
   let best = null;
   for (const s of squads) {
@@ -262,6 +292,7 @@ function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }
     if (Number(quantity) > 0) squads.push(buildSquad(unit, Number(quantity), resolvedBonuses));
   }
 
+  const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses);
   const enemySquadCount=resolvedBonuses.arachne?8:4;
   const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
   const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount);
@@ -297,6 +328,8 @@ function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }
     rawGoldRevivalCost,
     goldRevivalCost,
     expectedTotalLifetimeDamage,
+    strictHealthAdjustments:strictHealth.adjustments,
+    strictHealthUnresolved:strictHealth.unresolved,
     expectedDamagePerGold: goldRevivalCost > 0 ? expectedTotalLifetimeDamage / goldRevivalCost : null,
     healthSeparations: separations,
     separationSummary: {
@@ -1907,13 +1940,14 @@ self.onmessage=async(event)=>{
    }
   });
   if(result){
-    const coreQuantities={...(result.quantities||{})};
     const coreResult=result.result;
+    const coreQuantities=Object.fromEntries((coreResult?.squads||[]).map(s=>[s.name,s.quantity]));
     const hasFixedMercs=Object.keys(fixedQuantities).length>0;
-    const combinedQuantities=hasFixedMercs?{...coreQuantities,...fixedQuantities}:coreQuantities;
+    const requestedCombined=hasFixedMercs?{...coreQuantities,...fixedQuantities}:coreQuantities;
     const combinedResult=hasFixedMercs
-      ?scoreEpicArmy({units:army,quantities:combinedQuantities,bonuses:msg.bonuses})
+      ?scoreEpicArmy({units:army,quantities:requestedCombined,bonuses:msg.bonuses})
       :coreResult;
+    const combinedQuantities=Object.fromEntries((combinedResult?.squads||[]).map(s=>[s.name,s.quantity]));
 
     result.quantities=combinedQuantities;
     result.result=combinedResult;

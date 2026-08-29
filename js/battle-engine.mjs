@@ -207,6 +207,53 @@ function refreshRowAfterQtyChange(row,newQty){
   row.totalCapacity*=ratio;
 }
 
+
+function enforceStrictPvpHealthOrder(rows,orderedIds,minimumQuantity=1){
+  const byId=new Map(rows.map(r=>[r.id,r]));
+  let prev=null,adjustments=0,unresolved=0;
+  for(const id of orderedIds||[]){
+    const row=byId.get(id);if(!row||!(Number(row.qty)>0))continue;
+    const each=Number(row.effectiveHealthEach||0);
+    const strictThreshold=prev?Number(prev.squadHealth)-Math.max(1e-6,Math.abs(Number(prev.squadHealth))*1e-10):null;
+    if(prev&&each>0&&Number(row.squadHealth)>=strictThreshold){
+      const minQty=Math.max(1,Number(minimumQuantity||1));
+      let maxQty=Math.floor(strictThreshold/each);
+      while(maxQty>=minQty&&maxQty*each>=strictThreshold)maxQty--;
+      const nextQty=Math.max(minQty,Math.min(Number(row.qty),maxQty));
+      if(nextQty<Number(row.qty)){
+        refreshRowAfterQtyChange(row,nextQty);
+        adjustments++;
+      }
+      if(Number(row.squadHealth)>=strictThreshold)unresolved++;
+    }
+    prev=row;
+  }
+  return{adjustments,unresolved};
+}
+
+function enforceDistinctGlobalPvpHealth(rows){
+  const ordered=rows.filter(r=>Number(r.qty)>0).slice().sort((a,b)=>
+    Number(b.squadHealth)-Number(a.squadHealth)||
+    Number(a.plannedDeathIndex??a.deathIndex??999)-Number(b.plannedDeathIndex??b.deathIndex??999)||
+    Number(a.displayOrder||0)-Number(b.displayOrder||0)
+  );
+  let prev=null,adjustments=0,unresolved=0;
+  for(const row of ordered){
+    if(!prev){prev=row;continue;}
+    const each=Number(row.effectiveHealthEach||0);
+    const strictThreshold=Number(prev.squadHealth)-Math.max(1e-6,Math.abs(Number(prev.squadHealth))*1e-10);
+    if(each>0&&Number(row.squadHealth)>=strictThreshold){
+      let maxQty=Math.floor(strictThreshold/each);
+      while(maxQty>=1&&maxQty*each>=strictThreshold)maxQty--;
+      const nextQty=Math.max(1,Math.min(Number(row.qty),maxQty));
+      if(nextQty<Number(row.qty)){refreshRowAfterQtyChange(row,nextQty);adjustments++;}
+      if(Number(row.squadHealth)>=strictThreshold)unresolved++;
+    }
+    prev=row;
+  }
+  return{adjustments,unresolved};
+}
+
 function enforceCapacityLimit(categoryResult,limit){
   const safeLimit=Math.max(0,Number(limit||0));
   let total=categoryResult.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
@@ -316,6 +363,12 @@ function calculateFromGlobalOrder({allSelected,order,inputs,enemy}){
       results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)
     };
     if(!inputs._skipHardCapacity)enforceCapacityLimit(categories[category],limit*Math.max(0,Math.min(1,Number(fill)||0)));
+    const plannedIds=order.filter(u=>u.category===category).map(u=>u.id);
+    const strict=enforceStrictPvpHealthOrder(categories[category].results,plannedIds);
+    categories[category].strictHealthAdjustments=strict.adjustments;
+    categories[category].strictHealthUnresolved=strict.unresolved;
+    categories[category].totalCapacity=categories[category].results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    categories[category].capacityPercent=limit?categories[category].totalCapacity/limit:0;
   }
   return categories;
 }
@@ -374,6 +427,12 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
 
   const categories=calculateFromGlobalOrder({allSelected,order,inputs,enemy});
   const allRows=[...categories.troop.results,...categories.monster.results,...categories.mercenary.results];
+  const globalStrictHealth=enforceStrictPvpHealthOrder(allRows,order.map(u=>u.id));
+  for(const category of ['troop','monster','mercenary']){
+    const cfg=CATEGORY_CONFIG[category],cat=categories[category],limit=Number(inputs[cfg.capacityInput]||0);
+    cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    cat.capacityPercent=limit?cat.totalCapacity/limit:0;
+  }
   // Actual predicted death sequence follows calculated effective squad health:
   // the game's enemy target selects the healthiest surviving squad first.
   const actual=allRows.slice().sort((a,b)=>b.squadHealth-a.squadHealth||a.plannedDeathIndex-b.plannedDeathIndex);
@@ -388,6 +447,8 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
   return{
     inputs:structuredClone(inputs),battleType,enemy,pvpCp:true,pvpUnknown:battleType==='pvp_unknown',
     plannedOrder:order.map(u=>u.id),
+    strictHealthAdjustments:globalStrictHealth.adjustments,
+    strictHealthUnresolved:globalStrictHealth.unresolved,
     projectedLifetimeDamage,fullAttritionGold,
     costEquivalenceBand:COST_EQUIVALENCE_BAND,
     categories,
@@ -465,6 +526,11 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
       results:results.slice().sort((a,b)=>a.displayOrder-b.displayOrder)
     };
     if(!inputs._skipHardCapacity)enforceCapacityLimit(categoryResult,limit*Math.max(0,Math.min(1,Number(fill)||0)));
+    const strict=enforceStrictPvpHealthOrder(categoryResult.results,ordered.map(u=>u.id));
+    categoryResult.strictHealthAdjustments=strict.adjustments;
+    categoryResult.strictHealthUnresolved=strict.unresolved;
+    categoryResult.totalCapacity=categoryResult.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    categoryResult.capacityPercent=limit?categoryResult.totalCapacity/limit:0;
     return categoryResult;
   };
 
@@ -512,7 +578,13 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
   const troop=calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:flat('troop'),enemy});
   const monster=calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:flat('monster'),enemy});
   const mercenary=calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),enemy});
-  const all=[...troop.results,...monster.results,...mercenary.results].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
+  const all=[...troop.results,...monster.results,...mercenary.results];
+  const globalStrictHealth=enforceDistinctGlobalPvpHealth(all);
+  for(const cat of [troop,monster,mercenary]){
+    cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
+    cat.capacityPercent=cat.capacityLimit?cat.totalCapacity/cat.capacityLimit:0;
+  }
+  all.sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
   all.forEach((r,k)=>{
     r.predictedDeathIndex=k;
     r.averageAttackOpportunities=(k+1)-0.5;
@@ -521,6 +593,8 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
   const projectedLifetimeDamage=all.reduce((s,r)=>s+Number(r.projectedLifetimeDamage||0),0);
   const fullAttritionGold=all.reduce((s,r)=>s+Number(r.fullSquadGoldRevival||0),0);
   return{inputs:structuredClone(inputs),battleType,enemy,pvpCp:true,pvpUnknown:battleType==='pvp_unknown',
+    strictHealthAdjustments:globalStrictHealth.adjustments,
+    strictHealthUnresolved:globalStrictHealth.unresolved,
     projectedLifetimeDamage,fullAttritionGold,costEquivalenceBand:COST_EQUIVALENCE_BAND,
     categories:{troop,monster,mercenary},
     totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
