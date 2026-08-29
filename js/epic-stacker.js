@@ -2299,6 +2299,32 @@ function wireStatHelp(){
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('sacrificeHelpModal')?.hidden)closeSacrificeHelp();});
 }
 
+
+let numericEditTimer=null;
+function cancelNumericEditTimer(){
+  if(numericEditTimer){clearTimeout(numericEditTimer);numericEditTimer=null;}
+}
+function commitNumericEdit({persist=true}={}){
+  cancelNumericEditTimer();
+  readInputs();
+  if(persist)saveState();
+  recalculate();
+}
+function scheduleNumericEdit({persist=true,delay=300}={}){
+  cancelNumericEditTimer();
+  numericEditTimer=setTimeout(()=>{
+    numericEditTimer=null;
+    readInputs();
+    if(persist)saveState();
+    recalculate();
+  },delay);
+}
+function selectWholeFieldOnFocus(input){
+  requestAnimationFrame(()=>{
+    if(document.activeElement===input&&!input.disabled&&!input.readOnly)input.select();
+  });
+}
+
 function wireEvents(){
   wireStatHelp();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
@@ -2308,24 +2334,19 @@ function wireEvents(){
   const armyGroup=['leadership','authority','dominance'];
   for(const id of armyGroup){
     const input=els[id];
-    input.addEventListener('focus',()=>{input.value=String(parseNumber(input.value)||'');requestAnimationFrame(()=>input.select());});
-    input.addEventListener('pointerup',e=>{e.preventDefault();input.select();});
+    input.addEventListener('focus',()=>{input.value=String(parseNumber(input.value)||'');selectWholeFieldOnFocus(input);});
     input.addEventListener('keydown',e=>{
       if(e.key!=='Tab'&&e.key!=='Enter')return;
-      e.preventDefault();
+      cancelNumericEditTimer();
+      readInputs();saveState();
       const index=armyGroup.indexOf(id),step=e.shiftKey&&e.key==='Tab'?-1:1;
       const next=els[armyGroup[(index+step+armyGroup.length)%armyGroup.length]];
-      next.focus();requestAnimationFrame(()=>next.select());
-    });
-    input.addEventListener('blur',()=>formatFieldInteger(input));
-    input.addEventListener('input',()=>{
-      if(id==='authority'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
-        readInputs();
-        recalculateAfterMercenaryOnlyChange();
-        return;
-      }
+      if(e.key==='Enter')e.preventDefault();
+      next.focus();selectWholeFieldOnFocus(next);
       recalculate();
     });
+    input.addEventListener('blur',()=>{formatFieldInteger(input);commitNumericEdit();});
+    input.addEventListener('input',()=>scheduleNumericEdit());
   }
 
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
@@ -2380,31 +2401,29 @@ function wireEvents(){
   });
   for(const id of advancedIds){
     const input=els[id];if(!input)continue;
-    input.addEventListener('focus',()=>requestAnimationFrame(()=>input.select()));
-    input.addEventListener('pointerup',e=>{if(input.disabled||input.readOnly)return;e.preventDefault();input.select();});
+    input.addEventListener('focus',()=>selectWholeFieldOnFocus(input));
     input.addEventListener('keydown',e=>{
       if((e.key!=='Tab'&&e.key!=='Enter')||input.disabled||input.readOnly)return;
       const order=editableAdvancedOrder();
       const index=order.indexOf(id);
       if(index<0||order.length<2)return;
-      e.preventDefault();
+      cancelNumericEditTimer();
+      if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
+      readInputs();saveState();
+      if(e.key==='Enter')e.preventDefault();
       const step=e.shiftKey&&e.key==='Tab'?-1:1;
       const next=els[order[(index+step+order.length)%order.length]];
-      next.focus();requestAnimationFrame(()=>next.select());
+      next.focus();selectWholeFieldOnFocus(next);
+      recalculate();
     });
     input.addEventListener('input',()=>{
       if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
-      recalculate();
-      // Persist the battle-type workspace immediately. This is especially
-      // important for PvP-only fields because the browser may close without
-      // ever firing blur/change.
-      readInputs();
-      saveState();
+      scheduleNumericEdit();
     });
     if(['pvpHealth','pvpStrength'].includes(id)){
       input.addEventListener('blur',()=>{
         input.value=String(parseNumber(input.value));
-        readInputs();saveState();recalculate();
+        commitNumericEdit();
       });
     }
   }
@@ -2444,25 +2463,15 @@ function wireEvents(){
   });
 
   for(const id of ['leadershipFill','authorityFill','dominanceFill']){
-    els[id].addEventListener('input',()=>{
-      if(id==='authorityFill'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
-        readInputs();
-        recalculateAfterMercenaryOnlyChange();
-        return;
-      }
-      recalculate();
-    });
+    els[id].addEventListener('input',()=>scheduleNumericEdit());
     els[id].addEventListener('blur',()=>{
-      formatFillPercent(els[id]);readInputs();
-      if(id==='authorityFill'&&isAnyEpicOptimizeMode()&&!modeState().inputs.includeMercenariesInOptimization){
-        recalculateAfterMercenaryOnlyChange();
-        return;
-      }
-      recalculate();
+      formatFillPercent(els[id]);
+      commitNumericEdit();
     });
   }
   els.resetCustomOrderDefault?.addEventListener('click',resetCustomOrderToDefault);
-  els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();recalculate();});
+  els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();scheduleNumericEdit({delay:180});});
+  els.rankSeparation.addEventListener('change',()=>commitNumericEdit());
   els.minimumSeparation?.addEventListener('change',()=>{modeState().inputs.minimumSeparation=els.minimumSeparation.checked;updateSeparationModeUI();saveState();recalculate();});
   els.resetAdvancedSettings.addEventListener('click',resetAdvancedSettings);
   for(const id of ['autoLeadership','autoAuthority','autoDominance']){
