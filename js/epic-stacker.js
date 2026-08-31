@@ -1,5 +1,5 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=189-dev1';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev1';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=189-dev3';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev3';
 import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=188';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
@@ -956,7 +956,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=189-dev2');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=189-dev3');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

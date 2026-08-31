@@ -1,4 +1,4 @@
-/* TB Toolkit Epic Optimizer 2.0 Paired Counterfactual v189-dev2
+/* TB Toolkit Epic Optimizer 2.0 Paired Counterfactual v189-dev3
  *
  * Combat physics are loaded from the same authoritative module used by
  * Standard and Custom. Search strategy remains local to this worker.
@@ -13,7 +13,7 @@ let EPIC_MECHANICS_BUILD = 'unloaded';
 
 async function loadSharedCombat(){
   if(!sharedCombatPromise){
-    const url = new URL('./epic-combat-engine-v2.mjs?v=189-dev1', self.location.href);
+    const url = new URL('./epic-combat-engine-v2.mjs?v=189-dev3', self.location.href);
     sharedCombatPromise = import(url.href).then((mod)=>{
       deriveBonusInputs = mod.deriveBonusInputs;
       buildSquad = mod.buildSquad;

@@ -1,4 +1,4 @@
-import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs } from './epic-mechanics.mjs?v=189-dev1';
+import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=189-dev3';
 
 const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 
@@ -138,9 +138,10 @@ export function calculateCategory({
     const pveModifier = (rank - 1) * rankSeparation;
     const modifier = 1 + pveModifier + adj;
     const capEach = unit[config.capacityEach];
+    const physicalHealthEach = effectiveHealthEachFromHealthInputs(unit, inputs.healthInputs);
     const C = (modifier * maxHealthEach) / unit.healthEach;
     const D = C * capEach;
-    return { unit, pve, rank, speciesAdjustment: adj, pveModifier, modifier, C, D, capEach };
+    return { unit, pve, rank, speciesAdjustment: adj, pveModifier, modifier, C, D, capEach, physicalHealthEach };
   });
 
   const sumD = interim.reduce((sum, row) => sum + row.D, 0);
@@ -151,7 +152,8 @@ export function calculateCategory({
     const qty = mroundPositive(rawQty, roundTo);
     const squadStrength = row.unit.strengthEach * qty;
     const totalCapacity = row.capEach * qty;
-    const squadHealth = (qty * row.unit.healthEach) / (1 + row.speciesAdjustment);
+    const legacySquadHealth = (qty * row.unit.healthEach) / (1 + row.speciesAdjustment);
+    const squadHealth = qty * row.physicalHealthEach;
     const nominalHealth =
       (row.D / sumD) * (capacityLimit / row.capEach) * row.unit.healthEach;
 
@@ -175,8 +177,9 @@ export function calculateCategory({
       C: row.C,
       D: row.D,
       squadHealth,
+      legacySquadHealth,
       squadStrength,
-      totalCapacity,unitCapacityEach:row.capEach,unitStrengthEach:row.unit.strengthEach,unitEffectiveHealthEach:squadHealth/Math.max(1,qty),
+      totalCapacity,unitCapacityEach:row.capEach,unitStrengthEach:row.unit.strengthEach,unitEffectiveHealthEach:row.physicalHealthEach,physicalHealthEach:row.physicalHealthEach,
       nominalHealth,
     };
   });
@@ -202,7 +205,7 @@ export function calculateCategory({
     const requestedCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
     enforceRequestedCapacity(results,requestedCapacity,standardDeathIds);
   }
-  const strictHealth=enforceStrictHealthOrder(results,standardDeathIds);
+  const strictHealth=legalizePhysicalCategoryRows(results,standardDeathIds,{minimumSeparation:Boolean(inputs.minimumSeparation),separation:Number(inputs.rankSeparation||0)});
   const totalCapacity = results.reduce((sum, row) => sum + row.totalCapacity, 0);
   const displayResults = [...results].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -459,7 +462,7 @@ export function calculateCustomCategory({
       qty,rawQty,roundTo,rank:row.rank,orderIndex:row.orderIndex,deathIndex:row.deathIndex,
       squadModifier:row.squadModifier,speciesAdjustment:row.speciesAdjustment,modifier:row.modifier,C:row.C,D:row.D,
       squadHealth:qty*row.effectiveEach,
-      squadStrength:row.unit.strengthEach*qty,totalCapacity,capEach:row.capEach,unitStrengthEach:row.unit.strengthEach,effectiveEach:row.effectiveEach,
+      squadStrength:row.unit.strengthEach*qty,totalCapacity,capEach:row.capEach,unitStrengthEach:row.unit.strengthEach,effectiveEach:row.effectiveEach,physicalHealthEach:row.effectiveEach,unitEffectiveHealthEach:row.effectiveEach,
       nominalHealth:(row.D/sumD)*(capacityLimit/row.capEach)*row.effectiveEach
     };
   });
@@ -483,7 +486,7 @@ export function calculateCustomCategory({
     const requestedCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
     enforceRequestedCapacity(results,requestedCapacity,customDeathIds);
   }
-  const strictHealth=enforceStrictHealthOrder(results,customDeathIds);
+  const strictHealth=legalizePhysicalCategoryRows(results,customDeathIds,{minimumSeparation:Boolean(inputs.minimumSeparation),separation:Number(Number.isFinite(inputs.rankSeparation)?inputs.rankSeparation:inputs.layerSeparation)||0});
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
