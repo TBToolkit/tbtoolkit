@@ -1,16 +1,6 @@
-const SPECIES_GROUP = Object.freeze({
-  BEAST: 'MONSTER',
-  DRAGON: 'MONSTER',
-  ELEMENTAL: 'MONSTER',
-  GIANT: 'MONSTER',
-  'EPIC HUNTER': 'EPIC_HUNTER',
-  HUMAN: 'HUMAN',
-  CURSED: 'HUMAN',
-  DEMON: 'HUMAN',
-  ELVES: 'HUMAN',
-  UNDEAD: 'HUMAN',
-  BARBARIAN: 'HUMAN',
-});
+import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs } from './epic-mechanics.mjs?v=189-dev1';
+
+const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 
 const CATEGORY_CONFIG = Object.freeze({
   troop: {
@@ -426,12 +416,7 @@ export function calculateCustomCategory({
   // simulator. The previous relative species adjustment was only an
   // approximation and could invert manually ordered units from different
   // health families (for example Human vs Beast inside the same tier).
-  const effectiveHealthEach = unit=>{
-    const group=SPECIES_GROUP[unit.species];
-    if(!group)throw new Error(`Unknown species: ${unit.species}`);
-    const pct=Number(inputs.healthInputs?.[group]||0);
-    return Number(unit.healthEach||0)*(1+pct/100);
-  };
+  const effectiveHealthEach = unit=>effectiveHealthEachFromHealthInputs(unit, inputs.healthInputs);
   const maxHealthEach = Math.max(...selected.map(effectiveHealthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];

@@ -1,91 +1,23 @@
+import {
+  EPIC_MECHANICS_BUILD,
+  BONUS_FAMILY_BY_SPECIES,
+  assertLegalQuantity,
+  bonusFamilyForSpecies,
+  clampProbability,
+  deriveBonusInputs,
+} from './epic-mechanics.mjs?v=189-dev1';
+
 export const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
+export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
+const MATCHUP_KEY = Object.freeze({
+  FLYING: 'flying', MOUNTED: 'mounted', MELEE: 'melee', RANGED: 'ranged',
+});
 function enemySquadsForBattle(arachne){
  const copies=arachne?2:1,squads=[];
  for(const type of TARGET_TYPES)for(let copy=1;copy<=copies;copy++)squads.push({id:`${type}-${copy}`,type,copy});
  return squads;
-}
-
-const BONUS_FAMILY_BY_SPECIES = Object.freeze({
-  BEAST: 'MONSTER', DRAGON: 'MONSTER', GIANT: 'MONSTER', ELEMENTAL: 'MONSTER',
-  HUMAN: 'HUMAN', CURSED: 'HUMAN', BARBARIAN: 'HUMAN', ELVES: 'HUMAN',
-  DEMON: 'HUMAN', UNDEAD: 'HUMAN',
-  'EPIC HUNTER': 'EPIC_HUNTER',
-});
-
-const MATCHUP_KEY = Object.freeze({
-  FLYING: 'flying', MOUNTED: 'mounted', MELEE: 'melee', RANGED: 'ranged',
-});
-
-function finiteNumber(v, label) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`${label} must be a finite number.`);
-  return n;
-}
-
-function pctPoints(v, label) {
-  return finiteNumber(v, label) / 100;
-}
-
-function clampProbability(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-export function deriveBonusInputs(input) {
-  const monsterHealthPct = finiteNumber(input.monsterHealthPct, 'Monster Health %');
-  const monsterStrengthPct = finiteNumber(input.monsterStrengthPct, 'Monster Strength %');
-  const strengthAgainstEpicPct = finiteNumber(input.strengthAgainstEpicPct, 'Strength Against Epic %');
-  const monsterDDPct = finiteNumber(input.monsterDDPct, 'Monster Double Damage %');
-  const monsterSTPct = finiteNumber(input.monsterSTPct, 'Monster Strike Twice %');
-
-  const defaults = {
-    humanHealthPct: monsterHealthPct - 100,
-    epicHunterHealthPct: monsterHealthPct - 741,
-    humanStrengthPct: monsterStrengthPct - 100,
-    epicHunterStrengthPct: monsterStrengthPct - 741,
-    humanDDPct: monsterDDPct,
-    epicHunterDDPct: monsterDDPct,
-    humanSTPct: Math.max(0, monsterSTPct - 5),
-    epicHunterSTPct: Math.max(0, monsterSTPct - 5),
-  };
-  const custom = input.customFamilyBonuses ?? {};
-  const resolved = input.useCustomFamilyBonuses ? { ...defaults, ...custom } : defaults;
-
-  return {
-    family: {
-      MONSTER: {
-        health: pctPoints(monsterHealthPct, 'Monster Health %'),
-        strength: pctPoints(monsterStrengthPct, 'Monster Strength %'),
-        dd: clampProbability(pctPoints(monsterDDPct, 'Monster Double Damage %')),
-        st: clampProbability(pctPoints(monsterSTPct, 'Monster Strike Twice %')),
-      },
-      HUMAN: {
-        health: pctPoints(resolved.humanHealthPct, 'Human Health %'),
-        strength: pctPoints(resolved.humanStrengthPct, 'Human Strength %'),
-        dd: clampProbability(pctPoints(resolved.humanDDPct, 'Human Double Damage %')),
-        st: clampProbability(pctPoints(resolved.humanSTPct, 'Human Strike Twice %')),
-      },
-      EPIC_HUNTER: {
-        health: pctPoints(resolved.epicHunterHealthPct, 'Epic Hunter Health %'),
-        strength: pctPoints(resolved.epicHunterStrengthPct, 'Epic Hunter Strength %'),
-        dd: clampProbability(pctPoints(resolved.epicHunterDDPct, 'Epic Hunter Double Damage %')),
-        st: clampProbability(pctPoints(resolved.epicHunterSTPct, 'Epic Hunter Strike Twice %')),
-      },
-    },
-    strengthAgainstEpic: pctPoints(strengthAgainstEpicPct, 'Strength Against Epic %'),
-    arachne: Boolean(input.arachne),
-    userFacing: {
-      monsterHealthPct, monsterStrengthPct, strengthAgainstEpicPct, monsterDDPct, monsterSTPct,
-      ...resolved,
-    },
-  };
-}
-
-export function bonusFamilyForSpecies(species) {
-  const family = BONUS_FAMILY_BY_SPECIES[String(species ?? '').toUpperCase()];
-  if (!family) throw new Error(`Unknown bonus-family species: ${species}`);
-  return family;
 }
 
 export function validateArmyDatabase(units) {
@@ -107,8 +39,7 @@ export function validateArmyDatabase(units) {
 }
 
 export function buildSquad(unit, quantity, bonusInputs) {
-  const q = finiteNumber(quantity, `${unit.name} quantity`);
-  if (!Number.isInteger(q) || q < 0) throw new Error(`${unit.name} quantity must be a non-negative integer.`);
+  const q = assertLegalQuantity(quantity, `${unit.name} quantity`);
   const familyName = bonusFamilyForSpecies(unit.species);
   const family = bonusInputs.family[familyName];
   const intrinsicDD = Number(unit.bonuses?.doubleDamage ?? 0);
