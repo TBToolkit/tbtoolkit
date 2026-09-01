@@ -2041,6 +2041,7 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .workspace-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
 .workspace-actions button{border:1px solid rgba(130,174,201,.35);border-radius:7px;background:#102738;color:#cfe3ee;padding:5px 8px;font:inherit;font-size:.75rem;cursor:pointer}
 .workspace-actions button:disabled{opacity:.38;cursor:not-allowed}
+.workspace-actions input[hidden]{display:none!important}
 .workspace-dialog{width:min(520px,calc(100vw - 28px));border:1px solid rgba(116,174,207,.38);border-radius:14px;background:#0b1b28;color:#e7f1f6;padding:0;box-shadow:0 24px 80px #000b}
 .workspace-dialog::backdrop{background:#02080dcc;backdrop-filter:blur(3px)}
 .workspace-dialog form{display:grid;gap:16px;padding:22px}
@@ -2051,6 +2052,16 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .encounter-formation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .workspace-dialog .dialog-check{display:flex;align-items:center;gap:8px;margin-top:12px}.workspace-dialog .dialog-check input{width:auto}
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px}.dialog-actions button{border:1px solid rgba(135,177,199,.38);border-radius:8px;background:#17364a;color:#fff;padding:8px 14px;cursor:pointer}
+.biff-import-intro{margin:0;color:#aebdca;line-height:1.5}
+.biff-import-summary{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.biff-import-summary>div{display:grid;gap:4px;padding:10px;border:1px solid rgba(135,177,199,.25);border-radius:8px;background:#091824}
+.biff-import-summary span{color:#8fa1b1;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.biff-import-summary strong{font-size:.84rem;overflow-wrap:anywhere}
+#biffImportWarnings{padding:10px 12px;border:1px solid rgba(239,167,39,.35);border-radius:8px;background:rgba(239,167,39,.06)}
+#biffImportWarnings[hidden]{display:none!important}
+#biffImportWarnings h3{margin:0 0 6px;font-size:.8rem}
+#biffImportWarnings ul{margin:0;padding-left:18px;color:#c8d3dc;font-size:.72rem;line-height:1.45}
+@media(max-width:560px){.biff-import-summary{grid-template-columns:1fr}}
 @media(max-width:560px){.encounter-formation-grid{grid-template-columns:repeat(2,1fr)}}
 .battle-select-field{display:grid;gap:6px;min-width:0}
 .battle-select-field>span{

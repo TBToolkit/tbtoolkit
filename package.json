@@ -1,6 +1,6 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs"
+    "test": "node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs"
   }
 }

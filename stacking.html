@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=191-dev1" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=191-dev2" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=191-dev1" type="module"></script>
+<script src="js/epic-stacker.js?v=191-dev2" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -49,7 +49,7 @@
 </div>
 <div class="battle-select-grid">
 <label class="battle-select-field" for="accountSelect"><span>Player Account</span>
-<select id="accountSelect"></select><span class="workspace-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button></span></label>
+<select id="accountSelect"></select><span class="workspace-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".biff,application/json" hidden id="biffFileInput" type="file"/></span></label>
 <label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
 <select id="battleTypeSelect">
 <option value="epic">Epic Monster</option>
@@ -88,6 +88,21 @@
 <label id="pvpModelField"><span>PvP enemy squads</span><select id="encounterPvpModel"><option value="single">1 Enemy Squad</option><option value="unknown">Unknown Enemy Squads</option></select></label>
 <p class="validation-box" id="encounterFormError"></p>
 <div class="dialog-actions"><button value="cancel" type="button" id="cancelEncounter">Cancel</button><button value="default" type="submit">Save</button></div>
+</form>
+</dialog>
+
+<dialog id="biffImportDialog" class="workspace-dialog biff-import-dialog">
+<form id="biffImportForm" method="dialog">
+<h2>Import Player Account</h2>
+<p class="biff-import-intro">This account will be added as a new Player Account. Existing accounts will not be replaced.</p>
+<div class="biff-import-summary">
+<div><span>Account</span><strong id="biffImportAccountName">—</strong></div>
+<div><span>Custom encounters</span><strong id="biffImportEncounterCount">0</strong></div>
+<div><span>Saved workspaces</span><strong id="biffImportWorkspaceCount">0</strong></div>
+</div>
+<div hidden id="biffImportWarnings"><h3>Import notes</h3><ul id="biffImportWarningList"></ul></div>
+<p class="validation-box" id="biffImportError"></p>
+<div class="dialog-actions"><button type="button" id="cancelBiffImport">Cancel</button><button type="submit" id="confirmBiffImport">Import Account</button></div>
 </form>
 </dialog>
 
