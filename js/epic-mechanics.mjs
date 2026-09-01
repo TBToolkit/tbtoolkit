@@ -18,7 +18,7 @@ export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoint
  * remain outside this file so all methods can share the same mechanics without
  * sharing the same strategy.
  */
-export const EPIC_MECHANICS_BUILD = '190-dev2';
+export const EPIC_MECHANICS_BUILD = '191-dev1';
 
 /**
  * Resolve the player-facing Epic health/strength/DD/ST inputs into the three
@@ -44,6 +44,16 @@ export function deriveBonusInputs(input) {
   const custom = input.customFamilyBonuses ?? {};
   const resolved = input.useCustomFamilyBonuses ? { ...defaults, ...custom } : defaults;
 
+  const defaultEnemySquadTypes=input.arachne
+    ?['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED']
+    :['FLYING','MOUNTED','MELEE','RANGED'];
+  const enemySquadTypes=Array.isArray(input.enemySquadTypes)&&input.enemySquadTypes.length
+    ?input.enemySquadTypes.map(type=>String(type).toUpperCase())
+    :defaultEnemySquadTypes;
+  if(enemySquadTypes.length<1||enemySquadTypes.length>8||enemySquadTypes.some(type=>!['FLYING','MOUNTED','MELEE','RANGED'].includes(type))){
+    throw new Error('Epic enemy formation must contain 1–8 valid combat-type squads.');
+  }
+
   return {
     family: {
       MONSTER: {
@@ -67,6 +77,7 @@ export function deriveBonusInputs(input) {
     },
     strengthAgainstEpic: pctPoints(strengthAgainstEpicPct, 'Strength Against Epic %'),
     arachne: Boolean(input.arachne),
+    enemySquadTypes,
     userFacing: {
       monsterHealthPct,
       monsterStrengthPct,

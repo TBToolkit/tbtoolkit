@@ -1,15 +1,20 @@
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=190-dev2';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev2';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191-dev1';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev2';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev2';
+import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191-dev1';
+import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191-dev2';
 
-const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
+const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
+const APP_BUILD='191-dev5';
+const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let appInitialized=false;let optimizerBestEldSoFar=0;
+let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 function formatElapsed(ms){
   const total=Math.max(0,Math.floor(Number(ms||0)/1000));
@@ -40,12 +45,12 @@ function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
 dominance:'',dominanceFill:'99.99',autoDominance:true,
-monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'0',
-monsterStrength:'2299.5',strengthAgainstEpic:'3225',pvpStrength:'0',monsterDD:'12',monsterST:'12',
-humanStrength:'2199.5',epicHunterStrength:'1558.5',
-humanDD:'12',epicHunterDD:'12',humanST:'7',epicHunterST:'7',
+monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'1600',
+monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10',
+humanStrength:'1900',epicHunterStrength:'1259',
+humanDD:'10',epicHunterDD:'10',humanST:'5',epicHunterST:'5',
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
-arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:mode==='optimizer'?'0.10':'0.05'};}
+arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
 function cloneIds(source){
   return{
     troop:[...(source?.troop||[])],
@@ -125,7 +130,10 @@ function makeBattleWorkspace(type='epic_standard',seed=null){
 
   return workspace;
 }
-function battleWorkspaceKey(type){return String(type||'epic_standard');}
+function battleWorkspaceKey(type){
+  const battle=state?.modes?.battle;
+  return String(battle?.activeEncounterId&&String(type)===String(battle.activeBattleType)?battle.activeEncounterId:(type||'epic-doomsday'));
+}
 
 const TEMPLE_REVIVAL_DIVISORS=Object.freeze({
   1:1.04,2:1.06,3:1.08,4:1.11,5:1.13,6:1.16,7:1.19,8:1.22,9:1.27,
@@ -134,7 +142,10 @@ const TEMPLE_REVIVAL_DIVISORS=Object.freeze({
   30:3.84,31:3.93,32:4.03,33:4.13,34:4.23,35:4.34,36:4.46,37:4.59,38:4.72,39:4.87,
   40:5.02,41:5.17,42:5.34,43:5.52,44:5.71,45:5.91
 });
-function templeLevel(){return Math.max(1,Math.min(45,Number(state.preferences?.templeLevel)||45));}
+function currentAccount(){return state.accounts[state.activeAccountId]||Object.values(state.accounts)[0];}
+function currentEncounter(){return resolveEncounter(currentAccount(),state.modes.battle.activeEncounterId);}
+function currentEngineBattleType(){return engineBattleType(currentEncounter());}
+function templeLevel(){return Math.max(1,Math.min(45,Number(currentAccount()?.templeLevel)||45));}
 function templeRevivalDivisor(){return Number(TEMPLE_REVIVAL_DIVISORS[templeLevel()]||1);}
 function actualRevivalCost(rawCost){
   return sharedActualRevivalCost(Math.max(0,Number(rawCost)||0),templeRevivalDivisor());
@@ -169,13 +180,17 @@ function populateTempleLevel(){
   els.templeLevel.value=String(templeLevel());
   if(els.templeMultiplier)els.templeMultiplier.textContent=`${templeRevivalDivisor().toFixed(2)}×`;
 }
-const state={preferences:{templeLevel:45},modes:{
+const initialAccount=makeAccount();
+initialAccount.battle.activeEncounterId='epic-doomsday';
+const state={preferences:{templeLevel:45},accounts:{[initialAccount.id]:initialAccount},activeAccountId:initialAccount.id,modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
 custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}},squadOrder:{troop:[],monster:[],mercenary:[]}},
-battle:{activeBattleType:'epic_standard',activeBattleMethod:'basic',workspaces:{}}
+battle:initialAccount.battle
 }};
 function ensureBattleWorkspace(type=state.modes.battle.activeBattleType,method=state.modes.battle.activeBattleMethod,seed=null){
+  const encounter=currentEncounter();
+  type=encounter?engineBattleType(encounter):type;
   const key=battleWorkspaceKey(type);
   if(!state.modes.battle.workspaces[key]){
     state.modes.battle.workspaces[key]=makeBattleWorkspace(type,seed);
@@ -183,7 +198,8 @@ function ensureBattleWorkspace(type=state.modes.battle.activeBattleType,method=s
   const workspace=state.modes.battle.workspaces[key];
   workspace.inputs.battleType=type;
   workspace.inputs.battleMethod=method;
-  workspace.inputs.arachne=type==='epic_arachne';
+  workspace.inputs.arachne=!!encounter?.arachneBonus;
+  if(encounter?.battleType==='epic')workspace.inputs.enemySquadTypes=enemySquadTypes(encounter.enemyFormation);
   return workspace;
 }
 function currentBattleWorkspace(){
@@ -192,8 +208,19 @@ function currentBattleWorkspace(){
     state.modes.battle.activeBattleMethod
   );
 }
+function activateAccount(accountId){
+  if(!state.accounts[accountId])return;
+  state.activeAccountId=accountId;
+  state.modes.battle=state.accounts[accountId].battle;
+  const battle=state.modes.battle;
+  battle.activeBattleCategory=battle.activeBattleCategory||'epic';
+  battle.activeEncounterByType=battle.activeEncounterByType||{epic:'epic-doomsday',pvp:'pvp-single'};
+  battle.activeEncounterId=battle.activeEncounterId||battle.activeEncounterByType[battle.activeBattleCategory]||'epic-doomsday';
+  battle.activeBattleType=currentEngineBattleType();
+  ensureBattleWorkspace();
+}
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -377,7 +404,14 @@ async function loadData(){
 }
 function loadSavedState(){
   try{
-    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    const currentSaved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    if(currentSaved?.accounts&&Object.keys(currentSaved.accounts).length){
+      state.accounts={};
+      for(const [id,raw] of Object.entries(currentSaved.accounts))state.accounts[id]=hydrateAccount({...raw,id});
+      state.activeAccountId=state.accounts[currentSaved.activeAccountId]?currentSaved.activeAccountId:Object.keys(state.accounts)[0];
+      activateAccount(state.activeAccountId);activeMode='battle';return;
+    }
+    const saved=JSON.parse(localStorage.getItem(PREVIOUS_STORAGE_KEY)||'null');
     if(saved?.modes){
       if(saved.preferences&&Number.isFinite(Number(saved.preferences.templeLevel))){
         state.preferences.templeLevel=Math.max(1,Math.min(45,Number(saved.preferences.templeLevel)||45));
@@ -400,6 +434,8 @@ function loadSavedState(){
 
       const b=saved.modes.battle;
       if(b?.workspaces){
+        delete state.modes.battle.activeBattleCategory;
+        delete state.modes.battle.activeEncounterId;
         state.modes.battle.activeBattleType=b.activeBattleType||'epic_standard';
         state.modes.battle.activeBattleMethod=b.activeBattleMethod||'basic';
 
@@ -471,7 +507,19 @@ function loadSavedState(){
         state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type,b);
       }
 
-      ensureBattleWorkspace();
+      const legacyBattle=state.modes.battle;
+      initialAccount.templeLevel=state.preferences.templeLevel;
+      initialAccount.battle=legacyBattle;
+      initialAccount.battle.activeBattleCategory=String(legacyBattle.activeBattleType||'').startsWith('pvp_')?'pvp':'epic';
+      initialAccount.battle.activeEncounterByType={epic:'epic-doomsday',pvp:'pvp-single'};
+      const legacyEncounter={epic_arachne:'epic-arachne',pvp_single_cp:'pvp-single',pvp_unknown:'pvp-unknown'}[legacyBattle.activeBattleType]||'epic-doomsday';
+      initialAccount.battle.activeEncounterId=legacyEncounter;
+      const oldWorkspaces=legacyBattle.workspaces||{};initialAccount.battle.workspaces={};
+      for(const [oldKey,workspace] of Object.entries(oldWorkspaces)){
+        const mapped={epic_arachne:'epic-arachne',pvp_single_cp:'pvp-single',pvp_unknown:'pvp-unknown',epic_standard:'epic-doomsday'}[oldKey]||oldKey;
+        initialAccount.battle.workspaces[mapped]=workspace;
+      }
+      state.accounts={main:initialAccount};state.activeAccountId='main';activateAccount('main');
       return;
     }
   }catch(error){
@@ -479,10 +527,113 @@ function loadSavedState(){
   }
   ensureBattleWorkspace();
 }
-function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({activeMode,preferences:state.preferences,modes:state.modes}));}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({activeMode,activeAccountId:state.activeAccountId,accounts:state.accounts,preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}}));}
+function safeBiffFileName(name){
+  const stem=String(name||'tbtoolkit-account').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'tbtoolkit-account';
+  return `${stem}.biff`;
+}
+function downloadActiveAccountBiff(){
+  readInputs();saveState();
+  const text=serializeAccountToBiff(currentAccount(),{appBuild:APP_BUILD});
+  const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'}));
+  const link=document.createElement('a');link.href=url;link.download=safeBiffFileName(currentAccount().name);
+  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function allCustomEncounterIds(){return Object.values(state.accounts).flatMap(account=>Object.keys(account.customEncounters||{}));}
+function comparableName(value){return String(value||'').trim().toLocaleLowerCase();}
+function accountNameExists(name,excludeId=null){return Object.values(state.accounts).some(account=>account.id!==excludeId&&comparableName(account.name)===comparableName(name));}
+function promptForUniqueAccountName(message,suggested,excludeId=null){
+  while(true){
+    const raw=prompt(message,suggested);if(raw===null)return null;
+    const name=raw.trim();let error='';
+    if(!name)error='Enter a Player Account name.';
+    else if(name.length>60)error='Player Account names must be 60 characters or fewer.';
+    else if(accountNameExists(name,excludeId))error=`A Player Account named “${name}” already exists. Choose a different name.`;
+    if(error){alert(error);suggested=name;continue;}
+    return name;
+  }
+}
+function importedAccountNameSuggestion(sourceName){
+  const base=String(sourceName||'Imported Account').trim().slice(0,60)||'Imported Account';
+  const used=new Set(Object.values(state.accounts).map(account=>String(account.name||'').trim().toLocaleLowerCase()));
+  if(!used.has(base.toLocaleLowerCase()))return base;
+  const copyBase=`${base.slice(0,55).trim()} Copy`;
+  if(!used.has(copyBase.toLocaleLowerCase()))return copyBase;
+  let index=2,candidate='';
+  do{const suffix=` Copy ${index++}`;candidate=`${base.slice(0,60-suffix.length).trim()}${suffix}`;}while(used.has(candidate.toLocaleLowerCase()));
+  return candidate;
+}
+function validateImportedAccountName(){
+  const name=String(els.biffImportName?.value||'').trim();
+  let error='';
+  if(!name)error='Enter a name for the new Player Account.';
+  else if(name.length>60)error='Player Account names must be 60 characters or fewer.';
+  else if(accountNameExists(name))error=`A Player Account named “${name}” already exists. Choose a different name.`;
+  els.biffImportError.textContent=error;
+  els.biffImportError.classList.toggle('show',!!error);
+  els.confirmBiffImport.disabled=!!error||!pendingBiffImport;
+  return error?'':name;
+}
+function showBiffImportPreview(materialized){
+  pendingBiffImport=materialized;
+  els.biffImportAccountName.textContent=materialized.summary.accountName;
+  els.biffImportName.value=importedAccountNameSuggestion(materialized.summary.accountName);
+  els.biffImportEncounterCount.textContent=String(materialized.summary.encounterCount);
+  els.biffImportWorkspaceCount.textContent=String(materialized.summary.workspaceCount);
+  els.biffImportError.textContent='';
+  els.biffImportError.classList.remove('show');
+  els.confirmBiffImport.disabled=false;
+  els.biffImportWarningList.innerHTML='';
+  for(const warning of materialized.warnings){const item=document.createElement('li');item.textContent=warning;els.biffImportWarningList.append(item);}
+  els.biffImportWarnings.hidden=!materialized.warnings.length;
+  validateImportedAccountName();
+  els.biffImportDialog.showModal();
+  els.biffImportName.focus();els.biffImportName.select();
+}
+function showBiffImportError(error){
+  pendingBiffImport=null;
+  els.biffImportAccountName.textContent='Could not read file';
+  els.biffImportEncounterCount.textContent='—';els.biffImportWorkspaceCount.textContent='—';
+  els.biffImportWarnings.hidden=true;els.biffImportWarningList.innerHTML='';
+  els.biffImportError.textContent=error?.message||'The selected .biff file could not be imported.';
+  els.biffImportError.classList.add('show');
+  els.confirmBiffImport.disabled=true;
+  if(!els.biffImportDialog.open)els.biffImportDialog.showModal();
+}
+async function prepareBiffImport(file){
+  if(!file)return;
+  if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error('This .biff file is larger than 5 MB.'));return;}
+  try{
+    const parsed=parseBiff(await file.text());
+    const materialized=materializeImportedAccount(parsed,{
+      existingAccountIds:Object.keys(state.accounts),
+      existingEncounterIds:allCustomEncounterIds(),
+      builtInEncounterIds:BUILT_IN_ENCOUNTERS.map(row=>row.id),
+      armyIds:armyV2.map(row=>row.id)
+    });
+    showBiffImportPreview(materialized);
+  }catch(error){showBiffImportError(error);}
+}
+function confirmPendingBiffImport(){
+  if(!pendingBiffImport)return;
+  const name=validateImportedAccountName();if(!name)return;
+  const imported=hydrateAccount({...pendingBiffImport.account,name});
+  const previousAccounts=state.accounts,previousAccountId=state.activeAccountId,previousBattle=state.modes.battle;
+  try{
+    const candidate={...state.accounts,[imported.id]:imported};
+    validateAccountCollection(candidate,imported.id);
+    state.accounts=candidate;activateAccount(imported.id);saveState();
+    pendingBiffImport=null;els.biffImportDialog.close();els.biffFileInput.value='';
+    loadSavedOptimizerResult();refreshActiveMode();
+  }catch(error){
+    state.accounts=previousAccounts;state.activeAccountId=previousAccountId;state.modes.battle=previousBattle;
+    els.biffImportError.textContent=`Nothing was imported. ${error?.message||'Browser storage could not be updated.'}`;
+    els.biffImportError.classList.add('show');
+  }
+}
 function optimizerResultStorageKey(){
   return activeMode==='battle'
-    ?`tbtoolkit.battleCalculator.optimizerResult.v2.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
+    ?`tbtoolkit.battleCalculator.optimizerResult.v3.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
     :OPTIMIZER_RESULT_KEY;
 }
 function loadSavedOptimizerResult(){
@@ -513,6 +664,51 @@ function clearSavedOptimizerResult(){
 }
 function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
+function hydrateAccount(raw){
+  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel});
+  account.customEncounters={...(raw?.customEncounters||{})};
+  const source=raw?.battle||{};
+  account.battle.activeBattleCategory=source.activeBattleCategory||'epic';
+  account.battle.activeEncounterByType={...account.battle.activeEncounterByType,...(source.activeEncounterByType||{})};
+  account.battle.activeEncounterId=source.activeEncounterId||account.battle.activeEncounterByType[account.battle.activeBattleCategory];
+  account.battle.activeBattleMethod=source.activeBattleMethod||'basic';
+  account.battle.workspaces={};
+  for(const [id,workspace] of Object.entries(source.workspaces||{}))account.battle.workspaces[id]=makeBattleWorkspace(workspace?.inputs?.battleType,workspace);
+  return account;
+}
+function refreshWorkspaceSelectors(){
+  if(!els.accountSelect)return;
+  els.accountSelect.innerHTML='';
+  for(const account of Object.values(state.accounts)){
+    const option=document.createElement('option');option.value=account.id;option.textContent=account.name;els.accountSelect.append(option);
+  }
+  els.accountSelect.value=state.activeAccountId;
+  const account=currentAccount(),battle=state.modes.battle,category=battle.activeBattleCategory||'epic';
+  els.battleTypeSelect.value=category;
+  const choices=encountersForAccount(account,category);
+  if(!choices.some(row=>row.id===battle.activeEncounterId))battle.activeEncounterId=choices[0]?.id;
+  battle.activeEncounterByType[category]=battle.activeEncounterId;
+  battle.activeBattleType=currentEngineBattleType();
+  els.encounterSelect.innerHTML='';
+  for(const encounter of choices){const option=document.createElement('option');option.value=encounter.id;option.textContent=encounter.name;els.encounterSelect.append(option);}
+  els.encounterSelect.value=battle.activeEncounterId;
+  const builtIn=isBuiltInEncounter(battle.activeEncounterId);
+  els.editEncounter.disabled=builtIn;els.removeEncounter.disabled=builtIn;els.removeAccount.disabled=Object.keys(state.accounts).length<=1;
+}
+function openEncounterEditor(encounter=null,duplicate=false){
+  const category=state.modes.battle.activeBattleCategory;
+  els.encounterForm.dataset.editId=encounter&&!duplicate?encounter.id:'';
+  els.encounterDialogTitle.textContent=encounter?(duplicate?'Duplicate Encounter':'Edit Encounter'):'New Encounter';
+  els.encounterName.value=encounter?`${encounter.name}${duplicate?' Copy':''}`:'';
+  const formation=encounter?.enemyFormation||{FLYING:1,MOUNTED:1,MELEE:1,RANGED:1};
+  els.enemyFlying.value=formation.FLYING||0;els.enemyMounted.value=formation.MOUNTED||0;els.enemyMelee.value=formation.MELEE||0;els.enemyRanged.value=formation.RANGED||0;
+  els.encounterArachneBonus.checked=!!encounter?.arachneBonus;
+  els.encounterPvpModel.value=encounter?.pvpModel||'single';
+  els.epicFormationFields.hidden=category!=='epic';els.pvpModelField.hidden=category!=='pvp';els.encounterFormError.textContent='';els.encounterFormError.classList.remove('show');
+  els.encounterDialog.showModal();
+}
+function copyWorkspace(source){return source?JSON.parse(JSON.stringify(source)):null;}
+
 function setDerivedField(id,value,readonly=true){
   if(!els[id])return;
   els[id].value=Number.isFinite(Number(value))?String(Math.max(0,Number(value))):'0';
@@ -537,6 +733,7 @@ function epicBonusPayload(){
     monsterDDPct:parseNumber(i.monsterDD),
     monsterSTPct:parseNumber(i.monsterST),
     arachne:activeMode!=='custom'&&!!i.arachne,
+    enemySquadTypes:i.enemySquadTypes,
     includeMercenariesInOptimization:!!i.includeMercenariesInOptimization,
     useCustomFamilyBonuses:!!i.useCustomFamilyBonuses,
     customFamilyBonuses:{
@@ -620,6 +817,7 @@ function currentEpicEffectiveSignature(){
     includeMercenariesInOptimization:includeMercs,
     rankSeparation:parseNumber(i.rankSeparation),
     arachne:activeMode!=='custom'&&!!i.arachne,
+    enemySquadTypes:i.enemySquadTypes,
     monsterHealth:parseNumber(i.monsterHealth),
     humanHealth:parseNumber(i.humanHealth),
     epicHunterHealth:parseNumber(i.epicHunterHealth),
@@ -723,7 +921,7 @@ function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
-    ? state.modes.battle.activeBattleType==='epic_arachne'
+    ? !!modeState().inputs.arachne
     : !!modeState().inputs.arachne;
   if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText}${templeText} · Full battle simulation using the displayed quantities.`;}
@@ -927,7 +1125,7 @@ function renderEpicOptimizedResult(opt){
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
   els.resultStatus.textContent=activeMode==='battle'
-    ?`${count} optimized squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`
+    ?`${count} optimized squad${count===1?'':'s'} · Total Battle mobile entry order`
     :`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
@@ -956,7 +1154,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=190-dev2');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=191-dev1');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1071,7 +1269,7 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=battle
-    ?'Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can calculate a standard stack, follow a custom death order, or optimize supported Epic battles. PvP calculations include PvP health, strength, matchup bonuses, and revival costs when they apply.'
+    ?'Build an army for an Epic Monster or Player vs. Player battle. Enter your army limits and combat bonuses. Select the units you want to use. Choose Standard, Custom Order, or Optimize. Optimize is available for supported Epic battles.'
     : classic
       ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
       : optimizer
@@ -1088,9 +1286,9 @@ function configureModeUI(){
   if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
   if(els.selectionStepNumber&&!battle)els.selectionStepNumber.textContent='2';
   if(battle){
-    const type=state.modes.battle.activeBattleType||'epic_standard';
+    refreshWorkspaceSelectors();
+    const type=currentEngineBattleType();state.modes.battle.activeBattleType=type;
     const method=state.modes.battle.activeBattleMethod||'basic';
-    if(els.battleTypeSelect)els.battleTypeSelect.value=type;
     if(els.battleMethodSelect){
       const optimizeOption=els.battleMethodSelect.querySelector('option[value="optimize"]');
       if(optimizeOption)optimizeOption.disabled=type.startsWith('pvp_');
@@ -1099,7 +1297,8 @@ function configureModeUI(){
       }
       els.battleMethodSelect.value=state.modes.battle.activeBattleMethod||'basic';
     }
-    modeState().inputs.arachne=type==='epic_arachne';
+    modeState().inputs.arachne=!!currentEncounter()?.arachneBonus;
+    if(currentEncounter()?.battleType==='epic')modeState().inputs.enemySquadTypes=enemySquadTypes(currentEncounter().enemyFormation);
     const isPvp=type.startsWith('pvp_');
     const optimizeOption=document.getElementById('battleMethodOptimizeOption');
     if(optimizeOption){
@@ -1119,8 +1318,7 @@ function configureModeUI(){
       els.pvpEnemyUnitSelect.value=armyV2.some(u=>u.id===enemyId)?enemyId:'troop-g9-flying-corax-2';
     }
     if(els.battleContextNote)els.battleContextNote.textContent=
-      type==='epic_standard'?'Epic Monster: standard Epic battle with 4 enemy squads.'
-      :type==='epic_arachne'?'Epic Arachne: Epic battle with 8 enemy squads.'
+      type==='epic'?`${currentEncounter()?.name||'Epic Monster'}: ${modeState().inputs.enemySquadTypes.length} enemy squad${modeState().inputs.enemySquadTypes.length===1?'':'s'}${modeState().inputs.arachne?' with the Arachne bonus.':'.'}`
       :type==='pvp_unknown'?'PvP: enemy squad count and composition are unknown. Damage value is averaged across valid PvP target archetypes.'
       :'PvP — 1 enemy squad: the calculator builds a stack for a battle against one selected enemy squad.';
     const activeMethod=state.modes.battle.activeBattleMethod||'basic';
@@ -1202,7 +1400,7 @@ function readInputs(){
   for(const [cat,meta] of Object.entries(CAPACITY_META)){
     if(!i[meta.auto])i[meta.fill]=String(parseNumber(els[meta.fill].value));
   }
-  i.arachne=els.arachne.checked;
+  if(activeMode!=='battle')i.arachne=els.arachne.checked;
   i.useCustomFamilyBonuses=!!els.useCustomFamilyBonuses?.checked;
   i.includeMercenariesInOptimization=!!els.includeMercenariesInOptimization?.checked;
   saveState();
@@ -1231,7 +1429,7 @@ function isBattleOptimizeMode(){
   if(activeMode!=='battle')return false;
   const type=state.modes.battle.activeBattleType||'epic_standard';
   return state.modes.battle.activeBattleMethod==='optimize' &&
-    (type==='epic_standard'||type==='epic_arachne');
+    type==='epic';
 }
 function isAnyEpicOptimizeMode(){
   return activeMode==='optimizer'||isBattleOptimizeMode();
@@ -1336,7 +1534,7 @@ function customOrderMatchupValue(unit){
   return combat+species;
  }
  const bestCombat=Math.max(...['flying','mounted','melee','ranged'].map(bonus));
- return bestCombat+bonus('epic')+(battleType==='epic_arachne'?bonus('arachne'):0);
+ return bestCombat+bonus('epic')+(modeState().inputs.arachne?bonus('arachne'):0);
 }
 function customOrderMatchupText(unit){
  const pct=Math.round(customOrderMatchupValue(unit)*100);
@@ -1352,7 +1550,7 @@ let standardEpicDefaultOrderCache={key:'',orders:null};
 function standardEpicDefaultOrders(){
  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
  const selectedIds={troop:[...selectedIdsFor('troop')],monster:[...selectedIdsFor('monster')],mercenary:[...selectedIdsFor('mercenary')]};
- const inputs={...baseEngineInputs(),arachne:battleType==='epic_arachne'};
+ const inputs={...baseEngineInputs(),arachne:!!modeState().inputs.arachne,enemySquadTypes:modeState().inputs.enemySquadTypes};
  const key=JSON.stringify({battleType,selectedIds,inputs});
  if(standardEpicDefaultOrderCache.key===key&&standardEpicDefaultOrderCache.orders)return standardEpicDefaultOrderCache.orders;
  const standard=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,inputs});
@@ -1413,6 +1611,17 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
  }
 
  return standardEpicDefaultOrder(category).filter(id=>selected.has(id));
+}
+
+function untouchedEpicCustomOrderMatchesStandard(){
+ if(activeMode!=='battle'||state.modes.battle.activeBattleType!=='epic'||state.modes.battle.activeBattleMethod!=='custom')return false;
+ const orderState=currentBattleWorkspace().methods.custom;
+ return ['troop','monster','mercenary'].every(category=>{
+   const selected=new Set(selectedIdsFor(category));
+   const actual=(orderState.squadOrder?.[category]||[]).filter(id=>selected.has(id));
+   const expected=standardEpicDefaultOrder(category).filter(id=>selected.has(id));
+   return actual.length===expected.length&&actual.every((id,index)=>id===expected[index]);
+ });
 }
 
 let customOrderFloatObserver=null;
@@ -1686,7 +1895,8 @@ function baseEngineInputs(){
     leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,
     authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,
     dominance:parseNumber(i.dominance),dominanceFill:parseNumber(i.dominanceFill)/100,
-    arachne:(activeMode==='epic'&&!!i.arachne)||(activeMode==='battle'&&i.battleType==='epic_arachne'),
+    arachne:!!i.arachne,
+    enemySquadTypes:i.enemySquadTypes,
     healthInputs:{
       MONSTER:parseNumber(i.monsterHealth)+pvpHealth,
       HUMAN:parseNumber(i.humanHealth)+pvpHealth,
@@ -1984,14 +2194,6 @@ function renderLayerHealthChart(result){
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);
 
-  // Direction labels.
-  const first=svgEl('text',{x:margin.left,y:height-15,class:'chart-axis-label'});
-  first.textContent='Higher squad health';
-  svg.appendChild(first);
-  const last=svgEl('text',{x:margin.left+plotW,y:height-15,'text-anchor':'end',class:'chart-axis-label'});
-  last.textContent='Lower squad health';
-  svg.appendChild(last);
-
   for(const [category,rows] of Object.entries(source)){
     if(!rows.length)continue;
     const meta=CHART_SERIES[category];
@@ -2189,7 +2391,14 @@ function recalculate(){
       const method=state.modes.battle.activeBattleMethod||'basic';
       if(method==='custom'){
         syncCustomOrders();
-        if(battleType==='pvp_single_cp'){
+        if(battleType==='epic'&&untouchedEpicCustomOrderMatchesStandard()){
+          // An untouched Custom Order is the Standard plan. Reuse the Standard
+          // result so quantities, strict-health legalization, and ELD are exact.
+          result=calculateEpicStack({
+            troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+            selectedIds:modeState().selectedIds,inputs
+          });
+        }else if(battleType==='pvp_single_cp'){
           result=calculatePvpCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
             selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs,enemy:selectedPvpEnemy()
@@ -2215,10 +2424,10 @@ function recalculate(){
           troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
           selectedIds:modeState().selectedIds,inputs
         });
-      }else if(battleType==='epic_standard'||battleType==='epic_arachne'){
+      }else if(battleType==='epic'){
         result=calculateEpicStack({
           troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
-          selectedIds:modeState().selectedIds,inputs:{...inputs,arachne:battleType==='epic_arachne'}
+          selectedIds:modeState().selectedIds,inputs:{...inputs,arachne:!!modeState().inputs.arachne,enemySquadTypes:modeState().inputs.enemySquadTypes}
         });
       }else{
         result=calculateBattleStack({
@@ -2235,7 +2444,7 @@ function recalculate(){
     updateCapacity(result);
     syncAutoFillDisplayToActual(result);
     const bt=activeMode==='battle'?state.modes.battle.activeBattleType:null;
-    const canEpicScore=activeMode!=='battle'||bt==='epic_standard'||bt==='epic_arachne';
+    const canEpicScore=activeMode!=='battle'||bt==='epic';
     const scored=canEpicScore?scoreClassicResult(result):null;
     if(scored){
       renderLayerHealthChart(convertEpicV2Result(scored));
@@ -2250,14 +2459,14 @@ function recalculate(){
     updateLiveDamageMetric(liveIsPvp?Number(result.projectedLifetimeDamage||0):Number(scored?.result?.expectedTotalLifetimeDamage||0),liveIsPvp);
 
     const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
-    els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
+    els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Total Battle mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
     els.resultEmpty.hidden=true;els.resultGroups.hidden=false;
   }catch(error){
     console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');
   }
 }
 function resetCalculator(){
-  if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;
+  if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator':'Custom Stacker'} inputs and selections on this device?`))return;
   if(activeMode==='battle'){
     clearSavedOptimizerResult();
     const type=state.modes.battle.activeBattleType||'epic_standard';
@@ -2420,7 +2629,10 @@ function wireEvents(){
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
     readInputs();saveState();
-    const type=els.battleTypeSelect.value;
+    const category=els.battleTypeSelect.value;
+    state.modes.battle.activeBattleCategory=category;
+    state.modes.battle.activeEncounterId=state.modes.battle.activeEncounterByType[category]||(category==='epic'?'epic-doomsday':'pvp-single');
+    const type=currentEngineBattleType();
     let method=state.modes.battle.activeBattleMethod||'basic';
     if(type.startsWith('pvp_')&&method==='optimize')method='basic';
     state.modes.battle.activeBattleType=type;
@@ -2429,8 +2641,54 @@ function wireEvents(){
     loadSavedOptimizerResult();
     refreshActiveMode();
   });
+  if(els.accountSelect)els.accountSelect.addEventListener('change',()=>{readInputs();saveState();activateAccount(els.accountSelect.value);loadSavedOptimizerResult();refreshActiveMode();});
+  if(els.addAccount)els.addAccount.addEventListener('click',()=>{
+    const name=promptForUniqueAccountName('Player account name','New Account');if(!name)return;
+    const id=uniqueStableId('account',Object.keys(state.accounts));state.accounts[id]=makeAccount({id,name,templeLevel:templeLevel()});activateAccount(id);saveState();refreshActiveMode();
+  });
+  if(els.duplicateAccount)els.duplicateAccount.addEventListener('click',()=>{
+    readInputs();const source=currentAccount(),name=promptForUniqueAccountName('Name for duplicated account',`${source.name} Copy`);if(!name)return;
+    const id=uniqueStableId('account',Object.keys(state.accounts)),copy=hydrateAccount({...JSON.parse(JSON.stringify(source)),id,name});state.accounts[id]=copy;activateAccount(id);saveState();refreshActiveMode();
+  });
+  if(els.renameAccount)els.renameAccount.addEventListener('click',()=>{const account=currentAccount(),name=promptForUniqueAccountName('Player account name',account.name,account.id);if(!name)return;account.name=name;saveState();refreshWorkspaceSelectors();});
+  if(els.removeAccount)els.removeAccount.addEventListener('click',()=>{
+    if(Object.keys(state.accounts).length<=1)return;
+    const account=currentAccount();if(!confirm(`Remove player account “${account.name}” and all of its saved encounters?`))return;
+    delete state.accounts[account.id];activateAccount(Object.keys(state.accounts)[0]);saveState();refreshActiveMode();
+  });
+  if(els.exportAccount)els.exportAccount.addEventListener('click',downloadActiveAccountBiff);
+  if(els.importAccount)els.importAccount.addEventListener('click',()=>{els.biffFileInput.value='';els.biffFileInput.click();});
+  if(els.biffFileInput)els.biffFileInput.addEventListener('change',()=>prepareBiffImport(els.biffFileInput.files?.[0]));
+  if(els.biffImportName)els.biffImportName.addEventListener('input',validateImportedAccountName);
+  if(els.cancelBiffImport)els.cancelBiffImport.addEventListener('click',()=>{pendingBiffImport=null;els.biffFileInput.value='';els.biffImportDialog.close();});
+  if(els.biffImportForm)els.biffImportForm.addEventListener('submit',event=>{event.preventDefault();confirmPendingBiffImport();});
+  if(els.encounterSelect)els.encounterSelect.addEventListener('change',()=>{
+    readInputs();saveState();state.modes.battle.activeEncounterId=els.encounterSelect.value;state.modes.battle.activeEncounterByType[state.modes.battle.activeBattleCategory]=els.encounterSelect.value;state.modes.battle.activeBattleType=currentEngineBattleType();ensureBattleWorkspace();loadSavedOptimizerResult();refreshActiveMode();
+  });
+  if(els.addEncounter)els.addEncounter.addEventListener('click',()=>openEncounterEditor());
+  if(els.duplicateEncounter)els.duplicateEncounter.addEventListener('click',()=>openEncounterEditor(currentEncounter(),true));
+  if(els.editEncounter)els.editEncounter.addEventListener('click',()=>{if(!isBuiltInEncounter(state.modes.battle.activeEncounterId))openEncounterEditor(currentEncounter());});
+  if(els.removeEncounter)els.removeEncounter.addEventListener('click',()=>{
+    const id=state.modes.battle.activeEncounterId,encounter=currentEncounter();if(!encounter||isBuiltInEncounter(id)||!confirm(`Remove encounter “${encounter.name}”?`))return;
+    delete currentAccount().customEncounters[id];delete state.modes.battle.workspaces[id];state.modes.battle.activeEncounterId=encountersForAccount(currentAccount(),state.modes.battle.activeBattleCategory)[0].id;saveState();refreshActiveMode();
+  });
+  if(els.cancelEncounter)els.cancelEncounter.addEventListener('click',()=>els.encounterDialog.close());
+  if(els.encounterName)els.encounterName.addEventListener('input',()=>{els.encounterFormError.textContent='';els.encounterFormError.classList.remove('show');});
+  if(els.encounterForm)els.encounterForm.addEventListener('submit',event=>{
+    event.preventDefault();const account=currentAccount(),category=state.modes.battle.activeBattleCategory,editId=els.encounterForm.dataset.editId;
+    try{
+      const requestedName=els.encounterName.value.trim();
+      const duplicateName=encountersForAccount(account,category).find(row=>row.id!==editId&&comparableName(row.name)===comparableName(requestedName));
+      if(duplicateName)throw new Error(`An encounter named “${requestedName}” already exists for ${category==='epic'?'Epic Monster':'Player vs. Player'} battles. Choose a different name.`);
+      const id=editId||uniqueStableId(`${category}-custom`,[...Object.keys(account.customEncounters),...encountersForAccount(account,category).map(row=>row.id)]);
+      const encounter=createCustomEncounter({id,name:els.encounterName.value,battleType:category,enemyFormation:{FLYING:els.enemyFlying.value,MOUNTED:els.enemyMounted.value,MELEE:els.enemyMelee.value,RANGED:els.enemyRanged.value},arachneBonus:els.encounterArachneBonus.checked,pvpModel:els.encounterPvpModel.value});
+      const sourceId=editId?'':state.modes.battle.activeEncounterId;account.customEncounters[id]=encounter;
+      if(!editId&&sourceId&&els.encounterDialogTitle.textContent.startsWith('Duplicate'))state.modes.battle.workspaces[id]=makeBattleWorkspace(engineBattleType(encounter),copyWorkspace(state.modes.battle.workspaces[sourceId]));
+      state.modes.battle.activeEncounterId=id;state.modes.battle.activeEncounterByType[category]=id;state.modes.battle.activeBattleType=engineBattleType(encounter);ensureBattleWorkspace();els.encounterDialog.close();saveState();refreshActiveMode();
+    }catch(error){els.encounterFormError.textContent=error.message;els.encounterFormError.classList.add('show');}
+  });
   if(els.templeLevel)els.templeLevel.addEventListener('change',()=>{
-    state.preferences.templeLevel=Math.max(1,Math.min(45,Number(els.templeLevel.value)||45));
+    currentAccount().templeLevel=Math.max(1,Math.min(45,Number(els.templeLevel.value)||45));
     populateTempleLevel();
     saveState();
     // Temple affects PvP economic ordering as well as displayed revival costs,
