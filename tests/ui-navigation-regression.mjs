@@ -23,6 +23,10 @@ assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import
 assert.match(html,/id="biffImportDialog"/, 'Import must provide a preview dialog');
 assert.match(html,/id="biffImportName"/, 'Import preview must require a new Player Account name');
 assert.match(source,/importedAccountNameSuggestion/, 'Import must suggest a unique Player Account name');
-assert.match(source,/Choose a name that is different from an existing Player Account/, 'Import must reject duplicate visible account names');
+assert.match(source,/A Player Account named .* already exists/, 'Account creation and import must reject duplicate visible names');
+assert.match(source,/promptForUniqueAccountName/, 'Account New, Duplicate, and Rename must use shared unique-name validation');
+assert.match(source,/An encounter named .* already exists/, 'Encounter creation and duplication must reject duplicate visible names');
+assert.match(source,/biffImportError\.classList\.toggle\(['"]show['"]/, 'Import naming errors must be visibly rendered');
+assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encounter naming errors must be visibly rendered');
 
 console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));

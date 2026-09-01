@@ -6,7 +6,7 @@ import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounte
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191-dev2';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const APP_BUILD='191-dev3';
+const APP_BUILD='191-dev4';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
@@ -540,6 +540,19 @@ function downloadActiveAccountBiff(){
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function allCustomEncounterIds(){return Object.values(state.accounts).flatMap(account=>Object.keys(account.customEncounters||{}));}
+function comparableName(value){return String(value||'').trim().toLocaleLowerCase();}
+function accountNameExists(name,excludeId=null){return Object.values(state.accounts).some(account=>account.id!==excludeId&&comparableName(account.name)===comparableName(name));}
+function promptForUniqueAccountName(message,suggested,excludeId=null){
+  while(true){
+    const raw=prompt(message,suggested);if(raw===null)return null;
+    const name=raw.trim();let error='';
+    if(!name)error='Enter a Player Account name.';
+    else if(name.length>60)error='Player Account names must be 60 characters or fewer.';
+    else if(accountNameExists(name,excludeId))error=`A Player Account named “${name}” already exists. Choose a different name.`;
+    if(error){alert(error);suggested=name;continue;}
+    return name;
+  }
+}
 function importedAccountNameSuggestion(sourceName){
   const base=String(sourceName||'Imported Account').trim().slice(0,60)||'Imported Account';
   const used=new Set(Object.values(state.accounts).map(account=>String(account.name||'').trim().toLocaleLowerCase()));
@@ -555,8 +568,9 @@ function validateImportedAccountName(){
   let error='';
   if(!name)error='Enter a name for the new Player Account.';
   else if(name.length>60)error='Player Account names must be 60 characters or fewer.';
-  else if(Object.values(state.accounts).some(account=>String(account.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase()))error='Choose a name that is different from an existing Player Account.';
+  else if(accountNameExists(name))error=`A Player Account named “${name}” already exists. Choose a different name.`;
   els.biffImportError.textContent=error;
+  els.biffImportError.classList.toggle('show',!!error);
   els.confirmBiffImport.disabled=!!error||!pendingBiffImport;
   return error?'':name;
 }
@@ -567,6 +581,7 @@ function showBiffImportPreview(materialized){
   els.biffImportEncounterCount.textContent=String(materialized.summary.encounterCount);
   els.biffImportWorkspaceCount.textContent=String(materialized.summary.workspaceCount);
   els.biffImportError.textContent='';
+  els.biffImportError.classList.remove('show');
   els.confirmBiffImport.disabled=false;
   els.biffImportWarningList.innerHTML='';
   for(const warning of materialized.warnings){const item=document.createElement('li');item.textContent=warning;els.biffImportWarningList.append(item);}
@@ -581,6 +596,7 @@ function showBiffImportError(error){
   els.biffImportEncounterCount.textContent='—';els.biffImportWorkspaceCount.textContent='—';
   els.biffImportWarnings.hidden=true;els.biffImportWarningList.innerHTML='';
   els.biffImportError.textContent=error?.message||'The selected .biff file could not be imported.';
+  els.biffImportError.classList.add('show');
   els.confirmBiffImport.disabled=true;
   if(!els.biffImportDialog.open)els.biffImportDialog.showModal();
 }
@@ -612,6 +628,7 @@ function confirmPendingBiffImport(){
   }catch(error){
     state.accounts=previousAccounts;state.activeAccountId=previousAccountId;state.modes.battle=previousBattle;
     els.biffImportError.textContent=`Nothing was imported. ${error?.message||'Browser storage could not be updated.'}`;
+    els.biffImportError.classList.add('show');
   }
 }
 function optimizerResultStorageKey(){
@@ -687,7 +704,7 @@ function openEncounterEditor(encounter=null,duplicate=false){
   els.enemyFlying.value=formation.FLYING||0;els.enemyMounted.value=formation.MOUNTED||0;els.enemyMelee.value=formation.MELEE||0;els.enemyRanged.value=formation.RANGED||0;
   els.encounterArachneBonus.checked=!!encounter?.arachneBonus;
   els.encounterPvpModel.value=encounter?.pvpModel||'single';
-  els.epicFormationFields.hidden=category!=='epic';els.pvpModelField.hidden=category!=='pvp';els.encounterFormError.textContent='';
+  els.epicFormationFields.hidden=category!=='epic';els.pvpModelField.hidden=category!=='pvp';els.encounterFormError.textContent='';els.encounterFormError.classList.remove('show');
   els.encounterDialog.showModal();
 }
 function copyWorkspace(source){return source?JSON.parse(JSON.stringify(source)):null;}
@@ -2634,14 +2651,14 @@ function wireEvents(){
   });
   if(els.accountSelect)els.accountSelect.addEventListener('change',()=>{readInputs();saveState();activateAccount(els.accountSelect.value);loadSavedOptimizerResult();refreshActiveMode();});
   if(els.addAccount)els.addAccount.addEventListener('click',()=>{
-    const name=prompt('Player account name','New Account');if(!name?.trim())return;
-    const id=uniqueStableId('account',Object.keys(state.accounts));state.accounts[id]=makeAccount({id,name:name.trim(),templeLevel:templeLevel()});activateAccount(id);saveState();refreshActiveMode();
+    const name=promptForUniqueAccountName('Player account name','New Account');if(!name)return;
+    const id=uniqueStableId('account',Object.keys(state.accounts));state.accounts[id]=makeAccount({id,name,templeLevel:templeLevel()});activateAccount(id);saveState();refreshActiveMode();
   });
   if(els.duplicateAccount)els.duplicateAccount.addEventListener('click',()=>{
-    readInputs();const source=currentAccount(),name=prompt('Name for duplicated account',`${source.name} Copy`);if(!name?.trim())return;
-    const id=uniqueStableId('account',Object.keys(state.accounts)),copy=hydrateAccount({...JSON.parse(JSON.stringify(source)),id,name:name.trim()});state.accounts[id]=copy;activateAccount(id);saveState();refreshActiveMode();
+    readInputs();const source=currentAccount(),name=promptForUniqueAccountName('Name for duplicated account',`${source.name} Copy`);if(!name)return;
+    const id=uniqueStableId('account',Object.keys(state.accounts)),copy=hydrateAccount({...JSON.parse(JSON.stringify(source)),id,name});state.accounts[id]=copy;activateAccount(id);saveState();refreshActiveMode();
   });
-  if(els.renameAccount)els.renameAccount.addEventListener('click',()=>{const account=currentAccount(),name=prompt('Player account name',account.name);if(!name?.trim())return;account.name=name.trim();saveState();refreshWorkspaceSelectors();});
+  if(els.renameAccount)els.renameAccount.addEventListener('click',()=>{const account=currentAccount(),name=promptForUniqueAccountName('Player account name',account.name,account.id);if(!name)return;account.name=name;saveState();refreshWorkspaceSelectors();});
   if(els.removeAccount)els.removeAccount.addEventListener('click',()=>{
     if(Object.keys(state.accounts).length<=1)return;
     const account=currentAccount();if(!confirm(`Remove player account “${account.name}” and all of its saved encounters?`))return;
@@ -2664,15 +2681,19 @@ function wireEvents(){
     delete currentAccount().customEncounters[id];delete state.modes.battle.workspaces[id];state.modes.battle.activeEncounterId=encountersForAccount(currentAccount(),state.modes.battle.activeBattleCategory)[0].id;saveState();refreshActiveMode();
   });
   if(els.cancelEncounter)els.cancelEncounter.addEventListener('click',()=>els.encounterDialog.close());
+  if(els.encounterName)els.encounterName.addEventListener('input',()=>{els.encounterFormError.textContent='';els.encounterFormError.classList.remove('show');});
   if(els.encounterForm)els.encounterForm.addEventListener('submit',event=>{
     event.preventDefault();const account=currentAccount(),category=state.modes.battle.activeBattleCategory,editId=els.encounterForm.dataset.editId;
     try{
+      const requestedName=els.encounterName.value.trim();
+      const duplicateName=encountersForAccount(account,category).find(row=>row.id!==editId&&comparableName(row.name)===comparableName(requestedName));
+      if(duplicateName)throw new Error(`An encounter named “${requestedName}” already exists for ${category==='epic'?'Epic Monster':'Player vs. Player'} battles. Choose a different name.`);
       const id=editId||uniqueStableId(`${category}-custom`,[...Object.keys(account.customEncounters),...encountersForAccount(account,category).map(row=>row.id)]);
       const encounter=createCustomEncounter({id,name:els.encounterName.value,battleType:category,enemyFormation:{FLYING:els.enemyFlying.value,MOUNTED:els.enemyMounted.value,MELEE:els.enemyMelee.value,RANGED:els.enemyRanged.value},arachneBonus:els.encounterArachneBonus.checked,pvpModel:els.encounterPvpModel.value});
       const sourceId=editId?'':state.modes.battle.activeEncounterId;account.customEncounters[id]=encounter;
       if(!editId&&sourceId&&els.encounterDialogTitle.textContent.startsWith('Duplicate'))state.modes.battle.workspaces[id]=makeBattleWorkspace(engineBattleType(encounter),copyWorkspace(state.modes.battle.workspaces[sourceId]));
       state.modes.battle.activeEncounterId=id;state.modes.battle.activeEncounterByType[category]=id;state.modes.battle.activeBattleType=engineBattleType(encounter);ensureBattleWorkspace();els.encounterDialog.close();saveState();refreshActiveMode();
-    }catch(error){els.encounterFormError.textContent=error.message;}
+    }catch(error){els.encounterFormError.textContent=error.message;els.encounterFormError.classList.add('show');}
   });
   if(els.templeLevel)els.templeLevel.addEventListener('change',()=>{
     currentAccount().templeLevel=Math.max(1,Math.min(45,Number(els.templeLevel.value)||45));
