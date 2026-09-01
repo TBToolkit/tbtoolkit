@@ -5,10 +5,10 @@ import {
   clampProbability,
   bonusFamilyForSpecies,
   squadRevivalCosts,
-} from './combat-mechanics.mjs?v=190-dev1';
-import { BATTLE_SIMULATOR_BUILD, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=190-dev1';
+} from './combat-mechanics.mjs?v=190-dev2';
+import { BATTLE_SIMULATOR_BUILD, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=190-dev2';
 
-export const PVP_ENGINE_BUILD='190-dev1';
+export const PVP_ENGINE_BUILD='190-dev2';
 export { COMBAT_MECHANICS_BUILD, BATTLE_SIMULATOR_BUILD };
 
 const CATEGORY_CONFIG=Object.freeze({
@@ -428,41 +428,20 @@ function resolvePvpOrderCycle({cycleOrders,allSelected,inputs,enemy,battleType})
   return{order:candidates[0]?.order||cycleOrders[0],candidateCount:candidates.length};
 }
 
-export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType='pvp_single_cp'}){
-  const allSelected=[
-    ...categorySelectedMap(troops,selectedIds.troop),
-    ...categorySelectedMap(monsters,selectedIds.monster),
-    ...categorySelectedMap(mercenaries,selectedIds.mercenary)
-  ];
-  if(!allSelected.length){
-    const categories={troop:categoryEmpty('troop'),monster:categoryEmpty('monster'),mercenary:categoryEmpty('mercenary')};
-    return finalizePvpStack({categories,inputs,enemy,battleType,plannedOrder:[],strictHealth:{adjustments:0,unresolved:0},
-      diagnostics:{orderIterations:0,orderConverged:true,orderCycleDetected:false,orderCycleLength:0,orderCycleResolution:null,
-        economicPolicy:'gold-primary-5pct-damage-then-silver'}});
-  }
+function solvePvpStandardCategory({category,units,selectedIds,inputs,enemy,battleType}){
+  const selected=categorySelectedMap(units,selectedIds);
+  if(!selected.length)return{categoryResult:categoryEmpty(category),order:[],diagnostics:{orderIterations:0,orderConverged:true,orderCycleDetected:false,orderCycleLength:0,orderCycleResolution:null}};
 
-  const counts={
-    troop:allSelected.filter(u=>u.category==='troop').length,
-    monster:allSelected.filter(u=>u.category==='monster').length,
-    mercenary:allSelected.filter(u=>u.category==='mercenary').length
-  };
-
-  // Initial order uses estimated 90%-revivable, Temple-adjusted cost before any death-ladder
-  // spacing has been applied.
-  let metrics=allSelected.map(u=>{
-    const qty=initialEstimatedQuantity(u,counts[u.category],inputs);
+  let metrics=selected.map(u=>{
+    const qty=initialEstimatedQuantity(u,selected.length,inputs);
     const p=pvpDamageProfile(u,inputs,enemy);
     const legalQty=Math.max(0,Math.round(qty)),revival=pvpRevivalForQuantity(u,legalQty,inputs);
     return{u,goldCost:revival.actualGold,silverCost:revival.actualSilver,expectedDamage:legalQty*p.expectedEach};
   });
   let order=buildGlobalOrderFromMetrics(metrics);
   const seen=new Map(),orderHistory=[];
-  let orderIterations=0,orderConverged=false,orderCycleDetected=false,orderCycleLength=0;
-  let orderCycleResolution=null;
+  let orderIterations=0,orderConverged=false,orderCycleDetected=false,orderCycleLength=0,orderCycleResolution=null;
 
-  // Recalculate quantities and revival costs until the tier/order stabilizes.
-  // This resolves the circular dependency: death order changes quantity, while
-  // quantity changes the total cost of losing the squad.
   for(let iteration=0;iteration<16;iteration++){
     orderIterations=iteration+1;
     const key=orderKey(order);
@@ -470,42 +449,42 @@ export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inp
       orderCycleDetected=true;
       const cycleStart=seen.get(key),cycleOrders=orderHistory.slice(cycleStart);
       orderCycleLength=cycleOrders.length;
-      // Integer quantities can produce a short discrete oscillation. Resolve it
-      // with the same Gold-band/damage/Silver policy used to build the ladder.
-      const resolution=resolvePvpOrderCycle({cycleOrders,allSelected,inputs,enemy,battleType});
+      const resolution=resolvePvpOrderCycle({cycleOrders,allSelected:selected,inputs,enemy,battleType});
       order=resolution.order;
       orderCycleResolution='gold-band-damage-silver';
       break;
     }
-    seen.set(key,orderHistory.length);
-    orderHistory.push(order.slice());
-
-    const categories=calculateFromGlobalOrder({allSelected,order,inputs,enemy});
-    const resultRows=[
-      ...categories.troop.results,
-      ...categories.monster.results,
-      ...categories.mercenary.results
-    ];
-    const rowById=new Map(resultRows.map(r=>[r.id,r]));
+    seen.set(key,orderHistory.length);orderHistory.push(order.slice());
+    const calculated=calculateFromGlobalOrder({allSelected:selected,order,inputs,enemy});
+    const rowById=new Map(calculated[category].results.map(row=>[row.id,row]));
     metrics=order.map(u=>{
-      const r=rowById.get(u.id);
-      return{u,goldCost:r?.actualGoldRevivalCost??0,silverCost:r?.actualSilverRevivalCost??0,expectedDamage:r?.expectedPvpDamage??0};
+      const row=rowById.get(u.id);
+      return{u,goldCost:row?.actualGoldRevivalCost??0,silverCost:row?.actualSilverRevivalCost??0,expectedDamage:row?.expectedPvpDamage??0};
     });
     const next=buildGlobalOrderFromMetrics(metrics);
     if(orderKey(next)===key){order=next;orderConverged=true;break;}
     order=next;
   }
 
-  const categories=calculateFromGlobalOrder({allSelected,order,inputs,enemy});
+  const categoryResult=calculateFromGlobalOrder({allSelected:selected,order,inputs,enemy})[category];
+  return{categoryResult,order,diagnostics:{orderIterations,orderConverged,orderCycleDetected,orderCycleLength,orderCycleResolution}};
+}
+
+export function calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType='pvp_single_cp'}){
+  const source={troop:troops,monster:monsters,mercenary:mercenaries};
+  const solutions=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,solvePvpStandardCategory({category,units:source[category],selectedIds:selectedIds[category],inputs,enemy,battleType})]));
+  const categories=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,solutions[category].categoryResult]));
+  const plannedOrderByCategory=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,solutions[category].order.map(unit=>unit.id)]));
+  const strictHealth={
+    adjustments:Object.values(categories).reduce((sum,result)=>sum+Number(result.strictHealthAdjustments||0),0),
+    unresolved:Object.values(categories).reduce((sum,result)=>sum+Number(result.strictHealthUnresolved||0),0),
+  };
+  const result=finalizePvpStack({categories,inputs,enemy,battleType,plannedOrder:[],strictHealth,
+    diagnostics:{capacityPools:'independent',categoryOrderDiagnostics:Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,solutions[category].diagnostics])),economicPolicy:'gold-primary-5pct-damage-then-silver'}});
   const allRows=[...categories.troop.results,...categories.monster.results,...categories.mercenary.results];
-  const globalStrictHealth=enforceStrictPvpHealthOrder(allRows,order.map(u=>u.id),inputs,enemy);
-  for(const category of ['troop','monster','mercenary']){
-    const cfg=CATEGORY_CONFIG[category],cat=categories[category],limit=Number(inputs[cfg.capacityInput]||0);
-    cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
-    cat.capacityPercent=limit?cat.totalCapacity/limit:0;
-  }
-  return finalizePvpStack({categories,inputs,enemy,battleType,plannedOrder:order.map(u=>u.id),strictHealth:globalStrictHealth,
-    diagnostics:{orderIterations,orderConverged,orderCycleDetected,orderCycleLength,orderCycleResolution,economicPolicy:'gold-primary-5pct-damage-then-silver'}});
+  result.plannedOrderByCategory=plannedOrderByCategory;
+  result.plannedOrder=allRows.slice().sort((a,b)=>Number(a.predictedDeathIndex??999)-Number(b.predictedDeathIndex??999)||Number(a.unitId)-Number(b.unitId)).map(row=>row.id);
+  return result;
 }
 
 export function calculatePvpCustomCategory({category,units,selectedIds,inputs,order,unitOrder=null,enemy}){
@@ -531,7 +510,7 @@ export function calculatePvpCustomCategory({category,units,selectedIds,inputs,or
   const maxHealthEach=Math.max(...selected.map(u=>pvpEffectiveHealthEach(u,inputs)));
   const limit=Number(inputs[cfg.capacityInput]||0);
   const fill=Number(inputs[cfg.fillInput]||0);
-  const sep=Number(inputs.rankSeparation||0);
+  const sep=inputs.minimumSeparation?0:Number(inputs.rankSeparation||0);
 
   const calculateForOrder=ordered=>{
     const deathIndex=new Map(ordered.map((u,k)=>[u.id,k]));
@@ -621,35 +600,22 @@ export function calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds
   const allSelected=[...categorySelectedMap(troops,selectedIds.troop),...categorySelectedMap(monsters,selectedIds.monster),...categorySelectedMap(mercenaries,selectedIds.mercenary)];
   if(!allSelected.length)return calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType});
 
-  // PvP targeting is global across all capacity types. Preserve Standard's
-  // cross-category slot pattern, then apply the user's relative order inside
-  // the Troop, Monster, and Mercenary slots exposed by the current UI.
-  const standard=calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType});
-  const unitById=new Map(allSelected.map(unit=>[unit.id,unit]));
-  const customByCategory={};
-  for(const category of ['troop','monster','mercenary']){
-    const selectedCategory=allSelected.filter(unit=>unit.category===category);
-    const selectedSet=new Set(selectedCategory.map(unit=>unit.id));
-    const requested=flat(category).filter(id=>selectedSet.has(id));
-    const defaults=standard.plannedOrder.filter(id=>selectedSet.has(id));
-    for(const id of defaults)if(!requested.includes(id))requested.push(id);
-    customByCategory[category]=requested.map(id=>unitById.get(id)).filter(Boolean);
-  }
-  const cursors={troop:0,monster:0,mercenary:0};
-  const globalOrder=standard.plannedOrder.map(id=>{
-    const category=unitById.get(id)?.category;
-    return customByCategory[category]?.[cursors[category]++]||unitById.get(id);
-  }).filter(Boolean);
-  const categories=calculateFromGlobalOrder({allSelected,order:globalOrder,inputs,enemy});
+  const categories={
+    troop:calculatePvpCustomCategory({category:'troop',units:troops,selectedIds:selectedIds.troop,inputs,order:orders.troop,unitOrder:flat('troop'),enemy}),
+    monster:calculatePvpCustomCategory({category:'monster',units:monsters,selectedIds:selectedIds.monster,inputs,order:orders.monster,unitOrder:flat('monster'),enemy}),
+    mercenary:calculatePvpCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),enemy}),
+  };
+  const plannedOrderByCategory=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,categories[category].results.slice().sort((a,b)=>Number(a.plannedDeathIndex)-Number(b.plannedDeathIndex)).map(row=>row.id)]));
+  const strictHealth={
+    adjustments:Object.values(categories).reduce((sum,result)=>sum+Number(result.strictHealthAdjustments||0),0),
+    unresolved:Object.values(categories).reduce((sum,result)=>sum+Number(result.strictHealthUnresolved||0),0),
+  };
+  const result=finalizePvpStack({categories,inputs,enemy,battleType,plannedOrder:[],strictHealth,
+    diagnostics:{capacityPools:'independent',customOrder:'within-capacity-pool',economicPolicy:'gold-primary-5pct-damage-then-silver'}});
   const allRows=[...categories.troop.results,...categories.monster.results,...categories.mercenary.results];
-  const globalStrictHealth=enforceStrictPvpHealthOrder(allRows,globalOrder.map(unit=>unit.id),inputs,enemy);
-  for(const category of ['troop','monster','mercenary']){
-    const cfg=CATEGORY_CONFIG[category],cat=categories[category],limit=Number(inputs[cfg.capacityInput]||0);
-    cat.totalCapacity=cat.results.reduce((sum,row)=>sum+Number(row.totalCapacity||0),0);
-    cat.capacityPercent=limit?cat.totalCapacity/limit:0;
-  }
-  return finalizePvpStack({categories,inputs,enemy,battleType,plannedOrder:globalOrder.map(unit=>unit.id),strictHealth:globalStrictHealth,
-    diagnostics:{customGlobalTemplate:'standard-category-slots',economicPolicy:'gold-primary-5pct-damage-then-silver'}});
+  result.plannedOrderByCategory=plannedOrderByCategory;
+  result.plannedOrder=allRows.slice().sort((a,b)=>Number(a.predictedDeathIndex??999)-Number(b.predictedDeathIndex??999)||Number(a.unitId)-Number(b.unitId)).map(row=>row.id);
+  return result;
 }
 
 export function calculatePvpUnknownStack({troops,monsters,mercenaries,selectedIds,inputs}){

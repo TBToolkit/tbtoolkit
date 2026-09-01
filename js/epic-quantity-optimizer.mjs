@@ -1,5 +1,5 @@
 export const EPIC_OPTIMIZER_BUILD = '2.0-adaptive-death-search';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev1';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev2';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 

@@ -6,7 +6,7 @@ import {
   clampProbability,
   bonusFamilyForSpecies,
   assertLegalQuantity,
-} from './combat-mechanics.mjs?v=190-dev1';
+} from './combat-mechanics.mjs?v=190-dev2';
 
 export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoints, clampProbability, bonusFamilyForSpecies, assertLegalQuantity };
 
@@ -18,7 +18,7 @@ export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoint
  * remain outside this file so all methods can share the same mechanics without
  * sharing the same strategy.
  */
-export const EPIC_MECHANICS_BUILD = '190-dev1';
+export const EPIC_MECHANICS_BUILD = '190-dev2';
 
 /**
  * Resolve the player-facing Epic health/strength/DD/ST inputs into the three

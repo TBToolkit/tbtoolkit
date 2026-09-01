@@ -1,5 +1,5 @@
 /** Shared physical and economic primitives for every TB Toolkit battle type. */
-export const COMBAT_MECHANICS_BUILD='190-dev1';
+export const COMBAT_MECHANICS_BUILD='190-dev2';
 
 export const BONUS_FAMILY_BY_SPECIES=Object.freeze({
   BEAST:'MONSTER',DRAGON:'MONSTER',ELEMENTAL:'MONSTER',GIANT:'MONSTER',

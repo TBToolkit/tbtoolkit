@@ -1,7 +1,7 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=190-dev1';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev1';
-import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev1';
-import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev1';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=190-dev2';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev2';
+import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev2';
+import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev2';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -956,7 +956,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=190-dev1');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=190-dev2');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1130,9 +1130,9 @@ function configureModeUI(){
         :activeMethod==='custom'
           ?'Custom Order: you choose the death order. The calculator determines the squad quantities needed for that order.'
           :type==='pvp_single_cp'
-            ?'Standard: calculates squad quantities and one global death order automatically. Gold revival cost is prioritized, stronger squads are preserved when Gold costs are similar, and Silver breaks remaining ties.'
+            ?'Standard: fills each capacity pool and orders its squads automatically. Gold revival cost is prioritized, stronger squads are preserved when Gold costs are similar, and Silver breaks remaining ties. The global death order follows calculated squad health.'
             :type==='pvp_unknown'
-              ?'Standard: calculates squad quantities and one global death order automatically. Gold revival cost is prioritized, stronger average PvP damage is preserved when Gold costs are similar, and Silver breaks remaining ties.'
+              ?'Standard: fills each capacity pool and orders its squads automatically. Gold revival cost is prioritized, stronger average PvP damage is preserved when Gold costs are similar, and Silver breaks remaining ties. The global death order follows calculated squad health.'
               :'Standard: calculates squad quantities using the selected Squad Separation. The death order generally preserves squads with greater damage potential for later attacks.';
   }
   if(!battle){
@@ -1375,11 +1375,9 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
  const selected=new Set(selectedIdsFor(category));
  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
 
- // PvP Custom Order starts from the exact Standard-method ordering model.
- // Standard builds a global PvP death order using revival-cost exposure and
- // expected PvP damage (including matchup, Specialist 2x, DD and ST). The V2
- // UI keeps separate capacity columns, so preserve Standard's relative order
- // by filtering that global planned order to the requested category.
+ // PvP Custom Order starts from the exact Standard ordering for this capacity
+ // pool. The completed Troop, Monster, and Mercenary squads are then combined
+ // and the game's global healthiest-target-first order emerges from health.
  if(String(battleType).startsWith('pvp_')){
    const selectedIds={
      troop:[...selectedIdsFor('troop')],
@@ -1399,7 +1397,9 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
        selectedIds,inputs,enemy:selectedPvpEnemy(),battleType:'pvp_single_cp'
      });
    }
-   const planned=Array.isArray(standard?.plannedOrder)?standard.plannedOrder:[];
+   const planned=Array.isArray(standard?.plannedOrderByCategory?.[category])
+     ?standard.plannedOrderByCategory[category]
+     :(Array.isArray(standard?.plannedOrder)?standard.plannedOrder:[]);
    const filtered=planned.filter(id=>selected.has(id));
    if(filtered.length===selected.size)return filtered;
 

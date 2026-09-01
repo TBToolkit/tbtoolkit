@@ -32,7 +32,7 @@ const enemy=byId.get('troop-g9-flying-corax-2');
 
 function rows(result){return [...result.categories.troop.results,...result.categories.monster.results,...result.categories.mercenary.results];}
 function defaultCustomArgs(standard){
-  const squadOrders=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,standard.plannedOrder.filter(id=>byId.get(id)?.category===category)]));
+  const squadOrders=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,[...(standard.plannedOrderByCategory?.[category]||[])]]));
   const orders=Object.fromEntries(['troop','monster','mercenary'].map(category=>[category,[...new Set(squadOrders[category].map(id=>byId.get(id).level))]]));
   return{orders,squadOrders};
 }
@@ -46,23 +46,29 @@ function assertPhysical(result,inputs){
     assert.equal(row.actualSilverRevivalCost,revival.actualSilver,`${row.id} stale Silver`);
     assert.ok(Number.isInteger(row.qty)&&row.qty>=0,`${row.id} illegal quantity`);
   }
-  for(let index=1;index<actual.length;index++)assert.ok(actual[index-1].squadHealth>actual[index].squadHealth,'health order must be strict');
+  for(let index=1;index<actual.length;index++)assert.ok(actual[index-1].squadHealth>=actual[index].squadHealth,'health order must be descending');
+  actual.forEach((row,index)=>assert.equal(row.predictedDeathIndex,index,`${row.id} death index must follow global health targeting`));
   assert.equal(result.strictHealthUnresolved,0,'health legalization must resolve all ties');
   assert.ok(result.totals.leadership<=inputs.leadership*inputs.leadershipFill+1e-6,'Leadership capacity exceeded');
   assert.ok(result.totals.dominance<=inputs.dominance*inputs.dominanceFill+1e-6,'Dominance capacity exceeded');
   assert.ok(result.totals.authority<=inputs.authority*inputs.authorityFill+1e-6,'Authority capacity exceeded');
   const pld=resultRows.reduce((sum,row)=>sum+row.expectedPvpDamage*row.averageAttackOpportunities,0);
   assert.ok(Math.abs(pld-result.projectedLifetimeDamage)<=Math.max(1e-6,Math.abs(pld)*1e-12),'PLD does not equal squad total');
+  if(inputs.leadershipFill>=.99&&result.categories.troop.selectedCount){
+    const requested=inputs.leadership*inputs.leadershipFill;
+    assert.ok(result.totals.leadership/requested>.995,`Leadership Max Fill must remain above 99.5% of requested capacity; got ${(result.totals.leadership/requested*100).toFixed(3)}%`);
+  }
 }
 function assertDefaultParity(standard,custom){
   assert.equal(custom.projectedLifetimeDamage,standard.projectedLifetimeDamage,'Custom default PLD must equal Standard');
   assert.deepEqual(custom.plannedOrder,standard.plannedOrder,'Custom default must preserve the global Standard ladder');
+  assert.deepEqual(custom.plannedOrderByCategory,standard.plannedOrderByCategory,'Custom default must preserve each Standard capacity-pool order');
   assert.deepEqual(Object.fromEntries(rows(custom).map(row=>[row.id,row.qty])),Object.fromEntries(rows(standard).map(row=>[row.id,row.qty])),'Custom default quantities must equal Standard');
 }
 
 const expectedGolden={
-  minimum:{knownPld:1371809909488.4553,knownGold:302446.02368866326,unknownPld:1416770760642.2603,unknownGold:297545.8544839255},
-  fixed:{knownPld:1371809909488.4553,knownGold:302446.02368866326,unknownPld:1405132679896.9216,unknownGold:295449.0693739424},
+  minimum:{knownPld:2941313445408.894,knownGold:779011.8443316414,unknownPld:3089482333911.307,unknownGold:774286.971235195},
+  fixed:{knownPld:2941742339608.699,knownGold:779538.4094754653,unknownPld:3100653852154.829,unknownGold:777603.3840947547},
 };
 
 const emptySelected={troop:[],monster:[],mercenary:[]};
@@ -77,14 +83,19 @@ for(const empty of [
   assert.equal(empty.strictHealthUnresolved,0);
 }
 
+const maxFillInputs={...baseInputs,leadershipFill:1,dominanceFill:1,authorityFill:1};
+const maxFill=calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs:maxFillInputs,enemy,battleType:'pvp_single_cp'});
+assertPhysical(maxFill,maxFillInputs);
+assert.ok(maxFill.totals.leadership/maxFillInputs.leadership>.995,'checked Leadership Max Fill must use more than 99.5% of Leadership');
+
 const golden={};
 for(const minimumSeparation of [true,false]){
   const inputs={...baseInputs,minimumSeparation};
   const known=calculatePvpCpStack({troops,monsters,mercenaries,selectedIds,inputs,enemy,battleType:'pvp_single_cp'});
   assert.equal(known.projectionModel,'two-initiative-event-v1');
-  if(known.diagnostics.orderCycleDetected){
-    assert.ok(known.diagnostics.orderCycleLength>1,'known-enemy cycle length must be reported');
-    assert.equal(known.diagnostics.orderCycleResolution,'gold-band-damage-silver');
+  for(const diagnostics of Object.values(known.diagnostics.categoryOrderDiagnostics))if(diagnostics.orderCycleDetected){
+    assert.ok(diagnostics.orderCycleLength>1,'known-enemy cycle length must be reported');
+    assert.equal(diagnostics.orderCycleResolution,'gold-band-damage-silver');
   }
   assertPhysical(known,inputs);
   const knownDefault=defaultCustomArgs(known);
@@ -95,9 +106,9 @@ for(const minimumSeparation of [true,false]){
   assert.equal(unknown.projectionModel,'unknown-archetype-comparison-v1');
   assert.equal(unknown.enemy.archetypeWeighting,'equal-supported-archetype');
   assert.equal(unknown.enemy.archetypes.length,20);
-  if(unknown.diagnostics.orderCycleDetected){
-    assert.ok(unknown.diagnostics.orderCycleLength>1,'unknown-enemy cycle length must be reported');
-    assert.equal(unknown.diagnostics.orderCycleResolution,'gold-band-damage-silver');
+  for(const diagnostics of Object.values(unknown.diagnostics.categoryOrderDiagnostics))if(diagnostics.orderCycleDetected){
+    assert.ok(diagnostics.orderCycleLength>1,'unknown-enemy cycle length must be reported');
+    assert.equal(diagnostics.orderCycleResolution,'gold-band-damage-silver');
   }
   assertPhysical(unknown,inputs);
   const unknownDefault=defaultCustomArgs(unknown);
@@ -108,8 +119,9 @@ for(const minimumSeparation of [true,false]){
   [manualOrders.troop[0],manualOrders.troop[1]]=[manualOrders.troop[1],manualOrders.troop[0]];
   const manual=calculatePvpCustomStack({troops,monsters,mercenaries,selectedIds,orders:knownDefault.orders,squadOrders:manualOrders,inputs,enemy,battleType:'pvp_single_cp'});
   assertPhysical(manual,inputs);
-  assert.notDeepEqual(manual.plannedOrder,known.plannedOrder,'manual order must change the ladder');
-  assert.deepEqual(manual.plannedOrder.map(id=>byId.get(id).category),known.plannedOrder.map(id=>byId.get(id).category),'manual category order must preserve the global category slot pattern');
+  assert.notDeepEqual(manual.plannedOrderByCategory.troop,known.plannedOrderByCategory.troop,'manual order must change the Troop ladder');
+  assert.deepEqual(manual.plannedOrderByCategory.monster,known.plannedOrderByCategory.monster,'manual Troop order must not change the Monster ladder');
+  assert.deepEqual(manual.plannedOrderByCategory.mercenary,known.plannedOrderByCategory.mercenary,'manual Troop order must not change the Mercenary ladder');
 
   golden[minimumSeparation?'minimum':'fixed']={knownPld:known.projectedLifetimeDamage,knownGold:known.actualAttritionGold,unknownPld:unknown.projectedLifetimeDamage,unknownGold:unknown.actualAttritionGold};
 }
