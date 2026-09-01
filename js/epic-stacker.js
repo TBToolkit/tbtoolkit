@@ -2367,7 +2367,7 @@ function calculatorNumericNavigationOrder(){
   // derived/custom-family combat fields. Hidden/read-only fields are skipped.
   const ids=[
     'leadership','authority','dominance',
-    'monsterHealth','humanHealth','epicHunterHealth',
+    'monsterHealth',isPvp?'pvpHealth':null,'humanHealth','epicHunterHealth',
     'monsterStrength',
     isPvp?'pvpStrength':'strengthAgainstEpic',
     'monsterDD','monsterST'
