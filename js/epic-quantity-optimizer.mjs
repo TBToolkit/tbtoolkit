@@ -1,5 +1,5 @@
 export const EPIC_OPTIMIZER_BUILD = '2.0-adaptive-death-search';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191-dev1';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 
@@ -842,7 +842,7 @@ function adaptiveDeathPositionRefine({
     const ordered=[...(champion.result.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
     if(ordered.length<3)break;
     const productive=ordered.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
-    const enemyCount=bonuses?.arachne?8:4;
+    const enemyCount=Array.isArray(bonuses?.enemySquadTypes)&&bonuses.enemySquadTypes.length?bonuses.enemySquadTypes.length:(bonuses?.arachne?8:4);
     const halfCycle=Math.max(2,Math.floor(enemyCount/2));
     const regionIndexes=[0,ordered.length-1,Math.round((ordered.length-1)*.25),Math.round((ordered.length-1)*.50),Math.round((ordered.length-1)*.75)];
     for(let death=halfCycle;death<=ordered.length;death+=halfCycle)regionIndexes.push(Math.max(0,Math.min(ordered.length-1,death-1)));
@@ -944,7 +944,7 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   const baseEld=Number(base.expectedTotalLifetimeDamage||0);
   const selectedById=new Map(selected.map(u=>[u.id,u]));
   const ordered=[...(base.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
-  const enemySquadCount=bonuses?.arachne?8:4;
+  const enemySquadCount=Array.isArray(bonuses?.enemySquadTypes)&&bonuses.enemySquadTypes.length?bonuses.enemySquadTypes.length:(bonuses?.arachne?8:4);
   const earlyLimit=Math.min(enemySquadCount,ordered.length);
   const productive=ordered.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
   const overallDamage=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);

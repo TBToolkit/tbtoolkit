@@ -1,3 +1,15 @@
+import {
+  COMBAT_MECHANICS_BUILD,
+  BONUS_FAMILY_BY_SPECIES,
+  finiteNumber,
+  pctPoints,
+  clampProbability,
+  bonusFamilyForSpecies,
+  assertLegalQuantity,
+} from './combat-mechanics.mjs?v=190-dev2';
+
+export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoints, clampProbability, bonusFamilyForSpecies, assertLegalQuantity };
+
 /**
  * Shared Epic battle mechanics primitives.
  *
@@ -6,49 +18,7 @@
  * remain outside this file so all methods can share the same mechanics without
  * sharing the same strategy.
  */
-export const EPIC_MECHANICS_BUILD = '189-dev4';
-
-export const BONUS_FAMILY_BY_SPECIES = Object.freeze({
-  BEAST: 'MONSTER',
-  DRAGON: 'MONSTER',
-  ELEMENTAL: 'MONSTER',
-  GIANT: 'MONSTER',
-  HUMAN: 'HUMAN',
-  CURSED: 'HUMAN',
-  DEMON: 'HUMAN',
-  ELVES: 'HUMAN',
-  UNDEAD: 'HUMAN',
-  BARBARIAN: 'HUMAN',
-  'EPIC HUNTER': 'EPIC_HUNTER',
-});
-
-export function finiteNumber(v, label) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`${label} must be a finite number.`);
-  return n;
-}
-
-export function pctPoints(v, label) {
-  return finiteNumber(v, label) / 100;
-}
-
-export function clampProbability(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-export function bonusFamilyForSpecies(species) {
-  const family = BONUS_FAMILY_BY_SPECIES[String(species ?? '').toUpperCase()];
-  if (!family) throw new Error(`Unknown bonus-family species: ${species}`);
-  return family;
-}
-
-export function assertLegalQuantity(quantity, label = 'Quantity') {
-  const q = finiteNumber(quantity, label);
-  if (!Number.isInteger(q) || q < 0) {
-    throw new Error(`${label} must be a non-negative integer.`);
-  }
-  return q;
-}
+export const EPIC_MECHANICS_BUILD = '191-dev1';
 
 /**
  * Resolve the player-facing Epic health/strength/DD/ST inputs into the three
@@ -74,6 +44,16 @@ export function deriveBonusInputs(input) {
   const custom = input.customFamilyBonuses ?? {};
   const resolved = input.useCustomFamilyBonuses ? { ...defaults, ...custom } : defaults;
 
+  const defaultEnemySquadTypes=input.arachne
+    ?['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED']
+    :['FLYING','MOUNTED','MELEE','RANGED'];
+  const enemySquadTypes=Array.isArray(input.enemySquadTypes)&&input.enemySquadTypes.length
+    ?input.enemySquadTypes.map(type=>String(type).toUpperCase())
+    :defaultEnemySquadTypes;
+  if(enemySquadTypes.length<1||enemySquadTypes.length>8||enemySquadTypes.some(type=>!['FLYING','MOUNTED','MELEE','RANGED'].includes(type))){
+    throw new Error('Epic enemy formation must contain 1–8 valid combat-type squads.');
+  }
+
   return {
     family: {
       MONSTER: {
@@ -97,6 +77,7 @@ export function deriveBonusInputs(input) {
     },
     strengthAgainstEpic: pctPoints(strengthAgainstEpicPct, 'Strength Against Epic %'),
     arachne: Boolean(input.arachne),
+    enemySquadTypes,
     userFacing: {
       monsterHealthPct,
       monsterStrengthPct,

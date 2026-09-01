@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=179" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=191-dev1" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=189-dev4" type="module"></script>
+<script src="js/epic-stacker.js?v=191-dev1" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -48,13 +48,15 @@
 
 </div>
 <div class="battle-select-grid">
+<label class="battle-select-field" for="accountSelect"><span>Player Account</span>
+<select id="accountSelect"></select><span class="workspace-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button></span></label>
 <label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
 <select id="battleTypeSelect">
-<option value="epic_standard">Epic Monster — 4 enemy squads</option>
-<option value="epic_arachne">Epic Arachne — 8 enemy squads</option>
-<option value="pvp_single_cp">PvP — 1 enemy squad</option>
-<option value="pvp_unknown">PvP — Unknown enemy squads</option>
+<option value="epic">Epic Monster</option>
+<option value="pvp">Player vs. Player</option>
 </select></label>
+<label class="battle-select-field" for="encounterSelect"><span>Encounter</span>
+<select id="encounterSelect"></select><span class="workspace-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span></label>
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
 <select id="battleMethodSelect">
 <option value="basic">Standard</option>
@@ -69,6 +71,25 @@
 <div class="battle-selection-summary"><p id="battleContextNote"></p><p id="battleMethodNote"></p></div>
 </section>
 </div>
+
+<dialog id="encounterDialog" class="workspace-dialog">
+<form id="encounterForm" method="dialog">
+<h2 id="encounterDialogTitle">New Encounter</h2>
+<label><span>Name</span><input id="encounterName" maxlength="60" required type="text"/></label>
+<fieldset id="epicFormationFields"><legend>Enemy formation (1–8 squads)</legend>
+<div class="encounter-formation-grid">
+<label><span>Flying</span><input id="enemyFlying" max="8" min="0" type="number" value="1"/></label>
+<label><span>Mounted</span><input id="enemyMounted" max="8" min="0" type="number" value="1"/></label>
+<label><span>Melee</span><input id="enemyMelee" max="8" min="0" type="number" value="1"/></label>
+<label><span>Ranged</span><input id="enemyRanged" max="8" min="0" type="number" value="1"/></label>
+</div>
+<label class="dialog-check"><input id="encounterArachneBonus" type="checkbox"/> Apply Arachne bonus</label>
+</fieldset>
+<label id="pvpModelField"><span>PvP enemy squads</span><select id="encounterPvpModel"><option value="single">1 Enemy Squad</option><option value="unknown">Unknown Enemy Squads</option></select></label>
+<p class="validation-box" id="encounterFormError"></p>
+<div class="dialog-actions"><button value="cancel" type="button" id="cancelEncounter">Cancel</button><button value="default" type="submit">Save</button></div>
+</form>
+</dialog>
 
 <section class="topdown-panel setup-panel">
 <div class="topdown-panel-heading">

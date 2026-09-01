@@ -2038,6 +2038,20 @@ body.sacrifice-help-modal-open{overflow:hidden}
   gap:14px;
   padding:0 16px 10px;
 }
+.workspace-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.workspace-actions button{border:1px solid rgba(130,174,201,.35);border-radius:7px;background:#102738;color:#cfe3ee;padding:5px 8px;font:inherit;font-size:.75rem;cursor:pointer}
+.workspace-actions button:disabled{opacity:.38;cursor:not-allowed}
+.workspace-dialog{width:min(520px,calc(100vw - 28px));border:1px solid rgba(116,174,207,.38);border-radius:14px;background:#0b1b28;color:#e7f1f6;padding:0;box-shadow:0 24px 80px #000b}
+.workspace-dialog::backdrop{background:#02080dcc;backdrop-filter:blur(3px)}
+.workspace-dialog form{display:grid;gap:16px;padding:22px}
+.workspace-dialog h2{margin:0}
+.workspace-dialog label{display:grid;gap:6px}
+.workspace-dialog input,.workspace-dialog select{box-sizing:border-box;width:100%;border:1px solid rgba(135,177,199,.38);border-radius:8px;background:#102738;color:#fff;padding:9px}
+.workspace-dialog fieldset{border:1px solid rgba(135,177,199,.25);border-radius:10px;padding:12px}
+.encounter-formation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.workspace-dialog .dialog-check{display:flex;align-items:center;gap:8px;margin-top:12px}.workspace-dialog .dialog-check input{width:auto}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px}.dialog-actions button{border:1px solid rgba(135,177,199,.38);border-radius:8px;background:#17364a;color:#fff;padding:8px 14px;cursor:pointer}
+@media(max-width:560px){.encounter-formation-grid{grid-template-columns:repeat(2,1fr)}}
 .battle-select-field{display:grid;gap:6px;min-width:0}
 .battle-select-field>span{
   color:#eef3f6;
