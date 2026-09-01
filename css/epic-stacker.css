@@ -2844,6 +2844,7 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
   pointer-events:none!important;
 }
 #pvpEnemyUnitField[hidden],
+#pvpModelField[hidden],
 #pvpCpDetailsPanel[hidden]{
   display:none!important;
 }
