@@ -5,10 +5,12 @@ import {
   bonusFamilyForSpecies,
   clampProbability,
   deriveBonusInputs,
-} from './epic-mechanics.mjs?v=189-dev4';
+} from './epic-mechanics.mjs?v=190-dev1';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=190-dev1';
 
 export const EPIC_COMBAT_ENGINE_BUILD = '2.1-arachne8';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
+export { simulateInitiativeCase, simulateTwoInitiativeAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
 const MATCHUP_KEY = Object.freeze({
@@ -113,87 +115,6 @@ function enforceDistinctSquadHealth(squads,byId,resolvedBonuses){
   }
   squads.sort((a,b)=>a.displayOrder-b.displayOrder);
   return{adjustments,unresolved};
-}
-
-function chooseFriendlyAttacker(squads, alive, attackedThisCycle) {
-  let best = null;
-  for (const s of squads) {
-    if (!alive.has(s.id) || attackedThisCycle.has(s.id)) continue;
-    if (!best || s.nominalSquadStrength > best.nominalSquadStrength ||
-       (s.nominalSquadStrength === best.nominalSquadStrength && s.unitId < best.unitId)) best = s;
-  }
-  return best;
-}
-
-function chooseEnemyTarget(squads, alive) {
-  let best = null;
-  for (const s of squads) {
-    if (!alive.has(s.id)) continue;
-    if (!best || s.effectiveHealth > best.effectiveHealth ||
-       (s.effectiveHealth === best.effectiveHealth && s.unitId < best.unitId)) best = s;
-  }
-  return best;
-}
-
-export function simulateInitiativeCase(squads, friendlyStarts, enemySquadCount = 4) {
-  const alive = new Set(squads.filter(s => s.quantity > 0).map(s => s.id));
-  const attackOpportunities = Object.fromEntries(squads.map(s => [s.id, 0]));
-  const lifetimeDamage = Object.fromEntries(squads.map(s => [s.id, 0]));
-  const death = {};
-  const events = [];
-  let totalDamage = 0;
-  let cycle = 1;
-  let friendlyHasInitiative = Boolean(friendlyStarts);
-  let deathPosition = 0;
-
-  const friendlyAttack = (attackedThisCycle) => {
-    const attacker = chooseFriendlyAttacker(squads, alive, attackedThisCycle);
-    if (!attacker) return false;
-    attackedThisCycle.add(attacker.id);
-    attackOpportunities[attacker.id] += 1;
-    lifetimeDamage[attacker.id] += attacker.expectedDamagePerOpportunity;
-    totalDamage += attacker.expectedDamagePerOpportunity;
-    events.push({ cycle, side: 'FRIENDLY', unitId: attacker.unitId, id: attacker.id, name: attacker.name, expectedDamage: attacker.expectedDamagePerOpportunity });
-    return true;
-  };
-
-  const enemyAttack = () => {
-    const target = chooseEnemyTarget(squads, alive);
-    if (!target) return false;
-    alive.delete(target.id);
-    deathPosition += 1;
-    death[target.id] = { cycle, position: deathPosition };
-    events.push({ cycle, side: 'EPIC', killedUnitId: target.unitId, killedId: target.id, killedName: target.name, targetHealth: target.effectiveHealth });
-    return true;
-  };
-
-  while (alive.size) {
-    const attackedThisCycle = new Set();
-    let enemyAttacks = 0;
-    let friendlyTurn = friendlyHasInitiative;
-
-    while (enemyAttacks < enemySquadCount && alive.size) {
-      if (friendlyTurn) friendlyAttack(attackedThisCycle);
-      else { enemyAttack(); enemyAttacks += 1; }
-      friendlyTurn = !friendlyTurn;
-    }
-
-    while (alive.size && friendlyAttack(attackedThisCycle)) { /* exhaust surviving eligible squads */ }
-
-    cycle += 1;
-    friendlyHasInitiative = !friendlyHasInitiative;
-    if (cycle > squads.length + 5) throw new Error('Simulation exceeded expected cycle bound.');
-  }
-
-  return {
-    friendlyStarts: Boolean(friendlyStarts),
-    totalDamage,
-    cycles: cycle - 1,
-    attackOpportunities,
-    lifetimeDamage,
-    death,
-    events,
-  };
 }
 
 export function measuredHealthSeparations(squads) {

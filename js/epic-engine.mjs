@@ -1,5 +1,6 @@
-import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=189-dev4';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
+import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=190-dev1';
+import { mroundPositive } from './combat-mechanics.mjs?v=190-dev1';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev1';
 
 const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 
@@ -38,12 +39,7 @@ function maxOf(values) {
 }
 
 /** Excel-compatible MROUND behavior for the positive quantities used by BIFF STACK. */
-export function mroundPositive(value, multiple = 1) {
-  if (!Number.isFinite(value) || !Number.isFinite(multiple) || multiple <= 0) {
-    throw new Error(`Invalid MROUND inputs: value=${value}, multiple=${multiple}`);
-  }
-  return Math.floor(value / multiple + 0.5 + Number.EPSILON) * multiple;
-}
+export { mroundPositive };
 
 export function speciesAdjustment(species, healthInputs) {
   const group = SPECIES_GROUP[species];

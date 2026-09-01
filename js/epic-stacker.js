@@ -1,6 +1,7 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=189-dev4';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
-import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=188';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=190-dev1';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=190-dev1';
+import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev1';
+import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev1';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -136,8 +137,7 @@ const TEMPLE_REVIVAL_DIVISORS=Object.freeze({
 function templeLevel(){return Math.max(1,Math.min(45,Number(state.preferences?.templeLevel)||45));}
 function templeRevivalDivisor(){return Number(TEMPLE_REVIVAL_DIVISORS[templeLevel()]||1);}
 function actualRevivalCost(rawCost){
-  const raw=Math.max(0,Number(rawCost)||0);
-  return raw/templeRevivalDivisor();
+  return sharedActualRevivalCost(Math.max(0,Number(rawCost)||0),templeRevivalDivisor());
 }
 function findUnitById(id){
   for(const category of ['troop','monster','mercenary']){
@@ -149,7 +149,7 @@ function findUnitById(id){
 const ATTACKING_REVIVABLE_FRACTION=0.90;
 function attackingRevivableQuantity(row){
   const qty=Math.max(0,Math.floor(Number(row?.qty??row?.quantity??0)||0));
-  return Math.floor(qty*ATTACKING_REVIVABLE_FRACTION);
+  return sharedAttackingRevivableQuantity(qty,ATTACKING_REVIVABLE_FRACTION);
 }
 function rawSquadRevival(row,currency='gold'){
   const unit=findUnitById(row?.id);
@@ -261,7 +261,7 @@ function legacyUnitFromCanonical(unit){
   const tierSubtype=String(unit.tier||'').toUpperCase().split('-').slice(1).join('-');
   const legacyClass=unit.category==='mercenary'?(mercGroupMap[tierSubtype]||unit.unitClass):unit.unitClass;
   return{
-    id:unit.id,
+    id:unit.id,unitId:unit.unitId,
     category:unit.category,
     displayOrder:unit.displayOrder,
     class:legacyClass,
@@ -956,7 +956,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=189-dev4');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=190-dev1');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1130,9 +1130,9 @@ function configureModeUI(){
         :activeMethod==='custom'
           ?'Custom Order: you choose the death order. The calculator determines the squad quantities needed for that order.'
           :type==='pvp_single_cp'
-            ?'Standard: calculates squad quantities and death order automatically. Lower revival cost is prioritized, while stronger squads are preserved when revival costs are similar.'
+            ?'Standard: calculates squad quantities and one global death order automatically. Gold revival cost is prioritized, stronger squads are preserved when Gold costs are similar, and Silver breaks remaining ties.'
             :type==='pvp_unknown'
-              ?'Standard: calculates squad quantities and death order automatically. Lower revival cost is prioritized, while stronger average PvP damage across possible enemy types is preserved when revival costs are similar.'
+              ?'Standard: calculates squad quantities and one global death order automatically. Gold revival cost is prioritized, stronger average PvP damage is preserved when Gold costs are similar, and Silver breaks remaining ties.'
               :'Standard: calculates squad quantities using the selected Squad Separation. The death order generally preserves squads with greater damage potential for later attacks.';
   }
   if(!battle){
@@ -1699,6 +1699,7 @@ function baseEngineInputs(){
     pvpHealthPct:pvpHealth,pvpStrengthPct:pvpStrength,
     monsterDDPct:parseNumber(i.monsterDD),humanDDPct:parseNumber(i.humanDD),epicHunterDDPct:parseNumber(i.epicHunterDD),
     monsterSTPct:parseNumber(i.monsterST),humanSTPct:parseNumber(i.humanST),epicHunterSTPct:parseNumber(i.epicHunterST),
+    templeLevel:templeLevel(),templeRevivalDivisor:templeRevivalDivisor(),
     enemyUnitId:i.enemyUnitId||'troop-g9-flying-corax-2',
     minimumSeparation:!!i.minimumSeparation,
     rankSeparation:parseNumber(i.rankSeparation)/100,layerSeparation:parseNumber(i.rankSeparation)/100
@@ -1706,16 +1707,23 @@ function baseEngineInputs(){
 }
 function categoryProbe(category,fill,inputs){
   const meta=CAPACITY_META[category],probeInputs={...inputs,[meta.fill]:fill,_skipHardCapacity:true};
+  const battleType=activeMode==='battle'?String(state.modes.battle.activeBattleType||''):'';
+  if(battleType.startsWith('pvp_')){
+    let result;
+    if(isCustomOrderMode()){
+      syncCustomOrders();
+      result=battleType==='pvp_unknown'
+        ?calculatePvpUnknownCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs:probeInputs})
+        :calculatePvpCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs:probeInputs,enemy:selectedPvpEnemy(),battleType:'pvp_single_cp'});
+    }else{
+      result=battleType==='pvp_unknown'
+        ?calculatePvpUnknownStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs:probeInputs})
+        :calculatePvpCpStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds:modeState().selectedIds,inputs:probeInputs,enemy:selectedPvpEnemy(),battleType:'pvp_single_cp'});
+    }
+    return result.categories[category];
+  }
   if(isCustomOrderMode()){
     syncCustomOrders();
-    if(activeMode==='battle'&&state.modes.battle.activeBattleType==='pvp_single_cp'){
-      return calculatePvpCustomCategory({
-        category,units:units[category],selectedIds:selectedIdsFor(category),
-        inputs:probeInputs,order:activeOrderState().orders[category],
-        unitOrder:activeOrderState().squadOrder?.[category]||[],
-        enemy:selectedPvpEnemy()
-      });
-    }
     return calculateCustomCategory({
       category,units:units[category],selectedIds:selectedIdsFor(category),
       inputs:probeInputs,order:activeOrderState().orders[category],
@@ -1724,8 +1732,6 @@ function categoryProbe(category,fill,inputs){
         : (activeOrderState().orders[category]||[]).flatMap(level=>activeOrderState().unitOrders?.[category]?.[level]||[])
     });
   }
-  if(activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_'))
-    return calculateBattleCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs,battleType:state.modes.battle.activeBattleType});
   return calculateCategory({category,units:units[category],selectedIds:selectedIdsFor(category),inputs:probeInputs});
 }
 function findMaxSafeFill(category,inputs){const meta=CAPACITY_META[category],limit=inputs[meta.limit];if(!modeState().selectedIds[category].length||!(limit>0))return 1;const full=categoryProbe(category,1,inputs);if(full.totalCapacity<=limit)return 1;let low=0,high=1;for(let i=0;i<24;i++){const mid=(low+high)/2;const r=categoryProbe(category,mid,inputs);if(r.totalCapacity<=limit)low=mid;else high=mid;if(high-low<1e-7)break;}return low;}
@@ -2096,16 +2102,16 @@ function renderPvpCpDetails(result){
     ?`Unknown enemy squads · ${Number(enemy?.archetypes?.length||0)} target archetypes`
     :(enemy?`${enemy.level} · ${enemy.name} · ${enemy.type}`:'Selected enemy');
   els.pvpCpDetailsMeta.textContent=unknown
-    ?`Projected Lifetime Damage is a comparison metric that assumes every friendly squad receives its predicted attack opportunities. Unknown-enemy damage gives equal weight to each valid combat-type and species archetype found in the army database. Flying, Mounted, Melee, and Ranged bonuses can stack with Human, Beast, Dragon, Giant, or Elemental bonuses when both apply. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Standard treats revival costs within 5% as economically equivalent and preserves stronger average PvP damage.`
-    :`Projected Lifetime Damage assumes the single enemy squad survives long enough to defeat every friendly squad. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Standard treats revival costs within 5% as economically equivalent and preserves the stronger PvP damage.`;
+    ?`Projected Lifetime Damage is a comparison metric that assumes every friendly squad receives its predicted attack opportunities. Unknown-enemy damage gives equal weight to each supported combat-type and species archetype. Flying, Mounted, Melee, and Ranged bonuses can stack with Human, Beast, Dragon, Giant, or Elemental bonuses when both apply. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Standard treats Gold costs within 5% as economically equivalent, preserves stronger average PvP damage, and uses Silver as a deterministic tie-breaker.`
+    :`Projected Lifetime Damage uses the shared two-initiative event simulation against one enemy squad and assumes that squad survives long enough to defeat every friendly squad. Revival costs use 90% of each attacking squad, rounded down to whole units, then apply Temple Level ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× divisor). Expected Damage includes applicable matchup bonuses, Specialist 2× PvP strength, Double Damage, and Strike Twice. Standard treats Gold costs within 5% as economically equivalent, preserves stronger PvP damage, and uses Silver as a deterministic tie-breaker.`;
 
   const rows=[
     ...result.categories.troop.results,
     ...result.categories.monster.results,
     ...result.categories.mercenary.results
   ].slice().sort((a,b)=>(a.predictedDeathIndex??999)-(b.predictedDeathIndex??999)||a.displayOrder-b.displayOrder);
-  const actualFullGold=actualRevivalCost(rows.reduce((sum,row)=>sum+rawSquadRevival(row,'gold'),0));
-  const actualFullSilver=actualRevivalCost(rows.reduce((sum,row)=>sum+rawSquadRevival(row,'silver'),0));
+  const actualFullGold=Number(result.actualAttritionGold??rows.reduce((sum,row)=>sum+Number(row.actualGoldRevivalCost||0),0));
+  const actualFullSilver=Number(result.actualAttritionSilver??rows.reduce((sum,row)=>sum+Number(row.actualSilverRevivalCost||0),0));
   if(els.pvpCpFullGold)els.pvpCpFullGold.textContent=Math.round(actualFullGold).toLocaleString('en-US');
   if(els.pvpCpFullSilver)els.pvpCpFullSilver.textContent=Math.round(actualFullSilver).toLocaleString('en-US');
 
@@ -2120,8 +2126,8 @@ function renderPvpCpDetails(result){
       <td>${escapeHtml(`${r.level} · ${r.name}`)}</td>
       <td>${Number(r.qty||0).toLocaleString('en-US')}</td>
       <td>${(r.predictedDeathIndex??0)+1}</td>
-      <td>${Math.round(actualRevivalCost(rawSquadRevival(r,'gold'))).toLocaleString('en-US')}</td>
-      <td>${Math.round(actualRevivalCost(rawSquadRevival(r,'silver'))).toLocaleString('en-US')}</td>
+      <td>${Math.round(Number(r.actualGoldRevivalCost||0)).toLocaleString('en-US')}</td>
+      <td>${Math.round(Number(r.actualSilverRevivalCost||0)).toLocaleString('en-US')}</td>
       <td>${compactNumber(r.expectedPvpDamage)}</td>
       <td>${escapeHtml(reasonFor(r))}</td>
     </tr>`).join('');
@@ -2427,8 +2433,8 @@ function wireEvents(){
     state.preferences.templeLevel=Math.max(1,Math.min(45,Number(els.templeLevel.value)||45));
     populateTempleLevel();
     saveState();
-    // Temple does not change stack quantities or optimizer search. It changes
-    // only the displayed revival costs, so a normal recalculation is enough.
+    // Temple affects PvP economic ordering as well as displayed revival costs,
+    // so rebuild the authoritative stack with the new divisor.
     if(appInitialized)recalculate();
   });
   if(els.pvpEnemyUnitSelect)els.pvpEnemyUnitSelect.addEventListener('change',()=>{

@@ -1,3 +1,15 @@
+import {
+  COMBAT_MECHANICS_BUILD,
+  BONUS_FAMILY_BY_SPECIES,
+  finiteNumber,
+  pctPoints,
+  clampProbability,
+  bonusFamilyForSpecies,
+  assertLegalQuantity,
+} from './combat-mechanics.mjs?v=190-dev1';
+
+export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoints, clampProbability, bonusFamilyForSpecies, assertLegalQuantity };
+
 /**
  * Shared Epic battle mechanics primitives.
  *
@@ -6,49 +18,7 @@
  * remain outside this file so all methods can share the same mechanics without
  * sharing the same strategy.
  */
-export const EPIC_MECHANICS_BUILD = '189-dev4';
-
-export const BONUS_FAMILY_BY_SPECIES = Object.freeze({
-  BEAST: 'MONSTER',
-  DRAGON: 'MONSTER',
-  ELEMENTAL: 'MONSTER',
-  GIANT: 'MONSTER',
-  HUMAN: 'HUMAN',
-  CURSED: 'HUMAN',
-  DEMON: 'HUMAN',
-  ELVES: 'HUMAN',
-  UNDEAD: 'HUMAN',
-  BARBARIAN: 'HUMAN',
-  'EPIC HUNTER': 'EPIC_HUNTER',
-});
-
-export function finiteNumber(v, label) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) throw new Error(`${label} must be a finite number.`);
-  return n;
-}
-
-export function pctPoints(v, label) {
-  return finiteNumber(v, label) / 100;
-}
-
-export function clampProbability(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-export function bonusFamilyForSpecies(species) {
-  const family = BONUS_FAMILY_BY_SPECIES[String(species ?? '').toUpperCase()];
-  if (!family) throw new Error(`Unknown bonus-family species: ${species}`);
-  return family;
-}
-
-export function assertLegalQuantity(quantity, label = 'Quantity') {
-  const q = finiteNumber(quantity, label);
-  if (!Number.isInteger(q) || q < 0) {
-    throw new Error(`${label} must be a non-negative integer.`);
-  }
-  return q;
-}
+export const EPIC_MECHANICS_BUILD = '190-dev1';
 
 /**
  * Resolve the player-facing Epic health/strength/DD/ST inputs into the three
