@@ -6,7 +6,7 @@ import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounte
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191-dev2';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const APP_BUILD='191-dev4';
+const APP_BUILD='191-dev5';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
@@ -45,12 +45,12 @@ function defaultInputs(mode){return{
 leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
 dominance:'',dominanceFill:'99.99',autoDominance:true,
-monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'0',
-monsterStrength:'2299.5',strengthAgainstEpic:'3225',pvpStrength:'0',monsterDD:'12',monsterST:'12',
-humanStrength:'2199.5',epicHunterStrength:'1558.5',
-humanDD:'12',epicHunterDD:'12',humanST:'7',epicHunterST:'7',
+monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'1600',
+monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10',
+humanStrength:'1900',epicHunterStrength:'1259',
+humanDD:'10',epicHunterDD:'10',humanST:'5',epicHunterST:'5',
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
-arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:mode==='optimizer'?'0.10':'0.05'};}
+arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
 function cloneIds(source){
   return{
     troop:[...(source?.troop||[])],
@@ -1125,7 +1125,7 @@ function renderEpicOptimizedResult(opt){
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
   els.resultStatus.textContent=activeMode==='battle'
-    ?`${count} optimized squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`
+    ?`${count} optimized squad${count===1?'':'s'} · Total Battle mobile entry order`
     :`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
@@ -1269,7 +1269,7 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=battle
-    ?'Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can calculate a standard stack, follow a custom death order, or optimize supported Epic battles. PvP calculations include PvP health, strength, matchup bonuses, and revival costs when they apply.'
+    ?'Build an army for an Epic Monster or Player vs. Player battle. Enter your army limits and combat bonuses. Select the units you want to use. Choose Standard, Custom Order, or Optimize. Optimize is available for supported Epic battles.'
     : classic
       ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
       : optimizer
@@ -2194,14 +2194,6 @@ function renderLayerHealthChart(result){
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);
 
-  // Direction labels.
-  const first=svgEl('text',{x:margin.left,y:height-15,class:'chart-axis-label'});
-  first.textContent='Higher squad health';
-  svg.appendChild(first);
-  const last=svgEl('text',{x:margin.left+plotW,y:height-15,'text-anchor':'end',class:'chart-axis-label'});
-  last.textContent='Lower squad health';
-  svg.appendChild(last);
-
   for(const [category,rows] of Object.entries(source)){
     if(!rows.length)continue;
     const meta=CHART_SERIES[category];
@@ -2467,14 +2459,14 @@ function recalculate(){
     updateLiveDamageMetric(liveIsPvp?Number(result.projectedLifetimeDamage||0):Number(scored?.result?.expectedTotalLifetimeDamage||0),liveIsPvp);
 
     const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
-    els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Battle Calculator Beta · mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
+    els.resultStatus.textContent=activeMode==='battle'?`${count} calculated squad${count===1?'':'s'} · Total Battle mobile entry order`:`${count} calculated squad${count===1?'':'s'} · mobile entry order`;
     els.resultEmpty.hidden=true;els.resultGroups.hidden=false;
   }catch(error){
     console.error(error);showValidation([error.message||'The calculator could not complete the stack.']);clearResults('Calculation error.');
   }
 }
 function resetCalculator(){
-  if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator Beta':'Custom Stacker'} inputs and selections on this device?`))return;
+  if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator':'Custom Stacker'} inputs and selections on this device?`))return;
   if(activeMode==='battle'){
     clearSavedOptimizerResult();
     const type=state.modes.battle.activeBattleType||'epic_standard';

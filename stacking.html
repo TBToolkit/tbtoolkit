@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
+<meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Compare Standard, Custom Order, and optimized Epic calculations." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=191-dev4" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=191-dev5" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=191-dev4" type="module"></script>
+<script src="js/epic-stacker.js?v=191-dev5" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -31,10 +31,11 @@
 <div class="breadcrumb">Home / Stacking</div>
 <h1>Battle Calculator</h1>
 
-<p class="mode-description battle-page-description" id="modeDescription">Choose a battle type and calculation method. Enter your army limits and combat bonuses, then select the units you want to use. The Battle Calculator can calculate a standard stack, follow a custom death order, or optimize supported Epic battles. PvP calculations include PvP health, strength, matchup bonuses, and revival costs when they apply.</p>
+<p class="mode-description battle-page-description" id="modeDescription">Build an army for an Epic Monster or Player vs. Player battle. Enter your army limits and combat bonuses. Select the units you want to use. Choose Standard, Custom Order, or Optimize. Optimize is available for supported Epic battles.</p>
 <div class="battle-calculator-notes" aria-label="Battle Calculator assumptions">
-<p><strong>Account level:</strong> The Battle Calculator is designed around fully researched Tier 9 accounts. Developing accounts can also use it effectively.</p>
-<p><strong>Research and talents:</strong> Calculations assume that relevant Health and Strength talent points are complete or distributed evenly, and that Army Modernization and Monster Boost research are complete.</p>
+<p><strong>Account level:</strong> The Battle Calculator uses a fully researched Tier 9 account as its standard. You can also use it for a developing account.</p>
+<p><strong>Research and talents:</strong> The calculator assumes that the relevant Health and Strength talent points are complete or spread evenly. It also assumes that Army Modernization and Monster Boost research are complete.</p>
+<p><strong>Saved on this device:</strong> Your Player Accounts, encounters, selections, and calculator inputs are saved in this browser. Export a .biff file to make a backup or move an account to another device.</p>
 </div>
 </div>
 </div>
@@ -44,7 +45,7 @@
 <div class="battle-beta-panel" hidden id="battleBetaPanel">
 <section class="topdown-panel battle-config-panel">
 <div class="topdown-panel-heading battle-config-heading">
-<div><span class="section-kicker">1</span><h2>Battle</h2><p>Choose the battle and calculation method.</p></div>
+<div><span class="section-kicker">1</span><h2>Battle</h2></div>
 
 </div>
 <div class="battle-select-grid">
@@ -280,7 +281,7 @@
 </div>
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
-<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
+<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong><small>A larger ELD means more points per attack.</small></div>
 <div><span>Gold Revival</span><strong id="rawGoldRevival">—</strong><small>90% revivable attacking losses · Temple-adjusted</small></div>
 <div><span>Damage / 1,000 Gold</span><strong id="damagePerThousandGold">—</strong><small>Uses 90% revivable · Temple-adjusted Gold</small></div>
 </div>
@@ -328,12 +329,11 @@
 <section class="topdown-panel layer-chart-panel battle-sequenced-section" id="layerChartPanel">
 <div class="layer-chart-head">
 <div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
-<div aria-label="Dying order direction" class="die-direction"><span>Dies First</span><b>→</b><span>Dies Last</span></div>
 </div>
 <div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
 <div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad-health separation.</div>
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
-<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
+<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-layout"><div aria-label="Death order direction" class="die-direction die-direction-vertical"><span>Dies First</span><b>↓</b><span>Dies Last</span></div><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div></div>
 </section>
 </div>
 </div>

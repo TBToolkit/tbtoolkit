@@ -28,5 +28,15 @@ assert.match(source,/promptForUniqueAccountName/, 'Account New, Duplicate, and R
 assert.match(source,/An encounter named .* already exists/, 'Encounter creation and duplication must reject duplicate visible names');
 assert.match(source,/biffImportError\.classList\.toggle\(['"]show['"]/, 'Import naming errors must be visibly rendered');
 assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encounter naming errors must be visibly rendered');
+assert.doesNotMatch(source,/Battle Calculator Beta/, 'Results and reset copy must not describe the calculator as Beta');
+assert.doesNotMatch(source,/Higher squad health|Lower squad health/, 'The chart must not render the old horizontal health labels');
+assert.match(html,/Saved on this device:[\s\S]*?saved in this browser/, 'The page must explain local browser storage');
+assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
+assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
+assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
+assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
+assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');
+assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible\}/, 'Battle workspace Selection columns must grow without internal vertical scrolling');
+assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
 
 console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));
