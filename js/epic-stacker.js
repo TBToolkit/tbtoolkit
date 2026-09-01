@@ -1,5 +1,5 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=189-dev3';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev3';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=189-dev4';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
 import { calculateBattleStack, calculateBattleCategory, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpCustomCategory, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=188';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
@@ -956,7 +956,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=189-dev3');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=189-dev4');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1257,7 +1257,12 @@ function defaultCustomUnitIds(category,level){
     }
     return defaultPvpInternalOrder({category,units:units[category],selectedIds:chosen.map(u=>u.id),inputs,order:[level],enemy});
   }
-  return chosen.slice().sort((a,b)=>customInternalRank(a,units[category])-customInternalRank(b,units[category])||a.displayOrder-b.displayOrder).map(u=>u.id);
+  const planned=standardEpicDefaultOrder(category);
+  const chosenIds=new Set(chosen.map(unit=>unit.id));
+  const filtered=planned.filter(id=>chosenIds.has(id));
+  return filtered.length===chosen.length
+    ?filtered
+    :chosen.slice().sort((a,b)=>customInternalRank(a,units[category])-customInternalRank(b,units[category])||a.displayOrder-b.displayOrder).map(u=>u.id);
 }
 function legacyDefaultFlatOrder(category,stateRef=activeOrderState()){
   const selected=new Set(selectedIdsFor(category));
@@ -1291,6 +1296,12 @@ function syncCustomOrders(){
   const selected=new Set(selectedIdsFor(c));
   const defaults=customOrderV2DefaultFlatOrder(c,s);
   let flat=(s.squadOrder[c]||[]).filter(id=>selected.has(id));
+  const legacyFlat=legacyDefaultFlatOrder(c,s);
+  const oldAutomatic=legacyEpicDefaultFlatOrder(c);
+  if(flat.length&&(
+    (flat.length===legacyFlat.length&&flat.every((id,index)=>id===legacyFlat[index]))||
+    (flat.length===oldAutomatic.length&&flat.every((id,index)=>id===oldAutomatic[index]))
+  ))flat=[...defaults];
   // First v175 load migrates the exact v174 tier + internal order into one list.
   if(!flat.length&&selected.size)flat=[...defaults];
   for(const id of defaults)if(selected.has(id)&&!flat.includes(id))flat=insertMissingByDefault(flat,defaults,id);
@@ -1337,6 +1348,29 @@ function customOrderMatchupText(unit){
 function customOrderTierNumber(unit){
  const match=String(unit?.level||'').match(/\d+/);return match?Number(match[0]):999;
 }
+let standardEpicDefaultOrderCache={key:'',orders:null};
+function standardEpicDefaultOrders(){
+ const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
+ const selectedIds={troop:[...selectedIdsFor('troop')],monster:[...selectedIdsFor('monster')],mercenary:[...selectedIdsFor('mercenary')]};
+ const inputs={...baseEngineInputs(),arachne:battleType==='epic_arachne'};
+ const key=JSON.stringify({battleType,selectedIds,inputs});
+ if(standardEpicDefaultOrderCache.key===key&&standardEpicDefaultOrderCache.orders)return standardEpicDefaultOrderCache.orders;
+ const standard=calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,inputs});
+ const orders=standard?.plannedOrderByCategory||{troop:[],monster:[],mercenary:[]};
+ standardEpicDefaultOrderCache={key,orders};
+ return orders;
+}
+function standardEpicDefaultOrder(category){return [...(standardEpicDefaultOrders()[category]||[])];}
+function legacyEpicDefaultFlatOrder(category){
+ const selected=new Set(selectedIdsFor(category));
+ return units[category].filter(unit=>selected.has(unit.id)).slice().sort((a,b)=>{
+   const av=customOrderMatchupValue(a),bv=customOrderMatchupValue(b);
+   if(Math.abs(av-bv)>1e-12)return av-bv;
+   const at=customOrderTierNumber(a),bt=customOrderTierNumber(b);
+   if(at!==bt)return at-bt;
+   return Number(a.displayOrder||0)-Number(b.displayOrder||0);
+ }).map(unit=>unit.id);
+}
 function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
  const selected=new Set(selectedIdsFor(category));
  const battleType=activeMode==='battle'?state.modes.battle.activeBattleType:'epic_standard';
@@ -1378,13 +1412,7 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
    return fallback;
  }
 
- return units[category].filter(u=>selected.has(u.id)).slice().sort((a,b)=>{
-   const av=customOrderMatchupValue(a),bv=customOrderMatchupValue(b);
-   if(Math.abs(av-bv)>1e-12)return av-bv;
-   const at=customOrderTierNumber(a),bt=customOrderTierNumber(b);
-   if(at!==bt)return at-bt;
-   return Number(a.displayOrder||0)-Number(b.displayOrder||0);
- }).map(u=>u.id);
+ return standardEpicDefaultOrder(category).filter(id=>selected.has(id));
 }
 
 let customOrderFloatObserver=null;
@@ -1665,6 +1693,7 @@ function baseEngineInputs(){
       EPIC_HUNTER:parseNumber(i.epicHunterHealth)+pvpHealth
     },
     monsterStrengthPct:parseNumber(i.monsterStrength)+pvpStrength,
+    strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic),
     humanStrengthPct:parseNumber(i.humanStrength)+pvpStrength,
     epicHunterStrengthPct:parseNumber(i.epicHunterStrength)+pvpStrength,
     pvpHealthPct:pvpHealth,pvpStrengthPct:pvpStrength,
@@ -2310,24 +2339,10 @@ function wireStatHelp(){
 }
 
 
-let numericEditTimer=null;
-function cancelNumericEditTimer(){
-  if(numericEditTimer){clearTimeout(numericEditTimer);numericEditTimer=null;}
-}
 function commitNumericEdit({persist=true}={}){
-  cancelNumericEditTimer();
   readInputs();
   if(persist)saveState();
   recalculate();
-}
-function scheduleNumericEdit({persist=true,delay=300}={}){
-  cancelNumericEditTimer();
-  numericEditTimer=setTimeout(()=>{
-    numericEditTimer=null;
-    readInputs();
-    if(persist)saveState();
-    recalculate();
-  },delay);
 }
 function selectWholeFieldOnFocus(input){
   requestAnimationFrame(()=>{
@@ -2370,18 +2385,13 @@ function handleCalculatorNumericNavigation(id,input,e){
   // Own both Tab and Enter so native browser focus cannot jump to a checkbox,
   // Fill field, help icon, or other non-calculator control.
   e.preventDefault();
-  cancelNumericEditTimer();
-
   if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id)){
     syncDerivedEpicBonuses();
   }
-  readInputs();
-  saveState();
 
   const step=e.shiftKey&&e.key==='Tab'?-1:1;
   const nextId=order[(index+step+order.length)%order.length];
   const next=els[nextId];
-  recalculate();
   next.focus();
   selectWholeFieldOnFocus(next);
   return true;
@@ -2399,7 +2409,6 @@ function wireEvents(){
     input.addEventListener('focus',()=>{input.value=String(parseNumber(input.value)||'');selectWholeFieldOnFocus(input);});
     input.addEventListener('keydown',e=>handleCalculatorNumericNavigation(id,input,e));
     input.addEventListener('blur',()=>{formatFieldInteger(input);commitNumericEdit();});
-    input.addEventListener('input',()=>scheduleNumericEdit());
   }
 
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
@@ -2451,14 +2460,11 @@ function wireEvents(){
     input.addEventListener('keydown',e=>handleCalculatorNumericNavigation(id,input,e));
     input.addEventListener('input',()=>{
       if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id))syncDerivedEpicBonuses();
-      scheduleNumericEdit();
     });
-    if(['pvpHealth','pvpStrength'].includes(id)){
-      input.addEventListener('blur',()=>{
-        input.value=String(parseNumber(input.value));
-        commitNumericEdit();
-      });
-    }
+    input.addEventListener('blur',()=>{
+      if(['pvpHealth','pvpStrength'].includes(id))input.value=String(parseNumber(input.value));
+      commitNumericEdit();
+    });
   }
 
   els.useCustomFamilyBonuses.addEventListener('change',()=>{
@@ -2496,14 +2502,13 @@ function wireEvents(){
   });
 
   for(const id of ['leadershipFill','authorityFill','dominanceFill']){
-    els[id].addEventListener('input',()=>scheduleNumericEdit());
     els[id].addEventListener('blur',()=>{
       formatFillPercent(els[id]);
       commitNumericEdit();
     });
   }
   els.resetCustomOrderDefault?.addEventListener('click',resetCustomOrderToDefault);
-  els.rankSeparation.addEventListener('input',()=>{updateRankSeparationDisplay();scheduleNumericEdit({delay:180});});
+  els.rankSeparation.addEventListener('input',updateRankSeparationDisplay);
   els.rankSeparation.addEventListener('change',()=>commitNumericEdit());
   els.minimumSeparation?.addEventListener('change',()=>{modeState().inputs.minimumSeparation=els.minimumSeparation.checked;updateSeparationModeUI();saveState();recalculate();});
   els.resetAdvancedSettings.addEventListener('click',resetAdvancedSettings);

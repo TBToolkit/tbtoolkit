@@ -1,4 +1,5 @@
-import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=189-dev3';
+import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=189-dev4';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
 
 const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 
@@ -101,6 +102,7 @@ export function calculateCategory({
   units,
   selectedKeys,
   selectedIds,
+  deathOrderIds = null,
   inputs,
   roundingTable = [
     { capacity: 1, roundTo: 1 },
@@ -127,7 +129,15 @@ export function calculateCategory({
     };
   }
 
-  const ranked = rankSelected(selected, inputs.arachne);
+  const explicitDeathIndex = new Map((deathOrderIds ?? []).map((id,index)=>[id,index]));
+  const hasCompleteDeathOrder = selected.length > 0 && selected.every(unit=>explicitDeathIndex.has(unit.id));
+  const ranked = hasCompleteDeathOrder
+    ? selected.map(unit=>({
+        unit,
+        pve:pveScore(unit,inputs.arachne),
+        rank:selected.length-explicitDeathIndex.get(unit.id),
+      }))
+    : rankSelected(selected, inputs.arachne);
   const maxHealthEach = Math.max(...selected.map((u) => u.healthEach));
   const capacityLimit = inputs[config.capacityInput];
   const fill = inputs[config.fillInput];
@@ -200,7 +210,9 @@ export function calculateCategory({
       for(const id of deathIds){const row=byId.get(id);if(!row)continue;const each=row.qty>0?row.squadHealth/row.qty:0,step=Math.max(1,row.roundTo||1);if(prev&&each>0&&row.squadHealth>=prev.squadHealth){const q=Math.max(step,Math.floor((Math.ceil(prev.squadHealth/each)-1)/step)*step);if(q<row.qty){row.qty=q;row.totalCapacity=row.unitCapacityEach*q;row.squadHealth=q*each;row.squadStrength=row.unitStrengthEach*q;}}prev=row;}
     }
   }
-  const standardDeathIds=ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);
+  const standardDeathIds=hasCompleteDeathOrder
+    ? [...deathOrderIds]
+    : ranked.slice().sort((a,b)=>b.rank-a.rank).map(x=>x.unit.id);
   if(!inputs._skipHardCapacity){
     const requestedCapacity=capacityLimit*Math.max(0,Math.min(1,Number(fill)||0));
     enforceRequestedCapacity(results,requestedCapacity,standardDeathIds);
@@ -224,12 +236,86 @@ export function calculateCategory({
   };
 }
 
-export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys = {}, selectedIds = {}, inputs, roundingTable }) {
+function canonicalEpicUnit(unit,category){
+  const capacityEach=category==='troop'?'leadershipEach':category==='monster'?'dominanceEach':'authorityEach';
+  return{
+    id:unit.id,
+    unitId:Number.isInteger(unit.unitId)?unit.unitId:Number(unit.displayOrder||0),
+    displayOrder:Number(unit.displayOrder||0),
+    capacityType:unit.capacityType||(category==='troop'?'LEADERSHIP':category==='monster'?'DOMINANCE':'AUTHORITY'),
+    category,
+    combatType:unit.combatType||unit.type,
+    unitClass:unit.unitClass||unit.class,
+    species:unit.species,
+    name:unit.name,
+    tier:unit.tier||unit.level,
+    tierNumber:Number(unit.tierNumber??String(unit.tier||unit.level||'').match(/\d+/)?.[0]??0),
+    icon:unit.icon,
+    capacityCost:Number(unit.capacityCost??unit[capacityEach]??0),
+    baseStrength:Number(unit.baseStrength??unit.strengthEach??0),
+    baseHealth:Number(unit.baseHealth??unit.healthEach??0),
+    goldRevivalCost:Number(unit.goldRevivalCost||0),
+    silverRevivalCost:Number(unit.silverRevivalCost||0),
+    bonuses:{...(unit.bonuses||{})},
+  };
+}
+
+function epicBonusPayloadFromEngineInputs(inputs){
+  const required=[inputs?.monsterStrengthPct,inputs?.strengthAgainstEpicPct,inputs?.monsterDDPct,inputs?.monsterSTPct];
+  if(required.some(value=>!Number.isFinite(Number(value))))return null;
+  return{
+    monsterHealthPct:Number(inputs.healthInputs?.MONSTER||0),
+    monsterStrengthPct:Number(inputs.monsterStrengthPct),
+    strengthAgainstEpicPct:Number(inputs.strengthAgainstEpicPct),
+    monsterDDPct:Number(inputs.monsterDDPct),
+    monsterSTPct:Number(inputs.monsterSTPct),
+    arachne:Boolean(inputs.arachne),
+    useCustomFamilyBonuses:true,
+    customFamilyBonuses:{
+      humanHealthPct:Number(inputs.healthInputs?.HUMAN||0),
+      epicHunterHealthPct:Number(inputs.healthInputs?.EPIC_HUNTER||0),
+      humanStrengthPct:Number(inputs.humanStrengthPct),
+      epicHunterStrengthPct:Number(inputs.epicHunterStrengthPct),
+      humanDDPct:Number(inputs.humanDDPct),
+      epicHunterDDPct:Number(inputs.epicHunterDDPct),
+      humanSTPct:Number(inputs.humanSTPct),
+      epicHunterSTPct:Number(inputs.epicHunterSTPct),
+    },
+  };
+}
+
+function automaticDeathOrder(group,arachne){
+  return rankSelected(group,arachne).slice().sort((a,b)=>b.rank-a.rank).map(row=>row.unit.id);
+}
+
+function epicDeathOrderCandidates(group,category,bonuses){
+  const current=automaticDeathOrder(group,bonuses.arachne);
+  if(!group.length)return{current,selective:current,tiebreak:current};
+  const damage=new Map(group.map(unit=>[unit.id,buildSquad(canonicalEpicUnit(unit,category),1,bonuses).expectedDamagePerOpportunity]));
+  const selective=category==='troop'
+    ?group.slice().sort((a,b)=>{
+      const ae=String(a.unitClass||a.class).toUpperCase()==='ENGINEER'?0:1;
+      const be=String(b.unitClass||b.class).toUpperCase()==='ENGINEER'?0:1;
+      if(ae!==be)return ae-be;
+      if(ae===0)return Number(a.tierNumber||0)-Number(b.tierNumber||0)||Number(a.displayOrder||0)-Number(b.displayOrder||0);
+      return damage.get(a.id)-damage.get(b.id)||Number(a.displayOrder||0)-Number(b.displayOrder||0);
+    }).map(unit=>unit.id)
+    :current;
+  const tiebreak=group.slice().sort((a,b)=>
+    pveScore(a,bonuses.arachne)-pveScore(b,bonuses.arachne)||
+    damage.get(a.id)-damage.get(b.id)||
+    Number(a.displayOrder||0)-Number(b.displayOrder||0)
+  ).map(unit=>unit.id);
+  return{current,selective,tiebreak};
+}
+
+function calculateEpicStackCandidate({troops,monsters,mercenaries,selectedKeys,selectedIds,inputs,roundingTable,orders,strategy}){
   const troop = calculateCategory({
     category: 'troop',
     units: troops,
     selectedKeys: selectedKeys.troop,
     selectedIds: selectedIds.troop,
+    deathOrderIds:orders?.troop,
     inputs,
     roundingTable,
   });
@@ -238,6 +324,7 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     units: monsters,
     selectedKeys: selectedKeys.monster,
     selectedIds: selectedIds.monster,
+    deathOrderIds:orders?.monster,
     inputs,
     roundingTable,
   });
@@ -246,6 +333,7 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
     units: mercenaries,
     selectedKeys: selectedKeys.mercenary,
     selectedIds: selectedIds.mercenary,
+    deathOrderIds:orders?.mercenary,
     inputs,
     roundingTable,
   });
@@ -266,7 +354,47 @@ export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys
       dominance: monster.totalCapacity,
       authority: mercenary.totalCapacity,
     },
+    plannedOrderByCategory:{troop:[...(orders?.troop||[])],monster:[...(orders?.monster||[])],mercenary:[...(orders?.mercenary||[])]},
+    deathLadderStrategy:strategy,
   };
+}
+
+export function calculateEpicStack({ troops, monsters, mercenaries, selectedKeys = {}, selectedIds = {}, inputs, roundingTable }) {
+  const bonusPayload=epicBonusPayloadFromEngineInputs(inputs);
+  const selectedByCategory={
+    troop:selectedUnits(troops,selectedIds.troop,selectedKeys.troop),
+    monster:selectedUnits(monsters,selectedIds.monster,selectedKeys.monster),
+    mercenary:selectedUnits(mercenaries,selectedIds.mercenary,selectedKeys.mercenary),
+  };
+  if(!bonusPayload){
+    const orders=Object.fromEntries(Object.entries(selectedByCategory).map(([category,group])=>[category,automaticDeathOrder(group,inputs.arachne)]));
+    return calculateEpicStackCandidate({troops,monsters,mercenaries,selectedKeys,selectedIds,inputs,roundingTable,orders,strategy:'current_matchup'});
+  }
+
+  const candidateOrders={current_matchup:{},selective_hybrid:{},matchup_damage_tiebreak:{}};
+  const resolvedBonuses=deriveBonusInputs(bonusPayload);
+  for(const [category,group] of Object.entries(selectedByCategory)){
+    const orders=epicDeathOrderCandidates(group,category,resolvedBonuses);
+    candidateOrders.current_matchup[category]=orders.current;
+    candidateOrders.selective_hybrid[category]=orders.selective;
+    candidateOrders.matchup_damage_tiebreak[category]=orders.tiebreak;
+  }
+  const canonicalUnits=Object.entries(selectedByCategory).flatMap(([category,group])=>group.map(unit=>canonicalEpicUnit(unit,category)));
+  const candidates=Object.entries(candidateOrders).map(([strategy,orders])=>{
+    const stack=calculateEpicStackCandidate({troops,monsters,mercenaries,selectedKeys,selectedIds,inputs,roundingTable,orders,strategy});
+    const quantities={};
+    for(const category of ['troop','monster','mercenary'])for(const row of stack.categories[category].results)quantities[row.id]=Number(row.qty||0);
+    const score=scoreEpicArmy({units:canonicalUnits,quantities,bonuses:bonusPayload});
+    return{strategy,orders,stack,eld:Number(score.expectedTotalLifetimeDamage||0)};
+  });
+  const chosen=candidates.reduce((best,candidate)=>candidate.eld>best.eld+1e-6?candidate:best,candidates[0]);
+  chosen.stack.deathLadderSelection={
+    strategy:chosen.strategy,
+    expectedLifetimeDamage:chosen.eld,
+    orders:structuredClone(chosen.orders),
+    candidates:candidates.map(candidate=>({strategy:candidate.strategy,expectedLifetimeDamage:candidate.eld})),
+  };
+  return chosen.stack;
 }
 
 

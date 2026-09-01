@@ -1,5 +1,5 @@
 export const EPIC_OPTIMIZER_BUILD = '2.0-adaptive-death-search';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=61';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=189-dev4';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 
@@ -298,22 +298,44 @@ function matchupRankScore(unit, bonuses) {
   const b=unit.bonuses??{};
   return Math.max(Number(b.flying??0),Number(b.mounted??0),Number(b.melee??0),Number(b.ranged??0)) + Number(b.epic??0) + (bonuses?.arachne?Number(b.arachne??0):0);
 }
-function createMatchupRankedSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10}) {
+function seedDamageScore(unit,resolved){
+  return Number(buildSquad(unit,1,resolved).expectedDamagePerOpportunity||0);
+}
+function createOrderedEpicSeed({units,selectedIds,selectedNames,bonuses,capacityLimits,separationPct=.10,strategy='current_matchup'}) {
   const selected=selectUnits(units,selectedIds,selectedNames),resolved=deriveBonusInputs(bonuses),limits=limitsOf(capacityLimits),q={};
   for(const type of SEED_CAPACITY_TYPES){
     let group=selected.filter(u=>u.capacityType===type); if(!group.length||limits[type]<=0)continue;
+    const damage=new Map(group.map(unit=>[unit.id,seedDamageScore(unit,resolved)]));
     group=group.slice().sort((a,b)=>{
-      const ae=a.category==='troop'&&String(a.unitClass).toUpperCase()==='ENGINEER'?0:1;
-      const be=b.category==='troop'&&String(b.unitClass).toUpperCase()==='ENGINEER'?0:1;
-      if(ae!==be)return ae-be;
-      if(ae===0&&be===0)return (a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);
-      return matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses)||(a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);
+      if(strategy==='selective_hybrid'&&type==='LEADERSHIP'){
+        const ae=a.category==='troop'&&String(a.unitClass).toUpperCase()==='ENGINEER'?0:1;
+        const be=b.category==='troop'&&String(b.unitClass).toUpperCase()==='ENGINEER'?0:1;
+        if(ae!==be)return ae-be;
+        if(ae===0)return (a.tierNumber??0)-(b.tierNumber??0)||(a.displayOrder??0)-(b.displayOrder??0);
+        return damage.get(a.id)-damage.get(b.id)||(a.displayOrder??0)-(b.displayOrder??0);
+      }
+      const matchup=matchupRankScore(a,bonuses)-matchupRankScore(b,bonuses);
+      if(matchup)return matchup;
+      if(strategy==='matchup_damage_tiebreak'){
+        const damageDelta=damage.get(a.id)-damage.get(b.id);
+        if(damageDelta)return damageDelta;
+        return (a.displayOrder??0)-(b.displayOrder??0);
+      }
+      return (b.displayOrder??0)-(a.displayOrder??0);
     });
     const n=group.length,rows=group.map((u,index)=>({u,oneHealth:buildSquad(u,1,resolved).effectiveHealth,factor:1+(n-1-index)*(Number(separationPct)/100)}));
     const denom=rows.reduce((sum,r)=>sum+Number(r.u.capacityCost)*r.factor/r.oneHealth,0),target=denom>0?limits[type]/denom:0;
     for(const r of rows)q[r.u.name]=Math.max(1,Math.round(target*r.factor/r.oneHealth));
   }
   return repairCapacity({units:selected,quantities:q,capacityLimits:limits,minimumQuantity:1});
+}
+function createStandardDeathLadderSeed(args){
+  const candidates=['current_matchup','selective_hybrid','matchup_damage_tiebreak'].map(strategy=>{
+    const quantities=createOrderedEpicSeed({...args,strategy});
+    const result=scoreEpicArmy({units:args.units,quantities,bonuses:args.bonuses});
+    return{strategy,quantities,result};
+  });
+  return candidates.reduce((best,candidate)=>candidate.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-6?candidate:best,candidates[0]).quantities;
 }
 function requiredHealthGapPct(earlierSquad,laterSquad){
   if(!earlierSquad||!laterSquad||!(laterSquad.effectiveHealth>0))return Infinity;
@@ -1009,7 +1031,7 @@ function optimizeEpicQuantities(args) {
   if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator});
 
   const seedDefs=[];
-  for(const separationPct of [.03,.05,.10,.20])seedDefs.push({name:`matchup-${separationPct}`,make:()=>createMatchupRankedSeed({...args,separationPct})});
+  for(const separationPct of [.03,.05,.10,.20])seedDefs.push({name:`standard-two-tier-${separationPct}`,make:()=>createStandardDeathLadderSeed({...args,separationPct})});
   for(const separationPct of [.03,.05,.10])seedDefs.push({name:`legacy-${separationPct}`,make:()=>createLegacyHealthLadderSeed({...args,separationPct})});
   seedDefs.push({name:'forward',make:()=>makeEqualHealthSeed({...args,order:'forward',separationPct:.05})});
   seedDefs.push({name:'reverse',make:()=>makeEqualHealthSeed({...args,order:'reverse',separationPct:.05})});

@@ -6,7 +6,7 @@
  * remain outside this file so all methods can share the same mechanics without
  * sharing the same strategy.
  */
-export const EPIC_MECHANICS_BUILD = '189-dev3';
+export const EPIC_MECHANICS_BUILD = '189-dev4';
 
 export const BONUS_FAMILY_BY_SPECIES = Object.freeze({
   BEAST: 'MONSTER',
