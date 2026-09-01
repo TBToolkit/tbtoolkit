@@ -47,7 +47,7 @@ export function encountersForAccount(account,battleType){
   return[
     ...BUILT_IN_ENCOUNTERS.filter(encounter=>encounter.battleType===battleType),
     ...Object.values(account?.customEncounters||{}).filter(encounter=>encounter.battleType===battleType)
-  ];
+  ].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base',numeric:true}));
 }
 export function resolveEncounter(account,id){return BUILT_IN_BY_ID.get(id)||account?.customEncounters?.[id]||null;}
 export function isBuiltInEncounter(id){return BUILT_IN_BY_ID.has(id);}

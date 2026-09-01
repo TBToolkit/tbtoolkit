@@ -1507,6 +1507,17 @@ function customOrderV2DefaultFlatOrder(category,stateRef=activeOrderState()){
  return standardEpicDefaultOrder(category).filter(id=>selected.has(id));
 }
 
+function untouchedEpicCustomOrderMatchesStandard(){
+ if(activeMode!=='battle'||state.modes.battle.activeBattleType!=='epic'||state.modes.battle.activeBattleMethod!=='custom')return false;
+ const orderState=currentBattleWorkspace().methods.custom;
+ return ['troop','monster','mercenary'].every(category=>{
+   const selected=new Set(selectedIdsFor(category));
+   const actual=(orderState.squadOrder?.[category]||[]).filter(id=>selected.has(id));
+   const expected=standardEpicDefaultOrder(category).filter(id=>selected.has(id));
+   return actual.length===expected.length&&actual.every((id,index)=>id===expected[index]);
+ });
+}
+
 let customOrderFloatObserver=null;
 function updateCustomOrderFloatingMetric(){
   const bar=els.customOrderFloatingMetric||document.getElementById('customOrderFloatingMetric');
@@ -2282,7 +2293,14 @@ function recalculate(){
       const method=state.modes.battle.activeBattleMethod||'basic';
       if(method==='custom'){
         syncCustomOrders();
-        if(battleType==='pvp_single_cp'){
+        if(battleType==='epic'&&untouchedEpicCustomOrderMatchesStandard()){
+          // An untouched Custom Order is the Standard plan. Reuse the Standard
+          // result so quantities, strict-health legalization, and ELD are exact.
+          result=calculateEpicStack({
+            troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
+            selectedIds:modeState().selectedIds,inputs
+          });
+        }else if(battleType==='pvp_single_cp'){
           result=calculatePvpCustomStack({
             troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,
             selectedIds:modeState().selectedIds,orders:currentBattleWorkspace().orders,unitOrders:currentBattleWorkspace().methods.custom.unitOrders,squadOrders:currentBattleWorkspace().methods.custom.squadOrder,inputs,enemy:selectedPvpEnemy()

@@ -4,7 +4,7 @@ import {BUILT_IN_ENCOUNTERS,makeAccount,encountersForAccount,createCustomEncount
 import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
 
 const epics=BUILT_IN_ENCOUNTERS.filter(row=>row.battleType==='epic');
-assert.deepEqual(epics.map(row=>row.name),['Arachne','Armageddon','Arcanomancer','Doomsday','Hellforge','Basilisk','Briareus','Shadow City','Ashen','Tinman']);
+assert.deepEqual(encountersForAccount(makeAccount(),'epic').map(row=>row.name),['Arachne','Arcanomancer','Armageddon','Ashen','Basilisk','Briareus','Doomsday','Hellforge','Shadow City','Tinman']);
 for(const encounter of epics){
   assert.equal(enemySquadTypes(encounter.enemyFormation).length,encounter.name==='Arachne'?8:4);
   assert.equal(encounter.arachneBonus,encounter.name==='Arachne');
@@ -12,6 +12,9 @@ for(const encounter of epics){
 const main=makeAccount();assert.equal(main.name,'Main');validateAccountCollection({main},'main');
 assert.throws(()=>validateAccountCollection({},'main'));
 assert.equal(encountersForAccount(main,'pvp').length,2);
+main.customEncounters.zulu=createCustomEncounter({id:'zulu',name:'zulu',battleType:'pvp',pvpModel:'single'});
+main.customEncounters.alpha=createCustomEncounter({id:'alpha',name:'alpha',battleType:'pvp',pvpModel:'unknown'});
+assert.deepEqual(encountersForAccount(main,'pvp').map(row=>row.name),['1 Enemy Squad','alpha','Unknown Enemy Squads','zulu']);
 for(let total=1;total<=8;total++)assert.equal(enemySquadTypes({FLYING:total,MOUNTED:0,MELEE:0,RANGED:0}).length,total);
 assert.throws(()=>createCustomEncounter({id:'zero',name:'Zero',battleType:'epic',enemyFormation:{}}));
 assert.throws(()=>createCustomEncounter({id:'nine',name:'Nine',battleType:'epic',enemyFormation:{FLYING:9}}));
