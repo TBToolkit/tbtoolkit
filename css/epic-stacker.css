@@ -2057,6 +2057,10 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .biff-import-summary>div{display:grid;gap:4px;padding:10px;border:1px solid rgba(135,177,199,.25);border-radius:8px;background:#091824}
 .biff-import-summary span{color:#8fa1b1;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .biff-import-summary strong{font-size:.84rem;overflow-wrap:anywhere}
+.biff-import-name-field{display:grid;gap:6px}
+.biff-import-name-field>span{color:#eef3f6;font-size:.69rem;font-weight:900;text-transform:uppercase;letter-spacing:.035em}
+.biff-import-name-field input{box-sizing:border-box;width:100%;border:1px solid rgba(135,177,199,.38);border-radius:8px;background:#102738;color:#fff;padding:10px;font:inherit}
+.biff-import-name-field input:focus{outline:2px solid rgba(239,167,39,.34);outline-offset:1px;border-color:#d0952e}
 #biffImportWarnings{padding:10px 12px;border:1px solid rgba(239,167,39,.35);border-radius:8px;background:rgba(239,167,39,.06)}
 #biffImportWarnings[hidden]{display:none!important}
 #biffImportWarnings h3{margin:0 0 6px;font-size:.8rem}

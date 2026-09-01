@@ -6,9 +6,9 @@
 <meta content="Native Epic and custom army stacking calculators for Total Battle players." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=32" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=191-dev2" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=191-dev3" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=191-dev2" type="module"></script>
+<script src="js/epic-stacker.js?v=191-dev3" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -96,10 +96,11 @@
 <h2>Import Player Account</h2>
 <p class="biff-import-intro">This account will be added as a new Player Account. Existing accounts will not be replaced.</p>
 <div class="biff-import-summary">
-<div><span>Account</span><strong id="biffImportAccountName">—</strong></div>
+<div><span>Exported account</span><strong id="biffImportAccountName">—</strong></div>
 <div><span>Custom encounters</span><strong id="biffImportEncounterCount">0</strong></div>
 <div><span>Saved workspaces</span><strong id="biffImportWorkspaceCount">0</strong></div>
 </div>
+<label class="biff-import-name-field" for="biffImportName"><span>New Player Account Name</span><input autocomplete="off" id="biffImportName" maxlength="60" required type="text"/></label>
 <div hidden id="biffImportWarnings"><h3>Import notes</h3><ul id="biffImportWarningList"></ul></div>
 <p class="validation-box" id="biffImportError"></p>
 <div class="dialog-actions"><button type="button" id="cancelBiffImport">Cancel</button><button type="submit" id="confirmBiffImport">Import Account</button></div>

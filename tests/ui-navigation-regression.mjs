@@ -21,5 +21,8 @@ assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesS
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
 assert.match(html,/id="biffImportDialog"/, 'Import must provide a preview dialog');
+assert.match(html,/id="biffImportName"/, 'Import preview must require a new Player Account name');
+assert.match(source,/importedAccountNameSuggestion/, 'Import must suggest a unique Player Account name');
+assert.match(source,/Choose a name that is different from an existing Player Account/, 'Import must reject duplicate visible account names');
 
 console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));

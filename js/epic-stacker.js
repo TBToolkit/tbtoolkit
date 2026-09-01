@@ -2,10 +2,11 @@ import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateC
 import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191-dev1';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev2';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev2';
-import { WORKSPACE_MODEL_BUILD, BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191-dev1';
+import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191-dev1';
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191-dev2';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
+const APP_BUILD='191-dev3';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
@@ -219,7 +220,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -533,15 +534,36 @@ function safeBiffFileName(name){
 }
 function downloadActiveAccountBiff(){
   readInputs();saveState();
-  const text=serializeAccountToBiff(currentAccount(),{appBuild:WORKSPACE_MODEL_BUILD});
+  const text=serializeAccountToBiff(currentAccount(),{appBuild:APP_BUILD});
   const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'}));
   const link=document.createElement('a');link.href=url;link.download=safeBiffFileName(currentAccount().name);
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function allCustomEncounterIds(){return Object.values(state.accounts).flatMap(account=>Object.keys(account.customEncounters||{}));}
+function importedAccountNameSuggestion(sourceName){
+  const base=String(sourceName||'Imported Account').trim().slice(0,60)||'Imported Account';
+  const used=new Set(Object.values(state.accounts).map(account=>String(account.name||'').trim().toLocaleLowerCase()));
+  if(!used.has(base.toLocaleLowerCase()))return base;
+  const copyBase=`${base.slice(0,55).trim()} Copy`;
+  if(!used.has(copyBase.toLocaleLowerCase()))return copyBase;
+  let index=2,candidate='';
+  do{const suffix=` Copy ${index++}`;candidate=`${base.slice(0,60-suffix.length).trim()}${suffix}`;}while(used.has(candidate.toLocaleLowerCase()));
+  return candidate;
+}
+function validateImportedAccountName(){
+  const name=String(els.biffImportName?.value||'').trim();
+  let error='';
+  if(!name)error='Enter a name for the new Player Account.';
+  else if(name.length>60)error='Player Account names must be 60 characters or fewer.';
+  else if(Object.values(state.accounts).some(account=>String(account.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase()))error='Choose a name that is different from an existing Player Account.';
+  els.biffImportError.textContent=error;
+  els.confirmBiffImport.disabled=!!error||!pendingBiffImport;
+  return error?'':name;
+}
 function showBiffImportPreview(materialized){
   pendingBiffImport=materialized;
   els.biffImportAccountName.textContent=materialized.summary.accountName;
+  els.biffImportName.value=importedAccountNameSuggestion(materialized.summary.accountName);
   els.biffImportEncounterCount.textContent=String(materialized.summary.encounterCount);
   els.biffImportWorkspaceCount.textContent=String(materialized.summary.workspaceCount);
   els.biffImportError.textContent='';
@@ -549,7 +571,9 @@ function showBiffImportPreview(materialized){
   els.biffImportWarningList.innerHTML='';
   for(const warning of materialized.warnings){const item=document.createElement('li');item.textContent=warning;els.biffImportWarningList.append(item);}
   els.biffImportWarnings.hidden=!materialized.warnings.length;
+  validateImportedAccountName();
   els.biffImportDialog.showModal();
+  els.biffImportName.focus();els.biffImportName.select();
 }
 function showBiffImportError(error){
   pendingBiffImport=null;
@@ -576,7 +600,8 @@ async function prepareBiffImport(file){
 }
 function confirmPendingBiffImport(){
   if(!pendingBiffImport)return;
-  const imported=hydrateAccount(pendingBiffImport.account);
+  const name=validateImportedAccountName();if(!name)return;
+  const imported=hydrateAccount({...pendingBiffImport.account,name});
   const previousAccounts=state.accounts,previousAccountId=state.activeAccountId,previousBattle=state.modes.battle;
   try{
     const candidate={...state.accounts,[imported.id]:imported};
@@ -2625,6 +2650,7 @@ function wireEvents(){
   if(els.exportAccount)els.exportAccount.addEventListener('click',downloadActiveAccountBiff);
   if(els.importAccount)els.importAccount.addEventListener('click',()=>{els.biffFileInput.value='';els.biffFileInput.click();});
   if(els.biffFileInput)els.biffFileInput.addEventListener('change',()=>prepareBiffImport(els.biffFileInput.files?.[0]));
+  if(els.biffImportName)els.biffImportName.addEventListener('input',validateImportedAccountName);
   if(els.cancelBiffImport)els.cancelBiffImport.addEventListener('click',()=>{pendingBiffImport=null;els.biffFileInput.value='';els.biffImportDialog.close();});
   if(els.biffImportForm)els.biffImportForm.addEventListener('submit',event=>{event.preventDefault();confirmPendingBiffImport();});
   if(els.encounterSelect)els.encounterSelect.addEventListener('change',()=>{

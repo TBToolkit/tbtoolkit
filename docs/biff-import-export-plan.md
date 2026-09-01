@@ -4,7 +4,7 @@ Status: design checkpoint for `account-encounter-workspaces`
 
 ## Purpose
 
-`.biff` (Battle Information File Format) is the portable backup and sharing format for Battle Calculator accounts. Version 1 should let a player:
+`.biff` (Battle Information File Format) is the portable backup and sharing format for complete Battle Calculator Player Accounts. Version 1 should let a player:
 
 - export one account, including its custom encounters and encounter workspaces;
 - import that account on another browser or device without overwriting existing data;
@@ -74,6 +74,8 @@ The serializer should emit keys in a fixed order and sort custom encounters and 
 
 Version 1 defaults to **Add as New Account**. Import must never silently replace an existing account.
 
+The preview requires a unique Player Account display name. It is prefilled with the exported name when available, or a unique `Copy` suggestion when that name already exists.
+
 1. Read and parse the file without changing application state.
 2. Validate the envelope and normalize the payload into current runtime shapes.
 3. Show a preview: account name, Temple level, encounter count, workspace count, and warnings.
@@ -142,6 +144,7 @@ Add **Export** and **Import** beside the Player Account controls.
 ## Deferred from version 1
 
 - multi-account bundle export;
+- encounter-level or workspace-level import/export;
 - merge or replace import;
 - encryption or password protection;
 - compression;
