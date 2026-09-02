@@ -38,9 +38,11 @@ export function inferReviewAvailability({units,selectedIds}){
     const highestTier=Math.max(...selectedMonsters.map(unit=>finite(unit.tierNumber)));
     for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier)available.add(unit.id);
   }
-  // Mercenary ownership cannot be inferred. Only explicitly selected mercenaries
-  // enter the available pool (already added above).
-  return{selectedIds:selected,availableIds:sortedUnique([...available])};
+  // Mercenary ownership cannot be inferred. Explicitly selected mercenaries are
+  // mandatory army members during Review Selection; optimization may adjust their
+  // quantities, but the review must never add or remove mercenary types.
+  const mandatoryIds=selected.filter(id=>byId.get(id)?.category==='mercenary');
+  return{selectedIds:selected,availableIds:sortedUnique([...available]),mandatoryIds};
 }
 
 export function analyzeTierCompleteness({selectedIds,availableIds,units}){

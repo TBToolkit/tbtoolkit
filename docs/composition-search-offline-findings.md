@@ -5,7 +5,7 @@ This checkpoint does not change the Battle Calculator interface or shared worksp
 ## Provisional policy
 
 - Selected units form the complete candidate pool. Search never adds an unselected unit.
-- Selected mercenaries can be mandatory when mercenary optimization is off.
+- Selected mercenaries are always mandatory. Mercenary optimization may adjust their quantities, but Review Selection never adds or removes mercenary types.
 - The raw mathematical maximum remains available for diagnostics.
 - Armies within `0.05%` of the mathematical maximum are practical ties.
 - Within that tie range, prefer fewer micro squads, then fewer total squads, then fewer selection changes, then higher ELD.
@@ -31,7 +31,7 @@ This policy intentionally prefers the complete 30-unit Doomsday tier structure o
 - Synthetic regression: a four-squad mathematical maximum that improves ELD by `0.04%` but adds two negligible squads loses to the simpler two-squad army at the `0.05%` practical tie threshold.
 - Proposal regression: a `0.0001%` improvement does not trigger an apply-selection prompt; a `0.10%` improvement does.
 - Exhaustive subset regression: all non-empty subsets are evaluated for small candidate pools.
-- Mercenary ownership regression: mandatory owned mercenaries remain in every composition, and unselected mercenaries are never introduced.
+- Mercenary ownership regression: every selected mercenary remains in every composition, and unselected mercenaries are never introduced.
 - Real-data exhaustive screen: 63 compositions from a six-unit Tier 9 pool were evaluated with the exact Epic combat scorer.
 - Real-data sampled screen: 158 compositions from a 17-unit Tier 8–9 pool were evaluated.
 - Bounded deterministic search explores progressively smaller subsets with a fixed beam width and hard evaluation budget.
@@ -140,16 +140,11 @@ The repeatable long test is available through `npm run test:composition-arachne`
 
 The first included-mercenary benchmark uses the Doomsday inputs, the validated complete 30-unit G8–G9/S8–S9/E8–E9/M7–M9 troop and monster structure, and all 19 explicitly selected Tier II mercenaries. Authority is `156,570` at `40%` fill, so mercenary optimization receives an effective Authority limit of `62,628`.
 
-The selection search treats those 19 mercenaries as an ownership boundary: it may recommend removing one, but it may never add an unselected mercenary. The troop and monster structure remains mandatory during this focused benchmark. A 350-candidate removal beam was followed by short refinement of 12 candidates and stronger refinement of four finalists.
+The original experiment allowed the search to remove selected mercenaries. That behavior was rejected because it does not match common gameplay. The permanent rule is simpler: all 19 selected mercenaries are mandatory army members. Review Selection may recommend different troop and monster types, and the mercenary optimization checkbox may adjust mercenary quantities, but neither operation may add or remove a mercenary type.
 
-- All 19 selected mercenaries: approximately `1.477657T` ELD across 49 squads.
-- Recommended 17-mercenary subset: approximately `1.485344T` ELD across 47 squads.
-- Improvement: approximately `7.687B`, or `0.5202%`.
-- Recommended removals: Ariel and Grim Stalker.
+The revised benchmark runs a bounded composition screen in which troops and monsters are optional while every selected mercenary is mandatory. It also performs a quantity-optimization pass and asserts that all 19 mercenary types still have positive quantities. Unselected mercenaries remain outside the inferred availability pool.
 
-This improvement exceeds the provisional `0.05%` proposal threshold, so it is meaningful enough to show to the user. It also validates the intended distinction: with mercenary optimization enabled, explicitly owned mercenaries form the candidate pool; with it disabled, existing regression coverage keeps every selected mercenary mandatory and prevents the search from introducing an unselected one.
-
-The repeatable benchmark is available through `npm run test:review-selection-mercenaries`. It remains outside the normal suite because the finalist quantity refinements take several minutes.
+The repeatable invariant check is available through `npm run test:review-selection-mercenaries`.
 
 ## Next offline step
 

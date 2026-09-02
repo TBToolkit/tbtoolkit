@@ -77,10 +77,11 @@ assert.ok(availability.availableIds.includes('s8-ranged'),'Every lower Specialis
 assert.ok(['m9-flying','m9-mounted','m9-melee','m9-ranged','m8-flying'].every(id=>availability.availableIds.includes(id)),'One selected top-tier Monster must unlock its full tier and lower tiers for review');
 assert.ok(availability.availableIds.includes('e8'),'A selected Engineer must make lower Engineer tiers available');
 assert.ok(availability.availableIds.includes('merc-owned')&&!availability.availableIds.includes('merc-unowned'),'Review must never infer mercenary ownership');
+assert.deepEqual(availability.mandatoryIds,['merc-owned'],'Review must make every selected mercenary mandatory regardless of quantity-optimization mode');
 const allSelectedIds=reviewUnits.filter(unit=>unit.category!=='mercenary').map(unit=>unit.id);
 const allSelectedAvailability=inferReviewAvailability({units:reviewUnits,selectedIds:allSelectedIds});
 assert.equal(compositionSignature(allSelectedAvailability.availableIds),compositionSignature(allSelectedIds),'Selecting all troops and monsters must treat the selection as an availability pool without adding unrelated units');
-const tierStructures=createReviewTierStructures({units:reviewUnits,availableIds:availability.availableIds,mandatoryIds:['merc-owned']});
+const tierStructures=createReviewTierStructures({units:reviewUnits,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds});
 assert.ok(tierStructures.some(row=>row.floors.GUARDSMAN===8&&row.selectedIds.includes('g8-flying')&&row.selectedIds.includes('g9-ranged')&&!row.selectedIds.includes('g9-flying')),'Review structures must preserve partial top-tier unlocks while including complete lower tiers');
 assert.ok(tierStructures.every(row=>row.selectedIds.includes('merc-owned')),'Explicitly owned mandatory mercenaries must remain in every review tier structure');
 const lattice=await adaptiveTierLatticeSearch({structures:tierStructures,currentIds:['g9-ranged','s9-melee','m9-flying','e9','merc-owned'],beamWidth:8,maxEvaluations:100,evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.includes('g8-flying')&&ids.includes('m8-flying')?2000:ids.length}})});
