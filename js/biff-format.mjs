@@ -23,7 +23,11 @@ function cleanText(value,label,{maximum=80}={}){
   if(text.length>maximum)fail(`${label} is too long.`);
   return text;
 }
-function cleanId(value,label='ID'){return cleanText(value,label,{maximum:100});}
+function cleanId(value,label='ID'){
+  const id=cleanText(value,label,{maximum:100});
+  if(FORBIDDEN_KEYS.has(id))fail(`${label} uses a reserved value.`);
+  return id;
+}
 function ownEntries(value){
   if(!value||typeof value!=='object'||Array.isArray(value))return[];
   return Object.entries(value).filter(([key])=>!FORBIDDEN_KEYS.has(key));

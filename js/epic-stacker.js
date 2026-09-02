@@ -1,12 +1,12 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=190-dev2';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191-dev1';
-import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=190-dev2';
-import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=190-dev2';
-import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191-dev1';
-import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191-dev2';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=191';
+import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191';
+import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=191';
+import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=191';
+import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191';
+import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const APP_BUILD='191-dev5';
+const APP_BUILD='191';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
@@ -1154,7 +1154,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=191-dev1');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=191');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

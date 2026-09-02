@@ -49,6 +49,16 @@ const duplicate=structuredClone(raw);duplicate.account.customEncounters.push(str
 assert.throws(()=>parseBiff(JSON.stringify(duplicate)),/duplicate encounter IDs/);
 const invalidFormation=structuredClone(raw);invalidFormation.account.customEncounters[0].enemyFormation={FLYING:9};
 assert.throws(()=>parseBiff(JSON.stringify(invalidFormation)),/1–8 squads/);
+for(const reservedId of ['__proto__','prototype','constructor']){
+  const reservedEncounter=structuredClone(raw);
+  reservedEncounter.account.customEncounters[0].id=reservedId;
+  reservedEncounter.account.workspaces[0].encounterId=reservedId;
+  assert.throws(()=>parseBiff(JSON.stringify(reservedEncounter)),/reserved value/,`Encounter ID ${reservedId} must be rejected`);
+
+  const reservedAccount=structuredClone(raw);
+  reservedAccount.account.id=reservedId;
+  assert.throws(()=>parseBiff(JSON.stringify(reservedAccount)),/reserved value/,`Account ID ${reservedId} must be rejected`);
+}
 const fixture=parseBiff(await readFile(new URL('./fixtures/biff-v1-account.biff',import.meta.url),'utf8'));
 assert.equal(fixture.account.name,'Fixture Account');
 

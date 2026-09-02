@@ -1,10 +1,10 @@
-import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=190-dev2';
+import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=191';
 
 let armyPromise = null;
 
 async function loadArmy(){
   if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=190-dev2', import.meta.url);
+    const url = new URL('../data/army-v2.json?v=191', import.meta.url);
     armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
       if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
       return r.json();

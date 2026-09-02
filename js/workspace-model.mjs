@@ -1,4 +1,4 @@
-export const WORKSPACE_MODEL_BUILD='191-dev1';
+export const WORKSPACE_MODEL_BUILD='191';
 export const COMBAT_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 
 const FOUR_SQUADS=Object.freeze({FLYING:1,MOUNTED:1,MELEE:1,RANGED:1});

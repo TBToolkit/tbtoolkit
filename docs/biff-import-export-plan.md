@@ -22,7 +22,7 @@ The file is UTF-8 JSON with a `.biff` extension. The top-level envelope is delib
   "format": "tbtoolkit-biff",
   "schemaVersion": 1,
   "exportedAt": "2026-09-01T21:30:00.000Z",
-  "appBuild": "191-dev1",
+  "appBuild": "191",
   "kind": "account",
   "account": {}
 }

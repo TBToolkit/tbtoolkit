@@ -1,5 +1,5 @@
 /** Shared deterministic battle-event simulator. Damage profiles remain battle-specific. */
-export const BATTLE_SIMULATOR_BUILD='190-dev2';
+export const BATTLE_SIMULATOR_BUILD='191';
 
 function chooseFriendlyAttacker(squads,alive,attackedThisCycle){
   let best=null;

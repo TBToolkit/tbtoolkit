@@ -5,8 +5,8 @@ import {
   bonusFamilyForSpecies,
   clampProbability,
   deriveBonusInputs,
-} from './epic-mechanics.mjs?v=191-dev1';
-import { simulateInitiativeCase, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=190-dev2';
+} from './epic-mechanics.mjs?v=191';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=191';
 
 export const EPIC_COMBAT_ENGINE_BUILD = '2.2-formations-1-8';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
