@@ -136,9 +136,24 @@ The benchmark now asserts that the 30-unit structure must be independently ranke
 
 The repeatable long test is available through `npm run test:composition-arachne`. It remains separate from the normal regression suite because the broad intermediate stage and five deep runs take several minutes on the current test machine. A fast `tests/composition-search-arachne-tier-screen.mjs` diagnostic verifies all tier masks in about two seconds.
 
+## Included-mercenary benchmark
+
+The first included-mercenary benchmark uses the Doomsday inputs, the validated complete 30-unit G8–G9/S8–S9/E8–E9/M7–M9 troop and monster structure, and all 19 explicitly selected Tier II mercenaries. Authority is `156,570` at `40%` fill, so mercenary optimization receives an effective Authority limit of `62,628`.
+
+The selection search treats those 19 mercenaries as an ownership boundary: it may recommend removing one, but it may never add an unselected mercenary. The troop and monster structure remains mandatory during this focused benchmark. A 350-candidate removal beam was followed by short refinement of 12 candidates and stronger refinement of four finalists.
+
+- All 19 selected mercenaries: approximately `1.477657T` ELD across 49 squads.
+- Recommended 17-mercenary subset: approximately `1.485344T` ELD across 47 squads.
+- Improvement: approximately `7.687B`, or `0.5202%`.
+- Recommended removals: Ariel and Grim Stalker.
+
+This improvement exceeds the provisional `0.05%` proposal threshold, so it is meaningful enough to show to the user. It also validates the intended distinction: with mercenary optimization enabled, explicitly owned mercenaries form the candidate pool; with it disabled, existing regression coverage keeps every selected mercenary mandatory and prevents the search from introducing an unselected one.
+
+The repeatable benchmark is available through `npm run test:review-selection-mercenaries`. It remains outside the normal suite because the finalist quantity refinements take several minutes.
+
 ## Next offline step
 
-Add an included-mercenary benchmark, then measure the validated adaptive search in a browser worker before integrating the Review Selection control into the live calculator.
+Measure the validated adaptive search in a browser worker and define an interactive time budget before integrating the Review Selection control into the live calculator.
 
 ## Review Selection method matrix
 
