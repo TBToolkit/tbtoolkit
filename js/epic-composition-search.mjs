@@ -62,6 +62,36 @@ export function analyzeTierCompleteness({selectedIds,availableIds,units}){
   return{completeTierGroups,partialTierGroups,incompleteUnits,tierGroups};
 }
 
+export function createReviewTierStructures({units,availableIds,mandatoryIds=[]}){
+  const available=new Set(availableIds??[]),mandatory=sortedUnique(mandatoryIds);
+  const families=[
+    {id:'GUARDSMAN',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='GUARDSMAN'},
+    {id:'SPECIALIST',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='SPECIALIST'},
+    {id:'ENGINEER',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='ENGINEER'},
+    {id:'MONSTER',match:unit=>unit.category==='monster'}
+  ];
+  const options=families.map(family=>{
+    const rows=(units??[]).filter(unit=>available.has(unit.id)&&family.match(unit));
+    const tiers=[...new Set(rows.map(unit=>finite(unit.tierNumber)).filter(tier=>tier>0))].sort((a,b)=>b-a);
+    return[
+      {family:family.id,floor:null,unitIds:[]},
+      ...tiers.map(floor=>({family:family.id,floor,unitIds:rows.filter(unit=>finite(unit.tierNumber)>=floor).map(unit=>unit.id)}))
+    ];
+  });
+  const estimated=options.reduce((total,rows)=>total*rows.length,1);
+  if(estimated>20_000)throw new Error(`Review tier structure search would create ${estimated} structures; limit is 20000.`);
+  let structures=[{selectedIds:[...mandatory],floors:{}}];
+  for(const familyOptions of options){
+    const next=[];
+    for(const structure of structures)for(const option of familyOptions)next.push({
+      selectedIds:sortedUnique([...structure.selectedIds,...option.unitIds]),
+      floors:{...structure.floors,[option.family]:option.floor}
+    });
+    structures=next;
+  }
+  return structures.filter(structure=>structure.selectedIds.length);
+}
+
 export function analyzeCompositionCandidate(candidate,policy={}){
   const resolved={...DEFAULT_POLICY,...policy};
   const result=candidate?.result??{};

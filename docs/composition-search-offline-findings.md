@@ -138,4 +138,22 @@ The repeatable long test is available through `npm run test:composition-arachne`
 
 ## Next offline step
 
-Apply the hierarchical pipeline to the Doomsday benchmark, then add an included-mercenary benchmark. Use those cases to reduce the intermediate and deep candidate counts without losing either known winner before integrating the selection proposal control into the live calculator.
+Reduce the Review Selection tier and intermediate candidate budgets without changing the validated Doomsday or Arachne recommendations, then add an included-mercenary benchmark before integrating the control into the live calculator.
+
+## Review Selection method matrix
+
+Review Selection was evaluated with the established Doomsday and Arachne inputs across Standard, untouched Custom Order, and Optimize. Starting from the 39 checked G7–G9, S7–S9, E7–E9, and M7–M9 units, the availability rules correctly inferred a 93-unit pool extending through every lower troop and monster tier. The broad search evaluated 7,999 complete contiguous tier-band structures per encounter and expanded unit-level neighborhoods around the strongest tier leaders.
+
+Standard and untouched Custom Order intentionally match because the application reuses the Standard result when Custom Order has not been changed. Their recommendations are method-specific:
+
+- Doomsday Standard/Custom: approximately `849.181B` estimated ELD, using 29 units and excluding all selected Tier 7 troops plus Wind Lord.
+- Arachne Standard/Custom: approximately `3.831T` estimated ELD, using 28 units and excluding all selected Tier 7 troops, E8, and Destructive Colossus.
+
+The first Optimize-oriented pass used only deterministic screening and repeated the earlier Arachne mistake by excluding E8. Adding bounded intermediate quantity refinement for 30–31 promoted candidates corrected the ranking:
+
+- Doomsday Optimize Review: complete 30-unit G8–G9, S8–S9, E8–E9, and M7–M9 structure; approximately `868.352B` intermediate ELD.
+- Arachne Optimize Review: the same complete 30-unit tier structure; approximately `3.909T` intermediate ELD.
+
+The Doomsday recommendation deliberately keeps the complete M7 tier because the deeply measured benefit from removing Black Dragon is only `0.0348%`, inside the practical-noise threshold. The Arachne recommendation retains E8 and therefore reaches the correct structural basin before the user starts full optimization.
+
+The matrix validates accuracy but is not yet suitable for interactive use. Streaming the tier screen keeps memory bounded, but 7,999 Standard calculations and 30–31 intermediate optimizer passes per encounter take too long. The next performance step is to reduce the tier structures and intermediate promotions while requiring these exact recommendations to remain unchanged.

@@ -5,6 +5,7 @@
     "test:composition-deep": "node tests/composition-search-deep-finalists.mjs",
     "test:composition-arachne": "node tests/composition-search-arachne-finalists.mjs",
     "test:composition-arachne-tier-screen": "node tests/composition-search-arachne-tier-screen.mjs",
-    "test:composition-doomsday-hierarchical": "node tests/composition-search-doomsday-hierarchical.mjs"
+    "test:composition-doomsday-hierarchical": "node tests/composition-search-doomsday-hierarchical.mjs",
+    "test:review-selection-methods": "node tests/review-selection-methods.mjs"
   }
 }

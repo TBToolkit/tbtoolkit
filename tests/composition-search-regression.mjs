@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
-  analyzeTierCompleteness,createCompositionNeighborhood,evaluateSelectionProposal,exhaustiveCompositionSearch,
+  analyzeTierCompleteness,createCompositionNeighborhood,createReviewTierStructures,evaluateSelectionProposal,exhaustiveCompositionSearch,
   inferReviewAvailability,
   exhaustiveGroupCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
@@ -80,6 +80,9 @@ assert.ok(availability.availableIds.includes('merc-owned')&&!availability.availa
 const allSelectedIds=reviewUnits.filter(unit=>unit.category!=='mercenary').map(unit=>unit.id);
 const allSelectedAvailability=inferReviewAvailability({units:reviewUnits,selectedIds:allSelectedIds});
 assert.equal(compositionSignature(allSelectedAvailability.availableIds),compositionSignature(allSelectedIds),'Selecting all troops and monsters must treat the selection as an availability pool without adding unrelated units');
+const tierStructures=createReviewTierStructures({units:reviewUnits,availableIds:availability.availableIds,mandatoryIds:['merc-owned']});
+assert.ok(tierStructures.some(row=>row.floors.GUARDSMAN===8&&row.selectedIds.includes('g8-flying')&&row.selectedIds.includes('g9-ranged')&&!row.selectedIds.includes('g9-flying')),'Review structures must preserve partial top-tier unlocks while including complete lower tiers');
+assert.ok(tierStructures.every(row=>row.selectedIds.includes('merc-owned')),'Explicitly owned mandatory mercenaries must remain in every review tier structure');
 
 const monsterIds=['m7-flying','m7-mounted','m7-melee','m7-ranged'];
 const completenessUnits=monsterIds.map(id=>({id,category:'monster',tier:'M7',tierNumber:7}));
