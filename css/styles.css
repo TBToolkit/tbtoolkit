@@ -209,7 +209,7 @@ button { font: inherit; }
 /* Footer */
 .site-footer { background: #02070d; border-top: 1px solid rgba(255,255,255,.07); }
 .home-footer { padding: 22px 0 16px; margin-top: 14px; }
-.footer-grid { display: grid; grid-template-columns: 1.05fr .8fr .8fr .8fr; gap: 34px; }
+.footer-grid { display: grid; grid-template-columns: 1.05fr .8fr .8fr; gap: 34px; }
 .footer-brand-block { padding-right: 24px; border-right: 1px solid rgba(255,255,255,.10); }
 .footer-brand .brand-mark { font-size: 1.7rem; }
 .footer-sub { display: block; }
