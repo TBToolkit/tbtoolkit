@@ -88,16 +88,27 @@ The Arachne benchmark uses the second supplied input set:
 - Eight enemy squads, with two Flying, Mounted, Melee, and Ranged squads, plus the Arachne bonus
 - Candidate tiers: G7–G9, S7–S9, E7–E9, and M7–M9 (`39` selected units)
 
-The broad and deep-greedy screens produced `905` unique candidates. The strongest four screen candidates were polished, and the two strongest distinct compositions then received complete deep-optimizer runs. Both finalists retained 28 units and removed all G7 and S7 troops, E7, and E8. Their only structural difference was the M7 unit removed:
+The initial removal-only screen selected a 28-unit finalist at approximately `3.932T` ELD, but the user independently found a better 30-unit army at approximately `3.947T`. The missed army retains G8–G9, S8–S9, E8–E9, and M7–M9. This proved that selecting only a few finalists from one rough removal beam was not reliable enough.
 
-- Wind Lord retained and Black Dragon excluded: approximately `3.932T` ELD
-- Black Dragon retained and Wind Lord excluded: approximately `3.909T` ELD
-- Difference: approximately `22.914B` ELD, or `0.586%`, in favor of retaining Wind Lord
+The replacement hierarchical search performs five stages:
 
-This is larger than the `0.05%` practical-tie threshold, so no simplicity tie-break is needed between these finalists. The benchmark also confirms that the best M7 choice can change with the encounter formation and bonuses: the Doomsday case preferred Black Dragon, while this Arachne case preferred Wind Lord.
+1. Exhaust all `4,095` non-empty combinations of the 12 selected tier groups.
+2. Expand one-unit add, remove, and swap neighborhoods around eight distinct tier leaders (`2,254` unique structures in this case).
+3. Intermediate-optimize 31 candidates containing both score leaders and intact tier leaders.
+4. Fully optimize four finalists.
+5. Intermediate-audit 16 neighbors of the winner and fully optimize the strongest structurally different challenger.
 
-The repeatable long test is available through `npm run test:composition-arachne`. It takes roughly two and a half minutes on the current test machine and remains separate from the normal regression suite.
+Without receiving the answer as a seed, the tier search ranked the user's 30-unit structure first, promoted it through the intermediate stage, and deep-optimized it. The final results were:
+
+- User-discovered 30-unit structure: approximately `3.948116T` ELD
+- Former 28-unit finalist: approximately `3.931837T` ELD
+- Improvement: approximately `16.280B` ELD, or `0.414%`
+- Strongest fully optimized one-move audit challenger: approximately `3.892681T` ELD
+
+The benchmark now asserts that the 30-unit structure must be independently ranked first at the tier stage, promoted, and deeply optimized. The target signature is used only after the search as a regression assertion; it is never supplied to the search.
+
+The repeatable long test is available through `npm run test:composition-arachne`. It remains separate from the normal regression suite because the broad intermediate stage and five deep runs take several minutes on the current test machine. A fast `tests/composition-search-arachne-tier-screen.mjs` diagnostic verifies all tier masks in about two seconds.
 
 ## Next offline step
 
-Add an included-mercenary benchmark, then evaluate whether two deep finalists continue to provide enough coverage across all three cases before integrating the selection proposal control into the live calculator.
+Apply the hierarchical pipeline to the Doomsday benchmark, then add an included-mercenary benchmark. Use those cases to reduce the intermediate and deep candidate counts without losing either known winner before integrating the selection proposal control into the live calculator.

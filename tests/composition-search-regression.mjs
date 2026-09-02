@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
-  evaluateSelectionProposal,exhaustiveCompositionSearch,boundedCompositionSearch
+  createCompositionNeighborhood,evaluateSelectionProposal,exhaustiveCompositionSearch,
+  exhaustiveGroupCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
 
 function candidate({ids,eld,squads}){
@@ -46,6 +47,11 @@ assert.equal(Math.max(...seeded.results.map(row=>row.result.expectedTotalLifetim
 const fixedMercenary=await exhaustiveCompositionSearch({candidateIds:['troop-a','troop-b'],mandatoryIds:['merc-owned'],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length,capacities:{},squads:ids.map(id=>({id,name:id,quantity:1,expectedLifetimeDamage:1}))}})});
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.includes('merc-owned')),'Fixed selected mercenaries must remain in every explored composition');
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.every(id=>['troop-a','troop-b','merc-owned'].includes(id))),'Composition search must never add an unselected mercenary');
+const grouped=await exhaustiveGroupCompositionSearch({groups:[{id:'tier-1',unitIds:['a','b']},{id:'tier-2',unitIds:['c']}],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length}})});
+assert.equal(grouped.evaluations,3,'Two tier groups must produce three non-empty group structures');
+assert.ok(grouped.results.some(row=>compositionSignature(row.selectedIds)==='a|b|c'),'Grouped search must include the complete tier structure');
+const neighborhood=createCompositionNeighborhood({selectedIds:['a','b'],candidateIds:['a','b','c']});
+assert.deepEqual(neighborhood.map(compositionSignature).sort(),['a','a|b|c','a|c','b','b|c'],'Neighborhood must contain every one-unit add, remove, and swap');
 assert.equal(DEFAULT_POLICY.practicalTiePct,.05);
 assert.equal(DEFAULT_POLICY.minimumProposalImprovementPct,.05);
 

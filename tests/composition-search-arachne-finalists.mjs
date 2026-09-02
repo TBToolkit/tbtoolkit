@@ -1,102 +1,73 @@
 import fs from 'node:fs';
 import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from '../js/epic-quantity-optimizer.mjs';
 import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
-import {boundedCompositionSearch,compositionSignature} from '../js/epic-composition-search.mjs';
+import {compositionSignature,createCompositionNeighborhood,exhaustiveGroupCompositionSearch} from '../js/epic-composition-search.mjs';
 
 const army=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const byId=new Map(army.map(unit=>[unit.id,unit]));
-const bonuses={
-  monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,
-  monsterDDPct:32,monsterSTPct:30,arachne:true,
-  enemySquadTypes:['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED'],
-  includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
-};
+const bonuses={monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,monsterDDPct:32,monsterSTPct:30,arachne:true,enemySquadTypes:['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false};
 const capacityLimits={LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0};
-const candidatePool=army.filter(unit=>
-  (unit.category==='troop'&&['G9','G8','G7','S9','S8','S7','E9','E8','E7'].includes(unit.tier))||
-  (unit.category==='monster'&&['M9','M8','M7'].includes(unit.tier))
-).map(unit=>unit.id);
+const tiers=['G9','G8','G7','S9','S8','S7','E9','E8','E7','M9','M8','M7'];
+const groups=tiers.map(tier=>({id:tier,unitIds:army.filter(unit=>unit.tier===tier).map(unit=>unit.id)}));
+const candidatePool=groups.flatMap(group=>group.unitIds);
 
-function evaluateSelection(selectedIds){
-  const quantities=createLegacyHealthLadderSeed({
-    units:army,selectedIds,bonuses,capacityLimits,separationPct:.05
-  });
-  const result=scoreEpicArmy({units:army,quantities,bonuses});
-  return{selectedIds,selectionChanges:candidatePool.length-selectedIds.length,quantities,result};
+function roughEvaluate(selectedIds){
+  const quantities=createLegacyHealthLadderSeed({units:army,selectedIds,bonuses,capacityLimits,separationPct:.05});
+  return{selectedIds,quantities,result:scoreEpicArmy({units:army,quantities,bonuses})};
+}
+function unique(candidates){return[...new Map(candidates.map(row=>[compositionSignature(row.selectedIds),row])).values()];}
+function byEld(a,b){return Number(b.result?.expectedTotalLifetimeDamage||0)-Number(a.result?.expectedTotalLifetimeDamage||0);}
+function summarize(candidate){return{selectedUnits:candidate.selectedIds.length,tiers:[...new Set(candidate.selectedIds.map(id=>byId.get(id)?.tier))].filter(Boolean).sort(),excluded:candidatePool.filter(id=>!candidate.selectedIds.includes(id)).map(id=>({id,name:byId.get(id)?.name,tier:byId.get(id)?.tier})),eld:Number(candidate.result?.expectedTotalLifetimeDamage||0),squads:Number(candidate.result?.squads?.length||0)};}
+function intermediateOptimize(candidate){
+  const optimized=optimizeEpicQuantities({units:army,selectedIds:candidate.selectedIds,bonuses,capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1});
+  return{selectedIds:candidate.selectedIds,quantities:optimized.quantities,result:optimized.result};
+}
+function fullOptimize(candidate,label){
+  const started=performance.now();let lastPhase='';
+  const optimized=optimizeEpicQuantities({units:army,selectedIds:candidate.selectedIds,bonuses,capacityLimits,minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:progress=>{if(progress.phase===lastPhase)return;lastPhase=progress.phase;console.error(`[${label}] ${progress.phase}`);}});
+  return{selectedIds:candidate.selectedIds,quantities:optimized.quantities,result:optimized.result,elapsedMs:performance.now()-started,diagnostics:{evaluations:optimized.diagnostics?.totalEvaluations,practicalTieBreakApplied:optimized.diagnostics?.practicalTieBreakApplied,maximumExpectedLifetimeDamage:optimized.diagnostics?.maximumExpectedLifetimeDamage}};
 }
 
-const structuralSeeds=[];
-for(const tierNumber of [7,8,9]){
-  structuralSeeds.push(candidatePool.filter(id=>!(byId.get(id).category==='troop'&&Number(byId.get(id).tierNumber)===tierNumber)));
-  structuralSeeds.push(candidatePool.filter(id=>!(byId.get(id).category==='monster'&&Number(byId.get(id).tierNumber)===tierNumber)));
+console.error('[arachne] stage 1/5: exhaustive tier structures');
+const tierSearch=await exhaustiveGroupCompositionSearch({groups,evaluateSelection:async ids=>roughEvaluate(ids)});
+const tierRanked=tierSearch.results.sort(byEld);
+
+console.error('[arachne] stage 2/5: unit neighborhoods');
+const neighborhoodRows=[];
+for(const parent of tierRanked.slice(0,8)){
+  neighborhoodRows.push(parent);
+  for(const ids of createCompositionNeighborhood({selectedIds:parent.selectedIds,candidateIds:candidatePool}))neighborhoodRows.push(roughEvaluate(ids));
 }
+const neighborhoodRanked=unique(neighborhoodRows).sort(byEld);
 
-console.error('[arachne] broad structural screen');
-const broad=await boundedCompositionSearch({
-  candidateIds:candidatePool,initialSelections:structuralSeeds,beamWidth:16,maxEvaluations:500,
-  evaluateSelection:async ids=>evaluateSelection(ids)
-});
-console.error('[arachne] deep greedy structural screen');
-const greedy=await boundedCompositionSearch({
-  candidateIds:candidatePool,initialSelections:structuralSeeds,beamWidth:1,maxEvaluations:500,
-  evaluateSelection:async ids=>evaluateSelection(ids)
-});
-
-const screened=[...new Map([...broad.results,...greedy.results]
-  .map(candidate=>[compositionSignature(candidate.selectedIds),candidate])).values()]
-  .sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
-
-// Polish several screen leaders before committing the expensive full optimizer
-// to two distinct compositions. This protects against a shallow screen choosing
-// the wrong basin, as happened in the Doomsday benchmark.
-const polished=[];
-for(const [index,candidate] of screened.slice(0,4).entries()){
-  console.error(`[arachne] polish ${index+1}/4`);
-  const started=performance.now();
-  const optimized=optimizeEpicQuantities({
-    units:army,selectedIds:candidate.selectedIds,bonuses,capacityLimits,
-    initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1
-  });
-  polished.push({...candidate,quantities:optimized.quantities,result:optimized.result,elapsedMs:performance.now()-started});
+console.error('[arachne] stage 3/5: intermediate quantity refinement');
+const promotionPool=unique([...neighborhoodRanked.slice(0,20),...tierRanked.slice(0,12)]);
+const intermediate=[];
+for(const [index,candidate] of promotionPool.entries()){
+  if(index%8===0)console.error(`[arachne] intermediate ${index+1}/${promotionPool.length}`);
+  intermediate.push(intermediateOptimize(candidate));
 }
-polished.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+intermediate.sort(byEld);
 
-const finalists=polished.slice(0,2);
-const output=[];
-for(const [index,finalist] of finalists.entries()){
-  console.error(`[arachne] full finalist ${index+1}/2`);
-  const started=performance.now();
-  let lastPhase='';
-  const optimized=optimizeEpicQuantities({
-    units:army,selectedIds:finalist.selectedIds,bonuses,capacityLimits,
-    minimumHealthSeparationPct:.01,minimumQuantity:1,
-    onProgress:progress=>{
-      if(progress.phase===lastPhase)return;
-      lastPhase=progress.phase;
-      console.error(`[arachne finalist ${index+1}] ${progress.phase}`);
-    }
-  });
-  const elapsedMs=performance.now()-started;
-  output.push({
-    name:`finalist-${index+1}`,
-    selectedUnits:finalist.selectedIds.length,
-    selectedIds:finalist.selectedIds,
-    excluded:candidatePool.filter(id=>!finalist.selectedIds.includes(id)).map(id=>({id,name:byId.get(id)?.name,tier:byId.get(id)?.tier})),
-    screenEld:Number(screened.find(candidate=>compositionSignature(candidate.selectedIds)===compositionSignature(finalist.selectedIds))?.result.expectedTotalLifetimeDamage||0),
-    polishedEld:Number(finalist.result?.expectedTotalLifetimeDamage||0),
-    expectedLifetimeDamage:Number(optimized.result?.expectedTotalLifetimeDamage||0),
-    squads:Number(optimized.result?.squads?.length||0),
-    elapsedMs,
-    diagnostics:optimized.diagnostics
-  });
-}
-output.sort((a,b)=>b.expectedLifetimeDamage-a.expectedLifetimeDamage);
+console.error('[arachne] stage 4/5: full finalists');
+const deep=[];
+for(const [index,candidate] of intermediate.slice(0,4).entries())deep.push(fullOptimize(candidate,`arachne finalist ${index+1}`));
+deep.sort(byEld);
 
-console.log(JSON.stringify({
-  generatedAt:new Date().toISOString(),
-  inputs:{encounter:'Arachne',enemySquads:8,arachneBonus:true,bonuses,capacityLimits,candidateUnits:candidatePool.length,mercenariesSelected:0},
-  screening:{broadEvaluations:broad.evaluations,broadDepths:broad.depths,greedyEvaluations:greedy.evaluations,greedyDepths:greedy.depths,uniqueCandidates:screened.length},
-  winner:output[0]?.name,
-  eldDifference:Number(output[0]?.expectedLifetimeDamage||0)-Number(output[1]?.expectedLifetimeDamage||0),
-  finalists:output
-},null,2));
+console.error('[arachne] stage 5/5: winning-neighborhood audit');
+const winner=deep[0];
+const auditRough=createCompositionNeighborhood({selectedIds:winner.selectedIds,candidateIds:candidatePool}).map(ids=>roughEvaluate(ids)).sort(byEld);
+const auditIntermediate=auditRough.slice(0,16).map(intermediateOptimize).sort(byEld);
+const challenger=auditIntermediate.find(row=>compositionSignature(row.selectedIds)!==compositionSignature(winner.selectedIds));
+if(challenger)deep.push(fullOptimize(challenger,'arachne audit challenger'));
+deep.sort(byEld);
+
+// Benchmark assertion only: this structure is never supplied to the search.
+const benchmarkIds=candidatePool.filter(id=>!['G7','S7','E7'].includes(byId.get(id)?.tier));
+const benchmarkSignature=compositionSignature(benchmarkIds);
+const benchmarkTierRank=tierRanked.findIndex(row=>compositionSignature(row.selectedIds)===benchmarkSignature)+1;
+const benchmarkPromoted=promotionPool.some(row=>compositionSignature(row.selectedIds)===benchmarkSignature);
+const benchmarkDeepOptimized=deep.some(row=>compositionSignature(row.selectedIds)===benchmarkSignature);
+if(benchmarkTierRank!==1||!benchmarkPromoted||!benchmarkDeepOptimized)throw new Error(`Arachne benchmark was not independently discovered (tier rank ${benchmarkTierRank}, promoted ${benchmarkPromoted}, deep ${benchmarkDeepOptimized}).`);
+
+console.log(JSON.stringify({generatedAt:new Date().toISOString(),inputs:{encounter:'Arachne',enemySquads:8,arachneBonus:true,bonuses,capacityLimits,candidateUnits:candidatePool.length,mercenariesSelected:0},stages:{tierStructures:tierSearch.evaluations,tierLeadersExpanded:8,unitNeighborhoods:neighborhoodRanked.length,intermediateCandidates:promotionPool.length,deepFinalists:4,auditCandidates:Math.min(16,auditRough.length),auditDeepChallengers:challenger?1:0},benchmark:{tierRank:benchmarkTierRank,promoted:benchmarkPromoted,deepOptimized:benchmarkDeepOptimized},winner:summarize(deep[0]),deepResults:deep.map(row=>({...summarize(row),elapsedMs:row.elapsedMs,diagnostics:row.diagnostics}))},null,2));

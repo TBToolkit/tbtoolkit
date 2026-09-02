@@ -93,6 +93,47 @@ export async function exhaustiveCompositionSearch({candidateIds,mandatoryIds=[],
   return{results,evaluations:results.length};
 }
 
+export async function exhaustiveGroupCompositionSearch({groups,mandatoryIds=[],evaluateSelection}){
+  const normalized=(groups??[]).map((group,index)=>({
+    id:String(group?.id??index),
+    unitIds:sortedUnique(group?.unitIds??[])
+  })).filter(group=>group.unitIds.length);
+  if(normalized.length>16)throw new Error('Exhaustive group composition search is limited to 16 optional groups.');
+  const mandatory=sortedUnique(mandatoryIds),results=[];
+  const combinations=2**normalized.length;
+  for(let mask=1;mask<combinations;mask++){
+    const selected=[...mandatory],selectedGroupIds=[];
+    for(let index=0;index<normalized.length;index++){
+      if(!(mask&(2**index)))continue;
+      selectedGroupIds.push(normalized[index].id);
+      selected.push(...normalized[index].unitIds);
+    }
+    const selectedIds=sortedUnique(selected);
+    if(!selectedIds.length)continue;
+    const evaluated=await evaluateSelection(selectedIds);
+    results.push({...evaluated,selectedIds,selectedGroupIds:sortedUnique(selectedGroupIds)});
+  }
+  return{results,evaluations:results.length,groups:normalized.length};
+}
+
+export function createCompositionNeighborhood({selectedIds,candidateIds,mandatoryIds=[],allowAdd=true,allowRemove=true,allowSwap=true}){
+  const selected=sortedUnique(selectedIds),candidates=sortedUnique(candidateIds),mandatory=new Set(mandatoryIds);
+  const selectedSet=new Set(selected),available=candidates.filter(id=>!selectedSet.has(id));
+  const neighbors=new Map();
+  const add=ids=>{
+    const normalized=sortedUnique(ids);
+    if(normalized.length)neighbors.set(compositionSignature(normalized),normalized);
+  };
+  if(allowAdd)for(const added of available)add([...selected,added]);
+  if(allowRemove)for(const removed of selected)if(!mandatory.has(removed))add(selected.filter(id=>id!==removed));
+  if(allowSwap)for(const removed of selected){
+    if(mandatory.has(removed))continue;
+    for(const added of available)add([...selected.filter(id=>id!==removed),added]);
+  }
+  neighbors.delete(compositionSignature(selected));
+  return[...neighbors.values()];
+}
+
 export async function boundedCompositionSearch({
   candidateIds,mandatoryIds=[],initialSelections=[],evaluateSelection,beamWidth=12,maxEvaluations=250
 }){
