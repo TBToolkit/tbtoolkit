@@ -1,6 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/composition-search-regression.mjs"
+    "test": "node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/composition-search-regression.mjs",
+    "test:composition-deep": "node tests/composition-search-deep-finalists.mjs"
   }
 }

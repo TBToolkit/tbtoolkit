@@ -61,6 +61,18 @@ The corrected search independently evaluated the exact manual 29-unit selection 
 
 The offline local-polish values are not expected to equal the live `873.593B` result because the live result uses the full deep quantity optimizer. The composition stage has now demonstrated that it can reach the correct 29-unit basin without being given the final selection. An online implementation should screen many compositions with the structural and deep-greedy paths, then run the existing full optimizer on only the strongest one or two finalists.
 
+### Deep-finalist validation
+
+The two strongest distinct 29-unit basins were then run through the complete deep optimizer with the supplied inputs:
+
+- User selection, all Tier 7 troops and Black Dragon excluded: approximately `874.320B` ELD in `76.6` seconds
+- Screen alternative, all Tier 7 troops and Wind Lord excluded: approximately `867.294B` ELD in `75.8` seconds
+- Difference: approximately `7.026B` ELD in favor of the user's Black Dragon-excluded selection
+
+The run reproduced and slightly exceeded the `873.593B` screenshot. The fast screen and bounded local polish had ranked the Wind Lord-excluded alternative slightly higher, but the full deep optimizer reversed that order. Therefore, deeply optimizing only the screen's first-place candidate is not reliable enough. The online composition workflow should retain diverse basins and deep-optimize at least two finalists before choosing the proposed army.
+
+The deep comparison is intentionally available as a separate test command because it takes roughly two and a half minutes on the current test machine and should not run in the normal regression suite.
+
 ## Next offline step
 
 Expand the experiment matrix to different encounter formations, Arachne, and included mercenaries. Validate whether one or two final deep-optimizer runs are sufficient before integrating any control into the live calculator.
