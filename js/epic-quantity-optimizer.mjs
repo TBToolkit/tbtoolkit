@@ -1024,7 +1024,7 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   return {notes,alternatives,evaluations};
 }
 
-function optimizeEpicQuantities(args) {
+export function optimizeEpicQuantities(args) {
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
   const structureValidator=(result,chosen)=>hybridTroopStructurePreserved(result,chosen,minSep);
