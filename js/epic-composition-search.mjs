@@ -92,6 +92,71 @@ export function createReviewTierStructures({units,availableIds,mandatoryIds=[]})
   return structures.filter(structure=>structure.selectedIds.length);
 }
 
+export async function adaptiveTierLatticeSearch({structures,currentIds=[],evaluateSelection,beamWidth=20,maxEvaluations=500}){
+  const rows=structures??[];
+  if(!rows.length)return{results:[],evaluations:0,rounds:0};
+  const families=Object.keys(rows[0].floors??{}).sort();
+  const floorValues=Object.fromEntries(families.map(family=>[family,[...new Set(rows.map(row=>row.floors?.[family]??null))].sort((a,b)=>{
+    if(a===null)return-1;if(b===null)return 1;return a-b;
+  })]));
+  const floorSignature=floors=>families.map(family=>`${family}:${floors?.[family]??'-'}`).join('|');
+  const structureByFloors=new Map(rows.map(row=>[floorSignature(row.floors),row]));
+  const currentSignature=compositionSignature(currentIds);
+  const current=rows.find(row=>compositionSignature(row.selectedIds)===currentSignature);
+  const seeds=[];
+  const addSeed=row=>{if(row)seeds.push(row);};
+  addSeed(current);
+  // Multi-start diagonal structures cover top-only, broad, and intermediate
+  // tier bands without assuming a fixed number of useful lower tiers.
+  const maxDepth=Math.max(...families.map(family=>floorValues[family].length));
+  for(let depth=1;depth<maxDepth;depth++){
+    const floors={};
+    for(const family of families){const values=floorValues[family];floors[family]=values[Math.min(depth,values.length-1)];}
+    addSeed(structureByFloors.get(floorSignature(floors)));
+  }
+  // Axis starts let one family widen while the others remain at their highest
+  // tiers, protecting asymmetric solutions such as M7-M9 with G8-G9.
+  const topFloors=Object.fromEntries(families.map(family=>[family,floorValues[family].at(-1)]));
+  addSeed(structureByFloors.get(floorSignature(topFloors)));
+  for(const family of families)for(const floor of floorValues[family].slice(1,-1))addSeed(structureByFloors.get(floorSignature({...topFloors,[family]:floor})));
+
+  const cache=new Map(),results=[];
+  const evaluate=async structure=>{
+    const signature=floorSignature(structure.floors);
+    if(cache.has(signature))return null;
+    if(cache.size>=maxEvaluations)return null;
+    const candidate={...(await evaluateSelection(structure.selectedIds)),selectedIds:sortedUnique(structure.selectedIds),floors:{...structure.floors}};
+    cache.set(signature,candidate);results.push(candidate);return candidate;
+  };
+  const seeded=[];
+  for(const structure of new Map(seeds.map(row=>[floorSignature(row.floors),row])).values()){
+    const candidate=await evaluate(structure);if(candidate)seeded.push(candidate);
+  }
+  const rank=candidates=>candidates.sort((a,b)=>finite(b?.result?.expectedTotalLifetimeDamage)-finite(a?.result?.expectedTotalLifetimeDamage)||floorSignature(a.floors).localeCompare(floorSignature(b.floors)));
+  let frontier=rank(seeded).slice(0,Math.max(1,Math.floor(beamWidth))),rounds=0;
+  while(frontier.length&&cache.size<maxEvaluations){
+    const next=[];
+    for(const parent of frontier){
+      for(const family of families){
+        const values=floorValues[family],index=values.indexOf(parent.floors?.[family]??null);
+        for(const offset of [-1,1]){
+          const value=values[index+offset];if(value===undefined)continue;
+          const neighbor=structureByFloors.get(floorSignature({...parent.floors,[family]:value}));
+          if(!neighbor)continue;
+          const candidate=await evaluate(neighbor);if(candidate)next.push(candidate);
+          if(cache.size>=maxEvaluations)break;
+        }
+        if(cache.size>=maxEvaluations)break;
+      }
+      if(cache.size>=maxEvaluations)break;
+    }
+    const unseen=[...new Map(next.map(candidate=>[floorSignature(candidate.floors),candidate])).values()];
+    if(!unseen.length)break;
+    frontier=rank(unseen).slice(0,Math.max(1,Math.floor(beamWidth)));rounds++;
+  }
+  return{results:rank(results),evaluations:cache.size,rounds};
+}
+
 export function analyzeCompositionCandidate(candidate,policy={}){
   const resolved={...DEFAULT_POLICY,...policy};
   const result=candidate?.result??{};

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {calculateEpicStack} from '../js/epic-engine.mjs';
 import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from '../js/epic-quantity-optimizer.mjs';
 import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
-import {choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from '../js/epic-composition-search.mjs';
+import {adaptiveTierLatticeSearch,analyzeTierCompleteness,choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from '../js/epic-composition-search.mjs';
 
 const canonical=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const legacy=canonical.map(unit=>{
@@ -35,7 +35,11 @@ function optimizeReviewEvaluate(ids,testCase){
   return{selectedIds:ids,quantities,result:scoreEpicArmy({units:canonical,quantities,bonuses:testCase.bonuses})};
 }
 function optimizeIntermediate(candidate,testCase){
-  const optimized=optimizeEpicQuantities({units:canonical,selectedIds:candidate.selectedIds,bonuses:testCase.bonuses,capacityLimits:testCase.capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1});
+  const optimized=optimizeEpicQuantities({units:canonical,selectedIds:candidate.selectedIds,bonuses:testCase.bonuses,capacityLimits:testCase.capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:[.02,.005,.001],maxRoundsPerStage:3});
+  return{selectedIds:candidate.selectedIds,quantities:optimized.quantities,result:optimized.result};
+}
+function optimizeStrongerIntermediate(candidate,testCase){
+  const optimized=optimizeEpicQuantities({units:canonical,selectedIds:candidate.selectedIds,bonuses:testCase.bonuses,capacityLimits:testCase.capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:[.05,.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:8});
   return{selectedIds:candidate.selectedIds,quantities:optimized.quantities,result:optimized.result};
 }
 function tierSummary(ids){return[...new Set(ids.map(id=>byId.get(id)?.tier).filter(Boolean))].sort();}
@@ -47,10 +51,8 @@ function retainBest(map,row,limit){
   const keep=[...map.values()].sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage).slice(0,limit);
   map.clear();for(const candidate of keep)map.set(compositionSignature(candidate.selectedIds),candidate);
 }
-function tierScreen(testCase,evaluate,limit=32){
-  const retained=new Map();
-  for(const structure of structures)retainBest(retained,{...evaluate(structure.selectedIds,testCase),floors:structure.floors},limit);
-  return[...retained.values()].sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+async function tierScreen(testCase,evaluate){
+  return adaptiveTierLatticeSearch({structures,currentIds:originalIds,beamWidth:16,maxEvaluations:250,evaluateSelection:async ids=>evaluate(ids,testCase)});
 }
 function neighborhoodScreen(testCase,parents,evaluate,limit=64){
   const retained=new Map();
@@ -66,21 +68,27 @@ const structures=createReviewTierStructures({units:canonical,availableIds:availa
 const report=[];
 for(const testCase of cases){
   console.error(`[review] ${testCase.name}: Standard tier screen (${structures.length})`);
-  const standardTier=tierScreen(testCase,standardEvaluate);
+  const standardSearch=await tierScreen(testCase,standardEvaluate);
+  const standardTier=standardSearch.results;
   const standardNeighborhood=neighborhoodScreen(testCase,standardTier,standardEvaluate);
   const standardCurrent=standardEvaluate(originalIds,testCase);
   const standardCandidates=[standardCurrent,...standardNeighborhood].map(row=>({...row,selectionChanges:differences(originalIds,row.selectedIds).added.length+differences(originalIds,row.selectedIds).removed.length}));
   const standardDecision=choosePracticalComposition(standardCandidates,{units:canonical,availableIds:availability.availableIds});
 
   console.error(`[review] ${testCase.name}: Optimize quick tier screen (${structures.length})`);
-  const optimizeTier=tierScreen(testCase,optimizeReviewEvaluate);
+  const optimizeSearch=await tierScreen(testCase,optimizeReviewEvaluate);
+  const optimizeTier=optimizeSearch.results;
   const optimizeNeighborhood=neighborhoodScreen(testCase,optimizeTier,optimizeReviewEvaluate);
-  const optimizePromotion=[...new Map([...optimizeNeighborhood.slice(0,20),...optimizeTier.slice(0,12)].map(row=>[compositionSignature(row.selectedIds),row])).values()];
-  const optimizeIntermediateCandidates=[];
+  const optimizePromotion=[...new Map([...optimizeNeighborhood.slice(0,8),...optimizeTier.slice(0,4)].map(row=>[compositionSignature(row.selectedIds),row])).values()];
+  const optimizeShortlist=[];
   for(const [index,candidate] of optimizePromotion.entries()){
     if(index%8===0)console.error(`[review] ${testCase.name}: Optimize intermediate ${index+1}/${optimizePromotion.length}`);
-    optimizeIntermediateCandidates.push(optimizeIntermediate(candidate,testCase));
+    optimizeShortlist.push(optimizeIntermediate(candidate,testCase));
   }
+  optimizeShortlist.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
+  const completeCandidates=optimizeShortlist.filter(candidate=>analyzeTierCompleteness({selectedIds:candidate.selectedIds,availableIds:availability.availableIds,units:canonical}).partialTierGroups===0);
+  const optimizeSurvivors=[...new Map([...optimizeShortlist.slice(0,4),...completeCandidates.slice(0,2)].map(row=>[compositionSignature(row.selectedIds),row])).values()].slice(0,6);
+  const optimizeIntermediateCandidates=optimizeSurvivors.map(candidate=>optimizeStrongerIntermediate(candidate,testCase));
   const optimizeCurrent=optimizeIntermediate(optimizeReviewEvaluate(originalIds,testCase),testCase);
   const optimizeCandidates=[optimizeCurrent,...optimizeIntermediateCandidates].map(row=>({...row,selectionChanges:differences(originalIds,row.selectedIds).added.length+differences(originalIds,row.selectedIds).removed.length}));
   const optimizeDecision=choosePracticalComposition(optimizeCandidates,{units:canonical,availableIds:availability.availableIds});
@@ -88,7 +96,7 @@ for(const testCase of cases){
   const summarize=(decision,current)=>({currentEld:current.result.expectedTotalLifetimeDamage,recommendedEld:decision.chosen.eld,estimatedImprovementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,tiers:tierSummary(decision.chosen.selectedIds),selectedUnits:decision.chosen.selectedIds.length,partialTierGroups:decision.chosen.partialTierGroups,selectionChanges:decision.chosen.selectionChanges,differences:differences(originalIds,decision.chosen.selectedIds)});
   const standard=summarize(standardDecision,standardCurrent);
   const optimize=summarize(optimizeDecision,optimizeCurrent);
-  report.push({encounter:testCase.name,availability:{originalUnits:originalIds.length,inferredUnits:availability.availableIds.length,tierStructures:structures.length},methods:{standard,customOrderDefault:{...standard,matchesStandard:true},optimizeQuickReview:optimize}});
+  report.push({encounter:testCase.name,availability:{originalUnits:originalIds.length,inferredUnits:availability.availableIds.length,totalTierStructures:structures.length},search:{standardTierEvaluations:standardSearch.evaluations,standardTierRounds:standardSearch.rounds,optimizeTierEvaluations:optimizeSearch.evaluations,optimizeTierRounds:optimizeSearch.rounds,optimizeShortCandidates:optimizePromotion.length,optimizeStrongerCandidates:optimizeSurvivors.length},methods:{standard,customOrderDefault:{...standard,matchesStandard:true},optimizeQuickReview:optimize}});
 }
 
 if(report.some(row=>!row.methods.customOrderDefault.matchesStandard))throw new Error('Untouched Custom Order review must match Standard.');

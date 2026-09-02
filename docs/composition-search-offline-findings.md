@@ -138,7 +138,7 @@ The repeatable long test is available through `npm run test:composition-arachne`
 
 ## Next offline step
 
-Reduce the Review Selection tier and intermediate candidate budgets without changing the validated Doomsday or Arachne recommendations, then add an included-mercenary benchmark before integrating the control into the live calculator.
+Add an included-mercenary benchmark, then measure the validated adaptive search in a browser worker before integrating the Review Selection control into the live calculator.
 
 ## Review Selection method matrix
 
@@ -156,4 +156,12 @@ The first Optimize-oriented pass used only deterministic screening and repeated 
 
 The Doomsday recommendation deliberately keeps the complete M7 tier because the deeply measured benefit from removing Black Dragon is only `0.0348%`, inside the practical-noise threshold. The Arachne recommendation retains E8 and therefore reaches the correct structural basin before the user starts full optimization.
 
-The matrix validates accuracy but is not yet suitable for interactive use. Streaming the tier screen keeps memory bounded, but 7,999 Standard calculations and 30–31 intermediate optimizer passes per encounter take too long. The next performance step is to reduce the tier structures and intermediate promotions while requiring these exact recommendations to remain unchanged.
+The first matrix validated accuracy but was not suitable for interactive use: evaluating all 7,999 structures and refining 30–31 candidates took roughly thirteen minutes for both encounters. It was replaced with an adaptive best-first tier lattice that:
+
+- starts from the current selection, top-only tiers, diagonal tier bands, and asymmetric family-width seeds;
+- moves one family floor up or down at a time;
+- retains a diverse 16-candidate beam;
+- stops after at most 250 tier evaluations, without imposing a fixed lowest-tier window; and
+- uses successive halving: 11–12 candidates receive a short three-resolution refinement, then six survivors—including complete-tier alternatives—receive a stronger refinement.
+
+This reduced the tier search by `96.9%` and the stronger refinement set by about `80%`, completing the two-encounter matrix in under three minutes on the current test machine while preserving every Standard, untouched Custom Order, and Optimize recommendation exactly. An attempted reduction to eight short candidates and four stronger survivors changed the Doomsday recommendation and was rejected. The current 12/six breadth is therefore the smallest validated configuration, not an arbitrary tier cutoff.

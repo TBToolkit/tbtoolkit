@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
-  analyzeTierCompleteness,createCompositionNeighborhood,createReviewTierStructures,evaluateSelectionProposal,exhaustiveCompositionSearch,
+  adaptiveTierLatticeSearch,analyzeTierCompleteness,createCompositionNeighborhood,createReviewTierStructures,evaluateSelectionProposal,exhaustiveCompositionSearch,
   inferReviewAvailability,
   exhaustiveGroupCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
@@ -83,6 +83,9 @@ assert.equal(compositionSignature(allSelectedAvailability.availableIds),composit
 const tierStructures=createReviewTierStructures({units:reviewUnits,availableIds:availability.availableIds,mandatoryIds:['merc-owned']});
 assert.ok(tierStructures.some(row=>row.floors.GUARDSMAN===8&&row.selectedIds.includes('g8-flying')&&row.selectedIds.includes('g9-ranged')&&!row.selectedIds.includes('g9-flying')),'Review structures must preserve partial top-tier unlocks while including complete lower tiers');
 assert.ok(tierStructures.every(row=>row.selectedIds.includes('merc-owned')),'Explicitly owned mandatory mercenaries must remain in every review tier structure');
+const lattice=await adaptiveTierLatticeSearch({structures:tierStructures,currentIds:['g9-ranged','s9-melee','m9-flying','e9','merc-owned'],beamWidth:8,maxEvaluations:100,evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.includes('g8-flying')&&ids.includes('m8-flying')?2000:ids.length}})});
+assert.ok(lattice.evaluations<=100,'Adaptive tier search must respect its evaluation budget');
+assert.equal(Math.max(...lattice.results.map(row=>row.result.expectedTotalLifetimeDamage)),2000,'Adaptive tier search must traverse downward to promising lower tiers without a fixed tier window');
 
 const monsterIds=['m7-flying','m7-mounted','m7-melee','m7-ranged'];
 const completenessUnits=monsterIds.map(id=>({id,category:'monster',tier:'M7',tierNumber:7}));
