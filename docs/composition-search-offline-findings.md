@@ -73,6 +73,19 @@ The run reproduced and slightly exceeded the `873.593B` screenshot. The fast scr
 
 The deep comparison is intentionally available as a separate test command because it takes roughly two and a half minutes on the current test machine and should not run in the normal regression suite.
 
+### Hierarchical validation
+
+The five-stage hierarchy introduced for Arachne was then run unchanged with the Doomsday inputs. It evaluated all `4,095` tier structures, expanded `1,950` unit-level structures around eight tier leaders, intermediate-optimized 30 candidates, fully optimized four finalists, and deeply audited the strongest neighboring challenger.
+
+The known 29-unit army was not supplied to the search. Its 30-unit tier parent ranked second in the exhaustive tier stage; the unit-neighborhood stage independently generated the Black Dragon removal, promoted it, and deep-optimized it. Results:
+
+- All Tier 7 troops and Black Dragon excluded: approximately `874.320B` ELD
+- Intact 30-unit tier parent: approximately `874.015B` ELD
+- Difference: approximately `304.197M` ELD, or `0.0348%`
+- Strongest other fully optimized one-move audit challenger, with Destructive Colossus excluded: approximately `872.816B` ELD
+
+Although the 30-unit parent falls within the provisional `0.05%` practical-tie range, it has one more squad and lower ELD, so the 29-unit army remains the practical and mathematical choice. The repeatable hierarchy is available through `npm run test:composition-doomsday-hierarchical`.
+
 ## User-provided Arachne case
 
 The Arachne benchmark uses the second supplied input set:
