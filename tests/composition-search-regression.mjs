@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {
-  DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,
+  DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
   evaluateSelectionProposal,exhaustiveCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
 
@@ -40,6 +40,9 @@ assert.equal(Math.max(...exhaustive.results.map(row=>row.result.expectedTotalLif
 const bounded=await boundedCompositionSearch({candidateIds:['a','b','c'],beamWidth:8,maxEvaluations:20,evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.reduce((sum,id)=>sum+syntheticValues.get(id),0),capacities:{},squads:ids.map(id=>({id,name:id,quantity:1,expectedLifetimeDamage:syntheticValues.get(id)}))}})});
 assert.equal(Math.max(...bounded.results.map(row=>row.result.expectedTotalLifetimeDamage)),1600,'Bounded search must match the exhaustive maximum when its budget covers the small pool');
 assert.ok(bounded.evaluations<=20,'Bounded search must respect its evaluation budget');
+const seeded=await boundedCompositionSearch({candidateIds:['a','b','c'],initialSelections:[['a']],beamWidth:1,maxEvaluations:4,evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length===1&&ids[0]==='a'?2000:ids.reduce((sum,id)=>sum+syntheticValues.get(id),0),capacities:{},squads:ids.map(id=>({id,name:id,quantity:1,expectedLifetimeDamage:1}))}})});
+assert.ok(seeded.results.some(row=>compositionSignature(row.selectedIds)==='a'),'Bounded search must evaluate supplied structural starting selections');
+assert.equal(Math.max(...seeded.results.map(row=>row.result.expectedTotalLifetimeDamage)),2000,'A strong structural seed must be able to enter the beam');
 const fixedMercenary=await exhaustiveCompositionSearch({candidateIds:['troop-a','troop-b'],mandatoryIds:['merc-owned'],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length,capacities:{},squads:ids.map(id=>({id,name:id,quantity:1,expectedLifetimeDamage:1}))}})});
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.includes('merc-owned')),'Fixed selected mercenaries must remain in every explored composition');
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.every(id=>['troop-a','troop-b','merc-owned'].includes(id))),'Composition search must never add an unselected mercenary');

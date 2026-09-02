@@ -94,7 +94,7 @@ export async function exhaustiveCompositionSearch({candidateIds,mandatoryIds=[],
 }
 
 export async function boundedCompositionSearch({
-  candidateIds,mandatoryIds=[],evaluateSelection,beamWidth=12,maxEvaluations=250
+  candidateIds,mandatoryIds=[],initialSelections=[],evaluateSelection,beamWidth=12,maxEvaluations=250
 }){
   const candidates=sortedUnique(candidateIds),mandatory=new Set(mandatoryIds);
   const cache=new Map(),results=[];
@@ -107,7 +107,16 @@ export async function boundedCompositionSearch({
   };
   const full=await evaluate(candidates);
   if(!full)return{results,evaluations:0,depths:0};
-  let frontier=[full],depths=0;
+  const seeded=[full];
+  for(const ids of initialSelections){
+    const valid=sortedUnique(ids).filter(id=>candidates.includes(id)||mandatory.has(id));
+    for(const id of mandatory)if(!valid.includes(id))valid.push(id);
+    if(!valid.length)continue;
+    const seed=await evaluate(valid);
+    if(seed)seeded.push(seed);
+  }
+  seeded.sort((a,b)=>finite(b?.result?.expectedTotalLifetimeDamage)-finite(a?.result?.expectedTotalLifetimeDamage)||compositionSignature(a.selectedIds).localeCompare(compositionSignature(b.selectedIds)));
+  let frontier=[...new Map(seeded.map(candidate=>[compositionSignature(candidate.selectedIds),candidate])).values()].slice(0,Math.max(1,Math.floor(beamWidth))),depths=0;
   while(frontier.length&&cache.size<maxEvaluations){
     const next=[];
     for(const parent of frontier){

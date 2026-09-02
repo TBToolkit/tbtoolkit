@@ -79,8 +79,22 @@ function evaluateUserSelection(ids){
   const result=scoreEpicArmy({units:army,quantities,bonuses:userBonuses});
   return{selectedIds:ids,selectionChanges:userPool.length-ids.length,quantities,result};
 }
-const userBounded=await boundedCompositionSearch({candidateIds:userPool,beamWidth:16,maxEvaluations:500,evaluateSelection:async ids=>evaluateUserSelection(ids)});
-const userScreenFinalists=userBounded.results.slice().sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage).slice(0,3);
+const userStructuralSeeds=[];
+for(const tierNumber of [7,8,9]){
+  userStructuralSeeds.push(userPool.filter(id=>!(byId.get(id).category==='troop'&&Number(byId.get(id).tierNumber)===tierNumber)));
+  userStructuralSeeds.push(userPool.filter(id=>!(byId.get(id).category==='monster'&&Number(byId.get(id).tierNumber)===tierNumber)));
+}
+const userBounded=await boundedCompositionSearch({candidateIds:userPool,initialSelections:userStructuralSeeds,beamWidth:16,maxEvaluations:500,evaluateSelection:async ids=>evaluateUserSelection(ids)});
+const userDeepGreedy=await boundedCompositionSearch({candidateIds:userPool,initialSelections:userStructuralSeeds,beamWidth:1,maxEvaluations:500,evaluateSelection:async ids=>evaluateUserSelection(ids)});
+const combinedUserScreens=[...new Map([...userBounded.results,...userDeepGreedy.results].map(candidate=>[compositionSignature(candidate.selectedIds),candidate])).values()];
+const userManualSelection=userPool.filter(id=>{
+  const unit=byId.get(id);
+  if(unit.category==='troop'&&Number(unit.tierNumber)===7)return false;
+  if(unit.id==='monster-m7-flying-black-dragon')return false;
+  return true;
+});
+const userManualScreen=evaluateUserSelection(userManualSelection);
+const userScreenFinalists=combinedUserScreens.slice().sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage).slice(0,3);
 const userCurrentScreen=evaluateUserSelection(userPool);
 const userCurrentStarted=performance.now();
 const userCurrentOptimized=optimizeEpicQuantities({units:army,selectedIds:userPool,bonuses:userBonuses,capacityLimits:userCapacityLimits,initialQuantities:userCurrentScreen.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1});
@@ -112,7 +126,10 @@ const report={
     bonuses:userBonuses,
     boundedEvaluations:userBounded.evaluations,
     boundedDepths:userBounded.depths,
-    screenThresholds:thresholdTable(userBounded.results),
+    deepGreedyEvaluations:userDeepGreedy.evaluations,
+    deepGreedyDepths:userDeepGreedy.depths,
+    screenThresholds:thresholdTable(combinedUserScreens),
+    manualBenchmark:{selectedUnits:userManualSelection.length,screenEld:userManualScreen.result.expectedTotalLifetimeDamage,foundBySearch:combinedUserScreens.some(candidate=>compositionSignature(candidate.selectedIds)===compositionSignature(userManualSelection)),excluded:userPool.filter(id=>!userManualSelection.includes(id)).map(id=>({id,name:byId.get(id)?.name,tier:byId.get(id)?.tier}))},
     finalistPolishMode:'bounded local quantity polish from each deterministic screen seed',
     currentSelection:{eld:userCurrent.result.expectedTotalLifetimeDamage,squads:userCurrent.result.squads.length,elapsedMs:userCurrent.elapsedMs},
     polishedFinalists:userPolished.map(candidate=>({selectedUnits:candidate.selectedIds.length,excludedUnits:userPool.length-candidate.selectedIds.length,eld:candidate.result.expectedTotalLifetimeDamage,squads:candidate.result.squads.length,microSquads:choosePracticalComposition([candidate])?.chosen.microSquads,elapsedMs:candidate.elapsedMs,signature:compositionSignature(candidate.selectedIds)})),

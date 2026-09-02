@@ -42,17 +42,25 @@ The September 2 test uses the exact supplied inputs:
 - Doomsday formation: Flying, Mounted, Melee, and Ranged
 - Candidate tiers: G7–G9, S7–S9, E7–E9, and M7–M9 (`39` selected units)
 
-The bounded screen evaluated `500` compositions through two exclusion depths. A bounded local quantity polish was then applied to the current selection and the three strongest screen finalists.
+The first bounded screen spent almost its entire `500`-evaluation budget on one- and two-unit removals. It could not reach the user's manually discovered 29-unit army, which removes all nine selected Tier 7 troops plus Black Dragon. The live calculator produced approximately `873.593B` ELD for that army.
+
+The corrected offline search adds:
+
+- structural starting selections that remove a whole troop or monster tier;
+- a broad shallow beam for nearby alternatives; and
+- a deep greedy path that reached 29 exclusion depths within its own `500`-evaluation budget.
+
+The corrected search independently evaluated the exact manual 29-unit selection and retained it among the strongest finalists. Its screen also found nearby 29-unit variants, including a variant that keeps Black Dragon and excludes Wind Lord. Bounded local polishing produced:
 
 - Current 39-unit selection: approximately `778.403B` ELD
-- Best 37-unit finalist: approximately `798.133B` ELD
-- Improvement: approximately `2.535%`
-- Proposed exclusions: **Siege Ballistae 7 (E7)** and **Heavy Knight 7 (S7)**
+- Exact manual selection: approximately `863.952B` ELD with local polishing
+- Best locally polished nearby finalist: approximately `864.188B` ELD
+- Local comparison improvement: approximately `11.021%`
 - Added units: none
-- Micro squads in the proposed result: none
+- Micro squads: none
 
-This exceeds the provisional `0.05%` proposal threshold and should produce an accept/reject prompt. These figures are from bounded local polishing for composition comparison, not three independent runs of the full deep optimizer. Attempting to run the full deep optimizer for every large-pool finalist was prohibitively slow and confirms that an online implementation must screen many compositions cheaply, then deeply optimize only the final one or two.
+The offline local-polish values are not expected to equal the live `873.593B` result because the live result uses the full deep quantity optimizer. The composition stage has now demonstrated that it can reach the correct 29-unit basin without being given the final selection. An online implementation should screen many compositions with the structural and deep-greedy paths, then run the existing full optimizer on only the strongest one or two finalists.
 
 ## Next offline step
 
-Add a bounded deterministic composition search for larger pools, then compare its finalists against exhaustive results on small pools. Expand the experiment matrix to lower tiers, different encounter formations, Arachne, and included mercenaries before integrating any control into the live calculator.
+Expand the experiment matrix to different encounter formations, Arachne, and included mercenaries. Validate whether one or two final deep-optimizer runs are sufficient before integrating any control into the live calculator.
