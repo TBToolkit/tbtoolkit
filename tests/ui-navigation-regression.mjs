@@ -38,5 +38,7 @@ assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStreng
 assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');
 assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible\}/, 'Battle workspace Selection columns must grow without internal vertical scrolling');
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
+assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?details\.querySelectorAll\('\.hierarchy-unit input\[data-unit-id\]'\)[\s\S]*?next\[category\]\.add\(input\.dataset\.unitId\)/, 'A fully selected rendered group must preserve every descendant unit during reconciliation');
+assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 
 console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));

@@ -1842,7 +1842,14 @@ function reconcileSelectionsFromRenderedUI(){
     if(!master)return;
     seen[category]=true;
     if(master.checked&&!master.indeterminate){
-      for(const unit of units[category])if(String(unit.level)===String(level))next[category].add(unit.id);
+      // The rendered descendants are the authoritative members of this
+      // selection group. Mercenary group labels use a Roman tier (for
+      // example, "II" / tier 2), while individual mercenary levels include
+      // a subtype (for example, "2-COM"). Comparing those level strings can
+      // therefore erase a fully selected mercenary tier during reconciliation.
+      details.querySelectorAll('.hierarchy-unit input[data-unit-id]').forEach(input=>{
+        next[category].add(input.dataset.unitId);
+      });
       return;
     }
     // Partial or unchecked levels use the leaf checkboxes that are available.
