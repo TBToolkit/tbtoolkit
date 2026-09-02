@@ -186,7 +186,7 @@ button { font: inherit; }
 /* Interior pages */
 .page-hero { padding: 76px 0 42px; border-bottom: 1px solid var(--line); background: radial-gradient(circle at 75% 0%, rgba(14,181,255,.10), transparent 34%); }
 .breadcrumb { color: var(--muted); font-size: .85rem; margin-bottom: 15px; }
-.page-title { margin: 0; font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; font-size: clamp(2.8rem, 5vw, 4.8rem); letter-spacing: .01em; text-transform: uppercase; }
+.page-title { margin: 0; font-family: "Segoe UI", Inter, Arial, sans-serif; font-size: clamp(2.8rem, 5vw, 4.8rem); letter-spacing: .01em; text-transform: uppercase; }
 .page-intro { color: var(--muted); font-size: 1.02rem; line-height: 1.65; max-width: 760px; }
 .section { padding: 58px 0; }
 .section-compact { padding: 42px 0; }
@@ -859,7 +859,7 @@ button:focus-visible{
   .war-council-mobile-copy h1{
     margin:0;
     color:#f5f6f7;
-    font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+    font-family:"Segoe UI",Inter,Arial,sans-serif;
     font-size:3rem;
     line-height:.94;
     letter-spacing:-.035em;
@@ -1007,7 +1007,7 @@ button:focus-visible{
 .war-council-copy h1{
   margin:0;
   color:#f5f6f7;
-  font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+  font-family:"Segoe UI",Inter,Arial,sans-serif;
   font-size:clamp(3.2rem,5.1vw,5.7rem);
   line-height:.9;
   letter-spacing:-.035em;
