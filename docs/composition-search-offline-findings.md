@@ -12,6 +12,20 @@ This checkpoint does not change the Battle Calculator interface or shared worksp
 - A micro squad uses less than `0.05%` of its capacity pool **and** contributes less than `0.05%` of total ELD. This preserves small squads that have a meaningful combat effect.
 - Do not prompt to change the shared selection unless ELD improves by at least `0.05%` and the proposed selection is different.
 
+## Review Selection availability policy
+
+The optional Review Selection workflow treats the current selection as evidence of unit availability, not necessarily as the army the user wants to preserve:
+
+- At the highest selected Guardsman or Specialist tier, only the individually selected units are available. Every unit in lower tiers of that class is inferred as available.
+- Selecting any Monster makes its complete tier and all lower Monster tiers available.
+- Selecting an Engineer makes that Engineer and all lower Engineer tiers available.
+- Mercenary ownership is never inferred; only explicitly selected Mercenaries are available.
+- Review never considers a unit above the highest selected tier for its class.
+
+Within the `0.05%` practical-noise range, ranking first avoids negligible micro squads, then prefers complete available tiers and fewer partially used tiers, and only then considers selection changes and squad count. A tier is complete relative to the inferred available pool: if only one top-tier Guardsman is known to be unlocked, using that one unit is complete for that tier.
+
+This policy intentionally prefers the complete 30-unit Doomsday tier structure over the 29-unit partial-M7 structure when their estimated difference is only `0.0348%`. A partial tier still wins whenever its improvement exceeds the practical-noise threshold.
+
 ## Offline coverage
 
 - Synthetic regression: a four-squad mathematical maximum that improves ELD by `0.04%` but adds two negligible squads loses to the simpler two-squad army at the `0.05%` practical tie threshold.

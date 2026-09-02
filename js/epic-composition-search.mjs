@@ -2,7 +2,8 @@ const DEFAULT_POLICY=Object.freeze({
   practicalTiePct:.05,
   minimumProposalImprovementPct:.05,
   microCapacitySharePct:.05,
-  microDamageSharePct:.05
+  microDamageSharePct:.05,
+  preferCompleteTiers:true
 });
 
 function finite(value,fallback=0){const n=Number(value);return Number.isFinite(n)?n:fallback;}
@@ -10,6 +11,56 @@ function sortedUnique(values){return [...new Set(values??[])].sort();}
 function pctChange(from,to){return from>0?(to/from-1)*100:(to>0?Infinity:0);}
 
 export function compositionSignature(ids){return sortedUnique(ids).join('|');}
+
+function reviewGroupKey(unit){
+  if(unit?.category==='monster')return`monster|${unit.tier}`;
+  if(unit?.category==='troop')return`troop|${String(unit.unitClass??'').toUpperCase()}|${unit.tier}`;
+  return null;
+}
+
+export function inferReviewAvailability({units,selectedIds}){
+  const rows=units??[],byId=new Map(rows.map(unit=>[unit.id,unit]));
+  const selected=sortedUnique(selectedIds).filter(id=>byId.has(id)),selectedSet=new Set(selected);
+  const available=new Set(selected);
+  const unlockFamilies=['GUARDSMAN','SPECIALIST','ENGINEER'];
+  for(const unitClass of unlockFamilies){
+    const selectedFamily=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='troop'&&String(unit.unitClass).toUpperCase()===unitClass);
+    if(!selectedFamily.length)continue;
+    const highestTier=Math.max(...selectedFamily.map(unit=>finite(unit.tierNumber)));
+    for(const unit of rows){
+      if(unit.category!=='troop'||String(unit.unitClass).toUpperCase()!==unitClass)continue;
+      const tier=finite(unit.tierNumber);
+      if(tier<highestTier||(tier===highestTier&&(unitClass==='ENGINEER'||selectedSet.has(unit.id))))available.add(unit.id);
+    }
+  }
+  const selectedMonsters=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='monster');
+  if(selectedMonsters.length){
+    const highestTier=Math.max(...selectedMonsters.map(unit=>finite(unit.tierNumber)));
+    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier)available.add(unit.id);
+  }
+  // Mercenary ownership cannot be inferred. Only explicitly selected mercenaries
+  // enter the available pool (already added above).
+  return{selectedIds:selected,availableIds:sortedUnique([...available])};
+}
+
+export function analyzeTierCompleteness({selectedIds,availableIds,units}){
+  const selected=new Set(selectedIds??[]),available=new Set(availableIds??[]),groups=new Map();
+  for(const unit of units??[]){
+    if(!available.has(unit.id))continue;
+    const key=reviewGroupKey(unit);if(!key)continue;
+    if(!groups.has(key))groups.set(key,[]);groups.get(key).push(unit.id);
+  }
+  let completeTierGroups=0,partialTierGroups=0,incompleteUnits=0;
+  const tierGroups=[];
+  for(const [key,ids] of groups){
+    const selectedCount=ids.filter(id=>selected.has(id)).length;
+    if(!selectedCount)continue;
+    const complete=selectedCount===ids.length;
+    if(complete)completeTierGroups++;else{partialTierGroups++;incompleteUnits+=ids.length-selectedCount;}
+    tierGroups.push({key,availableUnits:ids.length,selectedUnits:selectedCount,complete});
+  }
+  return{completeTierGroups,partialTierGroups,incompleteUnits,tierGroups};
+}
 
 export function analyzeCompositionCandidate(candidate,policy={}){
   const resolved={...DEFAULT_POLICY,...policy};
@@ -26,13 +77,17 @@ export function analyzeCompositionCandidate(candidate,policy={}){
     if(micro)microSquads++;
     return{id:row.id,name:row.name,quantity:finite(row.quantity),capacitySharePct,damageSharePct,micro};
   });
+  const tierCompleteness=resolved.preferCompleteTiers&&resolved.units&&resolved.availableIds
+    ?analyzeTierCompleteness({selectedIds:candidate?.selectedIds??rows.map(row=>row.id),availableIds:resolved.availableIds,units:resolved.units})
+    :{completeTierGroups:0,partialTierGroups:0,incompleteUnits:0,tierGroups:[]};
   return{
     ...candidate,
     eld:totalDamage,
     selectedIds:sortedUnique(candidate?.selectedIds??rows.map(row=>row.id)),
     squadCount:rows.length,
     microSquads,
-    squadMetrics
+    squadMetrics,
+    ...tierCompleteness
   };
 }
 
@@ -44,8 +99,10 @@ export function choosePracticalComposition(candidates,policy={}){
   const eligible=analyzed.filter(candidate=>(maximum.eld-candidate.eld)/maximum.eld*100<=resolved.practicalTiePct+1e-9);
   eligible.sort((a,b)=>
     a.microSquads-b.microSquads||
-    a.squadCount-b.squadCount||
+    a.partialTierGroups-b.partialTierGroups||
+    a.incompleteUnits-b.incompleteUnits||
     finite(a.selectionChanges)-finite(b.selectionChanges)||
+    a.squadCount-b.squadCount||
     b.eld-a.eld||
     compositionSignature(a.selectedIds).localeCompare(compositionSignature(b.selectedIds))
   );
