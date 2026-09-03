@@ -6,9 +6,9 @@
 <meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Compare Standard, Custom Order, and optimized Epic calculations." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=44" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=191" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=195" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
-<script src="js/epic-stacker.js?v=192" type="module"></script>
+<script src="js/epic-stacker.js?v=193" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page">
 <header class="site-header">
@@ -31,12 +31,15 @@
 <div class="breadcrumb">Home / Stacking</div>
 <h1>Battle Calculator</h1>
 
-<p class="mode-description battle-page-description" id="modeDescription">Build an army for an Epic Monster or Player vs. Player battle. Enter your army limits and combat bonuses. Select the units you want to use. Choose Standard, Custom Order, or Optimize. Optimize is available for supported Epic battles.</p>
-<div class="battle-calculator-notes" aria-label="Battle Calculator assumptions">
+<p class="mode-description battle-page-description" id="modeDescription">Build and optimize an army for Epic Monster or Player vs. Player battles.</p>
+<details class="battle-calculator-notes">
+<summary>Assumptions &amp; saved data</summary>
+<div class="battle-calculator-note-content">
 <p><strong>Account level:</strong> The Battle Calculator uses a fully researched Tier 9 account as its standard. You can also use it for a developing account.</p>
 <p><strong>Research and talents:</strong> The calculator assumes that the relevant Health and Strength talent points are complete or spread evenly. It also assumes that Army Modernization and Monster Boost research are complete.</p>
 <p><strong>Saved on this device:</strong> Your Player Accounts, encounters, selections, and calculator inputs are saved in this browser. Export a .biff file to make a backup or move an account to another device.</p>
 </div>
+</details>
 </div>
 </div>
 
@@ -121,28 +124,28 @@
 <div class="limit-list compact-limit-list">
 
 <div class="limit-row">
-<div class="limit-name">Leadership</div>
+<div class="limit-title-row"><div class="limit-name">Leadership</div>
+<label class="auto-fill-toggle"><input checked id="autoLeadership" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="leadership">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="leadership" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input checked id="autoLeadership" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="leadershipFill">Fill</label><div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
 
 <div class="limit-row">
-<div class="limit-name">Authority</div>
+<div class="limit-title-row"><div class="limit-name">Authority</div>
+<label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="authority">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="authority" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="authorityFill">Fill</label><div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="10.00"/><span>%</span></div></div>
 </div>
 
 <div class="limit-row">
-<div class="limit-name">Dominance</div>
+<div class="limit-title-row"><div class="limit-name">Dominance</div>
+<label class="auto-fill-toggle"><input checked id="autoDominance" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="dominance">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="dominance" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input checked id="autoDominance" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="dominanceFill">Fill</label><div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
 
 </div>
-<p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Uncheck it to enter your own fill percentage.</p><div class="global-player-setting temple-setting">
+<p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Turn it off to enter your own fill percentage.</p><div class="global-player-setting temple-setting">
 <label for="templeLevel"><span class="field-label">Temple Level</span>
 <select class="epic-input temple-level-select" id="templeLevel"></select></label>
 <div class="temple-bonus-copy"><span>Revival cost divisor</span><strong id="templeMultiplier">1.00×</strong></div>
@@ -233,23 +236,23 @@
 
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
-<div class="selection-card-title"><div><h3>Guardsmen</h3><span id="guardsmanCount">0 selected</span></div><label class="category-master"><input id="guardsmanMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="guardsmanSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Guardsmen</span><span id="guardsmanCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="guardsmanMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list" id="guardsmanSelection"></div>
 </article>
 <article class="selection-card selection-specialists">
-<div class="selection-card-title"><div><h3>Specialists</h3><span id="specialistCount">0 selected</span></div><label class="category-master"><input id="specialistMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="specialistSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Specialists</span><span id="specialistCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="specialistMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list" id="specialistSelection"></div>
 </article>
 <article class="selection-card selection-engineers">
-<div class="selection-card-title"><div><h3>Engineers</h3><span id="engineerCount">0 selected</span></div><label class="category-master"><input id="engineerMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="engineerSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Engineers</span><span id="engineerCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="engineerMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list" id="engineerSelection"></div>
 </article>
 <article class="selection-card selection-monsters">
-<div class="selection-card-title"><div><h3>Monsters</h3><span id="monsterCardCount">0 selected</span></div><label class="category-master"><input id="monsterMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="monsterSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Monsters</span><span id="monsterCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="monsterMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list" id="monsterSelection"></div>
 </article>
 <article class="selection-card selection-mercenaries">
-<div class="selection-card-title"><div><h3>Mercenaries</h3><span id="mercenaryCardCount">0 selected</span></div><label class="category-master"><input id="mercenaryMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="mercenarySelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Mercenaries</span><span id="mercenaryCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="mercenaryMaster" type="checkbox"/><span>All</span></label></div>
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
@@ -393,3 +396,4 @@
 <footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking</a><a href="chests.html">Chest Data</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms &amp; Disclaimer</a></nav></div></footer>
 </body>
 </html>
+

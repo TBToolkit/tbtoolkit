@@ -40,6 +40,16 @@ assert.match(css,/\.result-row\.compact-result-row\{[\s\S]*?padding:3px 7px;/, '
 assert.doesNotMatch(source,/Battle Calculator Beta/, 'Results and reset copy must not describe the calculator as Beta');
 assert.doesNotMatch(source,/Higher squad health|Lower squad health/, 'The chart must not render the old horizontal health labels');
 assert.match(html,/Saved on this device:[\s\S]*?saved in this browser/, 'The page must explain local browser storage');
+assert.match(html,/<details class="battle-calculator-notes">[\s\S]*?<summary>Assumptions &amp; saved data<\/summary>/, 'Calculator assumptions must be available without delaying the primary workflow');
+assert.equal((html.match(/class="selection-card-toggle"/g)||[]).length,5,'Every Selection category must have a mobile disclosure control');
+assert.match(source,/selectionCardMedia=window\.matchMedia\('\(max-width:600px\)'\)/, 'Selection category disclosures must be scoped to the mobile layout');
+assert.match(css,/\.selection-card\.is-collapsed \.hierarchy-list\{display:none\}/, 'Collapsed mobile Selection categories must hide their unit hierarchy');
+assert.match(css,/\.battle-mode-active \.selection-optimize-row\{[\s\S]*?position:sticky;[\s\S]*?bottom:10px;/, 'The optimization action must remain reachable during long Selection workflows');
+assert.equal((html.match(/class="limit-title-row"/g)||[]).length,3,'Each Max Fill switch must be grouped directly with its capacity title');
+assert.match(css,/\.compact-limit-list \.limit-title-row\{[\s\S]*?display:flex;[\s\S]*?gap:11px;/, 'Capacity titles and Max Fill switches must use a consistent close association');
+assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?width:100%!important;[\s\S]*?max-width:100%!important;/, 'Fill controls must remain bounded by their capacity cards');
+assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
+assert.match(html,/css\/epic-stacker\.css\?v=195/, 'Battle Calculator must request the title-associated Max Fill layout build');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
 assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
@@ -56,3 +66,4 @@ assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?deta
 assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 
 console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));
+
