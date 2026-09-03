@@ -3959,3 +3959,25 @@ body.battle-mode-active .compact-limit-list .auto-fill-toggle input:focus-visibl
   }
 }
 
+/* v195 — associate Max Fill directly with its capacity title */
+body.battle-mode-active .compact-limit-list .limit-row{
+  grid-template-columns:minmax(0,1fr) minmax(74px,88px)!important;
+  grid-template-areas:
+    "title title"
+    "maximum fill"!important;
+}
+body.battle-mode-active .compact-limit-list .limit-title-row{
+  grid-area:title;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+}
+body.battle-mode-active .compact-limit-list .limit-name{
+  flex:0 1 auto;
+}
+body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
+  flex:0 0 auto;
+  justify-self:auto!important;
+}
+
