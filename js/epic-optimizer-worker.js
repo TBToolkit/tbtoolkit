@@ -1,4 +1,4 @@
-/* TB Toolkit Epic Optimizer 2.0 Paired Counterfactual v191
+/* TB Toolkit Epic Optimizer 2.3 G/S Conventional Tie-break v192
  *
  * Combat physics are loaded from the same authoritative module used by
  * Standard and Custom. Search strategy remains local to this worker.
@@ -29,7 +29,7 @@ async function loadSharedCombat(){
   return sharedCombatPromise;
 }
 
-const EPIC_OPTIMIZER_CORE_BUILD = '1.1-search-core';
+const EPIC_OPTIMIZER_CORE_BUILD = '1.2-conventional-gs';
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 
 function finite(v, label) {
@@ -1234,18 +1234,21 @@ function adaptiveDeathPositionRefine({
 
 function practicalStructureScore(result){
   const rows=[...(result?.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
-  const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0&&String(s.combatType||'').toUpperCase()!=='SIEGE');
+  // Only Guardsmen and Specialists participate in the player-facing
+  // conventionality preference. Engineers are intentionally sacrificial in
+  // Epic battles; monsters and mercenaries retain purely mathematical order.
+  const productive=rows.filter(s=>['G','S'].includes(String(s.tier||'').slice(0,1).toUpperCase())&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0);
   const damages=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);
   const median=damages.length?Math.max(1,damages[Math.floor(damages.length/2)]):1;
   let score=0;
-  for(const s of productive){
-    const death=Number(s.predictedDeathPosition??999);
-    if(death<=4){
-      const damageWeight=Math.max(.5,Number(s.expectedDamagePerOpportunity||0)/median);
-      const timingWeight=5-death;
-      // Productive opening sacrifices dominate the practical tie-break.
-      score+=1000+100*timingWeight*damageWeight;
-    }
+  const perceivedValue=s=>{
+    const tier=Number((String(s.tier||'').match(/\d+/)||[0])[0]);
+    return (Number(s.expectedDamagePerOpportunity||0)/median)*(1+.08*Math.max(0,tier-1));
+  };
+  for(let early=0;early<productive.length;early++)for(let late=early+1;late<productive.length;late++){
+    const excess=perceivedValue(productive[early])-perceivedValue(productive[late]);
+    if(excess<=.03)continue;
+    score+=excess*(1+Math.log2(1+late-early));
   }
   // Prefer a little more spacing when two structures have the same opening-sacrifice profile.
   const minSep=Number(result?.separationSummary?.minPct);
@@ -1291,6 +1294,7 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   const candidates=ordered.filter(s=>{
     const death=Number(s.predictedDeathPosition??999),u=selectedById.get(s.id);
     if(!u||death>earlyLimit)return false;
+    if(!['G','S'].includes(String(u.tier||'').slice(0,1).toUpperCase()))return false;
     if(String(u.combatType||'').toUpperCase()==='SIEGE')return false;
     if(!(Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0))return false;
     const damage=Number(s.expectedDamagePerOpportunity||0),tierNum=Number((String(u.tier||'').match(/\d+/)||[0])[0]);
@@ -1549,7 +1553,7 @@ function optimizeEpicQuantities(args) {
 
   // First apply the existing practical tie-break. Optimizer 2.2 then performs a
   // very fine convergence search from the army we would otherwise return.
-  let practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.05});
+  let practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.25});
   out.quantities={...practicalChoice.chosen.quantities};
   out.result=practicalChoice.chosen.result;
 
@@ -1580,7 +1584,7 @@ function optimizeEpicQuantities(args) {
   practicalChoice=chooseNearOptimalPractical({
     maximum:mathematicalMaximum,
     candidates:practicalPool,
-    tolerancePct:.05
+    tolerancePct:.25
   });
   out.quantities={...practicalChoice.chosen.quantities};
   out.result=practicalChoice.chosen.result;
@@ -1596,7 +1600,7 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.finalConvergenceEvaluations=convergence.evaluations;
   out.diagnostics.finalConvergenceBest=Number(convergence.best?.result?.expectedTotalLifetimeDamage||0);
   out.diagnostics.maximumExpectedLifetimeDamage=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
-  out.diagnostics.nearOptimalTolerancePct=.05;
+  out.diagnostics.nearOptimalTolerancePct=.25;
   out.diagnostics.practicalTieBreakApplied=out.result!==practicalChoice.mathematicalMaximum.result;
   out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
   out.diagnostics.practicalStructureScore=practicalChoice.score;

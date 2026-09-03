@@ -224,6 +224,19 @@ A clean Doomsday fixture was promoted to a full optimizer run: G9/G8, S9/S8, E9/
 
 A targeted monster counterfactual produced `1.097384878T` ELD, a loss of only `0.02031%`. It moved Fire Phoenix 2 beyond the opening cycle without changing the troop conventionality score, but Fire Phoenix 1 and Wind Lord remained at positions 2 and 3. This validates a narrow early-monster preference while also demonstrating that a single counterfactual is insufficient. The next offline algorithm should retain a small beam of progressively protected monster basins, permitting slightly worse intermediate moves while enforcing the overall `0.25%` ceiling.
 
+The early-monster work was subsequently deferred. Monster and mercenary positions will not participate in the near-optimal conventionality preference. Engineers are also excluded because their normal Epic role is sacrificial. The final intended scope is explicit G-tier Guardsmen and S-tier Specialists only.
+
+### Lower-tier G/S validation
+
+Two additional G8/G7 and S8/S7 cases were evaluated with E8/E7 engineers and M8/M7 monsters, Leadership `700,000`, Dominance `160,000`, and an intermediate combat profile.
+
+- Lower-tier Doomsday produced no unusual early Guardsman or Specialist death, so the targeted search correctly proposed no change.
+- Lower-tier Arachne found an alternative only `0.04334%` below the mathematical maximum.
+- Its weighted G/S inversion penalty fell from `14.7252` to `11.9920`, an improvement of about `18.6%`.
+- It replaced the early S8 Royal Lion with the lower-damage S8 Duelist while leaving the sacrificial engineers outside the scoring policy.
+
+Across the supplied Arachne, supplied Doomsday, lower-tier Doomsday, and lower-tier Arachne cases, the `0.25%` ceiling captures each useful G/S alternative and makes no change when the targeted issue is absent. The browser policy should use explicit tier prefixes `G` and `S` rather than relying only on the present engineer `SIEGE` classification.
+
 ## Review Selection method matrix
 
 Review Selection was evaluated with the established Doomsday and Arachne inputs across Standard, untouched Custom Order, and Optimize. Starting from the 39 checked G7–G9, S7–S9, E7–E9, and M7–M9 units, the availability rules correctly inferred a 93-unit pool extending through every lower troop and monster tier. The broad search evaluated 7,999 complete contiguous tier-band structures per encounter and expanded unit-level neighborhoods around the strongest tier leaders.
