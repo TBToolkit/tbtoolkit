@@ -197,6 +197,17 @@ The `0.1%`, `0.25%`, `0.5%`, and `1%` eligibility windows all selected the same 
 
 This remains an offline diagnostic. Before enabling it in the browser, test additional Epic encounters and expand the retained candidate pool so that the conventionality rule is not limited to alternatives generated for the first three flagged sacrifices.
 
+### Supplied Doomsday case
+
+The same troop-only audit was run on the supplied 30-squad Doomsday selection: G9/G8, S9/S8, E9/E8, all M9/M8/M7 monsters, and no mercenaries. The screenshot inputs were reproduced with Leadership `407,082`, Dominance `76,212`, Monster Health `1,637.5%`, Monster Strength `2,032%`, Strength PvE `3,877%`, Double Damage `12%`, and Strike Twice `18%`.
+
+- Mathematical maximum: `873.921899B` ELD, 28 troop inversions, six severe inversions, weighted penalty `16.3360`.
+- More conventional retained alternative: `872.990947B` ELD, 19 troop inversions, four severe inversions, weighted penalty `10.0517`.
+- ELD cost: `0.10653%`.
+- S9 Royal Lion 2 no longer occupies the first non-engineer troop sacrifice position; S8 Duelist 1 takes that early position.
+
+The `0.1%` window excluded the alternative by `0.00653` percentage points. The `0.25%`, `0.5%`, and `1%` windows all selected it. Combined with the Arachne result, `0.25%` is now the provisional ceiling: it captures both improvements while the wider windows have not yet produced additional value. This is not sufficient evidence to enable the policy online; the candidate generator retained only two distinct Doomsday alternatives and six Arachne alternatives.
+
 ## Review Selection method matrix
 
 Review Selection was evaluated with the established Doomsday and Arachne inputs across Standard, untouched Custom Order, and Optimize. Starting from the 39 checked G7–G9, S7–S9, E7–E9, and M7–M9 units, the availability rules correctly inferred a 93-unit pool extending through every lower troop and monster tier. The broad search evaluated 7,999 complete contiguous tier-band structures per encounter and expanded unit-level neighborhoods around the strongest tier leaders.

@@ -3,19 +3,25 @@ import {optimizeEpicQuantities} from '../js/epic-quantity-optimizer.mjs';
 
 const army=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const byId=new Map(army.map(unit=>[unit.id,unit]));
+const caseName=String(process.argv[2]??'arachne').toLowerCase();
+if(!['arachne','doomsday'].includes(caseName))throw new Error('Case must be arachne or doomsday.');
+const isArachne=caseName==='arachne';
 const selectedIds=army.filter(unit=>{
-  if(['G9','G8','S9','S8','E9','M9','M8'].includes(unit.tier))return true;
-  return unit.tier==='M7'&&unit.id!=='monster-m7-flying-black-dragon';
+  const tiers=isArachne?['G9','G8','S9','S8','E9','M9','M8']:['G9','G8','S9','S8','E9','E8','M9','M8','M7'];
+  if(!tiers.includes(unit.tier))return false;
+  return !isArachne||unit.tier!=='M7'||unit.id!=='monster-m7-flying-black-dragon';
 }).map(unit=>unit.id);
-const bonuses={
-  monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,
-  monsterDDPct:32,monsterSTPct:30,arachne:true,
+const bonuses=isArachne?{
+  monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,monsterDDPct:32,monsterSTPct:30,arachne:true,
   enemySquadTypes:['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED'],
   includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
+}:{
+  monsterHealthPct:1637.5,monsterStrengthPct:2032,strengthAgainstEpicPct:3877,monsterDDPct:12,monsterSTPct:18,arachne:false,
+  enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
 };
-const capacityLimits={LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0};
+const capacityLimits=isArachne?{LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0}:{LEADERSHIP:407_082,DOMINANCE:76_212,AUTHORITY:62_628};
 
-console.error('[conventional-order] optimizing supplied Arachne case');
+console.error(`[conventional-order] optimizing supplied ${isArachne?'Arachne':'Doomsday'} case`);
 const optimized=optimizeEpicQuantities({
   units:army,selectedIds,bonuses,capacityLimits,minimumHealthSeparationPct:.01,minimumQuantity:1,
   practicalEligibleCategories:['troop'],practicalTolerancePct:0,collectPracticalCandidates:true,
@@ -70,7 +76,7 @@ const thresholds=[.1,.25,.5,1].map(tolerancePct=>{
 console.log(JSON.stringify({
   generatedAt:new Date().toISOString(),
   scope:'Troop death-order conventionality only; monsters and mercenaries are excluded from the practical score.',
-  inputs:{encounter:'Arachne',selectedUnits:selectedIds.length,capacityLimits,bonuses},
+  inputs:{encounter:isArachne?'Arachne':'Doomsday',selectedUnits:selectedIds.length,capacityLimits,bonuses},
   candidateCount:candidates.length,
   mathematicalMaximum:{eld:maximum.eld,conventionality:maximum.conventionality,troopOpening:troopOpening(maximum.result)},
   candidates:candidates.map(candidate=>({eld:candidate.eld,lossPct:candidate.lossPct,conventionality:candidate.conventionality,troopOpening:troopOpening(candidate.result)})),
