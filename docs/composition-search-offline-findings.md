@@ -208,6 +208,22 @@ The same troop-only audit was run on the supplied 30-squad Doomsday selection: G
 
 The `0.1%` window excluded the alternative by `0.00653` percentage points. The `0.25%`, `0.5%`, and `1%` windows all selected it. Combined with the Arachne result, `0.25%` is now the provisional ceiling: it captures both improvements while the wider windows have not yet produced additional value. This is not sufficient evidence to enable the policy online; the candidate generator retained only two distinct Doomsday alternatives and six Arachne alternatives.
 
+## First-cycle monster sacrifice discovery
+
+An offline scenario miner evaluated 72 combinations across Doomsday/Arachne, four tier structures, three combat profiles, and three capacity profiles. Each scenario used six deterministic health-ladder seeds. A case was flagged only when a monster died during the first enemy cycle while at least one non-siege Guardsman or Specialist survived beyond it. Mercenaries were excluded.
+
+- 40 of 72 scenarios contained the pattern.
+- None of the simple health-spacing seed alternatives removed all early monster deaths within `0.25%` of the best seed.
+- This shows the pattern is reproducible and that varying only the starting health separation is not an adequate remedy.
+
+A clean Doomsday fixture was promoted to a full optimizer run: G9/G8, S9/S8, E9/E8, all M9/M8/M7 monsters, Leadership `700,000`, Dominance `160,000`, and the default `1,600%`/`2,000%` combat profile. Deep optimization strengthened the anomaly rather than removing it:
+
+- Mathematical maximum: `1.097607785T` ELD.
+- Fire Phoenix 2, Fire Phoenix 1, and Wind Lord died at positions 2, 3, and 4.
+- 16 non-siege combat troops survived beyond the four-enemy opening cycle.
+
+A targeted monster counterfactual produced `1.097384878T` ELD, a loss of only `0.02031%`. It moved Fire Phoenix 2 beyond the opening cycle without changing the troop conventionality score, but Fire Phoenix 1 and Wind Lord remained at positions 2 and 3. This validates a narrow early-monster preference while also demonstrating that a single counterfactual is insufficient. The next offline algorithm should retain a small beam of progressively protected monster basins, permitting slightly worse intermediate moves while enforcing the overall `0.25%` ceiling.
+
 ## Review Selection method matrix
 
 Review Selection was evaluated with the established Doomsday and Arachne inputs across Standard, untouched Custom Order, and Optimize. Starting from the 39 checked G7–G9, S7–S9, E7–E9, and M7–M9 units, the availability rules correctly inferred a 93-unit pool extending through every lower troop and monster tier. The broad search evaluated 7,999 complete contiguous tier-band structures per encounter and expanded unit-level neighborhoods around the strongest tier leaders.

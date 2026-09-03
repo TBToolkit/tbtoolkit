@@ -4,7 +4,7 @@ import {optimizeEpicQuantities} from '../js/epic-quantity-optimizer.mjs';
 const army=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const byId=new Map(army.map(unit=>[unit.id,unit]));
 const caseName=String(process.argv[2]??'arachne').toLowerCase();
-if(!['arachne','doomsday'].includes(caseName))throw new Error('Case must be arachne or doomsday.');
+if(!['arachne','doomsday','early-monster'].includes(caseName))throw new Error('Case must be arachne, doomsday, or early-monster.');
 const isArachne=caseName==='arachne';
 const selectedIds=army.filter(unit=>{
   const tiers=isArachne?['G9','G8','S9','S8','E9','M9','M8']:['G9','G8','S9','S8','E9','E8','M9','M8','M7'];
@@ -15,16 +15,20 @@ const bonuses=isArachne?{
   monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,monsterDDPct:32,monsterSTPct:30,arachne:true,
   enemySquadTypes:['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED'],
   includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
+}:caseName==='early-monster'?{
+  monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:2000,monsterDDPct:10,monsterSTPct:10,arachne:false,
+  enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
 }:{
   monsterHealthPct:1637.5,monsterStrengthPct:2032,strengthAgainstEpicPct:3877,monsterDDPct:12,monsterSTPct:18,arachne:false,
   enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false
 };
-const capacityLimits=isArachne?{LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0}:{LEADERSHIP:407_082,DOMINANCE:76_212,AUTHORITY:62_628};
+const capacityLimits=isArachne?{LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0}:caseName==='early-monster'?{LEADERSHIP:700_000,DOMINANCE:160_000,AUTHORITY:0}:{LEADERSHIP:407_082,DOMINANCE:76_212,AUTHORITY:62_628};
+const practicalEligibleCategories=caseName==='early-monster'?['monster']:['troop'];
 
-console.error(`[conventional-order] optimizing supplied ${isArachne?'Arachne':'Doomsday'} case`);
+console.error(`[conventional-order] optimizing ${isArachne?'supplied Arachne':caseName==='early-monster'?'early-monster Doomsday fixture':'supplied Doomsday'} case`);
 const optimized=optimizeEpicQuantities({
   units:army,selectedIds,bonuses,capacityLimits,minimumHealthSeparationPct:.01,minimumQuantity:1,
-  practicalEligibleCategories:['troop'],practicalTolerancePct:0,collectPracticalCandidates:true,
+  practicalEligibleCategories,practicalTolerancePct:0,collectPracticalCandidates:true,
   onProgress:progress=>{
     if(progress.phase!==globalThis.lastPhase){globalThis.lastPhase=progress.phase;console.error(`[conventional-order] ${progress.phase}`);}
   }
@@ -65,20 +69,36 @@ function troopOpening(result){
     .slice(0,10)
     .map(row=>({name:row.name,tier:byId.get(row.id)?.tier,death:row.predictedDeathPosition,attacks:row.averageAttackOpportunities,damagePerOpportunity:row.expectedDamagePerOpportunity}));
 }
+function earlyMonsterSummary(result){
+  const enemyCount=bonuses.enemySquadTypes.length;
+  const rows=[...(result.squads??[])].sort((a,b)=>a.predictedDeathPosition-b.predictedDeathPosition);
+  const earlyMonsters=rows.filter(row=>byId.get(row.id)?.category==='monster'&&row.predictedDeathPosition<=enemyCount);
+  const laterCombatTroops=rows.filter(row=>{
+    const unit=byId.get(row.id);
+    return unit?.category==='troop'&&String(unit.combatType).toUpperCase()!=='SIEGE'&&row.predictedDeathPosition>enemyCount;
+  });
+  return {earlyMonsters:earlyMonsters.map(row=>({name:row.name,death:row.predictedDeathPosition})),laterCombatTroops:laterCombatTroops.length};
+}
 
 const thresholds=[.1,.25,.5,1].map(tolerancePct=>{
   const eligible=candidates.filter(candidate=>candidate.lossPct<=tolerancePct+1e-9);
-  eligible.sort((a,b)=>a.conventionality.penalty-b.conventionality.penalty||a.conventionality.severeInversions-b.conventionality.severeInversions||b.eld-a.eld);
+  eligible.sort((a,b)=>{
+    if(caseName==='early-monster'){
+      const monsterDelta=earlyMonsterSummary(a.result).earlyMonsters.length-earlyMonsterSummary(b.result).earlyMonsters.length;
+      if(monsterDelta)return monsterDelta;
+    }
+    return a.conventionality.penalty-b.conventionality.penalty||a.conventionality.severeInversions-b.conventionality.severeInversions||b.eld-a.eld;
+  });
   const chosen=eligible[0]??maximum;
-  return {tolerancePct,eligibleCandidates:eligible.length,chosenLossPct:chosen.lossPct,conventionality:chosen.conventionality,eld:chosen.eld,troopOpening:troopOpening(chosen.result)};
+  return {tolerancePct,eligibleCandidates:eligible.length,chosenLossPct:chosen.lossPct,conventionality:chosen.conventionality,eld:chosen.eld,...earlyMonsterSummary(chosen.result),troopOpening:troopOpening(chosen.result)};
 });
 
 console.log(JSON.stringify({
   generatedAt:new Date().toISOString(),
   scope:'Troop death-order conventionality only; monsters and mercenaries are excluded from the practical score.',
-  inputs:{encounter:isArachne?'Arachne':'Doomsday',selectedUnits:selectedIds.length,capacityLimits,bonuses},
+  inputs:{encounter:isArachne?'Arachne':'Doomsday',caseName,selectedUnits:selectedIds.length,capacityLimits,bonuses},
   candidateCount:candidates.length,
-  mathematicalMaximum:{eld:maximum.eld,conventionality:maximum.conventionality,troopOpening:troopOpening(maximum.result)},
-  candidates:candidates.map(candidate=>({eld:candidate.eld,lossPct:candidate.lossPct,conventionality:candidate.conventionality,troopOpening:troopOpening(candidate.result)})),
+  mathematicalMaximum:{eld:maximum.eld,conventionality:maximum.conventionality,...earlyMonsterSummary(maximum.result),troopOpening:troopOpening(maximum.result)},
+  candidates:candidates.map(candidate=>({eld:candidate.eld,lossPct:candidate.lossPct,conventionality:candidate.conventionality,...earlyMonsterSummary(candidate.result),troopOpening:troopOpening(candidate.result)})),
   thresholds
 },null,2));
