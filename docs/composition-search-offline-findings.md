@@ -181,6 +181,22 @@ Review Selection is now connected to the Battle Calculator on the development br
 
 Local browser verification confirmed Epic/PvP visibility, proposal rendering, Keep Current, Accept Recommendation, recalculation, and a clean browser console. This interface remains on `optimizer-composition-search` for development testing and has not been merged into `main`.
 
+## Troop-only conventional death-order audit
+
+The supplied 28-squad Arachne case was used to test a secondary, player-facing death-order preference. The preference applies only to Guardsmen, Specialists, and Engineers. Monster and mercenary death positions do not contribute to its score, and whole-army ELD remains the primary objective.
+
+The first opening-sacrifice score was too coarse and still selected the mathematical champion. A second diagnostic compared the complete non-siege troop death ladder with a tier- and damage-per-opportunity value ladder. It weighted wider and more obvious inversions more heavily.
+
+- Mathematical maximum: `3.931836846T` ELD, 41 troop inversions, weighted penalty `15.9341`.
+- Most conventional retained alternative: `3.931245993T` ELD, 39 troop inversions, weighted penalty `15.1840`.
+- ELD cost: `0.01503%`.
+- The alternative moved S9 Duelist 2 from death position 2 to death position 7.
+- The severe-inversion count remained 3, so this is a useful improvement but not yet proof that the scoring model is complete.
+
+The `0.1%`, `0.25%`, `0.5%`, and `1%` eligibility windows all selected the same alternative because all six retained candidates were within `0.0232%` of the maximum. For this case, `0.1%` is therefore the recommended ceiling. Wider tolerances add risk without changing the result.
+
+This remains an offline diagnostic. Before enabling it in the browser, test additional Epic encounters and expand the retained candidate pool so that the conventionality rule is not limited to alternatives generated for the first three flagged sacrifices.
+
 ## Review Selection method matrix
 
 Review Selection was evaluated with the established Doomsday and Arachne inputs across Standard, untouched Custom Order, and Optimize. Starting from the 39 checked G7–G9, S7–S9, E7–E9, and M7–M9 units, the availability rules correctly inferred a 93-unit pool extending through every lower troop and monster tier. The broad search evaluated 7,999 complete contiguous tier-band structures per encounter and expanded unit-level neighborhoods around the strongest tier leaders.

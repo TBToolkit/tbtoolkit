@@ -897,9 +897,14 @@ function adaptiveDeathPositionRefine({
   return {best:champion,evaluations,acceptedMoves:accepted,summaries};
 }
 
-function practicalStructureScore(result){
+function practicalStructureScore(result,{units=[],eligibleCategories=null}={}){
+  const unitById=new Map(units.map(unit=>[String(unit.id),unit]));
+  const categorySet=eligibleCategories?.length?new Set(eligibleCategories.map(String)):null;
   const rows=[...(result?.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
-  const productive=rows.filter(s=>Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0&&String(s.combatType||'').toUpperCase()!=='SIEGE');
+  const productive=rows.filter(s=>{
+    const category=String(s.category??unitById.get(String(s.id))?.category??'');
+    return (!categorySet||categorySet.has(category))&&Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0&&String(s.combatType||'').toUpperCase()!=='SIEGE';
+  });
   const damages=productive.map(s=>Number(s.expectedDamagePerOpportunity||0)).filter(Number.isFinite).sort((a,b)=>a-b);
   const median=damages.length?Math.max(1,damages[Math.floor(damages.length/2)]):1;
   let score=0;
@@ -918,9 +923,10 @@ function practicalStructureScore(result){
   return score;
 }
 
-function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05}){
+function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05,units=[],eligibleCategories=null}){
   const pool=[maximum,...(candidates??[])].filter(c=>Number(c?.result?.expectedTotalLifetimeDamage||0)>0);
-  if(!pool.length)return {chosen:maximum,mathematicalMaximum:maximum,changed:false,lossPct:0,score:practicalStructureScore(maximum?.result)};
+  const score=result=>practicalStructureScore(result,{units,eligibleCategories});
+  if(!pool.length)return {chosen:maximum,mathematicalMaximum:maximum,changed:false,lossPct:0,score:score(maximum?.result)};
   const mathematicalMaximum=pool.reduce((best,c)=>Number(c.result.expectedTotalLifetimeDamage||0)>Number(best.result.expectedTotalLifetimeDamage||0)?c:best,pool[0]);
   const maxEld=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
   const eligible=pool.filter(c=>{
@@ -928,17 +934,17 @@ function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05}){
     return ((maxEld-eld)/maxEld*100)<=tolerancePct+1e-9;
   });
   eligible.sort((a,b)=>{
-    const pa=practicalStructureScore(a.result),pb=practicalStructureScore(b.result);
+    const pa=score(a.result),pb=score(b.result);
     if(pa!==pb)return pa-pb;
     return Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0);
   });
   const chosen=eligible[0]??mathematicalMaximum;
   const chosenEld=Number(chosen.result.expectedTotalLifetimeDamage||0);
   const lossPct=Math.max(0,(maxEld-chosenEld)/maxEld*100);
-  return {chosen,mathematicalMaximum,changed:chosen!==maximum,maximumChanged:mathematicalMaximum!==maximum,lossPct,score:practicalStructureScore(chosen.result),maximumScore:practicalStructureScore(mathematicalMaximum.result)};
+  return {chosen,mathematicalMaximum,changed:chosen!==maximum,maximumChanged:mathematicalMaximum!==maximum,lossPct,score:score(chosen.result),maximumScore:score(mathematicalMaximum.result)};
 }
 
-function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3}){
+function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3,eligibleCategories=null}){
   const limits=limitsOf(capacityLimits);
   const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
   const baseEld=Number(base.expectedTotalLifetimeDamage||0);
@@ -956,6 +962,7 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   const candidates=ordered.filter(s=>{
     const death=Number(s.predictedDeathPosition??999),u=selectedById.get(s.id);
     if(!u||death>earlyLimit)return false;
+    if(eligibleCategories?.length&&!eligibleCategories.includes(String(u.category)))return false;
     if(String(u.combatType||'').toUpperCase()==='SIEGE')return false;
     if(!(Number(s.expectedLifetimeDamage||0)>0&&Number(s.averageAttackOpportunities||0)>0))return false;
     const damage=Number(s.expectedDamagePerOpportunity||0),tierNum=Number((String(u.tier||'').match(/\d+/)||[0])[0]);
@@ -1119,7 +1126,7 @@ export function optimizeEpicQuantities(args) {
   let searchPasses=0;
   for(let pass=0;pass<2;pass++){
     searchPasses++;
-    const analysis=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+    const analysis=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3,eligibleCategories:args.practicalEligibleCategories});
     totalEvaluations+=analysis.evaluations;finalSearchEvaluations+=analysis.evaluations;
     practicalPool.push(...analysis.alternatives);
     const improved=analysis.alternatives.reduce((best,c)=>Number(c.result.expectedTotalLifetimeDamage||0)>Number(best.result.expectedTotalLifetimeDamage||0)?c:best,mathematicalMaximum);
@@ -1129,23 +1136,32 @@ export function optimizeEpicQuantities(args) {
 
   // Among armies within 0.05% of the true maximum discovered by the final
   // counterfactual passes, prefer the more practical opening structure.
-  const practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.05});
+  const practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:Number(args.practicalTolerancePct??.05),units:args.units,eligibleCategories:args.practicalEligibleCategories});
   out.quantities={...practicalChoice.chosen.quantities};
   out.result=practicalChoice.chosen.result;
 
   // Explain the army actually returned.
-  const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+  const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3,eligibleCategories:args.practicalEligibleCategories});
   totalEvaluations+=unusualFinal.evaluations;finalSearchEvaluations+=unusualFinal.evaluations;
   out.diagnostics.unusualSacrifices=unusualFinal.notes;
   out.diagnostics.unusualSacrificeEvaluations=finalSearchEvaluations;
   out.diagnostics.finalCounterfactualPasses=searchPasses;
   out.diagnostics.maximumExpectedLifetimeDamage=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
-  out.diagnostics.nearOptimalTolerancePct=.05;
+  out.diagnostics.nearOptimalTolerancePct=Number(args.practicalTolerancePct??.05);
   out.diagnostics.practicalTieBreakApplied=out.result!==practicalChoice.mathematicalMaximum.result;
   out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
   out.diagnostics.practicalStructureScore=practicalChoice.score;
   out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
   out.diagnostics.totalEvaluations=totalEvaluations;
+  if(args.collectPracticalCandidates){
+    const maximumEld=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
+    out.diagnostics.practicalCandidates=practicalPool.map((candidate,index)=>({
+      index,quantities:{...candidate.quantities},result:candidate.result,
+      eld:Number(candidate.result.expectedTotalLifetimeDamage||0),
+      lossPct:maximumEld>0?Math.max(0,(maximumEld-Number(candidate.result.expectedTotalLifetimeDamage||0))/maximumEld*100):0,
+      score:practicalStructureScore(candidate.result,{units:args.units,eligibleCategories:args.practicalEligibleCategories})
+    }));
+  }
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
   return out;
 }
