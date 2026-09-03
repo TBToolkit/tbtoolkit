@@ -521,7 +521,7 @@ details.advanced{margin-top:8px;padding-top:7px}
   align-items:flex-end;
   gap:7px;
   min-height:38px;
-  padding:6px 2px;
+  padding:3px 7px;
   border-bottom:1px solid rgba(255,255,255,.055);
   background:linear-gradient(90deg,var(--result-bg,#10202c) 0%,var(--result-bg-soft,#0a1822) 100%)!important;
   border:1px solid color-mix(in srgb,var(--result-accent,#415467) 68%,transparent);
@@ -529,7 +529,6 @@ details.advanced{margin-top:8px;padding-top:7px}
   border-radius:5px;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.025)!important;
   margin:2px 0;
-  padding:7px 7px;
 }
 .result-row.compact-result-row:last-child{border-bottom:0}
 .result-label{min-width:0;flex:0 1 auto;color:var(--result-text,#dfe5ea);text-shadow:0 1px 0 rgba(0,0,0,.65)}
@@ -1963,19 +1962,17 @@ body.sacrifice-help-modal-open{overflow:hidden}
    slot, so it cannot overlap either the truncating name or fixed-width quantity. */
 .result-row.compact-result-row .result-unit-icon{
   display:block!important;
-  flex:0 0 32px!important;
-  width:32px!important;
-  height:32px!important;
-  min-width:32px;
-  max-width:32px;
+  flex:0 0 40px!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px;
+  max-width:40px;
   align-self:center;
   object-fit:cover;
   border:1px solid color-mix(in srgb,var(--result-accent,#415467) 75%,#fff 10%)!important;
   border-radius:4px!important;
   background:#06111a;
 }
-@media(max-width:1180px){.result-row.compact-result-row .result-unit-icon{flex-basis:30px!important;width:30px!important;height:30px!important;min-width:30px;max-width:30px}}
-@media(max-width:760px){.result-row.compact-result-row .result-unit-icon{display:block!important;flex-basis:32px!important;width:32px!important;height:32px!important;min-width:32px;max-width:32px}}
 @media(max-width:1180px){
   .result-row.compact-result-row .result-leader{
     flex:.2 1 6px!important;

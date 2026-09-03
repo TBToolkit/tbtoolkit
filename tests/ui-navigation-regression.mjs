@@ -34,7 +34,8 @@ assert.match(source,/els\.reviewSelection\.hidden=!available/, 'Review Selection
 assert.match(source,/mercenary=\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]/, 'Accepting a review must preserve the workspace mercenary selection');
 assert.match(source,/row\.icon\|\|unit\?\.icon[\s\S]*?class="result-unit-icon"/, 'Result quantity tiles must render the matching unit icon');
 assert.doesNotMatch(source,/class="result-leader"/, 'Result quantity tiles must not render the old dotted leader');
-assert.match(css,/\.result-row\.compact-result-row \.result-unit-icon\{[\s\S]*?flex:0 0 32px!important;[\s\S]*?width:32px!important;[\s\S]*?height:32px!important;/, 'Result icons must use a fixed non-overlapping slot without changing tile size');
+assert.match(css,/\.result-row\.compact-result-row \.result-unit-icon\{[\s\S]*?flex:0 0 40px!important;[\s\S]*?width:40px!important;[\s\S]*?height:40px!important;/, 'Result icons must use a large fixed non-overlapping slot without changing tile size');
+assert.match(css,/\.result-row\.compact-result-row\{[\s\S]*?padding:3px 7px;/, 'Larger result icons must be offset by reduced vertical padding');
 assert.doesNotMatch(source,/Battle Calculator Beta/, 'Results and reset copy must not describe the calculator as Beta');
 assert.doesNotMatch(source,/Higher squad health|Lower squad health/, 'The chart must not render the old horizontal health labels');
 assert.match(html,/Saved on this device:[\s\S]*?saved in this browser/, 'The page must explain local browser storage');
