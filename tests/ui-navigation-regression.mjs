@@ -45,10 +45,11 @@ assert.equal((html.match(/class="selection-card-toggle"/g)||[]).length,5,'Every 
 assert.match(source,/selectionCardMedia=window\.matchMedia\('\(max-width:600px\)'\)/, 'Selection category disclosures must be scoped to the mobile layout');
 assert.match(css,/\.selection-card\.is-collapsed \.hierarchy-list\{display:none\}/, 'Collapsed mobile Selection categories must hide their unit hierarchy');
 assert.match(css,/\.battle-mode-active \.selection-optimize-row\{[\s\S]*?position:sticky;[\s\S]*?bottom:10px;/, 'The optimization action must remain reachable during long Selection workflows');
-assert.match(css,/\.compact-limit-list \.limit-row\{[\s\S]*?"name autofill"[\s\S]*?"maximum fill"/, 'Max Fill must sit beside each capacity title with Maximum and Fill beneath it');
+assert.equal((html.match(/class="limit-title-row"/g)||[]).length,3,'Each Max Fill switch must be grouped directly with its capacity title');
+assert.match(css,/\.compact-limit-list \.limit-title-row\{[\s\S]*?display:flex;[\s\S]*?gap:11px;/, 'Capacity titles and Max Fill switches must use a consistent close association');
 assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?width:100%!important;[\s\S]*?max-width:100%!important;/, 'Fill controls must remain bounded by their capacity cards');
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
-assert.match(html,/css\/epic-stacker\.css\?v=194/, 'Battle Calculator must request the compact Max Fill layout build');
+assert.match(html,/css\/epic-stacker\.css\?v=195/, 'Battle Calculator must request the title-associated Max Fill layout build');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
 assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
