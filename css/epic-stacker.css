@@ -3614,3 +3614,348 @@ html,body{overflow-x:hidden}
 @media(max-width:620px){
   .squad-order-bonus{font-size:.55rem!important}
 }
+
+
+/* ==========================================================================
+   v193 — Battle Calculator UX refinement
+   ========================================================================== */
+.battle-mode-active .epic-heading{
+  margin-bottom:16px;
+}
+.battle-mode-active .epic-heading h1{
+  font-size:clamp(2.25rem,4.5vw,3.55rem);
+  letter-spacing:.005em;
+}
+.battle-page-description{
+  margin-top:5px!important;
+  color:#b5c2ce!important;
+  font-size:.96rem;
+}
+.battle-calculator-notes{
+  width:min(100%,780px);
+  margin-top:10px;
+  border:1px solid #26394a;
+  border-radius:8px;
+  background:#08131e;
+  color:#9cafbf;
+  font-size:.78rem;
+}
+.battle-calculator-notes>summary{
+  display:flex;
+  align-items:center;
+  min-height:40px;
+  padding:0 38px 0 12px;
+  position:relative;
+  list-style:none;
+  cursor:pointer;
+  color:#d9e2e9;
+  font-weight:800;
+}
+.battle-calculator-notes>summary::-webkit-details-marker{display:none}
+.battle-calculator-notes>summary::after{
+  content:'›';
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%) rotate(90deg);
+  color:#efa727;
+  font-size:1.25rem;
+  transition:transform .15s ease;
+}
+.battle-calculator-notes[open]>summary::after{
+  transform:translateY(-50%) rotate(-90deg);
+}
+.battle-calculator-note-content{
+  padding:4px 12px 11px;
+  border-top:1px solid #203242;
+}
+.battle-calculator-note-content p{
+  margin:7px 0;
+  line-height:1.5;
+}
+
+/* Functional text should be readable before it is decorative. */
+.battle-mode-active .battle-select-field>span,
+.battle-mode-active .field-label,
+.battle-mode-active .help-field-heading label{
+  color:#c8d3dc;
+  font-size:.75rem;
+  line-height:1.25;
+  letter-spacing:.015em;
+  text-transform:none;
+}
+.battle-mode-active .setting-note,
+.battle-mode-active .battle-selection-summary p,
+.battle-mode-active .topdown-panel-heading p{
+  font-size:.76rem;
+  line-height:1.5;
+}
+.battle-mode-active .topdown-panel{
+  border-color:#31475a;
+  background:#101c27;
+}
+.battle-mode-active .topdown-panel-heading{
+  background:#0b1620;
+}
+.battle-mode-active .battle-select-field select,
+.battle-mode-active .epic-input{
+  background:#06121c;
+  border-color:#40576a;
+}
+.battle-mode-active .workspace-actions button{
+  min-height:32px;
+  padding:0 10px;
+  font-size:.75rem;
+}
+
+.selection-card-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  flex:1 1 auto;
+  min-width:0;
+  margin:-5px 0;
+  padding:5px 0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:default;
+}
+.selection-card-toggle>span:first-child{min-width:0}
+.selection-card-name{
+  display:block;
+  color:#f0f4f7;
+  font-size:.82rem;
+  font-weight:900;
+  letter-spacing:.025em;
+  text-transform:uppercase;
+}
+.selection-card-toggle>span:first-child>span:last-child{
+  display:block;
+  margin-top:3px;
+  color:#91a3b2;
+  font-size:.69rem;
+}
+.selection-card-chevron{display:none}
+
+.battle-mode-active :is(input,select,button,summary):focus-visible,
+.battle-mode-active .hierarchy-unit:focus-within{
+  outline:2px solid #f0a51a;
+  outline-offset:2px;
+}
+.battle-mode-active .epic-input:focus,
+.battle-mode-active .battle-select-field select:focus{
+  outline:2px solid rgba(240,165,26,.72);
+  outline-offset:2px;
+  border-color:#f0a51a;
+}
+
+/* Keep the long optimization workflow's status and primary action in reach. */
+.battle-mode-active .selection-optimize-row{
+  position:sticky;
+  bottom:10px;
+  z-index:12;
+  margin:0 12px 12px;
+  border:1px solid #44586a;
+  border-radius:10px;
+  background:rgba(9,20,30,.96);
+  box-shadow:0 10px 28px rgba(0,0,0,.38);
+  backdrop-filter:blur(8px);
+}
+.battle-mode-active .optimize-army-button{
+  min-height:46px;
+}
+
+@media(max-width:600px){
+  .battle-mode-active .epic-shell{padding-top:14px}
+  .battle-mode-active .epic-heading{margin-bottom:12px}
+  .battle-mode-active .epic-heading h1{
+    font-size:2rem;
+    line-height:1.08;
+  }
+  .battle-page-description{
+    font-size:.88rem;
+    line-height:1.45!important;
+  }
+  .battle-calculator-notes{
+    font-size:.76rem;
+  }
+  .battle-mode-active .workspace-actions{
+    gap:7px;
+  }
+  .battle-mode-active .workspace-actions button,
+  .battle-mode-active .toolbar-button,
+  .battle-mode-active .advanced-reset,
+  .battle-mode-active #resetCalculator{
+    min-height:40px;
+    padding:0 12px;
+    font-size:.78rem;
+  }
+  .selection-card-title{
+    min-height:48px;
+  }
+  .selection-card-toggle{
+    min-height:40px;
+    cursor:pointer;
+  }
+  .selection-card-chevron{
+    display:inline-block;
+    flex:0 0 auto;
+    color:#efa727;
+    font-size:1rem;
+    transition:transform .15s ease;
+  }
+  .selection-card.is-collapsed .selection-card-chevron{transform:rotate(180deg)}
+  .selection-card.is-collapsed .hierarchy-list{display:none}
+  .category-master{
+    min-height:40px;
+    padding-left:8px;
+  }
+  .battle-mode-active .selection-optimize-row{
+    bottom:8px;
+    margin:0 8px 8px;
+    padding:9px;
+    gap:8px;
+  }
+  .battle-mode-active .selection-optimize-row .optimize-help{
+    font-size:.72rem;
+    line-height:1.35;
+  }
+  .battle-mode-active .optimize-army-button{
+    min-height:48px;
+  }
+}
+
+
+/* v194 — compact Army Limit switches and aligned top-panel headings */
+.battle-mode-active .battle-only-column-title{
+  min-height:48px;
+  box-sizing:border-box;
+  margin:-14px -14px 12px!important;
+  padding:12px 14px!important;
+  border-bottom:1px solid #263849;
+  background:#0b1620;
+}
+.battle-mode-active .battle-only-column-title h2{
+  font-size:17px!important;
+  letter-spacing:.035em!important;
+}
+
+body.battle-mode-active .compact-limit-list .limit-row{
+  grid-template-columns:minmax(0,1fr) minmax(74px,88px)!important;
+  grid-template-areas:
+    "name autofill"
+    "maximum fill"!important;
+  gap:7px 10px!important;
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow:hidden;
+}
+body.battle-mode-active .compact-limit-list .limit-name{
+  grid-area:name!important;
+  align-self:center!important;
+}
+body.battle-mode-active .compact-limit-list .limit-maximum{
+  grid-area:maximum!important;
+  width:100%!important;
+  min-width:0!important;
+}
+body.battle-mode-active .compact-limit-list .limit-fill{
+  grid-area:fill!important;
+  width:100%!important;
+  min-width:0!important;
+}
+body.battle-mode-active .compact-limit-list .limit-maximum .epic-input,
+body.battle-mode-active .compact-limit-list .limit-fill .percent-field,
+body.battle-mode-active .compact-limit-list .limit-fill .epic-input{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle{
+  grid-area:autofill!important;
+  justify-self:end!important;
+  align-self:center!important;
+  width:auto!important;
+  min-width:0!important;
+  height:26px!important;
+  min-height:26px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  margin:0;
+  opacity:0;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle span{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  min-height:26px;
+  padding-left:35px;
+  color:#aebdca;
+  font-size:.65rem;
+  letter-spacing:.02em;
+  text-transform:none;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle span::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:50%;
+  width:29px;
+  height:17px;
+  border:1px solid #536779;
+  border-radius:999px;
+  background:#152431;
+  transform:translateY(-50%);
+  transition:border-color .15s ease,background .15s ease;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle span::after{
+  content:'';
+  position:absolute;
+  left:3px;
+  top:50%;
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  background:#a9b5bf;
+  transform:translateY(-50%);
+  transition:left .15s ease,background .15s ease;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle input:checked+span::before{
+  border-color:#e9a020;
+  background:#8f5d0c;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle input:checked+span::after{
+  left:15px;
+  background:#fff4d6;
+}
+body.battle-mode-active .compact-limit-list .auto-fill-toggle input:focus-visible+span{
+  outline:2px solid #f0a51a;
+  outline-offset:2px;
+  border-radius:4px;
+}
+
+@media(max-width:600px){
+  body.battle-mode-active .compact-limit-list .limit-row{
+    grid-template-columns:minmax(0,1fr) minmax(82px,96px)!important;
+  }
+  body.battle-mode-active .compact-limit-list .auto-fill-toggle{
+    min-height:36px!important;
+  }
+  body.battle-mode-active .compact-limit-list .auto-fill-toggle span{
+    min-height:36px;
+  }
+}
+
