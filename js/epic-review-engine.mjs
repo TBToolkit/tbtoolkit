@@ -19,21 +19,27 @@ function retainBest(map,row,limit){
   map.clear();for(const candidate of keep)map.set(compositionSignature(candidate.selectedIds),candidate);
 }
 
-export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,timeBudgetMs=120_000,onProgress=()=>{}}){
+export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,fixedQuantities={},timeBudgetMs=120_000,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+Math.max(1_000,Number(timeBudgetMs)||120_000);
   const availability=inferReviewAvailability({units,selectedIds:currentIds});
   const structures=createReviewTierStructures({units,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds});
+  const fixedNames=new Set(Object.keys(fixedQuantities||{}));
+  const fixedIds=new Set(units.filter(unit=>fixedNames.has(unit.name)||fixedNames.has(unit.id)).map(unit=>unit.id));
+  const optimizableIds=ids=>ids.filter(id=>!fixedIds.has(id));
+  const combineFixed=quantities=>({...quantities,...fixedQuantities});
   let evaluations=0;
   const quickEvaluate=ids=>{
     assertWithinDeadline(deadline);evaluations++;
-    const quantities=createLegacyHealthLadderSeed({units,selectedIds:ids,bonuses,capacityLimits,separationPct:.05});
+    const quantities=combineFixed(createLegacyHealthLadderSeed({units,selectedIds:optimizableIds(ids),bonuses,capacityLimits,separationPct:.05}));
     return{selectedIds:ids,quantities,result:scoreEpicArmy({units,quantities,bonuses})};
   };
   const refine=(candidate,strong=false)=>{
     assertWithinDeadline(deadline);
-    const optimized=optimizeEpicQuantities({units,selectedIds:candidate.selectedIds,bonuses,capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:strong?[.05,.02,.01,.005,.002,.001,.0005]:[.02,.005,.001],maxRoundsPerStage:strong?8:3});
+    const initialQuantities=Object.fromEntries(Object.entries(candidate.quantities).filter(([name])=>!fixedNames.has(name)));
+    const optimized=optimizeEpicQuantities({units,selectedIds:optimizableIds(candidate.selectedIds),bonuses,capacityLimits,initialQuantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:strong?[.05,.02,.01,.005,.002,.001,.0005]:[.02,.005,.001],maxRoundsPerStage:strong?8:3});
     assertWithinDeadline(deadline);
-    return{selectedIds:candidate.selectedIds,quantities:optimized.quantities,result:optimized.result};
+    const quantities=combineFixed(optimized.quantities);
+    return{selectedIds:candidate.selectedIds,quantities,result:scoreEpicArmy({units,quantities,bonuses})};
   };
 
   onProgress({phase:'tier-screen',progressPct:5,evaluations});
@@ -67,5 +73,5 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const selectedMercenaries=new Set(availability.mandatoryIds);
   if(changes.added.some(id=>units.find(unit=>unit.id===id)?.category==='mercenary')||changes.removed.some(id=>selectedMercenaries.has(id)))throw new Error('Review Selection attempted to change selected mercenary types.');
   onProgress({phase:'complete',progressPct:100,evaluations});
-  return{build:EPIC_REVIEW_BUILD,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},mandatoryMercenaryIds:availability.mandatoryIds};
+  return{build:EPIC_REVIEW_BUILD,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,fixedMercenaries:fixedIds.size,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},mandatoryMercenaryIds:availability.mandatoryIds};
 }

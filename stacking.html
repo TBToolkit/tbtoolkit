@@ -228,7 +228,7 @@
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
 <div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
-<div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
+<div class="selection-heading-actions"><button class="toolbar-button review-selection-button" hidden id="reviewSelection" type="button">Review Selection</button><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
 
 <div class="selection-card-grid">
@@ -353,8 +353,18 @@
   <div aria-describedby="sacrificeHelpText" aria-labelledby="sacrificeHelpTitle" aria-modal="true" class="sacrifice-help-dialog" role="dialog">
     <div class="sacrifice-help-header"><div><span class="sacrifice-help-eyebrow">Optimizer decision</span><h2 id="sacrificeHelpTitle">Why does this squad die early?</h2></div><button aria-label="Close explanation" class="sacrifice-help-close" data-sacrifice-help-close type="button">×</button></div>
     <p id="sacrificeHelpText"></p>
-  </div>
 </div>
+</div>
+
+<div class="review-progress-modal" hidden id="reviewProgressModal">
+<div class="review-progress-backdrop"></div>
+<div aria-describedby="reviewProgressDetail" aria-labelledby="reviewProgressTitle" aria-modal="true" class="review-progress-dialog" role="dialog">
+<div class="optimizer-spinner" aria-hidden="true"></div><div><span class="optimizer-eyebrow">Epic Monster</span><h2 id="reviewProgressTitle">Reviewing Selection</h2><p id="reviewProgressDetail">Preparing the selection review…</p><div aria-label="Review progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="reviewProgressTrack" role="progressbar"><i id="reviewProgressBar"></i></div><div class="optimizer-progress-meta"><span id="reviewProgressPercent">0%</span><span id="reviewElapsed">0:00</span></div><p class="review-progress-note">Your current selection will not change unless you accept a recommendation.</p><button class="toolbar-button optimizer-cancel" id="cancelReviewSelection" type="button">Cancel</button></div>
+</div></div>
+
+<dialog class="workspace-dialog review-proposal-dialog" id="reviewProposalDialog">
+<form method="dialog"><h2>Review Selection</h2><p id="reviewProposalSummary"></p><div class="review-proposal-metrics"><div><span>Current ELD</span><strong id="reviewCurrentEld">—</strong></div><div><span>Recommended ELD</span><strong id="reviewProposedEld">—</strong></div><div><span>Estimated Improvement</span><strong id="reviewImprovement">—</strong></div></div><div class="review-change-grid"><section><h3>Add</h3><ul id="reviewAddedUnits"></ul></section><section><h3>Remove</h3><ul id="reviewRemovedUnits"></ul></section></div><p class="review-mercenary-note">Selected mercenary types are always kept.</p><div class="dialog-actions"><button type="button" id="keepCurrentSelection">Keep Current</button><button type="button" id="acceptReviewSelection">Accept Recommendation</button></div></form>
+</dialog>
 
 <div class="optimizer-modal" hidden id="optimizerModal">
 <div class="optimizer-modal-backdrop"></div>

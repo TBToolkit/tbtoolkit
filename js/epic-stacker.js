@@ -13,6 +13,7 @@ const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
+let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
@@ -220,7 +221,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function parseNumber(value){const x=Number(String(value??'').replace(/[%,$\s]/g,'').replace(/,/g,''));return Number.isFinite(x)?x:0;}
 function formatInteger(value){return Math.round(parseNumber(value)).toLocaleString('en-US');}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
@@ -787,6 +788,87 @@ function effectiveEpicCapacityLimits(){
     AUTHORITY:i.includeMercenariesInOptimization?limit('authority','authorityFill','autoAuthority'):0,
     DOMINANCE:limit('dominance','dominanceFill','autoDominance')
   };
+}
+function isReviewSelectionAvailable(){return activeMode==='battle'&&state.modes.battle.activeBattleType==='epic';}
+function currentReviewInputSignature(){return JSON.stringify({encounter:state.modes.battle.activeEncounterId,method:state.modes.battle.activeBattleMethod,selectedIds:cloneIds(modeState().selectedIds),inputs:modeState().inputs});}
+function setReviewSelectionState(){
+  if(!els.reviewSelection)return;
+  const available=isReviewSelectionAvailable();
+  els.reviewSelection.hidden=!available;
+  els.reviewSelection.disabled=!appInitialized||!!reviewWorker||!!epicWorker;
+}
+function reviewHeadline(phase){
+  if(phase==='tier-screen')return'Comparing broad tier structures…';
+  if(phase==='unit-neighborhood')return'Checking nearby unit combinations…';
+  if(phase==='short-refinement')return'Refining the strongest selections…';
+  if(phase==='strong-refinement')return'Confirming the best practical selections…';
+  if(phase==='complete')return'Preparing the recommendation…';
+  return'Preparing the selection review…';
+}
+function updateReviewElapsed(){if(reviewStartedAt&&els.reviewElapsed)els.reviewElapsed.textContent=formatElapsed(performance.now()-reviewStartedAt);}
+function openReviewProgress(){
+  if(!els.reviewProgressModal)return;
+  els.reviewProgressModal.hidden=false;document.body.classList.add('review-progress-open');reviewStartedAt=performance.now();
+  if(reviewElapsedTimer)clearInterval(reviewElapsedTimer);reviewElapsedTimer=setInterval(updateReviewElapsed,250);updateReviewElapsed();
+  updateReviewProgress({phase:'loading',progressPct:0});
+}
+function closeReviewProgress(){
+  if(reviewElapsedTimer){clearInterval(reviewElapsedTimer);reviewElapsedTimer=null;}reviewStartedAt=0;
+  if(els.reviewProgressModal)els.reviewProgressModal.hidden=true;document.body.classList.remove('review-progress-open');
+}
+function updateReviewProgress(progress={}){
+  const pct=Math.max(0,Math.min(100,Math.round(Number(progress.progressPct||0))));
+  if(els.reviewProgressBar)els.reviewProgressBar.style.width=`${pct}%`;
+  if(els.reviewProgressTrack){els.reviewProgressTrack.setAttribute('aria-valuenow',String(pct));}
+  if(els.reviewProgressPercent)els.reviewProgressPercent.textContent=`${pct}%`;
+  if(els.reviewProgressDetail){const candidate=progress.candidateCount?` Candidate ${progress.candidate} of ${progress.candidateCount}.`:'';els.reviewProgressDetail.textContent=reviewHeadline(progress.phase)+candidate;}
+}
+function cancelReviewSelection(message='Selection review cancelled.'){
+  if(reviewWorker){reviewWorker.terminate();reviewWorker=null;}pendingReviewProposal=null;closeReviewProgress();setReviewSelectionState();
+  if(message&&els.resultStatus)els.resultStatus.textContent=message;
+}
+function reviewUnitNames(ids){const byId=new Map(armyV2.map(unit=>[unit.id,unit.name]));return(ids||[]).map(id=>byId.get(id)||id);}
+function renderReviewList(target,ids){if(!target)return;const names=reviewUnitNames(ids);target.innerHTML=names.length?names.map(name=>`<li>${escapeHtml(name)}</li>`).join(''):'<li>None</li>';}
+function showReviewProposal(payload){
+  pendingReviewProposal=payload;const proposal=payload.proposal,hasChanges=proposal.added.length||proposal.removed.length,worthwhile=proposal.improvementPct>=.05;
+  if(els.reviewCurrentEld)els.reviewCurrentEld.textContent=formatDamage(payload.current.eld);
+  if(els.reviewProposedEld)els.reviewProposedEld.textContent=formatDamage(proposal.eld);
+  if(els.reviewImprovement)els.reviewImprovement.textContent=`${proposal.improvementPct.toFixed(3)}%`;
+  renderReviewList(els.reviewAddedUnits,proposal.added);renderReviewList(els.reviewRemovedUnits,proposal.removed);
+  if(els.reviewProposalSummary)els.reviewProposalSummary.textContent=hasChanges&&worthwhile?'Review Selection found a practical improvement. Accept it to update the shared selection for this workspace.':'Your current selection is already within the practical improvement threshold.';
+  if(els.acceptReviewSelection)els.acceptReviewSelection.hidden=!(hasChanges&&worthwhile);
+  els.reviewProposalDialog?.showModal();
+}
+function acceptReviewSelection(){
+  const proposal=pendingReviewProposal?.proposal;if(!proposal)return;
+  const proposed=new Set(proposal.selectedIds),mercenary=[...(modeState().selectedIds.mercenary||[])];
+  modeState().selectedIds={troop:units.troop.filter(unit=>proposed.has(unit.id)).map(unit=>unit.id),monster:units.monster.filter(unit=>proposed.has(unit.id)).map(unit=>unit.id),mercenary};
+  pendingReviewProposal=null;els.reviewProposalDialog?.close();clearSavedOptimizerResult();epicResultCurrent=false;syncCustomOrders();saveState();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();setReviewSelectionState();
+}
+function startReviewSelection(){
+  if(!isReviewSelectionAvailable()||reviewWorker||epicWorker)return;
+  reconcileSelectionsFromRenderedUI();readInputs();syncDerivedEpicBonuses();readInputs();
+  const selected=modeState().selectedIds,any=selected.troop.length||selected.monster.length;
+  const errors=any?validate():['Select at least one Troop or Monster unit to review.'];showValidation(errors);if(errors.length)return;
+  resolveAutoFills(baseEngineInputs());
+  const includeMercs=!!modeState().inputs.includeMercenariesInOptimization;
+  const fixedQuantities=includeMercs?{}:fixedStandardMercenaryQuantitiesForOptimizer();
+  const currentIds=[...selected.troop,...selected.monster,...selected.mercenary];
+  const requestId=++reviewRequestId;reviewInputSignature=currentReviewInputSignature();pendingReviewProposal=null;
+  try{reviewWorker=new Worker('js/epic-review-worker.mjs?v=191',{type:'module'});}catch(error){console.error(error);showValidation(['This browser could not start Review Selection. Refresh the page and try again.']);return;}
+  setReviewSelectionState();openReviewProgress();
+  reviewWorker.onmessage=event=>{
+    const message=event.data??{};if(message.requestId!==requestId)return;
+    if(message.type==='progress'){updateReviewProgress(message.payload);return;}
+    if(message.type==='error'){console.error(message.message,message.stack);cancelReviewSelection('Selection review could not finish.');showValidation([message.message||'Review Selection could not finish.']);return;}
+    if(message.type==='result'){
+      reviewWorker.terminate();reviewWorker=null;closeReviewProgress();setReviewSelectionState();
+      if(currentReviewInputSignature()!==reviewInputSignature){showValidation(['Inputs or selections changed while the review was running. Run Review Selection again.']);return;}
+      showReviewProposal(message.payload);
+    }
+  };
+  reviewWorker.onerror=event=>{console.error(event);cancelReviewSelection('Selection review could not finish.');showValidation(['Review Selection encountered an error.']);};
+  reviewWorker.postMessage({type:'review',requestId,payload:{currentIds,bonuses:epicBonusPayload(),capacityLimits:effectiveEpicCapacityLimits(),fixedQuantities,timeBudgetMs:120000}});
 }
 function cancelEpicOptimization(){
   if(epicWorker){epicWorker.terminate();epicWorker=null;}
@@ -1358,6 +1440,7 @@ function configureModeUI(){
   syncDerivedEpicBonuses();
   updateVisibleStepNumbers();
   setOptimizeButtonState();
+  setReviewSelectionState();
 }
 function applyStateToInputs(){
   const i=modeState().inputs;
@@ -2623,6 +2706,10 @@ function wireEvents(){
   wireStatHelp();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
   els.clearAllSelections.addEventListener('click',clearAllSelections);
+  els.reviewSelection?.addEventListener('click',startReviewSelection);
+  els.cancelReviewSelection?.addEventListener('click',()=>cancelReviewSelection());
+  els.keepCurrentSelection?.addEventListener('click',()=>{pendingReviewProposal=null;els.reviewProposalDialog?.close();});
+  els.acceptReviewSelection?.addEventListener('click',acceptReviewSelection);
   els.resetCalculator.addEventListener('click',resetCalculator);
 
   const armyGroup=['leadership','authority','dominance'];

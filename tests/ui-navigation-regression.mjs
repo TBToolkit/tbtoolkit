@@ -28,6 +28,10 @@ assert.match(source,/promptForUniqueAccountName/, 'Account New, Duplicate, and R
 assert.match(source,/An encounter named .* already exists/, 'Encounter creation and duplication must reject duplicate visible names');
 assert.match(source,/biffImportError\.classList\.toggle\(['"]show['"]/, 'Import naming errors must be visibly rendered');
 assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encounter naming errors must be visibly rendered');
+assert.match(html,/hidden id="reviewSelection"/, 'Review Selection must start hidden until an eligible battle is configured');
+assert.match(source,/function isReviewSelectionAvailable\(\)\{return activeMode===['"]battle['"]&&state\.modes\.battle\.activeBattleType===['"]epic['"]/, 'Review Selection must only be available for Epic Monster battles');
+assert.match(source,/els\.reviewSelection\.hidden=!available/, 'Review Selection visibility must follow the Epic-only eligibility rule');
+assert.match(source,/mercenary=\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]/, 'Accepting a review must preserve the workspace mercenary selection');
 assert.doesNotMatch(source,/Battle Calculator Beta/, 'Results and reset copy must not describe the calculator as Beta');
 assert.doesNotMatch(source,/Higher squad health|Lower squad health/, 'The chart must not render the old horizontal health labels');
 assert.match(html,/Saved on this device:[\s\S]*?saved in this browser/, 'The page must explain local browser storage');

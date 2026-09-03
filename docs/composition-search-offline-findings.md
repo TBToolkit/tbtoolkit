@@ -163,7 +163,23 @@ Real-browser measurements on the current test machine:
 
 The current accurate process does not meet the aspirational 20-second target. The prototype therefore uses a conservative `120`-second default budget and retains visible progress plus cancellation. Runtime optimization can be revisited later without weakening the validated search breadth.
 
-The worker is not connected to the live calculator yet. The isolated browser harness is `tests/review-selection-worker-harness.html`, and a fast engine/protocol regression is available through `npm run test:review-selection-worker`.
+The isolated browser harness is `tests/review-selection-worker-harness.html`, and a fast engine/protocol regression is available through `npm run test:review-selection-worker`.
+
+## Development-interface integration
+
+Review Selection is now connected to the Battle Calculator on the development branch with these boundaries:
+
+- The control is visible only for Epic Monster battle types and remains hidden for every PvP battle type.
+- The worker receives a snapshot of the current workspace and cannot change saved state.
+- If mercenary optimization is disabled, deterministic Standard mercenary quantities are held fixed while troop and monster selections are reviewed.
+- If mercenary optimization is enabled, mercenary quantities may be refined, but selected mercenary types remain mandatory.
+- A completed review displays Current ELD, Recommended ELD, estimated improvement, additions, and removals.
+- `Keep Current` closes the proposal without changing the workspace.
+- `Accept Recommendation` replaces only troop and monster selections, preserves the exact mercenary selection, updates Custom Order defaults as needed, and recalculates the active method.
+- Inputs or selections changed during a review invalidate the returned proposal.
+- Cancellation and the `120`-second time budget leave the workspace unchanged.
+
+Local browser verification confirmed Epic/PvP visibility, proposal rendering, Keep Current, Accept Recommendation, recalculation, and a clean browser console. This interface remains on `optimizer-composition-search` for development testing and has not been merged into `main`.
 
 ## Review Selection method matrix
 
