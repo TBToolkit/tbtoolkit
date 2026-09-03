@@ -6,7 +6,7 @@
 <meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Compare Standard, Custom Order, and optimized Epic calculations." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=44" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=194" rel="stylesheet"/>
+<link href="css/epic-stacker.css?v=195" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
 <script src="js/epic-stacker.js?v=193" type="module"></script>
 </head>
@@ -124,23 +124,23 @@
 <div class="limit-list compact-limit-list">
 
 <div class="limit-row">
-<div class="limit-name">Leadership</div>
+<div class="limit-title-row"><div class="limit-name">Leadership</div>
+<label class="auto-fill-toggle"><input checked id="autoLeadership" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="leadership">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="leadership" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input checked id="autoLeadership" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="leadershipFill">Fill</label><div class="percent-field"><input class="epic-input" id="leadershipFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
 
 <div class="limit-row">
-<div class="limit-name">Authority</div>
+<div class="limit-title-row"><div class="limit-name">Authority</div>
+<label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="authority">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="authority" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input id="autoAuthority" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="authorityFill">Fill</label><div class="percent-field"><input class="epic-input" id="authorityFill" inputmode="decimal" type="text" value="10.00"/><span>%</span></div></div>
 </div>
 
 <div class="limit-row">
-<div class="limit-name">Dominance</div>
+<div class="limit-title-row"><div class="limit-name">Dominance</div>
+<label class="auto-fill-toggle"><input checked id="autoDominance" type="checkbox"/><span>Max Fill</span></label></div>
 <div class="limit-control limit-maximum"><label class="field-label" for="dominance">Maximum</label><input autocomplete="off" class="epic-input formatted-number" id="dominance" inputmode="numeric" placeholder="Enter value" type="text"/></div>
-<label class="auto-fill-toggle"><input checked id="autoDominance" type="checkbox"/><span>Max Fill</span></label>
 <div class="limit-control limit-fill"><label class="field-label" for="dominanceFill">Fill</label><div class="percent-field"><input class="epic-input" id="dominanceFill" inputmode="decimal" type="text" value="99.99"/><span>%</span></div></div>
 </div>
 
