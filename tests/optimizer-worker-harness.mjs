@@ -2,7 +2,7 @@ const output=document.getElementById('output');
 const army=await fetch('../data/army-v2.json').then(response=>response.json());
 const tiers=new Set(['G9','G8','S9','S8','E9','M9','M8','M7']);
 const selectedIds=army.filter(unit=>tiers.has(unit.tier)&&unit.id!=='monster-m7-flying-black-dragon').map(unit=>unit.id);
-const worker=new Worker('../js/epic-optimizer-worker.js?v=193');
+const worker=new Worker('../js/epic-optimizer-worker.js?v=194');
 worker.onmessage=event=>{
   const message=event.data??{};
   if(message.type==='progress')return;

@@ -1236,7 +1236,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=193');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=194');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

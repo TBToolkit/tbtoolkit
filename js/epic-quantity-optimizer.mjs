@@ -945,6 +945,16 @@ function chooseNearOptimalPractical({maximum,candidates,tolerancePct=.05,units=[
   return {chosen,mathematicalMaximum,changed:chosen!==maximum,maximumChanged:mathematicalMaximum!==maximum,lossPct,score:score(chosen.result),maximumScore:score(mathematicalMaximum.result)};
 }
 
+function scaleAuthoritySeed({units,quantities,factor,minimumQuantity=1}){
+  const mercenaryNames=new Set(units.filter(unit=>unit.capacityType==='AUTHORITY').map(unit=>unit.name));
+  const scaled={...quantities};
+  for(const name of mercenaryNames){
+    const current=Number(scaled[name]??0);
+    if(current>0)scaled[name]=Math.max(minimumQuantity,Math.floor(current*factor));
+  }
+  return scaled;
+}
+
 function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxFlags=3,eligibleCategories=null,eligibleTierPrefixes=null}){
   const limits=limitsOf(capacityLimits);
   const base=start.result??scoreEpicArmy({units,quantities:start.quantities,bonuses});
@@ -1045,6 +1055,9 @@ export function optimizeEpicQuantities(args) {
   seedDefs.push({name:'forward',make:()=>makeEqualHealthSeed({...args,order:'forward',separationPct:.05})});
   seedDefs.push({name:'reverse',make:()=>makeEqualHealthSeed({...args,order:'reverse',separationPct:.05})});
   for(const salt of [17,53,101,211])seedDefs.push({name:`diverse-${salt}`,make:()=>makeEqualHealthSeed({...args,order:'hash',salt,separationPct:.08})});
+  if(args.bonuses?.includeMercenariesInOptimization&&selected.some(unit=>unit.capacityType==='AUTHORITY')){
+    for(const factor of [.75,.5,.25])seedDefs.push({name:`authority-${Math.round(factor*100)}`,make:()=>scaleAuthoritySeed({units:selected,quantities:createLegacyHealthLadderSeed({...args,separationPct:.05}),factor,minimumQuantity:Number(args.minimumQuantity??1)})});
+  }
 
   let totalEvaluations=0;
   const seedScores=[];
@@ -1058,10 +1071,12 @@ export function optimizeEpicQuantities(args) {
 
   // Optimize several independent basins with a medium-cost deterministic local search.
   const finalists=[];
-  const localSeedCount=Math.min(4,seedScores.length);
+  const localSeeds=[...seedScores.filter(seed=>!seed.name.startsWith('authority-')).slice(0,4),...seedScores.filter(seed=>seed.name.startsWith('authority-'))];
+  const localSeedCount=localSeeds.length;
   for(let i=0;i<localSeedCount;i++){
-    const s=seedScores[i];
-    const local=optimizeFromSeed({...args,initialQuantities:s.quantities,structureValidator,stageFractions:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:8,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'local',seedIndex:i,seedCount:localSeedCount,seedName:s.name}):null});
+    const s=localSeeds[i];
+    const authorityBasin=s.name.startsWith('authority-');
+    const local=optimizeFromSeed({...args,initialQuantities:s.quantities,structureValidator,stageFractions:authorityBasin?[.02,.005,.001]:[.02,.01,.005,.002,.001,.0005],maxRoundsPerStage:authorityBasin?3:8,onProgress:typeof args.onProgress==='function'?p=>args.onProgress({...p,phase:'local',seedIndex:i,seedCount:localSeedCount,seedName:s.name}):null});
     totalEvaluations+=local.diagnostics.evaluations;
     finalists.push({name:s.name,quantities:local.quantities,result:local.result,local});
   }
@@ -1102,6 +1117,7 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
   out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
+  out.diagnostics.authorityCeiling=limits.AUTHORITY;
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
   out.diagnostics.evolutionBest=evo.best.result.expectedTotalLifetimeDamage;
   out.diagnostics.thresholdBest=threshold.result.expectedTotalLifetimeDamage;
@@ -1155,6 +1171,7 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.practicalStructureScore=practicalChoice.score;
   out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
   out.diagnostics.totalEvaluations=totalEvaluations;
+  out.diagnostics.authorityUsed=Number(out.result?.capacities?.AUTHORITY||0);
   if(args.collectPracticalCandidates){
     const maximumEld=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
     out.diagnostics.practicalCandidates=practicalPool.map((candidate,index)=>({
