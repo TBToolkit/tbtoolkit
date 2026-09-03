@@ -334,7 +334,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.2-final-convergence-polish';
+const EPIC_OPTIMIZER_BUILD = '2.3-conventional-gs';
 
 
 function finite(v, label) {
@@ -1363,6 +1363,81 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   return {notes,alternatives,evaluations};
 }
 
+function highestTierGsProtectedInOpening(result,selected,bonuses){
+  const enemyCount=Array.isArray(bonuses?.enemySquadTypes)&&bonuses.enemySquadTypes.length?bonuses.enemySquadTypes.length:(bonuses?.arachne?8:4);
+  const tierInfo=new Map();
+  for(const unit of selected){
+    const prefix=String(unit.tier||'').slice(0,1).toUpperCase();
+    if(!['G','S'].includes(prefix))continue;
+    const tier=Number((String(unit.tier||'').match(/\d+/)||[0])[0]);
+    const info=tierInfo.get(prefix)??{maximum:0,tiers:new Set()};
+    info.maximum=Math.max(info.maximum,tier);info.tiers.add(tier);tierInfo.set(prefix,info);
+  }
+  return (result?.squads||[]).every(squad=>{
+    if(Number(squad.predictedDeathPosition??999)>enemyCount)return true;
+    const prefix=String(squad.tier||'').slice(0,1).toUpperCase(),info=tierInfo.get(prefix);
+    if(!info||info.tiers.size<2)return true;
+    const tier=Number((String(squad.tier||'').match(/\d+/)||[0])[0]);
+    return tier<info.maximum;
+  });
+}
+
+function highestTierGsOpeningCount(result,selected,bonuses){
+  const enemyCount=Array.isArray(bonuses?.enemySquadTypes)&&bonuses.enemySquadTypes.length?bonuses.enemySquadTypes.length:(bonuses?.arachne?8:4);
+  const maximumByPrefix=new Map();
+  for(const unit of selected){
+    const prefix=String(unit.tier||'').slice(0,1).toUpperCase();
+    if(!['G','S'].includes(prefix))continue;
+    const tier=Number((String(unit.tier||'').match(/\d+/)||[0])[0]);
+    maximumByPrefix.set(prefix,Math.max(maximumByPrefix.get(prefix)||0,tier));
+  }
+  return (result?.squads||[]).filter(squad=>{
+    if(Number(squad.predictedDeathPosition??999)>enemyCount)return false;
+    const prefix=String(squad.tier||'').slice(0,1).toUpperCase();
+    const tier=Number((String(squad.tier||'').match(/\d+/)||[0])[0]);
+    return ['G','S'].includes(prefix)&&tier>0&&tier===maximumByPrefix.get(prefix);
+  }).length;
+}
+
+function searchConventionalGsBasin({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1}){
+  const maximumEld=Number(start.result?.expectedTotalLifetimeDamage||0);
+  const all=[];
+  let frontier=[start];
+  let evaluations=0;
+  const signature=candidate=>(candidate.result?.squads||[])
+    .filter(s=>['G','S'].includes(String(s.tier||'').slice(0,1).toUpperCase()))
+    .sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999))
+    .map(s=>s.id).join('|');
+  const seen=new Set([signature(start)]);
+
+  // One counterfactual often just swaps one top-tier opening sacrifice for
+  // another. Follow a few basins so the opening group can move together.
+  for(let depth=0;depth<3&&frontier.length;depth++){
+    const next=[];
+    for(const parent of frontier){
+      const analysis=analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,start:parent,structureValidator,minimumQuantity,maxFlags:6});
+      evaluations+=analysis.evaluations;
+      for(const candidate of analysis.alternatives){
+        const eld=Number(candidate.result?.expectedTotalLifetimeDamage||0);
+        if(!(eld>0)||maximumEld>0&&((maximumEld-eld)/maximumEld*100)>.75)continue;
+        const key=signature(candidate);if(seen.has(key))continue;seen.add(key);
+        const wrapped={...candidate,source:`conventional-gs-beam-${depth+1}`};
+        all.push(wrapped);next.push(wrapped);
+      }
+    }
+    next.sort((a,b)=>{
+      const countDiff=highestTierGsOpeningCount(a.result,selected,bonuses)-highestTierGsOpeningCount(b.result,selected,bonuses);
+      if(countDiff)return countDiff;
+      const scoreDiff=practicalStructureScore(a.result)-practicalStructureScore(b.result);
+      if(scoreDiff)return scoreDiff;
+      return Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0);
+    });
+    frontier=next.slice(0,4);
+    if(frontier.some(candidate=>highestTierGsOpeningCount(candidate.result,selected,bonuses)===0))break;
+  }
+  return {candidates:all,evaluations};
+}
+
 
 function finalConvergencePolish({
   units,
@@ -1541,6 +1616,22 @@ function optimizeEpicQuantities(args) {
   const practicalPool=[mathematicalMaximum];
   let finalSearchEvaluations=0;
   let searchPasses=0;
+
+  // Preserve one independently seeded basin in which lower-tier Guardsmen and
+  // Specialists absorb the opening cycle. The final 0.25% gate decides whether
+  // this more familiar ladder is close enough to the mathematical maximum.
+  const conventionalSeed=seedScores
+    .filter(seed=>highestTierGsProtectedInOpening(seed.result,selected,args.bonuses))
+    .sort((a,b)=>Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0))[0];
+  if(conventionalSeed){
+    const conventionalValidator=(result,chosen)=>structureValidator(result,chosen)&&highestTierGsProtectedInOpening(result,selected,args.bonuses);
+    const conventional=optimizeFromSeed({...args,initialQuantities:conventionalSeed.quantities,structureValidator:conventionalValidator,stageFractions:[.005,.002,.001,.0005,.0002],maxRoundsPerStage:4,onProgress:null});
+    totalEvaluations+=Number(conventional.diagnostics?.evaluations||0);
+    practicalPool.push({quantities:{...conventional.quantities},result:conventional.result,source:'conventional-gs-opening'});
+  }
+  const conventionalBeam=searchConventionalGsBasin({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1)});
+  totalEvaluations+=conventionalBeam.evaluations;finalSearchEvaluations+=conventionalBeam.evaluations;
+  practicalPool.push(...conventionalBeam.candidates);
   for(let pass=0;pass<2;pass++){
     searchPasses++;
     const analysis=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
@@ -1605,6 +1696,15 @@ function optimizeEpicQuantities(args) {
   out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
   out.diagnostics.practicalStructureScore=practicalChoice.score;
   out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
+  out.diagnostics.practicalCandidateSummary=practicalPool.map(candidate=>({
+    source:candidate.source||'optimizer-maximum',
+    eld:Number(candidate.result?.expectedTotalLifetimeDamage||0),
+    score:practicalStructureScore(candidate.result),
+    gsOrder:[...(candidate.result?.squads||[])]
+      .filter(squad=>['G','S'].includes(String(squad.tier||'').slice(0,1).toUpperCase()))
+      .sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999))
+      .map(squad=>({id:squad.id,tier:squad.tier,death:squad.predictedDeathPosition,damagePerOpportunity:squad.expectedDamagePerOpportunity}))
+  }));
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
   return out;

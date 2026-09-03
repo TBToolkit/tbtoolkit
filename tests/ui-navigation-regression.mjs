@@ -49,7 +49,7 @@ assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
 assert.match(optimizerWorker,/\['G','S'\]\.includes\(String\(s\.tier\|\|''\)\.slice\(0,1\)\.toUpperCase\(\)\)/, 'Optimizer conventionality must apply only to Guardsmen and Specialists');
 assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:\.25\}\)/, 'Optimizer must cap the G/S conventionality preference at 0.25% below maximum ELD');
-assert.match(source,/epic-optimizer-worker\.js\?v=192/, 'Optimizer worker cache key must include the G/S tie-break build');
+assert.match(source,/epic-optimizer-worker\.js\?v=193/, 'Optimizer worker cache key must include the G/S tie-break build');
 assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?details\.querySelectorAll\('\.hierarchy-unit input\[data-unit-id\]'\)[\s\S]*?next\[category\]\.add\(input\.dataset\.unitId\)/, 'A fully selected rendered group must preserve every descendant unit during reconciliation');
 assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 
