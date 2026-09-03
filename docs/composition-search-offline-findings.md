@@ -148,7 +148,22 @@ The repeatable invariant check is available through `npm run test:review-selecti
 
 ## Next offline step
 
-Measure the validated adaptive search in a browser worker and define an interactive time budget before integrating the Review Selection control into the live calculator.
+Integrate the proposal-only worker behind a Review Selection control, then add the Accept/Keep Current confirmation workflow without changing shared selections before acceptance.
+
+## Browser-worker timing
+
+The accuracy-preserving adaptive search now runs in a dedicated module worker. The worker loads canonical army data independently, reports search and refinement progress, and returns a proposal without touching saved calculator state. The calling page cancels by terminating the worker, which immediately discards the in-progress review.
+
+Real-browser measurements on the current test machine:
+
+- Doomsday: `41.5` seconds, producing the expected complete 30-unit G8–G9/S8–S9/E8–E9/M7–M9 recommendation.
+- Arachne: `38.9` seconds, producing the same expected complete 30-unit structure.
+- Cancellation: confirmed after approximately one second, with no selection change.
+- `20`-second budget: correctly returns a time-limit message with no selection change.
+
+The current accurate process does not meet the aspirational 20-second target. The prototype therefore uses a conservative `120`-second default budget and retains visible progress plus cancellation. Runtime optimization can be revisited later without weakening the validated search breadth.
+
+The worker is not connected to the live calculator yet. The isolated browser harness is `tests/review-selection-worker-harness.html`, and a fast engine/protocol regression is available through `npm run test:review-selection-worker`.
 
 ## Review Selection method matrix
 
