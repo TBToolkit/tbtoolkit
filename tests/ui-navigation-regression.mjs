@@ -62,6 +62,9 @@ assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematical
 assert.match(source,/epic-optimizer-worker\.js\?v=194/, 'Optimizer worker cache key must include the Authority-ceiling build');
 assert.match(optimizerWorker,/for\(const factor of \[\.75,\.5,\.25\]\)/, 'Mercenary optimization must compare explicit partial-Authority basins');
 assert.match(optimizerWorker,/authorityCeiling=limits\.AUTHORITY/, 'Optimizer diagnostics must report the Authority ceiling');
+assert.match(source,/function syncAutoFillDisplayToActual\(result\)[\s\S]*if\(!result\)return;/, 'Auto Fill displays must support optimized results');
+assert.match(source,/renderEpicOptimizedResult\(opt\)[\s\S]*updateCapacity\(result\);\s*syncAutoFillDisplayToActual\(result\);/, 'Optimized results must sync Max Fill displays to achieved capacity');
+assert.match(source,/maximum>0&&Number\.isFinite\(actual\)\?actual\/maximum:NaN/, 'Optimized Max Fill display must derive utilization from actual capacity and the configured maximum');
 assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?details\.querySelectorAll\('\.hierarchy-unit input\[data-unit-id\]'\)[\s\S]*?next\[category\]\.add\(input\.dataset\.unitId\)/, 'A fully selected rendered group must preserve every descendant unit during reconciliation');
 assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 

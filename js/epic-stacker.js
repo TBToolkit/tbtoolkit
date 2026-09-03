@@ -1201,6 +1201,7 @@ function renderEpicOptimizedResult(opt){
   renderResultRows('monster',result.categories.monster.results);
   renderResultRows('troop',result.categories.troop.results);
   updateCapacity(result);
+  syncAutoFillDisplayToActual(result);
   renderLayerHealthChart(result);
   renderPrediction(opt);
   updateLiveDamageMetric(Number(opt?.result?.expectedTotalLifetimeDamage||0),false,true);
@@ -2359,13 +2360,24 @@ function renderLayerHealthChart(result){
 }
 function syncAutoFillDisplayToActual(result){
   // Max Fill is a user-facing capacity result, so show the actual achieved
-  // utilization after whole-unit rounding for both Fixed and Minimum Separation.
-  if(!result||isAnyEpicOptimizeMode())return;
-  const map={troop:'leadershipFill',mercenary:'authorityFill',monster:'dominanceFill'};
-  for(const [category,fieldId] of Object.entries(map)){
+  // utilization after whole-unit rounding for every calculation method. This
+  // only updates the disabled display; the saved manual fill and optimizer
+  // capacity ceiling remain unchanged.
+  if(!result)return;
+  const map={
+    troop:{fieldId:'leadershipFill',total:'leadership',limit:'leadership'},
+    mercenary:{fieldId:'authorityFill',total:'authority',limit:'authority'},
+    monster:{fieldId:'dominanceFill',total:'dominance',limit:'dominance'}
+  };
+  for(const [category,{fieldId,total,limit}] of Object.entries(map)){
     const meta=CAPACITY_META[category];
     if(!modeState().inputs[meta.auto])continue;
-    const pct=Number(result?.categories?.[category]?.capacityPercent);
+    const categoryPct=Number(result?.categories?.[category]?.capacityPercent);
+    const maximum=parseNumber(modeState().inputs[limit]);
+    const actual=Number(result?.totals?.[total]);
+    const pct=Number.isFinite(categoryPct)
+      ?categoryPct
+      :maximum>0&&Number.isFinite(actual)?actual/maximum:NaN;
     if(Number.isFinite(pct)&&els[fieldId])els[fieldId].value=(pct*100).toFixed(2);
   }
 }
