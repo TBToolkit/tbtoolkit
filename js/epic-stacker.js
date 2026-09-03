@@ -1351,7 +1351,7 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=battle
-    ?'Build an army for an Epic Monster or Player vs. Player battle. Enter your army limits and combat bonuses. Select the units you want to use. Choose Standard, Custom Order, or Optimize. Optimize is available for supported Epic battles.'
+    ?'Build and optimize an army for Epic Monster or Player vs. Player battles.'
     : classic
       ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
       : optimizer
@@ -2707,6 +2707,21 @@ function handleCalculatorNumericNavigation(id,input,e){
 function wireEvents(){
   wireStatHelp();
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
+  const selectionCardMedia=window.matchMedia('(max-width:600px)');
+  const syncSelectionCardLayout=()=>{
+    if(selectionCardMedia.matches)return;
+    document.querySelectorAll('.selection-card.is-collapsed').forEach(card=>{
+      card.classList.remove('is-collapsed');
+      card.querySelector('.selection-card-toggle')?.setAttribute('aria-expanded','true');
+    });
+  };
+  document.querySelectorAll('.selection-card-toggle').forEach(button=>button.addEventListener('click',()=>{
+    if(!selectionCardMedia.matches)return;
+    const card=button.closest('.selection-card');
+    const collapsed=card.classList.toggle('is-collapsed');
+    button.setAttribute('aria-expanded',String(!collapsed));
+  }));
+  selectionCardMedia.addEventListener?.('change',syncSelectionCardLayout);
   els.clearAllSelections.addEventListener('click',clearAllSelections);
   els.reviewSelection?.addEventListener('click',startReviewSelection);
   els.cancelReviewSelection?.addEventListener('click',()=>cancelReviewSelection());
@@ -3051,3 +3066,4 @@ document.addEventListener('keydown',(event)=>{
   if(event.key!=='Escape')return;
   document.querySelectorAll('.inline-info-help[open]').forEach(details=>details.open=false);
 });
+
