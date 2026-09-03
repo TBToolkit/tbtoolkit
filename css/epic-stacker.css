@@ -511,7 +511,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 }
 .unit-strength{display:none}
 
-/* Results: text only, dotted leader, tier-colored text. */
+/* Results: compact unit identity, icon, and quantity. */
 .result-groups{gap:10px;padding:10px}
 .result-group{background:#06131e}
 .result-group h3{padding:8px 10px;font-size:.68rem}
@@ -548,6 +548,9 @@ details.advanced{margin-top:8px;padding-top:7px}
   color:inherit;
   opacity:.78;
   font-size:.56rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 .result-leader{
   flex:1 1 30px;
@@ -1955,6 +1958,24 @@ body.sacrifice-help-modal-open{overflow:hidden}
   line-clamp:2;
   line-height:1.08;
 }
+
+/* Keep the existing result-tile footprint. The icon occupies a fixed middle
+   slot, so it cannot overlap either the truncating name or fixed-width quantity. */
+.result-row.compact-result-row .result-unit-icon{
+  display:block!important;
+  flex:0 0 32px!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px;
+  max-width:32px;
+  align-self:center;
+  object-fit:cover;
+  border:1px solid color-mix(in srgb,var(--result-accent,#415467) 75%,#fff 10%)!important;
+  border-radius:4px!important;
+  background:#06111a;
+}
+@media(max-width:1180px){.result-row.compact-result-row .result-unit-icon{flex-basis:30px!important;width:30px!important;height:30px!important;min-width:30px;max-width:30px}}
+@media(max-width:760px){.result-row.compact-result-row .result-unit-icon{display:block!important;flex-basis:32px!important;width:32px!important;height:32px!important;min-width:32px;max-width:32px}}
 @media(max-width:1180px){
   .result-row.compact-result-row .result-leader{
     flex:.2 1 6px!important;

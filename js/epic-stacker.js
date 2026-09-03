@@ -2147,7 +2147,9 @@ function renderResultRows(category,rows){
     div.style.setProperty('--result-bg',resultColors.rowColor);
     div.style.setProperty('--result-bg-soft',resultColors.soft);
     div.style.setProperty('--result-accent',resultColors.accent);
-    div.innerHTML=`<div class="result-label"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</span></div><span class="result-leader" aria-hidden="true"></span><div class="result-qty">${formatInteger(row.qty)}</div>`;
+    const unit=armyV2.find(candidate=>candidate.id===row.id),icon=row.icon||unit?.icon||'assets/unit-icons/missing-icon.svg';
+    div.innerHTML=`<div class="result-label"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.level)} · ${escapeHtml(row.type)}</span></div><img class="result-unit-icon" src="${escapeHtml(icon)}" alt="" aria-hidden="true" loading="lazy"><div class="result-qty">${formatInteger(row.qty)}</div>`;
+    iconFallback(div.querySelector('.result-unit-icon'));
     target.appendChild(div);
   }
 }
