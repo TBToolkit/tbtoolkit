@@ -6,11 +6,11 @@ import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounte
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
 import {APP_BUILD,OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
+import {readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 
-const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
+const STORAGE_KEY=SAVED_STATE_KEY;
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
@@ -400,14 +400,15 @@ async function loadData(){
 }
 function loadSavedState(){
   try{
-    const currentSaved=readSavedJson(localStorage,STORAGE_KEY,{validate:validateAccountState});
+    const loaded=readLatestSavedState(localStorage,readSavedJson,{validate:validateAccountState});
+    const currentSaved=loaded?.state;
     if(currentSaved?.accounts&&Object.keys(currentSaved.accounts).length){
       state.accounts={};
       for(const [id,raw] of Object.entries(currentSaved.accounts))state.accounts[id]=hydrateAccount({...raw,id});
       state.activeAccountId=state.accounts[currentSaved.activeAccountId]?currentSaved.activeAccountId:Object.keys(state.accounts)[0];
       activateAccount(state.activeAccountId);activeMode='battle';return;
     }
-    const saved=readSavedJson(localStorage,PREVIOUS_STORAGE_KEY);
+    const saved=currentSaved;
     if(saved?.modes){
       if(saved.preferences&&Number.isFinite(Number(saved.preferences.templeLevel))){
         state.preferences.templeLevel=Math.max(1,Math.min(45,Number(saved.preferences.templeLevel)||45));
@@ -525,7 +526,7 @@ function loadSavedState(){
 }
 function saveState(){
   try{
-    writeSavedJson(localStorage,STORAGE_KEY,{activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+    writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
   }catch(error){
     // Persistence must never interrupt a selection or calculation-method UI
     // transition. Optimizer results are stored under their own bounded key.

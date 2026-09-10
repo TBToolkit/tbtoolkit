@@ -50,7 +50,7 @@ assert.equal((html.match(/class="limit-title-row"/g)||[]).length,3,'Each Max Fil
 assert.match(css,/\.compact-limit-list \.limit-title-row\{[\s\S]*?display:flex;[\s\S]*?gap:11px;/, 'Capacity titles and Max Fill switches must use a consistent close association');
 assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?width:100%!important;[\s\S]*?max-width:100%!important;/, 'Fill controls must remain bounded by their capacity cards');
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
-assert.match(html,/css\/epic-stacker\.css\?v=195/, 'Battle Calculator must request the title-associated Max Fill layout build');
+assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
 assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');

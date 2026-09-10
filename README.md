@@ -2,6 +2,22 @@
 
 Static website for TBToolkit.com.
 
+## Development and releases
+
+- Run `node scripts/build-site.mjs` (or `npm run build`) to create the production site in `dist/`.
+- The build computes one content-derived asset identity and applies it to scripts, styles, ES-module imports, and workers. Manual `?v=` values in source HTML are ignored in production output.
+- `dist/deployment-manifest.json` records the package release, Git commit, asset identity, build time, and browser-storage schema.
+- Change the version once in `package.json` when preparing a release; `package-lock.json` must remain synchronized.
+- Browser account data uses the stable `tbtoolkit.stackingCalculator` key and an explicit schema version. Add each future migration to `js/saved-state-schema.mjs`; do not rename the storage key for ordinary releases.
+- Pull requests run the regression and production-build checks. A successful push to `main` deploys the exact generated `dist/` artifact through GitHub Pages.
+
+Before merging a release, run:
+
+```text
+npm test
+npm run test:release
+```
+
 Changes in v4:
 - Rebuilt the homepage hero as real HTML/CSS instead of displaying the entire mockup image.
 - Reduced desktop hero height and removed the dark overlay problem.

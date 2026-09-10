@@ -12,7 +12,7 @@ const dataset=document.getElementById('dataExportDataset');
 const format=document.getElementById('dataExportFormat');
 const button=document.getElementById('dataExportDownload');
 const summary=document.getElementById('dataExportSummary');
-async function loadManifest(){try{const r=await fetch('downloads/data/export-manifest.json?v=74',{cache:'no-store'});if(r.ok)Object.assign(manifest,await r.json());}catch(_){}update();}
+async function loadManifest(){try{const r=await fetch('downloads/data/export-manifest.json',{cache:'no-store'});if(r.ok)Object.assign(manifest,await r.json());}catch(_){}update();}
 function update(){const item=manifest[dataset.value];const count=item.records?`${Number(item.records).toLocaleString('en-US')} records`:'Public dataset';const formatText=format.value==='xlsx'?'Excel workbook':format.value==='csv'?(dataset.value==='all'?'ZIP of CSV files':'CSV file'):'JSON file';summary.innerHTML=`<strong>${item.label}</strong><span>${count} · ${formatText}</span>`;}
 button.addEventListener('click',()=>{const item=manifest[dataset.value];window.location.href=item[format.value];});dataset.addEventListener('change',update);format.addEventListener('change',update);loadManifest();
 })();
