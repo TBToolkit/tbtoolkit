@@ -1,9 +1,9 @@
-import {EPIC_REVIEW_BUILD,runOptimizeReviewSelection} from './epic-review-engine.mjs?v=192';
-import {validateArmyDatabase} from './epic-combat-engine-v2.mjs?v=192';
+import {EPIC_REVIEW_BUILD,runOptimizeReviewSelection} from './epic-review-engine.mjs';
+import {validateArmyDatabase} from './epic-combat-engine-v2.mjs';
 
 let armyPromise;
 function loadArmy(){
-  if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json?v=191',import.meta.url),{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`Unable to load canonical army database (${response.status}).`);return response.json();});
+  if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json',import.meta.url),{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`Unable to load canonical army database (${response.status}).`);return response.json();});
   return armyPromise;
 }
 

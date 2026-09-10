@@ -1,6 +1,6 @@
-import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs?v=191';
-import { mroundPositive } from './combat-mechanics.mjs?v=191';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=192';
+import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs';
+import { mroundPositive } from './combat-mechanics.mjs';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs';
 
 const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 

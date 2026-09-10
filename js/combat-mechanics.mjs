@@ -1,5 +1,6 @@
 /** Shared physical and economic primitives for every TB Toolkit battle type. */
-export const COMBAT_MECHANICS_BUILD='191';
+export {COMBAT_MECHANICS_BUILD} from './build-info.mjs';
+import {COMBAT_MECHANICS_BUILD} from './build-info.mjs';
 
 export const BONUS_FAMILY_BY_SPECIES=Object.freeze({
   BEAST:'MONSTER',DRAGON:'MONSTER',ELEMENTAL:'MONSTER',GIANT:'MONSTER',

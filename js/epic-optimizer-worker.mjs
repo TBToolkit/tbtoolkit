@@ -1,70 +1,60 @@
-import { optimizeEpicQuantities, EPIC_OPTIMIZER_BUILD } from './epic-quantity-optimizer.mjs?v=192';
+import {optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
+import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
+import {ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 
-let armyPromise = null;
-
-async function loadArmy(){
-  if(!armyPromise){
-    const url = new URL('../data/army-v2.json?v=191', import.meta.url);
-    armyPromise = fetch(url, {cache:'no-store'}).then(async r=>{
-      if(!r.ok) throw new Error(`Unable to load canonical army database (${r.status}).`);
-      return r.json();
-    });
-  }
+let armyPromise;
+function loadArmy(){
+  if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json',import.meta.url),{cache:'no-store'}).then(async response=>{
+    if(!response.ok)throw new Error(`Unable to load canonical army database (${response.status}).`);
+    const units=await response.json(),validation=validateArmyDatabase(units);
+    if(!validation.valid)throw new Error(`Army database validation failed: ${validation.errors.join('; ')}`);
+    return units;
+  });
   return armyPromise;
 }
-
-self.onmessage = async (event)=>{
-  const msg = event.data ?? {};
-  if(msg.type !== 'optimize') return;
-  const requestId = msg.requestId;
-  try{
-    const army = await loadArmy();
-    self.postMessage({type:'progress', requestId, payload:{phase:'loading',progressPct:2}});
-    const result = optimizeEpicQuantities({
-      units: army,
-      selectedIds: msg.selectedIds,
-      bonuses: msg.bonuses,
-      capacityLimits: msg.capacityLimits,
-      seedSeparationPct: 0.10,
-      minimumHealthSeparationPct: 0.01,
-      minimumQuantity: 1,
-      onProgress:(progress)=>{
-        let progressPct=10;
-        if(progress.phase==='seed-screen') progressPct=5+Math.round(((Number(progress.seedIndex||0)+1)/Math.max(1,Number(progress.seedCount||1)))*15);
-        else if(progress.phase==='local') progressPct=22+Math.round(((Number(progress.seedIndex||0)+(Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))/Math.max(1,Number(progress.seedCount||1)))*48);
-        else if(progress.phase==='evolution') progressPct=72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*12);
-        else if(progress.phase==='threshold') progressPct=84+Math.round((Number(progress.round||0)/Math.max(1,Number(progress.roundCount||1)))*4);
-        else if(progress.phase==='counterfactual') progressPct=88+Math.round(((Number(progress.basinIndex||0)+1)/Math.max(1,Number(progress.basinCount||1)))*3);
-        else if(progress.phase==='paired-counterfactual') progressPct=91+Math.round(((Number(progress.pairIndex||0)+1)/Math.max(1,Number(progress.pairCount||1)))*2);
-        else if(progress.phase==='group-redistribution') progressPct=93+Math.round(((Number(progress.groupIndex||0)+1)/Math.max(1,Number(progress.groupCount||1)))*2);
-        else if(progress.phase==='polish') progressPct=96+Math.round(((Number(progress.stageIndex||0)+1)/Math.max(1,Number(progress.stageCount||1)))*1);
-        self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(96,progressPct)}});
-      }
-
-    });
-    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
-    const quantities=result?.quantities??{};
-    const quantityFingerprint=Object.keys(quantities).sort().map(k=>`${k}:${quantities[k]}`).join('|');
-    self.postMessage({
-      type:'result',
-      requestId,
-      payload:result,
-      diagnostics:{
-        optimizerBuild:EPIC_OPTIMIZER_BUILD,
-        engineBuild:'2.1-arachne8',
-        armyDatabase:'ARMY9-v72',
-        armyCount:Array.isArray(army)?army.length:0,
-        quantityFingerprint,
-        inputPayload:msg.bonuses,
-        capacityLimits:msg.capacityLimits
-      }
-    });
-  }catch(error){
-    self.postMessage({
-      type:'error',
-      requestId,
-      message:error?.message || String(error),
-      stack:error?.stack || ''
-    });
+function capacityUsage(units,quantities){
+  const totals={LEADERSHIP:0,DOMINANCE:0,AUTHORITY:0};
+  const byKey=new Map(units.flatMap(unit=>[[unit.id,unit],[unit.name,unit]]));
+  for(const [key,value] of Object.entries(quantities||{})){
+    const unit=byKey.get(key),quantity=Math.max(0,Number(value)||0);
+    if(unit&&quantity)totals[unit.capacityType]+=quantity*Number(unit.capacityCost||0);
   }
+  return totals;
+}
+function progressPercent(progress){
+  const fraction=(value,total)=>(Number(value||0)+1)/Math.max(1,Number(total||1));
+  if(progress.phase==='seed-screen')return 5+Math.round(fraction(progress.seedIndex,progress.seedCount)*15);
+  if(progress.phase==='local')return 22+Math.round(((Number(progress.seedIndex||0)+fraction(progress.stageIndex,progress.stageCount))/Math.max(1,Number(progress.seedCount||1)))*48);
+  if(progress.phase==='evolution')return 72+Math.round((Number(progress.generation||0)/Math.max(1,Number(progress.generationCount||1)))*12);
+  if(progress.phase==='threshold')return 84+Math.round((Number(progress.round||0)/Math.max(1,Number(progress.roundCount||1)))*4);
+  if(progress.phase==='counterfactual')return 88+Math.round(fraction(progress.basinIndex,progress.basinCount)*3);
+  if(progress.phase==='paired-counterfactual')return 91+Math.round(fraction(progress.pairIndex,progress.pairCount)*2);
+  if(progress.phase==='group-redistribution')return 92+Math.round(fraction(progress.groupIndex,progress.groupCount)*2);
+  if(progress.phase==='polish')return 95;
+  if(progress.phase==='death-position'||progress.phase==='convergence-polish')return 96;
+  return 10;
+}
+
+self.onmessage=async event=>{
+  const message=event.data??{};if(message.type!=='optimize')return;
+  const requestId=message.requestId;
+  try{
+    const units=await loadArmy();
+    self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
+    const fixedQuantities=message.fixedQuantities&&typeof message.fixedQuantities==='object'?{...message.fixedQuantities}:{};
+    const fixedUsage=capacityUsage(units,fixedQuantities);
+    const authorityMaximum=Math.max(0,Math.floor(Number(message.fixedAuthorityMaximum)||0));
+    if(Object.keys(fixedQuantities).length&&authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9)throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
+    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:progress=>self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(97,progressPercent(progress))}})});
+    if(result&&Object.keys(fixedQuantities).length){
+      const coreResult=result.result;
+      const coreQuantities=Object.fromEntries((coreResult?.squads||[]).map(squad=>[squad.name,squad.quantity]));
+      const combinedResult=scoreEpicArmy({units,quantities:{...coreQuantities,...fixedQuantities},bonuses:message.bonuses});
+      result.quantities=Object.fromEntries((combinedResult.squads||[]).map(squad=>[squad.name,squad.quantity]));
+      result.result=combinedResult;
+      result.diagnostics={...(result.diagnostics||{}),fixedMercenaries:Object.keys(fixedQuantities).length,mercenaryOptimizationMode:'standard-live',optimizerCoreExpectedLifetimeDamage:Number(coreResult?.expectedTotalLifetimeDamage||0),combinedExpectedLifetimeDamage:Number(combinedResult.expectedTotalLifetimeDamage||0)};
+    }
+    self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
+    self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,mechanicsBuild:COMBAT_MECHANICS_BUILD,armyDatabase:ARMY_DATABASE_BUILD,armyCount:units.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,inputPayload:message.bonuses,capacityLimits:message.capacityLimits,fixedCapacityUsage:fixedUsage}});
+  }catch(error){self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});}
 };

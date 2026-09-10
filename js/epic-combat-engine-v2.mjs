@@ -5,10 +5,10 @@ import {
   bonusFamilyForSpecies,
   clampProbability,
   deriveBonusInputs,
-} from './epic-mechanics.mjs?v=191';
-import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs?v=192';
+} from './epic-mechanics.mjs';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs';
 
-export const EPIC_COMBAT_ENGINE_BUILD = '2.3-opening-coin-toss';
+export {EPIC_COMBAT_ENGINE_BUILD} from './build-info.mjs';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
 export { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);

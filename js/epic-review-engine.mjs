@@ -1,8 +1,9 @@
 import {adaptiveTierLatticeSearch,analyzeTierCompleteness,choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from './epic-composition-search.mjs';
-import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs?v=192';
-import {scoreEpicArmy} from './epic-combat-engine-v2.mjs?v=192';
+import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
+import {scoreEpicArmy} from './epic-combat-engine-v2.mjs';
 
-export const EPIC_REVIEW_BUILD='0.2-opening-coin-toss';
+export {EPIC_REVIEW_BUILD} from './build-info.mjs';
+import {EPIC_REVIEW_BUILD} from './build-info.mjs';
 
 function assertWithinDeadline(deadline){
   if(Number.isFinite(deadline)&&performance.now()>deadline){
@@ -21,6 +22,7 @@ function retainBest(map,row,limit){
 
 export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,fixedQuantities={},timeBudgetMs=120_000,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+Math.max(1_000,Number(timeBudgetMs)||120_000);
+  const shouldAbort=()=>performance.now()>deadline;
   const availability=inferReviewAvailability({units,selectedIds:currentIds});
   const structures=createReviewTierStructures({units,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds});
   const fixedNames=new Set(Object.keys(fixedQuantities||{}));
@@ -36,7 +38,7 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const refine=(candidate,strong=false)=>{
     assertWithinDeadline(deadline);
     const initialQuantities=Object.fromEntries(Object.entries(candidate.quantities).filter(([name])=>!fixedNames.has(name)));
-    const optimized=optimizeEpicQuantities({units,selectedIds:optimizableIds(candidate.selectedIds),bonuses,capacityLimits,initialQuantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:strong?[.05,.02,.01,.005,.002,.001,.0005]:[.02,.005,.001],maxRoundsPerStage:strong?8:3});
+    const optimized=optimizeEpicQuantities({units,selectedIds:optimizableIds(candidate.selectedIds),bonuses,capacityLimits,initialQuantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:strong?[.05,.02,.01,.005,.002,.001,.0005]:[.02,.005,.001],maxRoundsPerStage:strong?8:3,shouldAbort});
     assertWithinDeadline(deadline);
     const quantities=combineFixed(optimized.quantities);
     return{selectedIds:candidate.selectedIds,quantities,result:scoreEpicArmy({units,quantities,bonuses})};

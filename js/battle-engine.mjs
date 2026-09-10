@@ -5,10 +5,10 @@ import {
   clampProbability,
   bonusFamilyForSpecies,
   squadRevivalCosts,
-} from './combat-mechanics.mjs?v=191';
-import { BATTLE_SIMULATOR_BUILD, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=191';
+} from './combat-mechanics.mjs';
+import { BATTLE_SIMULATOR_BUILD, simulateTwoInitiativeAverage } from './battle-simulator.mjs';
 
-export const PVP_ENGINE_BUILD='191';
+export {PVP_ENGINE_BUILD} from './build-info.mjs';
 export { COMBAT_MECHANICS_BUILD, BATTLE_SIMULATOR_BUILD };
 
 const CATEGORY_CONFIG=Object.freeze({

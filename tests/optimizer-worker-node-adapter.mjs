@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import {parentPort} from 'node:worker_threads';
 
-const workerUrl=new URL('../js/epic-optimizer-worker.js',import.meta.url);
+const workerUrl=new URL('../js/epic-optimizer-worker.mjs',import.meta.url);
 globalThis.self={
   location:{href:workerUrl.href},
   postMessage:message=>parentPort.postMessage(message)
