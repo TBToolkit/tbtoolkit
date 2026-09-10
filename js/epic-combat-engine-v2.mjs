@@ -6,11 +6,11 @@ import {
   clampProbability,
   deriveBonusInputs,
 } from './epic-mechanics.mjs?v=191';
-import { simulateInitiativeCase, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=191';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs?v=192';
 
-export const EPIC_COMBAT_ENGINE_BUILD = '2.2-formations-1-8';
+export const EPIC_COMBAT_ENGINE_BUILD = '2.3-opening-coin-toss';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
-export { simulateInitiativeCase, simulateTwoInitiativeAverage };
+export { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
 const MATCHUP_KEY = Object.freeze({
@@ -29,10 +29,12 @@ export function validateArmyDatabase(units) {
   if (!Array.isArray(units)) throw new Error('Army database must be an array.');
   const ids = new Set();
   const numericIds = new Set();
+  const names = new Set();
   const errors = [];
   for (const u of units) {
     if (!u.id || ids.has(u.id)) errors.push(`Duplicate/missing stable id: ${u.id}`); else ids.add(u.id);
     if (!Number.isInteger(u.unitId) || numericIds.has(u.unitId)) errors.push(`Duplicate/invalid UNIT ID: ${u.unitId}`); else numericIds.add(u.unitId);
+    if (!u.name || names.has(u.name)) errors.push(`Duplicate/missing unit name: ${u.name}`); else names.add(u.name);
     if (!['troop','monster','mercenary'].includes(u.category)) errors.push(`${u.id}: invalid category ${u.category}`);
     if (!['LEADERSHIP','DOMINANCE','AUTHORITY'].includes(u.capacityType)) errors.push(`${u.id}: invalid capacity type ${u.capacityType}`);
     for (const [k,v] of [['capacityCost',u.capacityCost],['baseStrength',u.baseStrength],['baseHealth',u.baseHealth],['goldRevivalCost',u.goldRevivalCost]]) {
@@ -148,8 +150,12 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
 
   const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses);
   const enemySquadCount=resolvedBonuses.enemySquadTypes.length;
-  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
-  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount);
+  // Epic battles toss initiative for cycle 1, then the epic starts every later cycle.
+  // Keep the old alternating model available only as an explicit offline control.
+  const openingCoinToss=bonuses?.initiativeModel!=='alternating';
+  const initiativeOptions=openingCoinToss?{enemyStartsAfterOpening:true}:undefined;
+  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount,initiativeOptions);
+  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount,initiativeOptions);
   const expectedTotalLifetimeDamage = (friendlyFirst.totalDamage + epicFirst.totalDamage) / 2;
   const capacities = { LEADERSHIP:0, DOMINANCE:0, AUTHORITY:0 };
   let rawGoldRevivalCost = 0;
@@ -182,6 +188,7 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
     rawGoldRevivalCost,
     goldRevivalCost,
     expectedTotalLifetimeDamage,
+    initiativeModel:openingCoinToss?'opening-coin-toss':'alternating',
     strictHealthAdjustments:strictHealth.adjustments,
     strictHealthUnresolved:strictHealth.unresolved,
     expectedDamagePerGold: goldRevivalCost > 0 ? expectedTotalLifetimeDamage / goldRevivalCost : null,

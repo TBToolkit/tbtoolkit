@@ -1,20 +1,22 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=191';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=192';
+import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs?v=192';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=191';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=191';
 import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191';
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const APP_BUILD='191';
+const APP_BUILD='192';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
-const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
+const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
+const OPTIMIZER_CACHE_BUILD='epic-optimizer-2.5-engine-2.3';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
+const OPTIMIZER_PROGRESS_DEFAULT_NOTE='The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.';
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 function formatElapsed(ms){
@@ -393,6 +395,8 @@ async function loadData(){
       if(!r.ok)throw new Error(`Army database request failed (${r.status})`);
       const data=await r.json();
       if(!Array.isArray(data)||!data.length)throw new Error('Army database is empty or invalid');
+      const validation=validateArmyDatabase(data);
+      if(!validation.valid)throw new Error(`Army database validation failed: ${validation.errors.join('; ')}`);
       armyV2=data;
       for(const category of ['troop','monster','mercenary']){
         units[category]=armyV2.filter(u=>u.category===category).map(legacyUnitFromCanonical);
@@ -634,7 +638,7 @@ function confirmPendingBiffImport(){
 }
 function optimizerResultStorageKey(){
   return activeMode==='battle'
-    ?`tbtoolkit.battleCalculator.optimizerResult.v3.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
+    ?`tbtoolkit.battleCalculator.optimizerResult.v4.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
     :OPTIMIZER_RESULT_KEY;
 }
 function loadSavedOptimizerResult(){
@@ -642,7 +646,7 @@ function loadSavedOptimizerResult(){
     lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
     let saved=JSON.parse(localStorage.getItem(optimizerResultStorageKey())||'null');
     if(activeMode==='battle'&&!saved)saved=currentBattleWorkspace().resultCache||null;
-    if(!saved?.payload||!saved?.signature)return;
+    if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
     lastOptimizedEpicPayload=saved.payload;
     lastOptimizedEpicSignature=saved.signature;
     lastEpicRunDiagnostics=saved.runDiagnostics??null;
@@ -652,7 +656,7 @@ function loadSavedOptimizerResult(){
 function saveOptimizerResult(){
   try{
     if(!lastOptimizedEpicPayload||!lastOptimizedEpicSignature)return;
-    const saved={payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
+    const saved={build:OPTIMIZER_CACHE_BUILD,payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
     localStorage.setItem(optimizerResultStorageKey(),JSON.stringify(saved));
     if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
     saveState();
@@ -855,7 +859,7 @@ function startReviewSelection(){
   const fixedQuantities=includeMercs?{}:fixedStandardMercenaryQuantitiesForOptimizer();
   const currentIds=[...selected.troop,...selected.monster,...selected.mercenary];
   const requestId=++reviewRequestId;reviewInputSignature=currentReviewInputSignature();pendingReviewProposal=null;
-  try{reviewWorker=new Worker('js/epic-review-worker.mjs?v=191',{type:'module'});}catch(error){console.error(error);showValidation(['This browser could not start Review Selection. Refresh the page and try again.']);return;}
+  try{reviewWorker=new Worker('js/epic-review-worker.mjs?v=192',{type:'module'});}catch(error){console.error(error);showValidation(['This browser could not start Review Selection. Refresh the page and try again.']);return;}
   setReviewSelectionState();openReviewProgress();
   reviewWorker.onmessage=event=>{
     const message=event.data??{};if(message.requestId!==requestId)return;
@@ -944,6 +948,8 @@ function openOptimizerModal(){
   optimizerBestEldSoFar=0;
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
+  const progressNote=document.getElementById('optimizerProgressNote');
+  if(progressNote)progressNote.textContent=OPTIMIZER_PROGRESS_DEFAULT_NOTE;
   if(!els.optimizerModal)return;
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
@@ -964,6 +970,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
   if(progress.phase==='death-position')return 'Testing widely different death-order structures…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
+  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied)return 'Selecting a practical near-optimal army…';
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';
@@ -982,10 +989,17 @@ function updateOptimizerProgress(progress={}){
     els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} candidates evaluated`:'';
   }
   const currentEld=Number(progress.expectedLifetimeDamage);
+  const reportedBest=Number(progress.bestExpectedLifetimeDamage);
+  if(Number.isFinite(reportedBest)&&reportedBest>0)optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,reportedBest);
   if(Number.isFinite(currentEld)&&currentEld>0){
     optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,currentEld);
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=formatDamage(currentEld);
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=formatDamage(optimizerBestEldSoFar);
+  }
+  const progressNote=document.getElementById('optimizerProgressNote');
+  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied&&progressNote){
+    const loss=Number(progress.practicalTieBreakLossPct);
+    progressNote.textContent=`The mathematical best remains shown for comparison. The selected practical army gives up ${Number.isFinite(loss)?loss.toFixed(3):'less than 0.250'}% ELD for a more conventional troop death order.`;
   }
 }
 function formatDamage(value){
@@ -1005,8 +1019,8 @@ function renderPrediction(opt){
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
     : !!modeState().inputs.arachne;
-  if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Two-initiative average · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
-  else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Two-initiative average${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText}${templeText} · Full battle simulation using the displayed quantities.`;}
+  if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Opening initiative: 50/50 · Epic starts every later cycle · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
+  else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Opening initiative: 50/50 · Epic starts every later cycle${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText}${templeText} · Full battle simulation using the displayed quantities.`;}
   const diagnosticNotes=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[String(n.id),n]));
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
 
@@ -1237,7 +1251,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=194');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=196');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1280,7 +1294,7 @@ function startEpicOptimization(){
           capacities:msg.payload?.result?.capacities,
           quantities:msg.payload?.quantities
         });
-        updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.evaluations});
+        updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.totalEvaluations??msg.payload?.diagnostics?.evaluations,expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,bestExpectedLifetimeDamage:msg.payload?.diagnostics?.maximumExpectedLifetimeDamage,practicalTieBreakApplied:!!msg.payload?.diagnostics?.practicalTieBreakApplied,practicalTieBreakLossPct:msg.payload?.diagnostics?.practicalTieBreakLossPct});
         renderEpicOptimizedResult(msg.payload);
         lastOptimizedEpicPayload=msg.payload;
         epicResultCurrent=true;
@@ -1293,7 +1307,8 @@ function startEpicOptimization(){
         epicResultCurrent=false;
       }finally{
         if(epicWorker){epicWorker.terminate();epicWorker=null;}
-        setTimeout(closeOptimizerModal,180);
+        const closeDelay=msg.payload?.diagnostics?.practicalTieBreakApplied?1400:180;
+        setTimeout(closeOptimizerModal,closeDelay);
         setOptimizeButtonState();
       }
     }

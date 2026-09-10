@@ -59,7 +59,16 @@ assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
 assert.match(optimizerWorker,/\['G','S'\]\.includes\(String\(s\.tier\|\|''\)\.slice\(0,1\)\.toUpperCase\(\)\)/, 'Optimizer conventionality must apply only to Guardsmen and Specialists');
 assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:\.25\}\)/, 'Optimizer must cap the G/S conventionality preference at 0.25% below maximum ELD');
-assert.match(source,/epic-optimizer-worker\.js\?v=194/, 'Optimizer worker cache key must include the Authority-ceiling build');
+assert.match(source,/epic-optimizer-worker\.js\?v=196/, 'Optimizer worker cache key must include the hardened optimizer build');
+assert.match(source,/epic-engine\.mjs\?v=192/, 'Standard and Custom Epic calculations must load the corrected simulator build');
+assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
+assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
+assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
+assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');
+assert.match(html,/Mathematical Best ELD/, 'Optimizer progress must distinguish the mathematical maximum from the selected practical result');
+assert.match(source,/Selecting a practical near-optimal army/, 'Optimizer finalization must explain an intentional practical tie-break');
+assert.match(source,/epic-review-worker\.mjs\?v=192/, 'Review Selection worker cache key must include the opening-coin-toss build');
+assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');
 assert.match(optimizerWorker,/for\(const factor of \[\.75,\.5,\.25\]\)/, 'Mercenary optimization must compare explicit partial-Authority basins');
 assert.match(optimizerWorker,/authorityCeiling=limits\.AUTHORITY/, 'Optimizer diagnostics must report the Authority ceiling');
 assert.match(source,/function syncAutoFillDisplayToActual\(result\)[\s\S]*if\(!result\)return;/, 'Auto Fill displays must support optimized results');

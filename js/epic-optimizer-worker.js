@@ -13,7 +13,7 @@ let EPIC_MECHANICS_BUILD = 'unloaded';
 
 async function loadSharedCombat(){
   if(!sharedCombatPromise){
-    const url = new URL('./epic-combat-engine-v2.mjs?v=191', self.location.href);
+    const url = new URL('./epic-combat-engine-v2.mjs?v=192', self.location.href);
     sharedCombatPromise = import(url.href).then((mod)=>{
       deriveBonusInputs = mod.deriveBonusInputs;
       buildSquad = mod.buildSquad;
@@ -157,7 +157,7 @@ function compareScore(a, b, epsilon = 1e-3) {
  *  - start from a feasible legacy-style health-ladder seed (or caller seed);
  *  - for each capacity family, transfer progressively smaller capacity chunks between
  *    selected squads and also test one-sided reductions / slack-filling increases;
- *  - score every candidate with the full two-initiative discrete battle simulator;
+ *  - score every candidate with the opening-coin-toss Epic battle simulator;
  *  - accept only strictly higher expected lifetime damage and enforce the validated
  *    minimum effective-health separation on every accepted candidate.
  *
@@ -334,7 +334,7 @@ function optimizeFromSeed({
 
 
 
-const EPIC_OPTIMIZER_BUILD = '2.4-authority-ceiling';
+const EPIC_OPTIMIZER_BUILD = '2.5-opening-coin-toss';
 
 
 function finite(v, label) {
@@ -446,7 +446,7 @@ function compareScore(a, b, epsilon = 1e-3) {
  *  - start from a feasible legacy-style health-ladder seed (or caller seed);
  *  - for each capacity family, transfer progressively smaller capacity chunks between
  *    selected squads and also test one-sided reductions / slack-filling increases;
- *  - score every candidate with the full two-initiative discrete battle simulator;
+ *  - score every candidate with the opening-coin-toss Epic battle simulator;
  *  - accept only strictly higher expected lifetime damage and enforce the validated
  *    minimum effective-health separation on every accepted candidate.
  *
@@ -1739,6 +1739,8 @@ self.onmessage=async(event)=>{
  try{
   await loadSharedCombat();
   const army=await loadArmy();
+  const armyValidation=validateArmyDatabase(army);
+  if(!armyValidation.valid)throw new Error(`Army database validation failed: ${armyValidation.errors.join('; ')}`);
   self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
   const fixedQuantities={...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})};
   const fixedUsage=fixedCapacityUsage(army,fixedQuantities);
@@ -1782,7 +1784,7 @@ self.onmessage=async(event)=>{
     result.diagnostics={
       ...(result.diagnostics||{}),
       fixedMercenaries:Object.keys(fixedQuantities).length,
-      mercenaryOptimizationMode:hasFixedMercs?'standard-postprocess':'optimized',
+      mercenaryOptimizationMode:hasFixedMercs?'standard-live':'optimized',
       optimizerCoreExpectedLifetimeDamage:Number(coreResult?.expectedTotalLifetimeDamage||0),
       combinedExpectedLifetimeDamage:Number(combinedResult?.expectedTotalLifetimeDamage||0)
     };

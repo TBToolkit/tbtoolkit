@@ -1,5 +1,5 @@
-export const EPIC_OPTIMIZER_BUILD = '2.0-adaptive-death-search';
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=191';
+export const EPIC_OPTIMIZER_BUILD = '2.1-opening-coin-toss';
+import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=192';
 
 const CAPACITY_TYPES = Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 
@@ -112,7 +112,7 @@ function compareScore(a, b, epsilon = 1e-3) {
  *  - start from a feasible legacy-style health-ladder seed (or caller seed);
  *  - for each capacity family, transfer progressively smaller capacity chunks between
  *    selected squads and also test one-sided reductions / slack-filling increases;
- *  - score every candidate with the full two-initiative discrete battle simulator;
+ *  - score every candidate with the opening-coin-toss Epic battle simulator;
  *  - accept only strictly higher expected lifetime damage and enforce the validated
  *    minimum effective-health separation on every accepted candidate.
  *
