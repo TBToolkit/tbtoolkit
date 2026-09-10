@@ -1,4 +1,4 @@
-export const APP_BUILD = '193';
+export const APP_BUILD = '194';
 export const ARMY_DATABASE_BUILD = 'ARMY9-v72';
 export const COMBAT_MECHANICS_BUILD = '191';
 export const EPIC_MECHANICS_BUILD = '191';

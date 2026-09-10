@@ -42,7 +42,9 @@ export function writeSavedJson(storage,key,value,{maxBytes=2_000_000,validate=va
 }
 
 export function validateAccountState(value){
-  validateSavedTree(value);
+  // Older builds embedded optimizer diagnostics inside each workspace. Allow
+  // those snapshots to load once so the next save can migrate them out.
+  validateSavedTree(value,{maxNodes:250_000,maxArrayLength:5_000});
   if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Saved calculator state must be an object.');
   if(value.accounts!==undefined){
     if(!value.accounts||typeof value.accounts!=='object'||Array.isArray(value.accounts))throw new Error('Saved accounts must be an object.');
@@ -55,4 +57,15 @@ export function validateAccountState(value){
     }
   }
   return value;
+}
+
+export function persistentAccountSnapshot(accounts){
+  const snapshot=structuredClone(accounts??{});
+  for(const account of Object.values(snapshot)){
+    for(const workspace of Object.values(account?.battle?.workspaces??{})){
+      if(workspace?.methods?.optimize)workspace.methods.optimize.resultCache=null;
+      if(Object.hasOwn(workspace??{},'resultCache'))delete workspace.resultCache;
+    }
+  }
+  return snapshot;
 }

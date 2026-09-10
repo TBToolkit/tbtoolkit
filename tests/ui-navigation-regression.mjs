@@ -63,6 +63,8 @@ assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematical
 assert.match(source,/createOptimizerWorker\(\)/, 'UI must obtain the shared module optimizer worker from its client boundary');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
+assert.match(source,/accounts:persistentAccountSnapshot\(state\.accounts\)/, 'General workspace persistence must exclude method-specific optimizer payloads');
+assert.match(source,/function saveState\(\)\{[\s\S]*?catch\(error\)/, 'A browser persistence failure must not interrupt method or selection changes');
 assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
 assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
 assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');

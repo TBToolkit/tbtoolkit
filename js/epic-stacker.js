@@ -5,7 +5,7 @@ import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantit
 import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs';
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
 import {APP_BUILD,OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
-import {readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
+import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 
@@ -523,7 +523,15 @@ function loadSavedState(){
   }
   ensureBattleWorkspace();
 }
-function saveState(){writeSavedJson(localStorage,STORAGE_KEY,{activeMode,activeAccountId:state.activeAccountId,accounts:state.accounts,preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});}
+function saveState(){
+  try{
+    writeSavedJson(localStorage,STORAGE_KEY,{activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+  }catch(error){
+    // Persistence must never interrupt a selection or calculation-method UI
+    // transition. Optimizer results are stored under their own bounded key.
+    console.warn('Could not save calculator state.',error);
+  }
+}
 function safeBiffFileName(name){
   const stem=String(name||'tbtoolkit-account').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'tbtoolkit-account';
   return `${stem}.biff`;
