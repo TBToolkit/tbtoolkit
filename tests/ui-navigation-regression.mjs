@@ -66,6 +66,8 @@ assert.match(source,/mercenary:\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|
 assert.match(source,/authority:parseNumber\(i\.authority\)/, 'Fixed Authority inputs must participate in optimizer cache invalidation');
 assert.match(optimizerWorker,/fixedQuantitiesForScoring=fixedQuantities/, 'Fixed mercenaries must be installed into candidate scoring before optimization');
 assert.match(optimizerWorker,/capacityLimits\.AUTHORITY=fixedUsage\.AUTHORITY/, 'Fixed mercenary Authority must be represented in candidate feasibility checks');
+assert.match(html,/Mathematical Best ELD/, 'Optimizer progress must distinguish the mathematical maximum from the selected practical result');
+assert.match(source,/Selecting a practical near-optimal army/, 'Optimizer finalization must explain an intentional practical tie-break');
 assert.match(source,/epic-review-worker\.mjs\?v=192/, 'Review Selection worker cache key must include the opening-coin-toss build');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');
 assert.match(optimizerWorker,/for\(const factor of \[\.75,\.5,\.25\]\)/, 'Mercenary optimization must compare explicit partial-Authority basins');

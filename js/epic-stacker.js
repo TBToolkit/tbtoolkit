@@ -16,6 +16,7 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
+const OPTIMIZER_PROGRESS_DEFAULT_NOTE='The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.';
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 function formatElapsed(ms){
@@ -947,6 +948,8 @@ function openOptimizerModal(){
   optimizerBestEldSoFar=0;
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
+  const progressNote=document.getElementById('optimizerProgressNote');
+  if(progressNote)progressNote.textContent=OPTIMIZER_PROGRESS_DEFAULT_NOTE;
   if(!els.optimizerModal)return;
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
@@ -967,6 +970,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
   if(progress.phase==='death-position')return 'Testing widely different death-order structures…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
+  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied)return 'Selecting a practical near-optimal army…';
   if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';
@@ -985,10 +989,17 @@ function updateOptimizerProgress(progress={}){
     els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} candidates evaluated`:'';
   }
   const currentEld=Number(progress.expectedLifetimeDamage);
+  const reportedBest=Number(progress.bestExpectedLifetimeDamage);
+  if(Number.isFinite(reportedBest)&&reportedBest>0)optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,reportedBest);
   if(Number.isFinite(currentEld)&&currentEld>0){
     optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,currentEld);
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=formatDamage(currentEld);
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=formatDamage(optimizerBestEldSoFar);
+  }
+  const progressNote=document.getElementById('optimizerProgressNote');
+  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied&&progressNote){
+    const loss=Number(progress.practicalTieBreakLossPct);
+    progressNote.textContent=`The mathematical best remains shown for comparison. The selected practical army gives up ${Number.isFinite(loss)?loss.toFixed(3):'less than 0.250'}% ELD for a more conventional troop death order.`;
   }
 }
 function formatDamage(value){
@@ -1283,7 +1294,7 @@ function startEpicOptimization(){
           capacities:msg.payload?.result?.capacities,
           quantities:msg.payload?.quantities
         });
-        updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.evaluations});
+        updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.totalEvaluations??msg.payload?.diagnostics?.evaluations,expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,bestExpectedLifetimeDamage:msg.payload?.diagnostics?.maximumExpectedLifetimeDamage,practicalTieBreakApplied:!!msg.payload?.diagnostics?.practicalTieBreakApplied,practicalTieBreakLossPct:msg.payload?.diagnostics?.practicalTieBreakLossPct});
         renderEpicOptimizedResult(msg.payload);
         lastOptimizedEpicPayload=msg.payload;
         epicResultCurrent=true;
@@ -1296,7 +1307,8 @@ function startEpicOptimization(){
         epicResultCurrent=false;
       }finally{
         if(epicWorker){epicWorker.terminate();epicWorker=null;}
-        setTimeout(closeOptimizerModal,180);
+        const closeDelay=msg.payload?.diagnostics?.practicalTieBreakApplied?1400:180;
+        setTimeout(closeOptimizerModal,closeDelay);
         setOptimizeButtonState();
       }
     }
