@@ -21,7 +21,7 @@ function chooseEnemyTarget(squads,alive){
   return best;
 }
 
-export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4){
+export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4,{enemyStartsAfterOpening=false}={}){
   const enemyCount=Math.max(1,Math.floor(Number(enemySquadCount)||0));
   const alive=new Set(squads.filter(s=>s.quantity>0).map(s=>s.id));
   const attackOpportunities=Object.fromEntries(squads.map(s=>[s.id,0]));
@@ -56,14 +56,20 @@ export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4){
       friendlyTurn=!friendlyTurn;
     }
     while(alive.size&&friendlyAttack(attackedThisCycle)){}
-    cycle+=1;friendlyHasInitiative=!friendlyHasInitiative;
+    cycle+=1;friendlyHasInitiative=enemyStartsAfterOpening?false:!friendlyHasInitiative;
     if(cycle>squads.length+5)throw new Error('Simulation exceeded expected cycle bound.');
   }
-  return{friendlyStarts:Boolean(friendlyStarts),totalDamage,cycles:cycle-1,attackOpportunities,lifetimeDamage,death,events};
+  return{friendlyStarts:Boolean(friendlyStarts),enemyStartsAfterOpening:Boolean(enemyStartsAfterOpening),totalDamage,cycles:cycle-1,attackOpportunities,lifetimeDamage,death,events};
 }
 
 export function simulateTwoInitiativeAverage(squads,enemySquadCount){
   const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
   const enemyFirst=simulateInitiativeCase(squads,false,enemySquadCount);
+  return{friendlyFirst,enemyFirst,expectedTotalLifetimeDamage:(friendlyFirst.totalDamage+enemyFirst.totalDamage)/2};
+}
+
+export function simulateOpeningCoinTossAverage(squads,enemySquadCount){
+  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount,{enemyStartsAfterOpening:true});
+  const enemyFirst=simulateInitiativeCase(squads,false,enemySquadCount,{enemyStartsAfterOpening:true});
   return{friendlyFirst,enemyFirst,expectedTotalLifetimeDamage:(friendlyFirst.totalDamage+enemyFirst.totalDamage)/2};
 }

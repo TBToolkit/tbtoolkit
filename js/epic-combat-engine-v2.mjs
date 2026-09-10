@@ -6,11 +6,11 @@ import {
   clampProbability,
   deriveBonusInputs,
 } from './epic-mechanics.mjs?v=191';
-import { simulateInitiativeCase, simulateTwoInitiativeAverage } from './battle-simulator.mjs?v=191';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs?v=191';
 
 export const EPIC_COMBAT_ENGINE_BUILD = '2.2-formations-1-8';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
-export { simulateInitiativeCase, simulateTwoInitiativeAverage };
+export { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
 const MATCHUP_KEY = Object.freeze({
@@ -148,8 +148,10 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
 
   const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses);
   const enemySquadCount=resolvedBonuses.enemySquadTypes.length;
-  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount);
-  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount);
+  const openingCoinToss=bonuses?.initiativeModel==='opening-coin-toss';
+  const initiativeOptions=openingCoinToss?{enemyStartsAfterOpening:true}:undefined;
+  const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount,initiativeOptions);
+  const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount,initiativeOptions);
   const expectedTotalLifetimeDamage = (friendlyFirst.totalDamage + epicFirst.totalDamage) / 2;
   const capacities = { LEADERSHIP:0, DOMINANCE:0, AUTHORITY:0 };
   let rawGoldRevivalCost = 0;
@@ -182,6 +184,7 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
     rawGoldRevivalCost,
     goldRevivalCost,
     expectedTotalLifetimeDamage,
+    initiativeModel:openingCoinToss?'opening-coin-toss':'alternating',
     strictHealthAdjustments:strictHealth.adjustments,
     strictHealthUnresolved:strictHealth.unresolved,
     expectedDamagePerGold: goldRevivalCost > 0 ? expectedTotalLifetimeDamage / goldRevivalCost : null,
