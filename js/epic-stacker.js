@@ -887,18 +887,18 @@ function currentEpicEffectiveSignature(){
   const selected={
     troop:[...(modeState().selectedIds.troop||[])].sort(),
     monster:[...(modeState().selectedIds.monster||[])].sort(),
-    mercenary:[...(modeState().selectedIds.mercenary||[])].sort()
+    mercenary:includeMercs?[...(modeState().selectedIds.mercenary||[])].sort():[]
   };
   const effective={
     selected,
     leadership:parseNumber(i.leadership),
-    authority:parseNumber(i.authority),
+    authority:includeMercs?parseNumber(i.authority):null,
     dominance:parseNumber(i.dominance),
     autoLeadership:!!i.autoLeadership,
-    autoAuthority:!!i.autoAuthority,
+    autoAuthority:includeMercs?!!i.autoAuthority:null,
     autoDominance:!!i.autoDominance,
     leadershipFill:parseNumber(i.leadershipFill),
-    authorityFill:parseNumber(i.authorityFill),
+    authorityFill:includeMercs?parseNumber(i.authorityFill):null,
     dominanceFill:parseNumber(i.dominanceFill),
     includeMercenariesInOptimization:includeMercs,
     rankSeparation:parseNumber(i.rankSeparation),
