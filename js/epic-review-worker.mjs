@@ -1,4 +1,5 @@
 import {EPIC_REVIEW_BUILD,runOptimizeReviewSelection} from './epic-review-engine.mjs?v=192';
+import {validateArmyDatabase} from './epic-combat-engine-v2.mjs?v=192';
 
 let armyPromise;
 function loadArmy(){
@@ -12,6 +13,8 @@ self.onmessage=async event=>{
   const requestId=message.requestId;
   try{
     const units=await loadArmy();
+    const validation=validateArmyDatabase(units);
+    if(!validation.valid)throw new Error(`Army database validation failed: ${validation.errors.join('; ')}`);
     const payload=await runOptimizeReviewSelection({...message.payload,units,onProgress:progress=>self.postMessage({type:'progress',requestId,payload:progress})});
     self.postMessage({type:'result',requestId,payload,diagnostics:{reviewBuild:EPIC_REVIEW_BUILD,armyCount:units.length}});
   }catch(error){self.postMessage({type:'error',requestId,code:error?.code||'REVIEW_ERROR',message:error?.message||String(error),stack:error?.stack||''});}

@@ -29,10 +29,12 @@ export function validateArmyDatabase(units) {
   if (!Array.isArray(units)) throw new Error('Army database must be an array.');
   const ids = new Set();
   const numericIds = new Set();
+  const names = new Set();
   const errors = [];
   for (const u of units) {
     if (!u.id || ids.has(u.id)) errors.push(`Duplicate/missing stable id: ${u.id}`); else ids.add(u.id);
     if (!Number.isInteger(u.unitId) || numericIds.has(u.unitId)) errors.push(`Duplicate/invalid UNIT ID: ${u.unitId}`); else numericIds.add(u.unitId);
+    if (!u.name || names.has(u.name)) errors.push(`Duplicate/missing unit name: ${u.name}`); else names.add(u.name);
     if (!['troop','monster','mercenary'].includes(u.category)) errors.push(`${u.id}: invalid category ${u.category}`);
     if (!['LEADERSHIP','DOMINANCE','AUTHORITY'].includes(u.capacityType)) errors.push(`${u.id}: invalid capacity type ${u.capacityType}`);
     for (const [k,v] of [['capacityCost',u.capacityCost],['baseStrength',u.baseStrength],['baseHealth',u.baseHealth],['goldRevivalCost',u.goldRevivalCost]]) {

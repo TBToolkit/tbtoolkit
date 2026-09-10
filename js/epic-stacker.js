@@ -1,15 +1,16 @@
-import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=191';
-import { scoreEpicArmy } from './epic-combat-engine-v2.mjs?v=192';
+import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs?v=192';
+import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs?v=192';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs?v=191';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs?v=191';
 import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs?v=191';
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs?v=191';
 
 const STORAGE_KEY='tbtoolkit.stackingCalculator.v18';
-const APP_BUILD='191';
+const APP_BUILD='192';
 const PREVIOUS_STORAGE_KEY='tbtoolkit.stackingCalculator.v17';
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
-const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v1';
+const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
+const OPTIMIZER_CACHE_BUILD='epic-optimizer-2.5-engine-2.3';
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
@@ -393,6 +394,8 @@ async function loadData(){
       if(!r.ok)throw new Error(`Army database request failed (${r.status})`);
       const data=await r.json();
       if(!Array.isArray(data)||!data.length)throw new Error('Army database is empty or invalid');
+      const validation=validateArmyDatabase(data);
+      if(!validation.valid)throw new Error(`Army database validation failed: ${validation.errors.join('; ')}`);
       armyV2=data;
       for(const category of ['troop','monster','mercenary']){
         units[category]=armyV2.filter(u=>u.category===category).map(legacyUnitFromCanonical);
@@ -634,7 +637,7 @@ function confirmPendingBiffImport(){
 }
 function optimizerResultStorageKey(){
   return activeMode==='battle'
-    ?`tbtoolkit.battleCalculator.optimizerResult.v3.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
+    ?`tbtoolkit.battleCalculator.optimizerResult.v4.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
     :OPTIMIZER_RESULT_KEY;
 }
 function loadSavedOptimizerResult(){
@@ -642,7 +645,7 @@ function loadSavedOptimizerResult(){
     lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
     let saved=JSON.parse(localStorage.getItem(optimizerResultStorageKey())||'null');
     if(activeMode==='battle'&&!saved)saved=currentBattleWorkspace().resultCache||null;
-    if(!saved?.payload||!saved?.signature)return;
+    if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
     lastOptimizedEpicPayload=saved.payload;
     lastOptimizedEpicSignature=saved.signature;
     lastEpicRunDiagnostics=saved.runDiagnostics??null;
@@ -652,7 +655,7 @@ function loadSavedOptimizerResult(){
 function saveOptimizerResult(){
   try{
     if(!lastOptimizedEpicPayload||!lastOptimizedEpicSignature)return;
-    const saved={payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
+    const saved={build:OPTIMIZER_CACHE_BUILD,payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
     localStorage.setItem(optimizerResultStorageKey(),JSON.stringify(saved));
     if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
     saveState();
@@ -883,18 +886,18 @@ function currentEpicEffectiveSignature(){
   const selected={
     troop:[...(modeState().selectedIds.troop||[])].sort(),
     monster:[...(modeState().selectedIds.monster||[])].sort(),
-    mercenary:includeMercs?[...(modeState().selectedIds.mercenary||[])].sort():[]
+    mercenary:[...(modeState().selectedIds.mercenary||[])].sort()
   };
   const effective={
     selected,
     leadership:parseNumber(i.leadership),
-    authority:includeMercs?parseNumber(i.authority):null,
+    authority:parseNumber(i.authority),
     dominance:parseNumber(i.dominance),
     autoLeadership:!!i.autoLeadership,
-    autoAuthority:includeMercs?!!i.autoAuthority:null,
+    autoAuthority:!!i.autoAuthority,
     autoDominance:!!i.autoDominance,
     leadershipFill:parseNumber(i.leadershipFill),
-    authorityFill:includeMercs?parseNumber(i.authorityFill):null,
+    authorityFill:parseNumber(i.authorityFill),
     dominanceFill:parseNumber(i.dominanceFill),
     includeMercenariesInOptimization:includeMercs,
     rankSeparation:parseNumber(i.rankSeparation),
@@ -1237,7 +1240,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=new Worker('js/epic-optimizer-worker.js?v=195');
+    epicWorker=new Worker('js/epic-optimizer-worker.js?v=196');
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();

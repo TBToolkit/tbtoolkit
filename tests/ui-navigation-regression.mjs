@@ -59,7 +59,13 @@ assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
 assert.match(optimizerWorker,/\['G','S'\]\.includes\(String\(s\.tier\|\|''\)\.slice\(0,1\)\.toUpperCase\(\)\)/, 'Optimizer conventionality must apply only to Guardsmen and Specialists');
 assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:\.25\}\)/, 'Optimizer must cap the G/S conventionality preference at 0.25% below maximum ELD');
-assert.match(source,/epic-optimizer-worker\.js\?v=195/, 'Optimizer worker cache key must include the opening-coin-toss build');
+assert.match(source,/epic-optimizer-worker\.js\?v=196/, 'Optimizer worker cache key must include the fixed-mercenary scoring build');
+assert.match(source,/epic-engine\.mjs\?v=192/, 'Standard and Custom Epic calculations must load the corrected simulator build');
+assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
+assert.match(source,/mercenary:\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\)/, 'Fixed mercenary selections must participate in optimizer cache invalidation');
+assert.match(source,/authority:parseNumber\(i\.authority\)/, 'Fixed Authority inputs must participate in optimizer cache invalidation');
+assert.match(optimizerWorker,/fixedQuantitiesForScoring=fixedQuantities/, 'Fixed mercenaries must be installed into candidate scoring before optimization');
+assert.match(optimizerWorker,/capacityLimits\.AUTHORITY=fixedUsage\.AUTHORITY/, 'Fixed mercenary Authority must be represented in candidate feasibility checks');
 assert.match(source,/epic-review-worker\.mjs\?v=192/, 'Review Selection worker cache key must include the opening-coin-toss build');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');
 assert.match(optimizerWorker,/for\(const factor of \[\.75,\.5,\.25\]\)/, 'Mercenary optimization must compare explicit partial-Authority basins');

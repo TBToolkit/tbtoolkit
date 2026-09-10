@@ -7,6 +7,8 @@ let sharedCombatPromise = null;
 let deriveBonusInputs = null;
 let buildSquad = null;
 let scoreEpicArmy = null;
+let rawScoreEpicArmy = null;
+let fixedQuantitiesForScoring = {};
 let validateArmyDatabase = null;
 let EPIC_COMBAT_ENGINE_BUILD = 'unloaded';
 let EPIC_MECHANICS_BUILD = 'unloaded';
@@ -17,7 +19,8 @@ async function loadSharedCombat(){
     sharedCombatPromise = import(url.href).then((mod)=>{
       deriveBonusInputs = mod.deriveBonusInputs;
       buildSquad = mod.buildSquad;
-      scoreEpicArmy = mod.scoreEpicArmy;
+      rawScoreEpicArmy = mod.scoreEpicArmy;
+      scoreEpicArmy = args=>rawScoreEpicArmy({...args,quantities:{...(args?.quantities||{}),...fixedQuantitiesForScoring}});
       validateArmyDatabase = mod.validateArmyDatabase;
       EPIC_COMBAT_ENGINE_BUILD = mod.EPIC_COMBAT_ENGINE_BUILD;
       EPIC_MECHANICS_BUILD = mod.EPIC_MECHANICS_BUILD;
@@ -1739,8 +1742,11 @@ self.onmessage=async(event)=>{
  try{
   await loadSharedCombat();
   const army=await loadArmy();
+  const armyValidation=validateArmyDatabase(army);
+  if(!armyValidation.valid)throw new Error(`Army database validation failed: ${armyValidation.errors.join('; ')}`);
   self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
   const fixedQuantities={...((msg.fixedQuantities&&typeof msg.fixedQuantities==='object')?msg.fixedQuantities:{})};
+  fixedQuantitiesForScoring=fixedQuantities;
   const fixedUsage=fixedCapacityUsage(army,fixedQuantities);
   const capacityLimits={...(msg.capacityLimits||{})};
   if(Object.keys(fixedQuantities).length){
@@ -1748,6 +1754,10 @@ self.onmessage=async(event)=>{
     if(authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9){
       throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
     }
+    // Fixed mercenaries still participate in every simulated death ladder.
+    // Their exact usage is the effective Authority limit because the quantity
+    // optimizer is not permitted to add, remove, or resize them.
+    capacityLimits.AUTHORITY=fixedUsage.AUTHORITY;
   }
   const result=optimizeEpicQuantities({
    units:army,selectedIds:msg.selectedIds,bonuses:msg.bonuses,capacityLimits,
@@ -1769,11 +1779,11 @@ self.onmessage=async(event)=>{
   });
   if(result){
     const coreResult=result.result;
-    const coreQuantities=Object.fromEntries((coreResult?.squads||[]).map(s=>[s.name,s.quantity]));
+    const coreQuantities=Object.fromEntries((coreResult?.squads||[]).filter(s=>!Object.prototype.hasOwnProperty.call(fixedQuantities,s.name)).map(s=>[s.name,s.quantity]));
     const hasFixedMercs=Object.keys(fixedQuantities).length>0;
     const requestedCombined=hasFixedMercs?{...coreQuantities,...fixedQuantities}:coreQuantities;
     const combinedResult=hasFixedMercs
-      ?scoreEpicArmy({units:army,quantities:requestedCombined,bonuses:msg.bonuses})
+      ?rawScoreEpicArmy({units:army,quantities:requestedCombined,bonuses:msg.bonuses})
       :coreResult;
     const combinedQuantities=Object.fromEntries((combinedResult?.squads||[]).map(s=>[s.name,s.quantity]));
 
@@ -1782,7 +1792,7 @@ self.onmessage=async(event)=>{
     result.diagnostics={
       ...(result.diagnostics||{}),
       fixedMercenaries:Object.keys(fixedQuantities).length,
-      mercenaryOptimizationMode:hasFixedMercs?'standard-postprocess':'optimized',
+      mercenaryOptimizationMode:hasFixedMercs?'fixed-integrated':'optimized',
       optimizerCoreExpectedLifetimeDamage:Number(coreResult?.expectedTotalLifetimeDamage||0),
       combinedExpectedLifetimeDamage:Number(combinedResult?.expectedTotalLifetimeDamage||0)
     };
