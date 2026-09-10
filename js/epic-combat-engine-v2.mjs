@@ -6,9 +6,9 @@ import {
   clampProbability,
   deriveBonusInputs,
 } from './epic-mechanics.mjs?v=191';
-import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs?v=191';
+import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs?v=192';
 
-export const EPIC_COMBAT_ENGINE_BUILD = '2.2-formations-1-8';
+export const EPIC_COMBAT_ENGINE_BUILD = '2.3-opening-coin-toss';
 export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
 export { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
@@ -148,7 +148,9 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
 
   const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses);
   const enemySquadCount=resolvedBonuses.enemySquadTypes.length;
-  const openingCoinToss=bonuses?.initiativeModel==='opening-coin-toss';
+  // Epic battles toss initiative for cycle 1, then the epic starts every later cycle.
+  // Keep the old alternating model available only as an explicit offline control.
+  const openingCoinToss=bonuses?.initiativeModel!=='alternating';
   const initiativeOptions=openingCoinToss?{enemyStartsAfterOpening:true}:undefined;
   const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount,initiativeOptions);
   const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount,initiativeOptions);

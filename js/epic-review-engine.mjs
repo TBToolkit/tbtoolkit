@@ -1,8 +1,8 @@
 import {adaptiveTierLatticeSearch,analyzeTierCompleteness,choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from './epic-composition-search.mjs';
-import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs?v=191';
-import {scoreEpicArmy} from './epic-combat-engine-v2.mjs?v=191';
+import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs?v=192';
+import {scoreEpicArmy} from './epic-combat-engine-v2.mjs?v=192';
 
-export const EPIC_REVIEW_BUILD='0.1-worker-prototype';
+export const EPIC_REVIEW_BUILD='0.2-opening-coin-toss';
 
 function assertWithinDeadline(deadline){
   if(Number.isFinite(deadline)&&performance.now()>deadline){
@@ -73,5 +73,5 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const selectedMercenaries=new Set(availability.mandatoryIds);
   if(changes.added.some(id=>units.find(unit=>unit.id===id)?.category==='mercenary')||changes.removed.some(id=>selectedMercenaries.has(id)))throw new Error('Review Selection attempted to change selected mercenary types.');
   onProgress({phase:'complete',progressPct:100,evaluations});
-  return{build:EPIC_REVIEW_BUILD,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,fixedMercenaries:fixedIds.size,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},mandatoryMercenaryIds:availability.mandatoryIds};
+  return{build:EPIC_REVIEW_BUILD,initiativeModel:current.result.initiativeModel,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,fixedMercenaries:fixedIds.size,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},mandatoryMercenaryIds:availability.mandatoryIds};
 }

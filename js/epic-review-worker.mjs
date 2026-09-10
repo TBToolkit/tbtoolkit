@@ -1,4 +1,4 @@
-import {EPIC_REVIEW_BUILD,runOptimizeReviewSelection} from './epic-review-engine.mjs';
+import {EPIC_REVIEW_BUILD,runOptimizeReviewSelection} from './epic-review-engine.mjs?v=192';
 
 let armyPromise;
 function loadArmy(){
