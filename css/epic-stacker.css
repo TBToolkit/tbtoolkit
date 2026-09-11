@@ -112,37 +112,6 @@
   padding-top:2px;
 }
 .die-direction b{color:var(--epic-orange);font-size:1rem}
-.layer-chart-layout{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:stretch}
-.die-direction-vertical{width:auto;min-height:320px;padding:14px 0 18px;flex-direction:column;justify-content:space-between;text-align:center;white-space:normal}
-.die-direction-vertical span{font-size:.6rem;line-height:1.15}
-.die-direction-vertical b{font-size:1.15rem}
-
-.overlap-summary{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:9px;
-  padding:12px 13px 0;
-}
-.overlap-chip{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  min-height:40px;
-  padding:8px 11px;
-  border-radius:8px;
-  border:1px solid #30475a;
-  background:#071724;
-  font-size:.72rem;
-}
-.overlap-chip span{color:#aab7c4}
-.overlap-chip strong{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
-.overlap-chip.separated{border-color:#3f6c4f;background:rgba(30,92,54,.13)}
-.overlap-chip.separated strong{color:#79d695}
-.overlap-chip.overlap{border-color:#7a6334;background:rgba(136,91,22,.13)}
-.overlap-chip.overlap strong{color:#ffc35f}
-.overlap-chip.neutral strong{color:#7f8e9c}
-
 .layer-chart-empty{
   margin:13px;
   padding:28px 16px;
@@ -163,16 +132,12 @@
   border:1px solid #293e50;
   border-radius:9px;
   overflow:hidden;
-  background:
-    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
-    #04111b;
-  background-size:100% 40px,80px 100%,auto;
+  background:#04111b;
 }
 .layer-health-chart{
   display:block;
   width:100%;
-  height:430px;
+  height:480px;
   overflow:visible;
 }
 .chart-tooltip{
@@ -211,19 +176,17 @@
 
 .chart-axis-label{fill:#8292a1;font-size:11px;font-weight:700}
 .chart-grid-line{stroke:rgba(180,195,208,.16);stroke-width:1}
+.chart-grid-line-vertical{stroke:rgba(180,195,208,.10)}
+.chart-axis-line{stroke:#627789;stroke-width:1.5}
 .chart-series-line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .chart-point{stroke:#02080d;stroke-width:2;cursor:pointer}
-.chart-point-label{font-size:10px;font-weight:900;text-anchor:middle}
-.chart-overlap-band{fill:rgba(255,168,52,.075)}
-.chart-overlap-edge{stroke:rgba(255,188,83,.42);stroke-width:1;stroke-dasharray:5 5}
+.chart-point-label{font-size:12px;font-weight:900;text-anchor:middle}
 .chart-y-title{fill:#98a8b7;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
 
 @media(max-width:760px){
   .layer-chart-head{flex-direction:column}
   .die-direction{width:100%;justify-content:flex-start}
-  .die-direction-vertical{width:auto;justify-content:space-between}
-  .overlap-summary{grid-template-columns:1fr}
-  .layer-health-chart{height:400px}
+  .layer-health-chart{height:440px}
 }
 
 
@@ -243,8 +206,8 @@
 .layer-health-chart{
   width:100%;
   height:auto;
-  aspect-ratio:16/9;
-  min-height:320px;
+  aspect-ratio:1.65/1;
+  min-height:360px;
 }
 .chart-tooltip{
   display:grid;
@@ -268,7 +231,7 @@
 @media(max-width:760px){
   .chart-legend{gap:13px;padding-top:11px}
   .layer-chart-scroll{padding-left:8px;padding-right:8px}
-  .layer-health-chart{min-height:300px;aspect-ratio:1.25/1}
+  .layer-health-chart{min-height:340px;aspect-ratio:1.2/1}
   .chart-tooltip{grid-template-columns:52px minmax(0,1fr);min-width:190px;max-width:235px}
   .chart-tooltip img{width:52px;height:52px}
 }
@@ -571,8 +534,8 @@ details.advanced{margin-top:8px;padding-top:7px}
 .result-qty small{display:none}
 .compact-result-empty{padding:10px!important;font-size:.65rem}
 
-/* Slightly shorter visual without changing chart logic or tooltip icons. */
-.layer-health-chart{min-height:280px}
+/* Give the health ladder enough height for unit-colored labels and axes. */
+.layer-health-chart{min-height:360px}
 .chart-tooltip img{display:block}
 
 /* Mobile */
@@ -603,7 +566,7 @@ details.advanced{margin-top:8px;padding-top:7px}
   .health-grid label{font-size:.56rem;letter-spacing:.02em}
   .health-percent-field .epic-input{font-size:.85rem!important;padding-left:4px;padding-right:21px}
   .health-percent-field>span{right:6px;font-size:.85rem!important}
-  .layer-health-chart{min-height:260px}
+  .layer-health-chart{min-height:340px}
 }
 
 @media(max-width:420px){
@@ -675,7 +638,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 .capacity-results{padding:14px 16px;border-bottom:1px solid #263849;background:#0e1923}
 .capacity-results .capacity-grid{gap:8px}.capacity-results .capacity-row{grid-template-columns:82px minmax(80px,1fr) minmax(115px,auto)}
 .result-panel .result-empty{margin:14px 16px}.result-panel .result-groups{padding:0 16px 10px}.result-utility{padding:8px 16px 14px}
-.layer-chart-panel{padding:0}.layer-chart-panel .layer-chart-head{padding:14px 16px;border-bottom:1px solid #263849}.layer-chart-panel .section-number{display:flex;align-items:center;gap:10px;color:#f0f4f7;text-transform:uppercase;font-weight:900}.layer-chart-panel .overlap-summary{padding:12px 16px 0}.layer-chart-panel .chart-legend{padding:8px 16px}.layer-chart-panel .layer-chart-empty{margin:10px 16px 16px}.layer-chart-panel .layer-chart-scroll{margin:0 10px 12px}
+.layer-chart-panel{padding:0}.layer-chart-panel .layer-chart-head{padding:14px 16px;border-bottom:1px solid #263849}.layer-chart-panel .section-number{display:flex;align-items:center;gap:10px;color:#f0f4f7;text-transform:uppercase;font-weight:900}.layer-chart-panel .chart-legend{padding:8px 16px}.layer-chart-panel .layer-chart-empty{margin:10px 16px 16px}.layer-chart-panel .layer-chart-scroll{margin:0 10px 12px}
 
 @media (max-width:1180px){
   .selection-card-grid{grid-template-columns:repeat(3,minmax(180px,1fr))}.selection-mercenaries{grid-column:span 2}
@@ -698,7 +661,6 @@ details.advanced{margin-top:8px;padding-top:7px}
   .selection-card-title{padding:9px 10px}.hierarchy-list{padding:5px}.selection-level>summary{min-height:38px}.hierarchy-unit{min-height:36px}.hierarchy-unit-copy strong{font-size:11px}
   .order-view .order-columns{padding:10px}
   .capacity-results .capacity-row{grid-template-columns:72px 1fr}.capacity-results .capacity-value{grid-column:1/-1;text-align:right;margin-top:-2px}
-  .layer-chart-layout{grid-template-columns:44px minmax(0,1fr)}
 }
 
 /* v46: Advanced settings now live directly beneath Army Limits. */
@@ -1285,8 +1247,9 @@ body.optimizer-modal-open{overflow:hidden}
   position:absolute;inset:0;background:rgba(2,8,13,.78);backdrop-filter:blur(3px)
 }
 .optimizer-dialog{
-  position:relative;z-index:1;width:min(520px,100%);
+  position:relative;z-index:1;width:min(620px,100%);
   display:grid;grid-template-columns:42px minmax(0,1fr);gap:14px;
+  max-height:calc(100vh - 36px);overflow:auto;
   padding:20px;border:1px solid #40576a;border-radius:12px;
   background:linear-gradient(145deg,#152431,#0c1822);
   box-shadow:0 24px 70px rgba(0,0,0,.48)
@@ -1318,6 +1281,19 @@ body.optimizer-modal-open{overflow:hidden}
   min-height:2.7em;margin:11px 0 13px;color:#8fa0ae;
   font-size:.67rem;line-height:1.45
 }
+.optimizer-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.optimizer-eld-compact{flex:0 0 auto;text-align:right;font-variant-numeric:tabular-nums}
+.optimizer-eld-compact span{display:block;color:#8fa1b1;font-size:.54rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
+.optimizer-eld-compact strong{display:flex;align-items:baseline;justify-content:flex-end;gap:4px;margin-top:2px;color:#f2f5f7;font-size:.8rem}
+.optimizer-eld-compact b{font:inherit}.optimizer-eld-compact i{color:#6f8493;font-style:normal}
+.optimizer-health-ladder{width:calc(100% + 56px);margin:10px 0 8px -56px;padding:10px;border:1px solid #31485a;border-radius:9px;background:#091721}
+.optimizer-health-ladder-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.optimizer-health-ladder-heading strong{color:#dce6ec;font-size:.7rem;text-transform:uppercase;letter-spacing:.025em}
+.optimizer-health-ladder-heading span{color:#7f93a2;font-size:.55rem;text-align:right}
+#optimizerHealthLadder{display:block;width:100%;height:205px;overflow:visible;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent)}
+.optimizer-health-legend{display:flex;justify-content:center;gap:18px;margin-top:5px;color:#aab8c2;font-size:.55rem;font-weight:800}
+.optimizer-health-legend span::before{content:"";display:inline-block;width:13px;height:2px;margin:0 5px 2px 0;background:currentColor}
+.optimizer-health-legend .troop{color:#dce6ec}.optimizer-health-legend .monster{color:#64a5ff}.optimizer-health-legend .mercenary{color:#e86b59}
 .optimizer-cancel{min-width:90px}
 
 @media(max-width:1100px){
@@ -1332,6 +1308,8 @@ body.optimizer-modal-open{overflow:hidden}
   .optimizer-dialog{grid-template-columns:1fr;width:min(440px,100%);padding:18px}
   .optimizer-spinner{width:32px;height:32px}
   .optimizer-cancel{width:100%;min-height:44px}
+  .optimizer-health-ladder-heading{align-items:flex-start;flex-direction:column;gap:2px}
+  .optimizer-health-ladder{width:100%;margin-left:0}
 }
 @media(max-width:520px){
   .selection-area .selection-card-grid{grid-template-columns:1fr}
@@ -1682,46 +1660,6 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .sacrifice-help-close{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #40566a;border-radius:9px;background:#111f2b;color:#dbe4eb;font-size:1.5rem;line-height:1;cursor:pointer}
 @media(max-width:760px){.sacrifice-help-modal{padding:10px}.sacrifice-help-dialog{padding:14px;border-radius:11px}.sacrifice-flag{width:24px;height:24px}}
 
-/* v103 — optimizer progress ELD status */
-.optimizer-eld-status{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px;
-  margin-top:13px;
-}
-.optimizer-eld-status>div{
-  border:1px solid #31485b;
-  border-radius:8px;
-  background:#071725;
-  padding:10px 12px;
-  min-width:0;
-}
-.optimizer-eld-status span{
-  display:block;
-  color:#8fa1b1;
-  font-size:.62rem;
-  line-height:1.25;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  font-weight:850;
-}
-.optimizer-eld-status strong{
-  display:block;
-  margin-top:4px;
-  color:#f2f5f7;
-  font-size:1rem;
-  font-variant-numeric:tabular-nums;
-}
-.optimizer-progress-note{
-  margin:8px 0 0;
-  color:#8193a2;
-  font-size:.67rem;
-  line-height:1.45;
-}
-@media(max-width:520px){
-  .optimizer-eld-status{grid-template-columns:1fr}
-}
-
 /* v105 — Battle Details discoverability and optimizer ELD clarity */
 .battle-details{margin-top:10px;border:1px solid #2d4355;border-radius:7px;padding:0;overflow:hidden;background:#091824}
 .battle-details>summary{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:3px 12px;min-height:48px;padding:9px 42px 9px 12px;cursor:pointer;list-style:none;color:#eef3f6;background:#0d1d2a;transition:background-color .15s ease}
@@ -1733,8 +1671,6 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .battle-details>.prediction-meta,.battle-details>.prediction-table-wrap{margin-left:10px;margin-right:10px}
 .battle-details>.prediction-table-wrap{margin-bottom:8px}
 @media (hover:hover) and (pointer:fine){.battle-details>summary:hover{background:#112433}}
-.optimizer-eld-definition{margin:9px 0 0;color:#aebbc6;font-size:.69rem;line-height:1.45}
-.optimizer-eld-definition strong{color:#e8eef2}
 @media(max-width:520px){.battle-details>summary{align-items:flex-start;flex-direction:column;gap:3px}.battle-details-title{font-size:.8rem}.battle-details-subtitle{font-size:.64rem}}
 
 
@@ -1793,13 +1729,6 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .battle-details>.prediction-table-wrap{margin-bottom:8px}
 @media (hover:hover) and (pointer:fine){.battle-details>summary:hover{background:#112433}}
 
-.optimizer-eld-definition{
-  margin:9px 0 0;
-  color:#aebbc6;
-  font-size:.69rem;
-  line-height:1.45;
-}
-.optimizer-eld-definition strong{color:#e8eef2}
 .optimizer-elapsed{
   display:flex;
   justify-content:space-between;

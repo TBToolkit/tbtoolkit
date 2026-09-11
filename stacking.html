@@ -331,12 +331,11 @@
 
 <section class="topdown-panel layer-chart-panel battle-sequenced-section" id="layerChartPanel">
 <div class="layer-chart-head">
-<div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
+<div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Squad health by predicted death order. Select a point to view unit details.</p></div>
 </div>
-<div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
-<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad-health separation.</div>
+<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad health and death order.</div>
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
-<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-layout"><div aria-label="Death order direction" class="die-direction die-direction-vertical"><span>Dies First</span><b>↓</b><span>Dies Last</span></div><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div></div>
+<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by predicted death order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
 </div>
 </div>
@@ -374,17 +373,15 @@
 <div aria-describedby="optimizerProgressDetail" aria-labelledby="optimizerProgressTitle" aria-modal="true" class="optimizer-dialog" role="dialog">
 <div class="optimizer-spinner" aria-hidden="true"></div>
 <div class="optimizer-dialog-copy">
-<span class="optimizer-eyebrow">Epic Stacker</span>
-<h2 id="optimizerProgressTitle">Optimizing Army</h2>
+<div class="optimizer-title-row"><div><span class="optimizer-eyebrow">Epic Stacker</span><h2 id="optimizerProgressTitle">Optimizing Army</h2></div><div class="optimizer-eld-compact" id="optimizerProgressDetail"><span>Current / Best</span><strong><b id="optimizerProgressCurrentEld">—</b><i>/</i><b id="optimizerProgressBestEld">—</b></strong></div></div>
 <p id="optimizerProgressHeadline">Preparing your selected squads…</p>
 <div aria-label="Optimization progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="optimizerProgressTrack" role="progressbar"><i id="optimizerProgressBar"></i></div>
 <div class="optimizer-progress-meta"><span id="optimizerProgressPercent">0%</span><span id="optimizerProgressEvaluations"></span></div>
-<div class="optimizer-eld-status" id="optimizerProgressDetail">
-  <div><span>Current Candidate ELD</span><strong id="optimizerProgressCurrentEld">—</strong></div>
-  <div><span>Mathematical Best ELD</span><strong id="optimizerProgressBestEld">—</strong></div>
-</div>
-<p class="optimizer-eld-definition"><strong>ELD = Expected Lifetime Damage.</strong> It is the total damage the army is expected to deal over the full battle.</p>
-<p class="optimizer-progress-note" id="optimizerProgressNote">The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.</p>
+<section class="optimizer-health-ladder" aria-labelledby="optimizerHealthLadderTitle">
+  <div class="optimizer-health-ladder-heading"><strong id="optimizerHealthLadderTitle">Best Army Health Ladder</strong><span>Updates when a higher ELD is found</span></div>
+  <svg aria-label="Squad health ladder for the best army found so far; horizontal position is predicted death order" id="optimizerHealthLadder" role="img" viewBox="0 0 580 220"></svg>
+  <div class="optimizer-health-legend"><span class="troop">Troops</span><span class="monster">Monsters</span><span class="mercenary">Mercs</span></div>
+</section>
 <div class="optimizer-elapsed"><span>Time Elapsed</span><strong id="optimizerElapsedTime">0:00</strong></div>
 <button class="toolbar-button optimizer-cancel" id="cancelOptimization" type="button">Cancel</button>
 </div>

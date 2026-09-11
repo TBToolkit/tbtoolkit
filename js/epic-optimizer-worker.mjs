@@ -21,6 +21,13 @@ function capacityUsage(units,quantities){
   }
   return totals;
 }
+function ladderRows(result){
+  return (result?.squads||[]).filter(squad=>Number(squad.quantity)>0).map(squad=>({id:squad.id,category:squad.category,tier:squad.tier,effectiveHealth:squad.effectiveHealth,deathPosition:squad.predictedDeathPosition}));
+}
+function mergeFixedMercenaryLadder(coreRows,fixedRows){
+  const combined=[...(Array.isArray(coreRows)?coreRows:[]),...fixedRows];
+  return combined.sort((a,b)=>Number(b.effectiveHealth)-Number(a.effectiveHealth)||Number(a.deathPosition)-Number(b.deathPosition)).map((row,index)=>({...row,deathPosition:index+1}));
+}
 function progressPercent(progress){
   const fraction=(value,total)=>(Number(value||0)+1)/Math.max(1,Number(total||1));
   if(progress.phase==='seed-screen')return 5+Math.round(fraction(progress.seedIndex,progress.seedCount)*15);
@@ -43,9 +50,22 @@ self.onmessage=async event=>{
     self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
     const fixedQuantities=message.fixedQuantities&&typeof message.fixedQuantities==='object'?{...message.fixedQuantities}:{};
     const fixedUsage=capacityUsage(units,fixedQuantities);
+    const fixedMercenaryRows=Object.keys(fixedQuantities).length?ladderRows(scoreEpicArmy({units,quantities:fixedQuantities,bonuses:message.bonuses})).filter(row=>row.category==='mercenary'):[];
     const authorityMaximum=Math.max(0,Math.floor(Number(message.fixedAuthorityMaximum)||0));
     if(Object.keys(fixedQuantities).length&&authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9)throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
-    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:progress=>self.postMessage({type:'progress',requestId,payload:{...progress,progressPct:Math.min(97,progressPercent(progress))}})});
+    let cumulativeEvaluations=0,lastRawEvaluations=0,lastEvaluationScope='';
+    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:progress=>{
+      const raw=Math.max(0,Number(progress.evaluations)||0);
+      let scope=String(progress.phase||'');
+      if(progress.phase==='local'||progress.phase==='polish')scope+=`|seed:${progress.seedIndex??''}`;
+      else if(progress.phase==='counterfactual')scope+=`|basin:${progress.basinIndex??''}`;
+      else if(progress.phase==='paired-counterfactual')scope+=`|pair:${progress.pairIndex??''}`;
+      else if(progress.phase==='group-redistribution')scope+=`|group:${progress.groupIndex??''}`;
+      else if(progress.phase==='convergence-polish')scope+=`|pass:${progress.passIndex??''}`;
+      if(scope!==lastEvaluationScope){cumulativeEvaluations+=raw;lastEvaluationScope=scope;}else cumulativeEvaluations+=Math.max(0,raw-lastRawEvaluations);
+      lastRawEvaluations=raw;
+      self.postMessage({type:'progress',requestId,payload:{...progress,evaluations:cumulativeEvaluations,healthLadder:mergeFixedMercenaryLadder(progress.healthLadder,fixedMercenaryRows),progressPct:Math.min(97,progressPercent(progress))}});
+    }});
     if(result&&Object.keys(fixedQuantities).length){
       const coreResult=result.result;
       const coreQuantities=Object.fromEntries((coreResult?.squads||[]).map(squad=>[squad.name,squad.quantity]));

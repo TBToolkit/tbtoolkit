@@ -22,6 +22,8 @@ assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidd
 assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesStandard\(\)/, 'Untouched Epic Custom Order must reuse Standard');
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
+assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
+assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');
 assert.match(html,/id="biffImportDialog"/, 'Import must provide a preview dialog');
 assert.match(html,/id="biffImportName"/, 'Import preview must require a new Player Account name');
 assert.match(source,/importedAccountNameSuggestion/, 'Import must suggest a unique Player Account name');
@@ -52,7 +54,16 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
-assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
+assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
+assert.match(source,/xTitle\.textContent='Death Order →'/, 'The results chart must identify its horizontal death-order axis');
+assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
+assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');
+assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
+assert.match(source,/for\(let death=5;death<=combinedOrder\.length;death\+=5\)/, 'The death-order axis must use five-position increments');
+assert.equal((source.match(/class:'chart-axis-line'/g)||[]).length,2,'The results chart must draw explicit horizontal and vertical axes');
+assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative gridlines must not extend outside the chart axes');
+assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');
+assert.match(source,/SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note\?` <button class="sacrifice-flag"/, 'Sacrifice flag rendering must remain behind the reversible display switch');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
 assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
 assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');
@@ -68,7 +79,7 @@ assert.match(source,/function saveState\(\)\{[\s\S]*?catch\(error\)/, 'A browser
 assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
 assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
 assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');
-assert.match(html,/Mathematical Best ELD/, 'Optimizer progress must distinguish the mathematical maximum from the selected practical result');
+assert.match(html,/Current \/ Best/, 'Optimizer progress must distinguish the current candidate from the mathematical best');
 assert.match(source,/Selecting a practical near-optimal army/, 'Optimizer finalization must explain an intentional practical tie-break');
 assert.match(source,/createReviewWorker\(\)/, 'UI must obtain Review Selection through its worker client boundary');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');

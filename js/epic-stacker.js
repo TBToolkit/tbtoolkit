@@ -18,7 +18,6 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
-const OPTIMIZER_PROGRESS_DEFAULT_NOTE='The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.';
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 function updateOptimizerElapsed(){
@@ -220,7 +219,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
 function formatFillPercent(el){const n=parseNumber(el.value);el.value=Number.isFinite(n)?n.toFixed(2):'0.00';}
 const TIER_COLORS={9:'#69b85a',8:'#9aa4ad',7:'#d8ad42',6:'#d96858',5:'#d7974b',4:'#9673c8',3:'#55a6cf',2:'#7eae59',1:'#8f9892'};
@@ -946,14 +945,38 @@ function setOptimizeButtonState(){
 }
 function openOptimizerModal(){
   optimizerBestEldSoFar=0;
+  renderOptimizerHealthLadder([]);
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
-  const progressNote=document.getElementById('optimizerProgressNote');
-  if(progressNote)progressNote.textContent=OPTIMIZER_PROGRESS_DEFAULT_NOTE;
   if(!els.optimizerModal)return;
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
   updateOptimizerProgress({phase:'loading',progressPct:0,evaluations:0});
+}
+function renderOptimizerHealthLadder(rows=[]){
+  const svg=document.getElementById('optimizerHealthLadder');
+  if(!svg)return;
+  svg.replaceChildren();
+  const data=(Array.isArray(rows)?rows:[]).filter(row=>Number(row?.effectiveHealth)>0);
+  const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
+  const yLabel=make('text',{x:9,y:105,transform:'rotate(-90 9 105)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
+  const xLabel=make('text',{x:300,y:215,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent='DEATH ORDER →';svg.append(xLabel);
+  if(!data.length){const label=make('text',{x:300,y:103,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
+  const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
+  const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
+  for(const y of [20,100,180])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
+  const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
+  for(const category of ['troop','monster','mercenary']){
+    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:32+(Number(row.deathPosition)-1)/(count-1)*532,y:18+(high-Number(row.effectiveHealth))/range*158}));
+    if(!points.length)continue;
+    if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
+    for(const point of points){
+      const pointColor=outputRowColors(category,{id:point.row.id,level:point.row.tier}).accent;
+      svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:pointColor,stroke:'#07131c','stroke-width':1.3}));
+      const label=make('text',{x:point.x,y:Math.max(11,point.y-7),'text-anchor':'middle',fill:pointColor,'font-size':8.5,'font-weight':900});
+      label.textContent=category==='mercenary'?(mercTierRoman[tierNumber(point.row.tier)]||String(point.row.tier||'')):String(point.row.tier||'');svg.append(label);
+    }
+  }
 }
 function closeOptimizerModal(){
   if(!els.optimizerModal)return;
@@ -988,24 +1011,23 @@ function updateOptimizerProgress(progress={}){
     const e=Number(progress.evaluations||0);
     els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} candidates evaluated`:'';
   }
-  const currentEld=Number(progress.expectedLifetimeDamage);
+  const currentEld=Number(progress.expectedLifetimeDamage),previousBest=optimizerBestEldSoFar;
   const reportedBest=Number(progress.bestExpectedLifetimeDamage);
   if(Number.isFinite(reportedBest)&&reportedBest>0)optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,reportedBest);
   if(Number.isFinite(currentEld)&&currentEld>0){
     optimizerBestEldSoFar=Math.max(optimizerBestEldSoFar,currentEld);
+    if(currentEld>previousBest&&Array.isArray(progress.healthLadder))renderOptimizerHealthLadder(progress.healthLadder);
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=formatDamage(currentEld);
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=formatDamage(optimizerBestEldSoFar);
-  }
-  const progressNote=document.getElementById('optimizerProgressNote');
-  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied&&progressNote){
-    const loss=Number(progress.practicalTieBreakLossPct);
-    progressNote.textContent=`The mathematical best remains shown for comparison. The selected practical army gives up ${Number.isFinite(loss)?loss.toFixed(3):'less than 0.250'}% ELD for a more conventional troop death order.`;
   }
 }
 function clearPrediction(){
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   if(els.predictionRows)els.predictionRows.innerHTML='';
 }
+// Keep the unusual-sacrifice diagnostics and explanation UI available for a
+// future opt-in experience, but do not surface flags in Battle Details today.
+const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
@@ -1073,7 +1095,7 @@ function renderPrediction(opt){
 
   els.predictionRows.innerHTML=rows.map(s=>{
     const note=optimizerContext?unusualMap.get(String(s.id)):null;
-    const flag=note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
+    const flag=SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
     return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
   if(optimizerContext&&unusualMap.size){
@@ -2176,32 +2198,21 @@ function compactHealth(value){
   return Math.round(n).toLocaleString('en-US');
 }
 
+function niceHealthAxisStep(maxValue,targetIntervals=5){
+  const rough=Math.max(Number(maxValue)||1,1)/Math.max(targetIntervals,1);
+  const magnitude=10**Math.floor(Math.log10(rough));
+  const normalized=rough/magnitude;
+  const factor=normalized<=1?1:normalized<=2?2:normalized<=5?5:10;
+  return factor*magnitude;
+}
+
+function compactAxisHealth(value){
+  return compactHealth(value).replace(/\.0+(?=[KMB]$)/,'');
+}
+
 function chartUnitLabel(category,row){
-  if(category==='mercenary')return row.level;
+  if(category==='mercenary')return['','I','II','III','IV','V','VI','VII','VIII','IX'][tierNumber(row.level)]||row.level;
   return row.level;
-}
-
-function overlapStatus(upperRows,lowerRows){
-  if(!upperRows.length||!lowerRows.length)return{kind:'neutral',text:'Not enough data'};
-  const upperMin=Math.min(...upperRows.map(r=>r.squadHealth));
-  const lowerMax=Math.max(...lowerRows.map(r=>r.squadHealth));
-  const margin=upperMin-lowerMax;
-  if(margin>0)return{kind:'separated',text:`Separated · ${compactHealth(margin)} gap`};
-  return{kind:'overlap',text:`Overlap · ${compactHealth(Math.abs(margin))}`};
-}
-
-function renderOverlapSummary(result){
-  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
-  if(!chips?.length)return;
-  const troop=result?.categories?.troop?.results??[];
-  const monster=result?.categories?.monster?.results??[];
-  const merc=result?.categories?.mercenary?.results??[];
-  const statuses=[overlapStatus(troop,monster),overlapStatus(monster,merc)];
-  chips.forEach((chip,i)=>{
-    chip.classList.remove('neutral','separated','overlap');
-    chip.classList.add(statuses[i].kind);
-    chip.querySelector('strong').textContent=statuses[i].text;
-  });
 }
 
 function clearLayerChart(){
@@ -2209,12 +2220,6 @@ function clearLayerChart(){
   if(els.layerChartScroll)els.layerChartScroll.hidden=true;
   if(els.layerChartEmpty)els.layerChartEmpty.hidden=false;
   if(els.layerChartTooltip)els.layerChartTooltip.hidden=true;
-  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
-  chips?.forEach(chip=>{
-    chip.classList.remove('separated','overlap');
-    chip.classList.add('neutral');
-    chip.querySelector('strong').textContent='—';
-  });
 }
 
 function svgEl(name,attrs={}){
@@ -2236,24 +2241,23 @@ function renderLayerHealthChart(result){
     source[key].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
   }
 
-  renderOverlapSummary(result);
   els.layerChartEmpty.hidden=true;
   els.layerChartScroll.hidden=false;
 
   const svg=els.layerHealthChart;
   svg.innerHTML='';
   const width=900;
-  const height=430;
-  const margin={top:34,right:35,bottom:48,left:78};
+  const height=480;
+  const margin={top:38,right:24,bottom:58,left:70};
   const plotW=width-margin.left-margin.right;
   const plotH=height-margin.top-margin.bottom;
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
   svg.setAttribute('preserveAspectRatio','none');
 
   const vals=all.map(r=>r.squadHealth).filter(Number.isFinite);
-  let min=0,max=Math.max(...vals);
-  const span=Math.max(max,1);
-  max=max+span*.08;
+  const min=0,rawMax=Math.max(...vals);
+  const healthStep=niceHealthAxisStep(rawMax);
+  const max=Math.max(healthStep,Math.ceil(rawMax/healthStep)*healthStep);
 
   const y=v=>margin.top+(max-v)/(max-min)*plotH;
   const x=(i,count)=>{
@@ -2261,44 +2265,44 @@ function renderLayerHealthChart(result){
     return margin.left+(i/(count-1))*plotW;
   };
 
-  // Highlight actual overlap health bands, without judging them.
-  const bands=[];
-  const t=source.troop,m=source.monster,q=source.mercenary;
-  if(t.length&&m.length){
-    const low=Math.max(Math.min(...t.map(r=>r.squadHealth)),Math.min(...m.map(r=>r.squadHealth)));
-    const high=Math.min(Math.max(...t.map(r=>r.squadHealth)),Math.max(...m.map(r=>r.squadHealth)));
-    if(high>=low)bands.push({low,high});
-  }
-  if(m.length&&q.length){
-    const low=Math.max(Math.min(...m.map(r=>r.squadHealth)),Math.min(...q.map(r=>r.squadHealth)));
-    const high=Math.min(Math.max(...m.map(r=>r.squadHealth)),Math.max(...q.map(r=>r.squadHealth)));
-    if(high>=low)bands.push({low,high});
-  }
-  for(const band of bands){
-    const y1=y(band.high),y2=y(band.low);
-    svg.appendChild(svgEl('rect',{x:margin.left,y:y1,width:plotW,height:Math.max(2,y2-y1),class:'chart-overlap-band'}));
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y1,y2:y1,class:'chart-overlap-edge'}));
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y2,y2:y2,class:'chart-overlap-edge'}));
-  }
+  const deathValue=row=>{
+    const explicit=Number(row.predictedDeathPosition);
+    if(Number.isFinite(explicit))return explicit;
+    const index=Number(row.predictedDeathIndex);
+    return Number.isFinite(index)?index+1:Infinity;
+  };
+  const combinedOrder=all.slice().sort((a,b)=>deathValue(a)-deathValue(b)||b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
+  const deathPosition=new Map(combinedOrder.map((row,index)=>[row,index]));
 
-  // Y grid / labels.
-  const ticks=6;
-  for(let i=0;i<ticks;i++){
-    const value=max-(i/(ticks-1))*(max-min);
+  // Rounded health intervals create one clean, predictable horizontal grid.
+  for(let value=0;value<=max+healthStep*.001;value+=healthStep){
     const yy=y(value);
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:yy,y2:yy,class:'chart-grid-line'}));
+    if(value>0)svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:yy,y2:yy,class:'chart-grid-line'}));
     const label=svgEl('text',{x:margin.left-10,y:yy+4,'text-anchor':'end',class:'chart-axis-label'});
-    label.textContent=compactHealth(value);
+    label.textContent=compactAxisHealth(value);
     svg.appendChild(label);
   }
+  const baselineY=y(0);
+  for(let death=5;death<=combinedOrder.length;death+=5){
+    const xx=x(death-1,combinedOrder.length);
+    svg.appendChild(svgEl('line',{x1:xx,x2:xx,y1:margin.top,y2:baselineY,class:'chart-grid-line chart-grid-line-vertical'}));
+    const label=svgEl('text',{x:xx,y:baselineY+19,'text-anchor':'middle',class:'chart-axis-label'});
+    label.textContent=String(death);
+    svg.appendChild(label);
+  }
+  svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left,y1:margin.top,y2:baselineY,class:'chart-axis-line'}));
+  svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:baselineY,y2:baselineY,class:'chart-axis-line'}));
   const yTitle=svgEl('text',{x:15,y:height/2,transform:`rotate(-90 15 ${height/2})`,'text-anchor':'middle',class:'chart-y-title'});
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);
+  const xTitle=svgEl('text',{x:margin.left+plotW/2,y:height-13,'text-anchor':'middle',class:'chart-y-title'});
+  xTitle.textContent='Death Order →';
+  svg.appendChild(xTitle);
 
   for(const [category,rows] of Object.entries(source)){
     if(!rows.length)continue;
     const meta=CHART_SERIES[category];
-    const points=rows.map((row,i)=>({row,x:x(i,rows.length),y:y(row.squadHealth)}));
+    const points=rows.map(row=>({row,x:x(deathPosition.get(row),combinedOrder.length),y:y(row.squadHealth)})).sort((a,b)=>a.x-b.x);
     const path=svgEl('polyline',{
       points:points.map(p=>`${p.x},${p.y}`).join(' '),
       class:'chart-series-line',
@@ -2306,13 +2310,14 @@ function renderLayerHealthChart(result){
     });
     svg.appendChild(path);
 
-    points.forEach((p,i)=>{
+    points.forEach(p=>{
       const g=svgEl('g');
-      const c=svgEl('circle',{cx:p.x,cy:p.y,r:5.3,fill:meta.color,class:'chart-point',tabindex:'0'});
+      const pointColor=outputRowColors(category,p.row).accent;
+      const c=svgEl('circle',{cx:p.x,cy:p.y,r:5.3,fill:pointColor,class:'chart-point',tabindex:'0'});
       const label=svgEl('text',{
         x:p.x,
-        y:p.y+(category==='mercenary'?18:-11),
-        fill:meta.color,
+        y:Math.max(14,p.y-11),
+        fill:pointColor,
         class:'chart-point-label'
       });
       label.textContent=chartUnitLabel(category,p.row);
@@ -2322,7 +2327,7 @@ function renderLayerHealthChart(result){
 
       const showTip=(evt)=>{
         const tip=els.layerChartTooltip;
-        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Position in ${meta.label}: ${i+1} of ${rows.length}</span></div>`;
+        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Death Order: ${deathPosition.get(p.row)+1} of ${combinedOrder.length}</span></div>`;
         iconFallback(tip.querySelector('img'));
         tip.hidden=false;
         const wrap=svg.parentElement.getBoundingClientRect();

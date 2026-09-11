@@ -6,6 +6,10 @@ import {EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 const CAPACITY_TYPES=Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
 const OPTIMIZER_SCORING_CONTEXTS=new WeakMap();
 
+function healthLadderSnapshot(result){
+  return (result?.squads??[]).filter(squad=>Number(squad.quantity)>0).map(squad=>({id:squad.id,category:squad.category,tier:squad.tier,effectiveHealth:squad.effectiveHealth,deathPosition:squad.predictedDeathPosition}));
+}
+
 function controlledScore(payload){
   const shouldAbort=payload?.bonuses?.__shouldAbort;
   if(typeof shouldAbort==='function'&&shouldAbort()){
@@ -180,6 +184,7 @@ function optimizeFromSeed({
       stageCount:stageFractions.length,
       evaluations,
       expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+      healthLadder:healthLadderSnapshot(result),
       capacities:{...result.capacities},
       minHealthSeparationPct:result.separationSummary.minPct,
     });
@@ -288,6 +293,7 @@ function optimizeFromSeed({
         acceptedMoves:stageAccepted,
         evaluations,
         expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+        healthLadder:healthLadderSnapshot(result),
         capacities:{...result.capacities},
         minHealthSeparationPct:result.separationSummary.minPct,
       });
@@ -455,7 +461,7 @@ function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimum
     // Preserve high fitness while retaining different death-order basins.
     for(const c of candidates){const sig=deathSignature(c.result);if(!seen.has(sig)||next.length<Math.ceil(populationSize*.6)){next.push(c);seen.add(sig);}if(next.length>=populationSize)break;}
     population=next;
-    if(typeof onProgress==='function')onProgress({phase:'evolution',generation:gen+1,generationCount:generations,evaluations,expectedLifetimeDamage:population[0].result.expectedTotalLifetimeDamage});
+    if(typeof onProgress==='function')onProgress({phase:'evolution',generation:gen+1,generationCount:generations,evaluations,expectedLifetimeDamage:population[0].result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(population[0].result)});
   }
   return {best:population[0],population,evaluations};
 }
@@ -522,7 +528,7 @@ function opportunityThresholdRefine({units,selected,bonuses,capacityLimits,start
     }
     if(!best)break;
     quantities=best.quantities; result=best.result; accepted++;
-    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
+    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(result),target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
   }
   return {quantities,result,evaluations,acceptedMoves:accepted};
 }
@@ -834,7 +840,7 @@ function groupRedistributionRefine({units,selected,bonuses,capacityLimits,start,
       basinSeeds.push(alternate??top);
       summaries.push({key:g.key,size:n,budget,rawBestEld:top.result.expectedTotalLifetimeDamage,alternateEld:alternate?.result.expectedTotalLifetimeDamage??null});
     }
-    if(typeof onProgress==='function')onProgress({phase:'group-redistribution',round:1,roundCount:1,groupIndex:gi,groupCount:groups.length,evaluations,acceptedMoves:accepted,groupKey:g.key,expectedLifetimeDamage:best.result.expectedTotalLifetimeDamage});
+    if(typeof onProgress==='function')onProgress({phase:'group-redistribution',round:1,roundCount:1,groupIndex:gi,groupCount:groups.length,evaluations,acceptedMoves:accepted,groupKey:g.key,expectedLifetimeDamage:best.result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(best.result)});
   }
   basinSeeds.sort((x,y)=>y.result.expectedTotalLifetimeDamage-x.result.expectedTotalLifetimeDamage);
   const chosen=[],seenTypes=new Set();
@@ -911,7 +917,7 @@ function adaptiveDeathPositionRefine({
       evaluations+=Number(local.diagnostics?.evaluations??0);
       const candidate={quantities:{...local.quantities},result:local.result,source:'adaptive-death-position',targetName:seed.targetName,fromDeath:seed.fromDeath,toDeath:seed.toDeath};
       if(Number(candidate.result.expectedTotalLifetimeDamage||0)>Number(passBest.result.expectedTotalLifetimeDamage||0)+1e-6)passBest=candidate;
-      if(typeof onProgress==='function')onProgress({phase:'death-position',passIndex:pass,passCount:maxPasses,seedIndex:i,seedCount:diverse.length,evaluations,expectedLifetimeDamage:candidate.result.expectedTotalLifetimeDamage});
+      if(typeof onProgress==='function')onProgress({phase:'death-position',passIndex:pass,passCount:maxPasses,seedIndex:i,seedCount:diverse.length,evaluations,expectedLifetimeDamage:candidate.result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(candidate.result)});
     }
     summaries.push({pass:pass+1,rawCandidates:raw.length,polishedBasins:diverse.length,startEld:Number(champion.result.expectedTotalLifetimeDamage||0),bestEld:Number(passBest.result.expectedTotalLifetimeDamage||0),bestMove:passBest===champion?null:{unit:passBest.targetName,from:passBest.fromDeath,to:passBest.toDeath}});
     if(passBest===champion)break;
@@ -1225,7 +1231,7 @@ export function optimizeEpicQuantities(args) {
   for(let i=0;i<seedDefs.length;i++){
     const d=seedDefs[i],quantities=d.make(),result=controlledScore({units:args.units,quantities,bonuses:args.bonuses}); totalEvaluations++;
     if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:limits})&&structureValidator(result,selected))seedScores.push({name:d.name,quantities,result});
-    if(typeof args.onProgress==='function')args.onProgress({phase:'seed-screen',seedIndex:i,seedCount:seedDefs.length,evaluations:totalEvaluations,expectedLifetimeDamage:result.expectedTotalLifetimeDamage});
+    if(typeof args.onProgress==='function')args.onProgress({phase:'seed-screen',seedIndex:i,seedCount:seedDefs.length,evaluations:totalEvaluations,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(result)});
   }
   if(!seedScores.length)throw new Error('Unable to construct a feasible optimizer starting population.');
   seedScores.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);

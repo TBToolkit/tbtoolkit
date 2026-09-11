@@ -10,10 +10,12 @@ assert.ok(troop&&monster&&mercenary,'Fixed-mercenary test units must exist');
 const fixedQuantity=7;
 const requestId='fixed-mercenary-worker';
 const worker=new Worker(new URL('./optimizer-worker-node-adapter.mjs',import.meta.url));
+const progress=[];
 const result=await new Promise((resolve,reject)=>{
   const timer=setTimeout(()=>{worker.terminate();reject(new Error('Optimizer worker test timed out.'));},120_000);
   worker.on('message',message=>{
-    if(message.requestId!==requestId||message.type==='progress')return;
+    if(message.requestId!==requestId)return;
+    if(message.type==='progress'){progress.push(message.payload);return;}
     clearTimeout(timer);
     if(message.type==='error')reject(new Error(message.message));else resolve(message);
     worker.terminate();
@@ -26,4 +28,7 @@ assert.ok(fixed,'The fixed mercenary must be added to the final live result');
 assert.equal(fixed.quantity,fixedQuantity,'The final live result must not resize a fixed mercenary');
 assert.equal(result.payload.result.capacities.AUTHORITY,mercenary.capacityCost*fixedQuantity,'Fixed Authority usage must remain exact');
 assert.equal(result.payload.diagnostics.mercenaryOptimizationMode,'standard-live');
+assert.ok(progress.some(update=>update.healthLadder?.some(row=>row.id===mercenary.id&&row.category==='mercenary')),'A fixed mercenary must appear in optimizer progress ladder snapshots');
+const evaluationCounts=progress.map(update=>Number(update.evaluations)).filter(Number.isFinite);
+assert.ok(evaluationCounts.every((value,index)=>index===0||value>=evaluationCounts[index-1]),'Displayed optimizer evaluations must be cumulative and monotonic');
 console.log(JSON.stringify({ok:true,mercenary:fixed.name,quantity:fixed.quantity,authority:result.payload.result.capacities.AUTHORITY,eld:result.payload.result.expectedTotalLifetimeDamage}));
