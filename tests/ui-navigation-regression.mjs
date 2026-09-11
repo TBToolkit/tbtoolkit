@@ -87,6 +87,7 @@ assert.match(html,/data-chart-style="separated"/, 'Both visuals must allow the s
 assert.match(source,/preferences:\{templeLevel:45,chartStyle:'combined'\}/, 'The current combined death-order chart must remain the default');
 assert.match(source,/state\.preferences\.chartStyle=currentSaved\.preferences\.chartStyle==='separated'\?'separated':'combined'/, 'The global chart preference must be restored safely');
 assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
+assert.match(source,/chartStyle\(\)==='separated'[\s\S]*?suffix[\s\S]*?return`\$\{roman\}-\$\{suffix\}`/, 'Separated Results mercenary labels must retain their subgroup suffix');
 assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');
 assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
 assert.match(source,/for\(let death=5;death<=horizontalCount;death\+=5\)/, 'Both horizontal-axis styles must use five-position increments');
