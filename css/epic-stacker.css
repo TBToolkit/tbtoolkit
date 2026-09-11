@@ -1670,6 +1670,13 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .bonus-matrix-header .stat-help-button{width:17px;height:17px;font-size:.58rem;flex:0 0 17px}
 .bonus-matrix-row{border-top:1px solid #263a4a}
 .bonus-matrix-row>strong{color:#edf2f6;font-size:.72rem;text-transform:uppercase}
+.bonus-profile-name{display:flex;align-items:center;gap:6px;min-width:0}
+.human-bonus-disclosure{display:flex;align-items:center;gap:5px;min-width:0;padding:0;border:0;background:none;color:#edf2f6;font:900 .72rem/1.2 inherit;text-align:left;text-transform:uppercase;cursor:pointer}
+.human-bonus-disclosure>span{color:#f0a51a;font-size:1rem;transition:transform .15s ease}
+.human-bonus-disclosure[aria-expanded="true"]>span{transform:rotate(90deg)}
+.bonus-profile-name small{padding:2px 5px;border:1px solid #a97820;border-radius:999px;background:#2b210e;color:#ffc85c;font-size:.5rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.bonus-child-row{background:#08141e}
+.bonus-child-row>strong{padding-left:20px;color:#bdcad3}
 .bonus-matrix-row .percent-field{min-width:0}
 .bonus-matrix-row .epic-input{width:100%;min-width:0;padding:8px 20px 8px 7px;text-align:right;font-size:.76rem}
 .bonus-matrix-row .percent-field>span{right:7px;font-size:.68rem}
@@ -1677,6 +1684,7 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .bonus-mode-base{color:#7f93a3;font-size:.62rem;font-weight:850;text-align:center;text-transform:uppercase}
 .bonus-auto-toggle{display:flex;align-items:center;justify-content:center;gap:4px;color:#aab9c5;font-size:.61rem;font-weight:850;cursor:pointer}
 .bonus-auto-toggle input{accent-color:var(--epic-orange)}
+.section-heading-help{flex:0 0 auto}
 .global-bonus-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:760px){
   .bonus-matrix{overflow-x:auto}

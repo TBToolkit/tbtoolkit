@@ -8,7 +8,7 @@ const account={
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,specialistHealth:'2345',autoSpecialistBonuses:false,ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -25,6 +25,7 @@ assert.equal(raw.format,BIFF_FORMAT);assert.equal(raw.schemaVersion,BIFF_SCHEMA_
 assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
+assert.equal(raw.account.workspaces[0].inputs.autoHumanBonuses,false);
 assert.doesNotMatch(text,/resultCache|must not export/);
 
 const parsed=parseBiff(text);

@@ -26,8 +26,12 @@ assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesS
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
 assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
-assert.equal((html.match(/data-bonus-profile=/g)||[]).length,5,'Unit bonuses must render as five profile rows');
-assert.match(html,/data-bonus-profile="monster"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'Monster bonuses must appear first, followed by the four derived profiles');
+assert.equal((html.match(/data-bonus-profile=/g)||[]).length,6,'Unit bonuses must include three simple rows plus the expandable Human profiles');
+assert.match(html,/data-bonus-profile="monster"[\s\S]*?data-bonus-profile="human"[\s\S]*?hidden id="humanBonusDetails"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'The default matrix must show Monsters, Human Units, and Epic Hunters with G/S/E nested under Human Units');
+assert.match(html,/<h2>Unit Bonuses<\/h2><button[^>]+data-stat-help="unitBonusProfiles"/,'Section 3 must be named Unit Bonuses and carry the profile help control');
+assert.doesNotMatch(html,/<h2>Health &amp; Combat<\/h2>/,'The old section name must not remain');
+assert.match(source,/bonusDD:[\s\S]*?monster-dd\.webp[\s\S]*?bonusST:[\s\S]*?monster-st\.webp[\s\S]*?bonusHealth:[\s\S]*?monster-health\.webp[\s\S]*?bonusStrength:[\s\S]*?monster-strength\.webp/,'Each column help topic must include its Monster example screenshot');
+assert.match(source,/function updateHumanProfileStatus\(\)[\s\S]*?textContent='Mixed'/,'Collapsed Human Units must disclose customized child profiles');
 assert.doesNotMatch(html,/id="useCustomFamilyBonuses"/,'The old all-or-nothing custom-family control must not remain');
 assert.match(source,/useCustomProfileBonuses:true/,'Optimizer and Review Selection must receive the resolved profile matrix');
 assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');
