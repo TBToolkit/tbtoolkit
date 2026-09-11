@@ -34,6 +34,13 @@ assert.doesNotMatch(html,/<h2>Health &amp; Combat<\/h2>/,'The old section name m
 assert.match(source,/bonusDD:[\s\S]*?monster-dd\.webp[\s\S]*?bonusST:[\s\S]*?monster-st\.webp[\s\S]*?bonusHealth:[\s\S]*?monster-health\.webp[\s\S]*?bonusStrength:[\s\S]*?monster-strength\.webp/,'Each column help topic must include its Monster example screenshot');
 assert.match(html,/<span>Unit <button[^>]+data-stat-help="bonusUnit"/,'The Unit column must provide contextual profile-selection help');
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
+assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
+assert.equal((html.match(/data-guide-panel=/g)||[]).length,8,'The mechanics guide must contain all eight reference sections');
+assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
+assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
+assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
+assert.match(source,/function openBattleGuide\([\s\S]*?battleGuideReturnFocus/,'The guide must restore focus to its opening control');
+assert.match(source,/if\(e\.key!=='Tab'\)return;/,'The guide must keep keyboard focus within the open modal');
 assert.match(source,/function updateBonusGroupStatus\([\s\S]*?textContent='Mixed'/,'Collapsed Monster and Human rows must disclose customized child profiles');
 assert.match(css,/\.bonus-profile-disclosure\{[\s\S]*?font-family:inherit/,'Expandable profile labels must inherit the calculator typography');
 assert.match(css,/@media \(min-width:1101px\) and \(max-width:1320px\)[\s\S]*?advanced-settings-column\{grid-column:1\/-1/,'Unit Bonuses must move below sections 1 and 2 before its values become cramped');

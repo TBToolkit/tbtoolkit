@@ -32,6 +32,7 @@
 <h1>Battle Calculator</h1>
 
 <p class="mode-description battle-page-description" id="modeDescription">Build and optimize an army for Epic Monster or Player vs. Player battles.</p>
+<div class="calculator-reference-row"><button class="calculator-guide-link" data-battle-guide="overview" type="button">How Epic battles are calculated</button></div>
 <details class="battle-calculator-notes">
 <summary>Assumptions &amp; saved data</summary>
 <div class="battle-calculator-note-content">
@@ -241,7 +242,7 @@
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
-<div class="selection-optimize-row optimizer-only"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
+<div class="selection-optimize-row optimizer-only"><div><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
 </section>
 
 <section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
@@ -331,6 +332,115 @@
 <div class="stat-help-header"><div><span class="stat-help-eyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
 <p class="stat-help-text" id="statHelpText"></p>
 <div class="stat-help-gallery" id="statHelpGallery"></div>
+<button class="stat-help-guide-link" data-battle-guide="" hidden id="statHelpGuideLink" type="button">Learn how this affects calculations</button>
+</div>
+</div>
+
+<div class="battle-guide-modal" hidden id="battleGuideModal">
+<div class="battle-guide-backdrop" data-battle-guide-close></div>
+<div aria-labelledby="battleGuideTitle" aria-modal="true" class="battle-guide-dialog" role="dialog">
+<header class="battle-guide-header">
+<div><span class="battle-guide-eyebrow">Battle Calculator Guide</span><h2 id="battleGuideTitle">How Epic Battles Are Calculated</h2><p>Follow the complete calculation, or open only the section you need.</p></div>
+<button aria-label="Close battle calculator guide" class="battle-guide-close" data-battle-guide-close type="button">×</button>
+</header>
+<div class="battle-guide-layout">
+<nav aria-label="Guide sections" class="battle-guide-nav">
+<button data-battle-guide-section="overview" type="button">Battle overview</button>
+<button data-battle-guide-section="bonuses" type="button">Unit bonuses</button>
+<button data-battle-guide-section="damage" type="button">Epic damage</button>
+<button data-battle-guide-section="chance" type="button">Double Damage &amp; Strike Twice</button>
+<button data-battle-guide-section="health" type="button">Health &amp; death order</button>
+<button data-battle-guide-section="methods" type="button">Calculation methods</button>
+<button data-battle-guide-section="optimizer" type="button">Optimizer workflow</button>
+<button data-battle-guide-section="results" type="button">Reading results</button>
+</nav>
+<div class="battle-guide-content">
+<details data-guide-panel="overview" id="guide-overview" name="battle-guide-section" open>
+<summary><span>1</span>Battle overview</summary>
+<div class="battle-guide-section-copy">
+<p>An Epic battle is a sequence of attacks between your surviving squads and the Epic’s surviving enemy squads. The calculator models each friendly squad separately, including its health, target matchups, attack opportunities, and expected damage.</p>
+<div class="battle-guide-callout"><strong>Opening initiative</strong><p>The first attack is a 50/50 coin toss: either your army or the Epic attacks first. After that opening cycle, the Epic attacks first in every later cycle. The calculator simulates both opening outcomes and averages them.</p></div>
+<p>A normal Epic formation contains one Flying, Mounted, Melee, and Ranged enemy squad. Arachne contains two of each. Custom encounters may contain from one to eight enemy squads.</p>
+</div>
+</details>
+
+<details data-guide-panel="bonuses" id="guide-bonuses" name="battle-guide-section">
+<summary><span>2</span>Unit bonus assignment</summary>
+<div class="battle-guide-section-copy">
+<p>Every unit uses one bonus profile. Species takes priority over troop class: Beasts, Dragons, Elementals, and Giants use their matching species profile even when the unit appears in a Specialist or mercenary group.</p>
+<div class="battle-guide-routing"><div><strong>Monster species</strong><span>Beast · Dragon · Elemental · Giant</span></div><div><strong>Human classes</strong><span>Guardsman · Specialist · Engineer</span></div><div><strong>Special profiles</strong><span>Epic Hunter</span></div></div>
+<p>Cursed, Demon, Elves, Undead, and Barbarian units use Guardsman bonuses. Human mercenaries without a Guardsman, Specialist, or Engineer class also use Guardsman bonuses. Mercenaries otherwise follow the same species rules as every other unit.</p>
+<p>Rows marked <strong>Auto</strong> follow their parent Monsters or Humans row. Turning Auto off lets that profile use its own Double Damage, Strike Twice, Health, and Strength values.</p>
+</div>
+</details>
+
+<details data-guide-panel="damage" id="guide-damage" name="battle-guide-section">
+<summary><span>3</span>Epic battle damage</summary>
+<div class="battle-guide-section-copy">
+<p><strong>Base Strength</strong> is the unit’s original strength. <strong>Profile Strength</strong> is the Strength value from the unit’s assigned Beast, Guardsman, Specialist, or other profile. <strong>Strength PvE</strong> is a global bonus applied to every unit fighting an Epic.</p>
+<div class="battle-guide-formula"><span>Strength per unit</span><code>Base Strength × (1 + Profile Strength + Strength PvE + Epic bonus + matchup bonus + Arachne bonus)</code></div>
+<p>An <strong>Epic bonus</strong> belongs to a specific unit and applies against Epic monsters. A <strong>matchup bonus</strong> applies only when that unit attacks a matching Flying, Mounted, Melee, or Ranged enemy squad. An intrinsic Arachne bonus applies only in an Arachne encounter.</p>
+<div class="battle-guide-example"><strong>Example</strong><p>A unit has 1,000 Base Strength, 2,000% Profile Strength, 3,000% Strength PvE, a 100% Epic bonus, and a 50% bonus against its target.</p><code>1,000 × (1 + 20 + 30 + 1 + 0.5) = 52,500 damage</code><p>The extra 1 represents the unit’s original 100% Base Strength.</p></div>
+</div>
+</details>
+
+<details data-guide-panel="chance" id="guide-chance" name="battle-guide-section">
+<summary><span>4</span>Double Damage and Strike Twice</summary>
+<div class="battle-guide-section-copy">
+<p><strong>Double Damage</strong> is the chance that an attack deals twice its normal damage. The calculator adds the unit’s intrinsic Double Damage to its profile value and caps the final chance at 100%. For example, a Smiter with an intrinsic 5% bonus and a 14% profile value has a 19% Double Damage chance.</p>
+<p><strong>Strike Twice</strong> is the chance to attack a second, distinct enemy squad. Damage is calculated separately for that second target, so the first target’s matchup bonus is not automatically reused.</p>
+<div class="battle-guide-formula"><span>Expected damage per opportunity</span><code>(1 + Double Damage chance) × (first-strike damage + Strike Twice chance × second-strike damage)</code></div>
+<div class="battle-guide-example"><strong>Four-squad example</strong><p>A ranged Guardsman deals 150 damage to Flying because of a matchup bonus, but 100 damage to its next-best target. With 20% Strike Twice:</p><code>150 + (0.20 × 100) = 170 expected damage</code><p>If it also receives the same matchup bonus against Melee, its second strike may deal 150 damage instead. With Arachne, two copies of each enemy type exist, so both strikes can sometimes receive the same matchup bonus while still targeting different squads.</p></div>
+</div>
+</details>
+
+<details data-guide-panel="health" id="guide-health" name="battle-guide-section">
+<summary><span>5</span>Health and predicted death order</summary>
+<div class="battle-guide-section-copy">
+<div class="battle-guide-formula"><span>Effective squad health</span><code>Quantity × Base Health × (1 + Profile Health)</code></div>
+<p>The calculator uses effective squad health to construct the predicted death ladder. Higher-health friendly squads are expected to be defeated earlier; lower-health squads remain for later attack opportunities.</p>
+<p><strong>Minimum Separation</strong> uses the smallest legal health difference that preserves the requested order. Fixed separation requires a larger percentage gap between adjacent squads.</p>
+<div class="battle-guide-callout"><strong>Why capacity can finish slightly below 100%</strong><p>Quantities must be whole legal increments, remain below the capacity limit, and preserve the health ladder. A final deterministic top-up adds every legal increment it can. Any remaining space may be too small for another unit or adding one may reverse the intended death order.</p></div>
+</div>
+</details>
+
+<details data-guide-panel="methods" id="guide-methods" name="battle-guide-section">
+<summary><span>6</span>Calculation methods</summary>
+<div class="battle-guide-section-copy battle-guide-methods">
+<div><strong>Standard</strong><p>Builds legal quantities and an automatic death order from the selected units and their matchup value.</p></div>
+<div><strong>Custom Order</strong><p>Uses the death order chosen by the player, then calculates legal quantities that preserve it.</p></div>
+<div><strong>Optimize</strong><p>Simulates many quantity and death-order structures and keeps the army with the strongest Expected Lifetime Damage.</p></div>
+<div><strong>Review Selection</strong><p>Checks whether a different subset of the units available to the player offers meaningful improvement. Nothing changes unless the recommendation is accepted.</p></div>
+</div>
+</details>
+
+<details data-guide-panel="optimizer" id="guide-optimizer" name="battle-guide-section">
+<summary><span>7</span>Optimizer workflow</summary>
+<div class="battle-guide-section-copy">
+<p>The optimizer searches only the units selected by the player. When mercenaries are excluded, their quantities remain fixed and their damage is included in the final score.</p>
+<ol class="battle-guide-flow">
+<li><strong>Validate and prepare</strong><span>Resolve unit profiles, bonuses, capacity limits, enemy formation, and legal quantity rules.</span></li>
+<li><strong>Screen independent seeds</strong><span>Create several different starting army structures so the search is not dependent on one initial guess.</span></li>
+<li><strong>Local refinement</strong><span>Transfer progressively smaller amounts of capacity between squads and keep improvements.</span></li>
+<li><strong>Structural exploration</strong><span>Test alternate death orders, attack-opportunity thresholds, counterfactual battle basins, and related squad-group redistributions.</span></li>
+<li><strong>Precision polish</strong><span>Revisit the strongest candidates with smaller changes until no tested move improves ELD.</span></li>
+<li><strong>Practical tie-break</strong><span>When armies are nearly equal, prefer a more practical death order within the allowed near-optimal range.</span></li>
+<li><strong>Canonical final score</strong><span>Re-run the selected army through the shared battle simulator and display its quantities, death order, ELD, and revival cost.</span></li>
+</ol>
+</div>
+</details>
+
+<details data-guide-panel="results" id="guide-results" name="battle-guide-section">
+<summary><span>8</span>Reading the results</summary>
+<div class="battle-guide-section-copy battle-guide-results-grid">
+<div><strong>Expected Lifetime Damage (ELD)</strong><p>The average total damage the army is expected to cause across its predicted attack opportunities. It is a comparison metric, not a guarantee for one battle.</p></div>
+<div><strong>Gold Revival</strong><p>The Temple-adjusted Gold cost for 90% revivable attacking losses. Whole-unit rounding is applied.</p></div>
+<div><strong>Damage per 1,000 Gold</strong><p>Expected Lifetime Damage divided by revival cost, expressed per 1,000 Gold.</p></div>
+<div><strong>Unusual death orders</strong><p>A squad may die earlier because sacrificing one attack can allow several stronger squads to gain attacks. The optimizer compares total army ELD rather than judging one squad in isolation.</p></div>
+</div>
+</details>
+</div>
+</div>
 </div>
 </div>
 

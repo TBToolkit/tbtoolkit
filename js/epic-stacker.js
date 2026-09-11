@@ -2737,12 +2737,20 @@ const STAT_HELP={
   epicHunterST:{title:'Epic Hunter Strike Twice',text:'Open your Superior Epic Monster Hunter, then copy “Chance to strike two squads” from the Bonuses section.',images:[['epic-hunter-click.webp','1. Open the Epic Hunter squad.'],['epic-hunter-st.webp','2. Copy Strike Twice.']]}
 };
 let statHelpReturnFocus=null;
+const STAT_HELP_GUIDE_SECTION={
+  unitBonusProfiles:'bonuses',bonusUnit:'bonuses',bonusDD:'chance',bonusST:'chance',
+  monsterDD:'chance',humanDD:'chance',epicHunterDD:'chance',monsterST:'chance',humanST:'chance',epicHunterST:'chance',
+  bonusHealth:'health',monsterHealth:'health',humanHealth:'health',epicHunterHealth:'health',
+  bonusStrength:'damage',monsterStrength:'damage',humanStrength:'damage',epicHunterStrength:'damage',strengthAgainstEpic:'damage'
+};
 function openStatHelp(key,trigger){
   const help=STAT_HELP[key],modal=document.getElementById('statHelpModal');if(!help||!modal)return;
   statHelpReturnFocus=trigger||document.activeElement;
   document.getElementById('statHelpTitle').textContent=help.title;
   document.getElementById('statHelpText').textContent=help.text;
   document.getElementById('statHelpGallery').innerHTML=help.images.map(([src,caption])=>`<figure class="stat-help-figure"><img alt="${escapeHtml(caption)}" loading="lazy" src="${STAT_HELP_BASE}${encodeURIComponent(src)}"/><figcaption>${escapeHtml(caption)}</figcaption></figure>`).join('');
+  const guideLink=document.getElementById('statHelpGuideLink'),guideSection=STAT_HELP_GUIDE_SECTION[key];
+  if(guideLink){guideLink.hidden=!guideSection;guideLink.dataset.battleGuide=guideSection||'';}
   modal.hidden=false;document.body.classList.add('stat-help-modal-open');
   requestAnimationFrame(()=>modal.querySelector('.stat-help-close')?.focus());
 }
@@ -2751,10 +2759,44 @@ function closeStatHelp(){
   modal.hidden=true;document.body.classList.remove('stat-help-modal-open');
   const target=statHelpReturnFocus;statHelpReturnFocus=null;if(target&&typeof target.focus==='function')target.focus();
 }
+let battleGuideReturnFocus=null;
+function openBattleGuide(section='overview',trigger=null){
+  const modal=document.getElementById('battleGuideModal');if(!modal)return;
+  const returnTarget=!document.getElementById('statHelpModal')?.hidden&&statHelpReturnFocus?statHelpReturnFocus:(trigger||document.activeElement);
+  if(!document.getElementById('statHelpModal')?.hidden)closeStatHelp();
+  battleGuideReturnFocus=returnTarget;
+  modal.hidden=false;document.body.classList.add('battle-guide-open');
+  const panel=modal.querySelector(`[data-guide-panel="${section}"]`)||modal.querySelector('[data-guide-panel="overview"]');
+  modal.querySelectorAll('[data-guide-panel]').forEach(item=>item.open=item===panel);
+  if(panel)requestAnimationFrame(()=>panel.scrollIntoView({block:'start'}));
+  modal.querySelectorAll('[data-battle-guide-section]').forEach(button=>button.setAttribute('aria-current',String(button.dataset.battleGuideSection===panel?.dataset.guidePanel)));
+  requestAnimationFrame(()=>modal.querySelector('.battle-guide-close')?.focus());
+}
+function closeBattleGuide(){
+  const modal=document.getElementById('battleGuideModal');if(!modal||modal.hidden)return;
+  modal.hidden=true;document.body.classList.remove('battle-guide-open');
+  const target=battleGuideReturnFocus;battleGuideReturnFocus=null;if(target&&typeof target.focus==='function')target.focus();
+}
 function wireStatHelp(){
   document.querySelectorAll('[data-stat-help]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();openStatHelp(button.dataset.statHelp,button);}));
   document.querySelectorAll('[data-stat-help-close]').forEach(button=>button.addEventListener('click',closeStatHelp));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('statHelpModal')?.hidden)closeStatHelp();});
+  document.querySelectorAll('[data-battle-guide]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();openBattleGuide(button.dataset.battleGuide,button);}));
+  document.querySelectorAll('[data-battle-guide-close]').forEach(button=>button.addEventListener('click',closeBattleGuide));
+  document.querySelectorAll('[data-battle-guide-section]').forEach(button=>button.addEventListener('click',()=>{
+    const section=button.dataset.battleGuideSection,panel=document.querySelector(`[data-guide-panel="${section}"]`);if(!panel)return;
+    document.querySelectorAll('[data-guide-panel]').forEach(item=>item.open=item===panel);panel.scrollIntoView({behavior:'smooth',block:'start'});
+    document.querySelectorAll('[data-battle-guide-section]').forEach(item=>item.setAttribute('aria-current',String(item===button)));
+  }));
+  document.addEventListener('keydown',e=>{
+    const modal=document.getElementById('battleGuideModal');if(modal?.hidden)return;
+    if(e.key==='Escape'){closeBattleGuide();return;}
+    if(e.key!=='Tab')return;
+    const focusable=[...modal.querySelectorAll('button,[href],summary,[tabindex]:not([tabindex="-1"])')].filter(element=>!element.hidden);
+    if(!focusable.length)return;const first=focusable[0],last=focusable.at(-1);
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  });
   document.querySelectorAll('[data-sacrifice-help-close]').forEach(el=>el.addEventListener('click',closeSacrificeHelp));
   document.getElementById('sacrificeHelpModal')?.querySelector('.sacrifice-help-backdrop')?.addEventListener('click',closeSacrificeHelp);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('sacrificeHelpModal')?.hidden)closeSacrificeHelp();});
