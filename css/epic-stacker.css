@@ -180,7 +180,7 @@
 .chart-axis-line{stroke:#627789;stroke-width:1.5}
 .chart-series-line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .chart-point{stroke:#02080d;stroke-width:2;cursor:pointer}
-.chart-point-label{font-size:10px;font-weight:900;text-anchor:middle}
+.chart-point-label{font-size:12px;font-weight:900;text-anchor:middle}
 .chart-y-title{fill:#98a8b7;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
 
 @media(max-width:760px){
