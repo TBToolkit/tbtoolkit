@@ -973,7 +973,7 @@ function renderOptimizerHealthLadder(rows=[]){
     for(const point of points){
       const pointColor=outputRowColors(category,{id:point.row.id,level:point.row.tier}).accent;
       svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:pointColor,stroke:'#07131c','stroke-width':1.3}));
-      const label=make('text',{x:point.x,y:Math.max(9,point.y-6),'text-anchor':'middle',fill:pointColor,'font-size':6.5,'font-weight':800});
+      const label=make('text',{x:point.x,y:Math.max(11,point.y-7),'text-anchor':'middle',fill:pointColor,'font-size':8.5,'font-weight':900});
       label.textContent=category==='mercenary'?(mercTierRoman[tierNumber(point.row.tier)]||String(point.row.tier||'')):String(point.row.tier||'');svg.append(label);
     }
   }
