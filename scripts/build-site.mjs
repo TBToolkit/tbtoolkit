@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {cp, mkdir, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import {SAVED_STATE_SCHEMA_VERSION} from '../js/saved-state-schema.mjs';
 
 const root=path.resolve(import.meta.dirname,'..');
 const output=path.join(root,'dist');
@@ -59,7 +60,7 @@ const manifest={
   commit,
   assetVersion,
   builtAt:new Date().toISOString(),
-  storageSchemaVersion:19,
+  storageSchemaVersion:SAVED_STATE_SCHEMA_VERSION,
 };
 await writeFile(path.join(output,'deployment-manifest.json'),`${JSON.stringify(manifest,null,2)}\n`);
 await writeFile(path.join(output,'.nojekyll'),'');

@@ -8,6 +8,12 @@ export const BONUS_FAMILY_BY_SPECIES=Object.freeze({
   'EPIC HUNTER':'EPIC_HUNTER',
 });
 
+export const BONUS_PROFILE_BY_SPECIES=Object.freeze({
+  BEAST:'MONSTER',DRAGON:'MONSTER',ELEMENTAL:'MONSTER',GIANT:'MONSTER',
+  CURSED:'GUARDSMAN',DEMON:'GUARDSMAN',ELVES:'GUARDSMAN',UNDEAD:'GUARDSMAN',BARBARIAN:'GUARDSMAN',
+  'EPIC HUNTER':'EPIC_HUNTER',
+});
+
 export const ATTACKING_REVIVABLE_FRACTION=.90;
 
 export function finiteNumber(value,label='Value'){
@@ -26,6 +32,19 @@ export function bonusFamilyForSpecies(species){
   const family=BONUS_FAMILY_BY_SPECIES[String(species??'').toUpperCase()];
   if(!family)throw new Error(`Unknown bonus-family species: ${species}`);
   return family;
+}
+
+/** Resolve the account bonus row used by a concrete unit. */
+export function bonusProfileForUnit(unit){
+  const species=String(unit?.species??'').toUpperCase();
+  const override=BONUS_PROFILE_BY_SPECIES[species];
+  if(override)return override;
+  if(species!=='HUMAN')throw new Error(`Unknown bonus-profile species: ${unit?.species}`);
+  const unitClass=String(unit?.unitClass??unit?.class??'').toUpperCase();
+  if(['GUARDSMAN','SPECIALIST','ENGINEER'].includes(unitClass))return unitClass;
+  // Human mercenaries without a G/S/E class follow the same account bonuses
+  // as Guardsmen, matching the existing Human-family behavior.
+  return'GUARDSMAN';
 }
 
 export function assertLegalQuantity(quantity,label='Quantity'){

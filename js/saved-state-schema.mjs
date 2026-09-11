@@ -1,5 +1,5 @@
 export const SAVED_STATE_KEY='tbtoolkit.stackingCalculator';
-export const SAVED_STATE_SCHEMA_VERSION=19;
+export const SAVED_STATE_SCHEMA_VERSION=20;
 export const LEGACY_SAVED_STATE_KEYS=[
   {key:'tbtoolkit.stackingCalculator.v18',schemaVersion:18},
   {key:'tbtoolkit.stackingCalculator.v17',schemaVersion:17},
@@ -8,6 +8,7 @@ export const LEGACY_SAVED_STATE_KEYS=[
 const migrations=new Map([
   [17,state=>state],
   [18,state=>state],
+  [19,state=>state],
 ]);
 
 export function migrateSavedState(value,fromVersion){

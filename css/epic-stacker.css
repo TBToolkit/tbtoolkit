@@ -1660,6 +1660,30 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .sacrifice-help-close{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #40566a;border-radius:9px;background:#111f2b;color:#dbe4eb;font-size:1.5rem;line-height:1;cursor:pointer}
 @media(max-width:760px){.sacrifice-help-modal{padding:10px}.sacrifice-help-dialog{padding:14px;border-radius:11px}.sacrifice-flag{width:24px;height:24px}}
 
+/* v111 — compact unit bonus matrix */
+.bonus-matrix-heading{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bonus-matrix-heading h3{margin:0}
+.bonus-matrix{overflow:hidden;border:1px solid #304658;border-radius:10px;background:#0a1722}
+.bonus-matrix-header,.bonus-matrix-row{display:grid;grid-template-columns:minmax(96px,1.25fr) repeat(4,minmax(68px,1fr)) 56px;gap:8px;align-items:center;padding:8px 10px}
+.bonus-matrix-header{min-height:38px;background:#0d1d29;color:#91a4b4;font-size:.61rem;font-weight:900;text-transform:uppercase;letter-spacing:.035em}
+.bonus-matrix-header>span:not(:first-child){display:flex;align-items:center;justify-content:center;gap:4px;text-align:center}
+.bonus-matrix-header .stat-help-button{width:17px;height:17px;font-size:.58rem;flex:0 0 17px}
+.bonus-matrix-row{border-top:1px solid #263a4a}
+.bonus-matrix-row>strong{color:#edf2f6;font-size:.72rem;text-transform:uppercase}
+.bonus-matrix-row .percent-field{min-width:0}
+.bonus-matrix-row .epic-input{width:100%;min-width:0;padding:8px 20px 8px 7px;text-align:right;font-size:.76rem}
+.bonus-matrix-row .percent-field>span{right:7px;font-size:.68rem}
+.bonus-matrix-row .family-derived-field:disabled{opacity:.72;background:#09141e;color:#aebbc5}
+.bonus-mode-base{color:#7f93a3;font-size:.62rem;font-weight:850;text-align:center;text-transform:uppercase}
+.bonus-auto-toggle{display:flex;align-items:center;justify-content:center;gap:4px;color:#aab9c5;font-size:.61rem;font-weight:850;cursor:pointer}
+.bonus-auto-toggle input{accent-color:var(--epic-orange)}
+.global-bonus-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:760px){
+  .bonus-matrix{overflow-x:auto}
+  .bonus-matrix-header,.bonus-matrix-row{min-width:610px;grid-template-columns:100px repeat(4,88px) 58px}
+  .global-bonus-grid{grid-template-columns:1fr}
+}
+
 /* v105 — Battle Details discoverability and optimizer ELD clarity */
 .battle-details{margin-top:10px;border:1px solid #2d4355;border-radius:7px;padding:0;overflow:hidden;background:#091824}
 .battle-details>summary{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:3px 12px;min-height:48px;padding:9px 42px 9px 12px;cursor:pointer;list-style:none;color:#eef3f6;background:#0d1d2a;transition:background-color .15s ease}

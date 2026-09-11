@@ -1,8 +1,6 @@
-import { BONUS_FAMILY_BY_SPECIES, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs';
+import { bonusProfileForUnit, effectiveHealthEachFromHealthInputs, legalizePhysicalCategoryRows } from './epic-mechanics.mjs';
 import { mroundPositive } from './combat-mechanics.mjs';
 import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs';
-
-const SPECIES_GROUP = BONUS_FAMILY_BY_SPECIES;
 
 const CATEGORY_CONFIG = Object.freeze({
   troop: {
@@ -41,16 +39,14 @@ function maxOf(values) {
 /** Excel-compatible MROUND behavior for the positive quantities used by BIFF STACK. */
 export { mroundPositive };
 
-export function speciesAdjustment(species, healthInputs) {
-  const group = SPECIES_GROUP[species];
-  if (!group) throw new Error(`Unknown species: ${species}`);
-
-  const humanHealth = healthInputs.HUMAN;
-  const speciesHealth = healthInputs[group];
-  if (!(humanHealth > 0) || !(speciesHealth > 0)) {
-    throw new Error(`Health inputs must be > 0; HUMAN=${humanHealth}, ${group}=${speciesHealth}`);
+export function speciesAdjustment(unit, healthInputs) {
+  const profile = bonusProfileForUnit(typeof unit==='object'?unit:{species:unit,unitClass:'GUARDSMAN'});
+  const referenceHealth = healthInputs.GUARDSMAN??healthInputs.HUMAN;
+  const profileHealth = healthInputs[profile]??healthInputs.HUMAN;
+  if (!(referenceHealth > 0) || !(profileHealth > 0)) {
+    throw new Error(`Health inputs must be > 0; GUARDSMAN=${referenceHealth}, ${profile}=${profileHealth}`);
   }
-  return (humanHealth - speciesHealth) / humanHealth;
+  return (referenceHealth - profileHealth) / referenceHealth;
 }
 
 export function pveScore(unit, arachne = false) {
@@ -140,7 +136,7 @@ export function calculateCategory({
   const rankSeparation = inputs.minimumSeparation ? 0 : inputs.rankSeparation;
 
   const interim = ranked.map(({ unit, pve, rank }) => {
-    const adj = speciesAdjustment(unit.species, inputs.healthInputs);
+    const adj = speciesAdjustment(unit, inputs.healthInputs);
     const pveModifier = (rank - 1) * rankSeparation;
     const modifier = 1 + pveModifier + adj;
     const capEach = unit[config.capacityEach];
@@ -277,6 +273,13 @@ function epicBonusPayloadFromEngineInputs(inputs){
       humanSTPct:Number(inputs.humanSTPct),
       epicHunterSTPct:Number(inputs.epicHunterSTPct),
     },
+    useCustomProfileBonuses:true,
+    customProfileBonuses:Object.fromEntries(['guardsman','specialist','engineer'].flatMap(profile=>[
+      [`${profile}HealthPct`,Number((inputs.healthInputs?.[profile.toUpperCase()]??inputs.healthInputs?.HUMAN)||0)],
+      [`${profile}StrengthPct`,Number(inputs[`${profile}StrengthPct`]??inputs.humanStrengthPct)],
+      [`${profile}DDPct`,Number(inputs[`${profile}DDPct`]??inputs.humanDDPct)],
+      [`${profile}STPct`,Number(inputs[`${profile}STPct`]??inputs.humanSTPct)],
+    ])),
   };
 }
 

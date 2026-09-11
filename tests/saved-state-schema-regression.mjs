@@ -8,6 +8,7 @@ values.set(LEGACY_SAVED_STATE_KEYS[0].key,JSON.stringify({accounts:{main:{name:'
 const legacy=readLatestSavedState(storage,readJson);
 assert.equal(legacy.sourceKey,'tbtoolkit.stackingCalculator.v18');
 assert.equal(legacy.state.schemaVersion,SAVED_STATE_SCHEMA_VERSION);
+assert.equal(migrateSavedState({accounts:{old:{name:'Old'}}},19).schemaVersion,SAVED_STATE_SCHEMA_VERSION);
 values.set(SAVED_STATE_KEY,JSON.stringify({schemaVersion:SAVED_STATE_SCHEMA_VERSION,accounts:{new:{name:'New'}}}));
 const current=readLatestSavedState(storage,readJson);
 assert.equal(current.sourceKey,SAVED_STATE_KEY);

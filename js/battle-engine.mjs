@@ -4,6 +4,7 @@ import {
   finiteNumber,
   clampProbability,
   bonusFamilyForSpecies,
+  bonusProfileForUnit,
   squadRevivalCosts,
 } from './combat-mechanics.mjs';
 import { BATTLE_SIMULATOR_BUILD, simulateTwoInitiativeAverage } from './battle-simulator.mjs';
@@ -25,29 +26,27 @@ function specialist(u){
   return String(u.class||'').toUpperCase()==='SPECIALIST';
 }
 function familyKey(u){
-  const family=bonusFamilyForSpecies(u.species);
-  return family==='EPIC_HUNTER'?'epicHunter':family.toLowerCase();
+  const profile=bonusProfileForUnit(u);
+  return profile==='EPIC_HUNTER'?'epicHunter':profile.toLowerCase();
 }
 function familyStrengthPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}StrengthPct`]??0);
+  return Number(i[`${k}StrengthPct`]??i.humanStrengthPct??0);
 }
 function familyHealthPct(u,i){
-  const k=familyKey(u);
-  if(k==='monster')return Number(i.healthInputs?.MONSTER??0);
-  if(k==='human')return Number(i.healthInputs?.HUMAN??0);
-  return Number(i.healthInputs?.EPIC_HUNTER??0);
+  const profile=bonusProfileForUnit(u);
+  return Number(i.healthInputs?.[profile]??i.healthInputs?.HUMAN??0);
 }
 function pvpEffectiveHealthEach(u,i){
   return finiteNumber(u.healthEach,`${u.name||u.id} base health`)*(1+finiteNumber(familyHealthPct(u,i),`${u.name||u.id} health bonus`)/100);
 }
 function familyDdPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}DDPct`]??0);
+  return Number(i[`${k}DDPct`]??i.humanDDPct??0);
 }
 function familyStPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}STPct`]??0);
+  return Number(i[`${k}STPct`]??i.humanSTPct??0);
 }
 function bonusValue(u,key){
   return Number(u.bonuses?.[String(key||'').toLowerCase()]??0);

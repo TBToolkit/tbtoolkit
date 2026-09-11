@@ -5,10 +5,11 @@ import {
   pctPoints,
   clampProbability,
   bonusFamilyForSpecies,
+  bonusProfileForUnit,
   assertLegalQuantity,
 } from './combat-mechanics.mjs';
 
-export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoints, clampProbability, bonusFamilyForSpecies, assertLegalQuantity };
+export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoints, clampProbability, bonusFamilyForSpecies, bonusProfileForUnit, assertLegalQuantity };
 
 /**
  * Shared Epic battle mechanics primitives.
@@ -21,8 +22,7 @@ export { COMBAT_MECHANICS_BUILD, BONUS_FAMILY_BY_SPECIES, finiteNumber, pctPoint
 export {EPIC_MECHANICS_BUILD} from './build-info.mjs';
 
 /**
- * Resolve the player-facing Epic health/strength/DD/ST inputs into the three
- * bonus families used by Total Battle combat calculations.
+ * Resolve player-facing Epic inputs into concrete unit bonus profiles.
  */
 export function deriveBonusInputs(input) {
   const monsterHealthPct = finiteNumber(input.monsterHealthPct, 'Monster Health %');
@@ -32,17 +32,35 @@ export function deriveBonusInputs(input) {
   const monsterSTPct = finiteNumber(input.monsterSTPct, 'Monster Strike Twice %');
 
   const defaults = {
+    guardsmanHealthPct: monsterHealthPct - 100,
+    specialistHealthPct: monsterHealthPct - 100,
+    engineerHealthPct: monsterHealthPct - 100,
     humanHealthPct: monsterHealthPct - 100,
     epicHunterHealthPct: monsterHealthPct - 741,
+    guardsmanStrengthPct: monsterStrengthPct - 100,
+    specialistStrengthPct: monsterStrengthPct - 100,
+    engineerStrengthPct: monsterStrengthPct - 100,
     humanStrengthPct: monsterStrengthPct - 100,
     epicHunterStrengthPct: monsterStrengthPct - 741,
+    guardsmanDDPct: monsterDDPct,
+    specialistDDPct: monsterDDPct,
+    engineerDDPct: monsterDDPct,
     humanDDPct: monsterDDPct,
     epicHunterDDPct: monsterDDPct,
+    guardsmanSTPct: Math.max(0, monsterSTPct - 5),
+    specialistSTPct: Math.max(0, monsterSTPct - 5),
+    engineerSTPct: Math.max(0, monsterSTPct - 5),
     humanSTPct: Math.max(0, monsterSTPct - 5),
     epicHunterSTPct: Math.max(0, monsterSTPct - 5),
   };
-  const custom = input.customFamilyBonuses ?? {};
-  const resolved = input.useCustomFamilyBonuses ? { ...defaults, ...custom } : defaults;
+  const legacyCustom = input.customFamilyBonuses ?? {};
+  const legacyResolved=input.useCustomFamilyBonuses?{...defaults,...legacyCustom}:defaults;
+  if(input.useCustomFamilyBonuses){
+    for(const profile of ['guardsman','specialist','engineer']){
+      for(const stat of ['Health','Strength','DD','ST'])legacyResolved[`${profile}${stat}Pct`]=legacyCustom[`human${stat}Pct`]??legacyResolved[`${profile}${stat}Pct`];
+    }
+  }
+  const resolved=input.useCustomProfileBonuses?{...legacyResolved,...(input.customProfileBonuses??{})}:legacyResolved;
 
   const defaultEnemySquadTypes=input.arachne
     ?['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED']
@@ -55,18 +73,30 @@ export function deriveBonusInputs(input) {
   }
 
   return {
-    family: {
+    profile: {
       MONSTER: {
         health: pctPoints(monsterHealthPct, 'Monster Health %'),
         strength: pctPoints(monsterStrengthPct, 'Monster Strength %'),
         dd: clampProbability(pctPoints(monsterDDPct, 'Monster Double Damage %')),
         st: clampProbability(pctPoints(monsterSTPct, 'Monster Strike Twice %')),
       },
-      HUMAN: {
-        health: pctPoints(resolved.humanHealthPct, 'Human Health %'),
-        strength: pctPoints(resolved.humanStrengthPct, 'Human Strength %'),
-        dd: clampProbability(pctPoints(resolved.humanDDPct, 'Human Double Damage %')),
-        st: clampProbability(pctPoints(resolved.humanSTPct, 'Human Strike Twice %')),
+      GUARDSMAN: {
+        health: pctPoints(resolved.guardsmanHealthPct, 'Guardsman Health %'),
+        strength: pctPoints(resolved.guardsmanStrengthPct, 'Guardsman Strength %'),
+        dd: clampProbability(pctPoints(resolved.guardsmanDDPct, 'Guardsman Double Damage %')),
+        st: clampProbability(pctPoints(resolved.guardsmanSTPct, 'Guardsman Strike Twice %')),
+      },
+      SPECIALIST: {
+        health: pctPoints(resolved.specialistHealthPct, 'Specialist Health %'),
+        strength: pctPoints(resolved.specialistStrengthPct, 'Specialist Strength %'),
+        dd: clampProbability(pctPoints(resolved.specialistDDPct, 'Specialist Double Damage %')),
+        st: clampProbability(pctPoints(resolved.specialistSTPct, 'Specialist Strike Twice %')),
+      },
+      ENGINEER: {
+        health: pctPoints(resolved.engineerHealthPct, 'Engineer Health %'),
+        strength: pctPoints(resolved.engineerStrengthPct, 'Engineer Strength %'),
+        dd: clampProbability(pctPoints(resolved.engineerDDPct, 'Engineer Double Damage %')),
+        st: clampProbability(pctPoints(resolved.engineerSTPct, 'Engineer Strike Twice %')),
       },
       EPIC_HUNTER: {
         health: pctPoints(resolved.epicHunterHealthPct, 'Epic Hunter Health %'),
@@ -91,19 +121,20 @@ export function deriveBonusInputs(input) {
 
 /** Effective health of one unit using already-resolved family bonuses. */
 export function effectiveHealthEachFromResolved(unit, resolvedBonuses) {
-  const familyName = bonusFamilyForSpecies(unit.species);
-  const family = resolvedBonuses?.family?.[familyName];
-  if (!family) throw new Error(`Missing ${familyName} family bonuses.`);
-  return finiteNumber(unit.baseHealth, `${unit.name ?? unit.id} base health`) * (1 + finiteNumber(family.health, `${familyName} health bonus`));
+  const profileName = bonusProfileForUnit(unit);
+  const profile = resolvedBonuses?.profile?.[profileName]??resolvedBonuses?.family?.[profileName];
+  if (!profile) throw new Error(`Missing ${profileName} bonus profile.`);
+  return finiteNumber(unit.baseHealth, `${unit.name ?? unit.id} base health`) * (1 + finiteNumber(profile.health, `${profileName} health bonus`));
 }
 
 /**
  * Effective health of one unit from the percentage-point healthInputs shape
- * used by epic-engine.mjs: {MONSTER, HUMAN, EPIC_HUNTER}.
+ * used by epic-engine.mjs. Legacy {MONSTER, HUMAN, EPIC_HUNTER} callers
+ * remain supported through the HUMAN fallback.
  */
 export function effectiveHealthEachFromHealthInputs(unit, healthInputs) {
-  const familyName = bonusFamilyForSpecies(unit.species);
-  const pct = finiteNumber(healthInputs?.[familyName], `${familyName} Health %`);
+  const profileName = bonusProfileForUnit(unit);
+  const pct = finiteNumber(healthInputs?.[profileName]??healthInputs?.HUMAN, `${profileName} Health %`);
   const base = Number(unit.baseHealth ?? unit.healthEach);
   return finiteNumber(base, `${unit.name ?? unit.id} base health`) * (1 + pct / 100);
 }

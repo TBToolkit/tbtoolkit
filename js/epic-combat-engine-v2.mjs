@@ -3,13 +3,14 @@ import {
   BONUS_FAMILY_BY_SPECIES,
   assertLegalQuantity,
   bonusFamilyForSpecies,
+  bonusProfileForUnit,
   clampProbability,
   deriveBonusInputs,
 } from './epic-mechanics.mjs';
 import { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage } from './battle-simulator.mjs';
 
 export {EPIC_COMBAT_ENGINE_BUILD} from './build-info.mjs';
-export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies };
+export { EPIC_MECHANICS_BUILD, deriveBonusInputs, bonusFamilyForSpecies, bonusProfileForUnit };
 export { simulateInitiativeCase, simulateTwoInitiativeAverage, simulateOpeningCoinTossAverage };
 const TARGET_TYPES=Object.freeze(['FLYING','MOUNTED','MELEE','RANGED']);
 const TARGETS=TARGET_TYPES; // backward-compatible export alias
@@ -59,14 +60,14 @@ export function validateArmyDatabase(units) {
     for (const [k,v] of [['capacityCost',u.capacityCost],['baseStrength',u.baseStrength],['baseHealth',u.baseHealth],['goldRevivalCost',u.goldRevivalCost]]) {
       if (!(Number(v) >= 0)) errors.push(`${u.id}: invalid ${k}`);
     }
-    try { bonusFamilyForSpecies(u.species); } catch (e) { errors.push(`${u.id}: ${e.message}`); }
+    try { bonusProfileForUnit(u); } catch (e) { errors.push(`${u.id}: ${e.message}`); }
   }
   return { valid: errors.length === 0, errors, count: units.length, stableIds: ids.size, unitIds: numericIds.size };
 }
 
 function prepareSquadTemplate(unit,bonusInputs,preparedEnemySquads=null){
-  const familyName = bonusFamilyForSpecies(unit.species);
-  const family = bonusInputs.family[familyName];
+  const familyName = bonusProfileForUnit(unit);
+  const family = bonusInputs.profile[familyName];
   const intrinsicDD = Number(unit.bonuses?.doubleDamage ?? 0);
   const pDD = clampProbability(family.dd + intrinsicDD);
   const pST = clampProbability(family.st);

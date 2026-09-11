@@ -12,6 +12,6 @@ assert.equal(manifest.releaseVersion,'v1.11.0');
 const entry=await readFile('dist/js/epic-stacker.js','utf8');
 assert.match(entry,new RegExp(`from './epic-engine\\.mjs\\?v=${manifest.assetVersion}'`),'Module dependencies must share the deployment identity.');
 assert.doesNotMatch(html,/epic-stacker\.js\?v=201/,'Manual source cache numbers must not leak into the deployment.');
-assert.equal(manifest.storageSchemaVersion,19);
+assert.equal(manifest.storageSchemaVersion,20);
 await rm('dist',{recursive:true,force:true});
 console.log(JSON.stringify({ok:true,assetVersion:manifest.assetVersion}));

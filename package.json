@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build-site.mjs",
-    "test": "node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/browser-storage-regression.mjs && node tests/saved-state-schema-regression.mjs && node tests/composition-search-regression.mjs && node tests/optimizer-abort-regression.mjs && node tests/epic-opening-initiative-regression.mjs && node tests/epic-scoring-context-regression.mjs",
+    "test": "node tests/bonus-profile-routing-regression.mjs && node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/browser-storage-regression.mjs && node tests/saved-state-schema-regression.mjs && node tests/composition-search-regression.mjs && node tests/optimizer-abort-regression.mjs && node tests/epic-opening-initiative-regression.mjs && node tests/epic-scoring-context-regression.mjs",
     "test:release": "node tests/release-pipeline-regression.mjs",
     "test:composition-deep": "node tests/composition-search-deep-finalists.mjs",
     "test:composition-arachne": "node tests/composition-search-arachne-finalists.mjs",

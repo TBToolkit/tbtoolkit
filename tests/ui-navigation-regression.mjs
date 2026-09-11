@@ -11,11 +11,14 @@ const end=source.indexOf('function handleCalculatorNumericNavigation',start);
 assert.ok(start>=0&&end>start,'numeric navigation function must exist');
 const navigation=source.slice(start,end);
 
+const monsterDD=navigation.indexOf("'monsterDD'");
+const monsterST=navigation.indexOf("'monsterST'");
 const monsterHealth=navigation.indexOf("'monsterHealth'");
-const pvpHealth=navigation.indexOf("isPvp?'pvpHealth':null");
 const monsterStrength=navigation.indexOf("'monsterStrength'");
-assert.ok(monsterHealth>=0&&pvpHealth>monsterHealth&&monsterStrength>pvpHealth,
-  'PvP navigation must place Health PvP after Monster Health and before Monster Strength');
+const guardsmanDD=navigation.indexOf("['DD','ST','Health','Strength']");
+const pvpHealth=navigation.indexOf("isPvp?'pvpHealth':'strengthAgainstEpic'");
+assert.ok(monsterDD>=0&&monsterST>monsterDD&&monsterHealth>monsterST&&monsterStrength>monsterHealth&&guardsmanDD>monsterStrength&&pvpHealth>guardsmanDD,
+  'Numeric navigation must follow the visible unit-bonus matrix before global bonuses');
 assert.match(source,/pvpEnemyUnitField\.hidden=type!==['"]pvp_single_cp['"]/, 'Enemy Unit selector must only show for one-squad PvP');
 assert.match(css,/#pvpEnemyUnitField\[hidden\][\s\S]*?display:none!important/, 'Hidden Enemy Unit selector must override grid display');
 assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidden PvP encounter model must override dialog label display');
@@ -23,6 +26,10 @@ assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesS
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
 assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
+assert.equal((html.match(/data-bonus-profile=/g)||[]).length,5,'Unit bonuses must render as five profile rows');
+assert.match(html,/data-bonus-profile="monster"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'Monster bonuses must appear first, followed by the four derived profiles');
+assert.doesNotMatch(html,/id="useCustomFamilyBonuses"/,'The old all-or-nothing custom-family control must not remain');
+assert.match(source,/useCustomProfileBonuses:true/,'Optimizer and Review Selection must receive the resolved profile matrix');
 assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');
 assert.match(html,/id="biffImportDialog"/, 'Import must provide a preview dialog');
 assert.match(html,/id="biffImportName"/, 'Import preview must require a new Player Account name');
@@ -74,6 +81,7 @@ assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematical
 assert.match(source,/createOptimizerWorker\(\)/, 'UI must obtain the shared module optimizer worker from its client boundary');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
+assert.match(optimizerEntry,/COMBAT_MECHANICS_BUILD/, 'Optimizer diagnostics and cache identity must change with shared combat mechanics');
 assert.match(source,/accounts:persistentAccountSnapshot\(state\.accounts\)/, 'General workspace persistence must exclude method-specific optimizer payloads');
 assert.match(source,/function saveState\(\)\{[\s\S]*?catch\(error\)/, 'A browser persistence failure must not interrupt method or selection changes');
 assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
@@ -91,5 +99,5 @@ assert.match(source,/maximum>0&&Number\.isFinite\(actual\)\?actual\/maximum:NaN/
 assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?details\.querySelectorAll\('\.hierarchy-unit input\[data-unit-id\]'\)[\s\S]*?next\[category\]\.add\(input\.dataset\.unitId\)/, 'A fully selected rendered group must preserve every descendant unit during reconciliation');
 assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 
-console.log(JSON.stringify({ok:true,pvpOrder:['monsterHealth','pvpHealth','monsterStrength']}));
+console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 
