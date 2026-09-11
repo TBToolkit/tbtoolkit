@@ -81,11 +81,15 @@ assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill mus
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
-assert.match(source,/xTitle\.textContent='Death Order →'/, 'The results chart must identify its horizontal death-order axis');
+assert.match(source,/xTitle\.textContent=chartStyle\(\)==='separated'\?'Position Within Army Type →':'Death Order →'/, 'The results chart must identify the horizontal axis for either chart style');
+assert.match(html,/data-chart-style="combined"/, 'Both visuals must expose the shared chart-style preference');
+assert.match(html,/data-chart-style="separated"/, 'Both visuals must allow the separated army-type chart');
+assert.match(source,/preferences:\{templeLevel:45,chartStyle:'combined'\}/, 'The current combined death-order chart must remain the default');
+assert.match(source,/state\.preferences\.chartStyle=currentSaved\.preferences\.chartStyle==='separated'\?'separated':'combined'/, 'The global chart preference must be restored safely');
 assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
 assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');
 assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
-assert.match(source,/for\(let death=5;death<=combinedOrder\.length;death\+=5\)/, 'The death-order axis must use five-position increments');
+assert.match(source,/for\(let death=5;death<=horizontalCount;death\+=5\)/, 'Both horizontal-axis styles must use five-position increments');
 assert.equal((source.match(/class:'chart-axis-line'/g)||[]).length,2,'The results chart must draw explicit horizontal and vertical axes');
 assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative gridlines must not extend outside the chart axes');
 assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');

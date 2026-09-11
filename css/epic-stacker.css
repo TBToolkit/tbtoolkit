@@ -182,6 +182,10 @@
 .chart-point{stroke:#02080d;stroke-width:2;cursor:pointer}
 .chart-point-label{font-size:12px;font-weight:900;text-anchor:middle}
 .chart-y-title{fill:#98a8b7;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.chart-style-control{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid #3a5063;border-radius:8px;background:#07131d;white-space:nowrap}
+.chart-style-control button{min-height:28px;padding:4px 9px;border:0;border-radius:5px;background:transparent;color:#9fb0bf;font-family:inherit;font-size:.7rem;font-weight:800;cursor:pointer}
+.chart-style-control button:hover{color:#fff;background:#172735}.chart-style-control button.active{color:#071019;background:#e2a72e}
+.optimizer-chart-style-control{margin:5px 0 8px auto;width:max-content}
 
 @media(max-width:760px){
   .layer-chart-head{flex-direction:column}

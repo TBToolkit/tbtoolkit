@@ -237,7 +237,7 @@ function populateTempleLevel(){
 }
 const initialAccount=makeAccount();
 initialAccount.battle.activeEncounterId='epic-doomsday';
-const state={preferences:{templeLevel:45},accounts:{[initialAccount.id]:initialAccount},activeAccountId:initialAccount.id,modes:{
+const state={preferences:{templeLevel:45,chartStyle:'combined'},accounts:{[initialAccount.id]:initialAccount},activeAccountId:initialAccount.id,modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
 custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}},squadOrder:{troop:[],monster:[],mercenary:[]}},
@@ -457,6 +457,10 @@ function loadSavedState(){
   try{
     const loaded=readLatestSavedState(localStorage,readSavedJson,{validate:validateAccountState});
     const currentSaved=loaded?.state;
+    if(currentSaved?.preferences){
+      if(Number.isFinite(Number(currentSaved.preferences.templeLevel)))state.preferences.templeLevel=Math.max(1,Math.min(45,Number(currentSaved.preferences.templeLevel)||45));
+      state.preferences.chartStyle=currentSaved.preferences.chartStyle==='separated'?'separated':'combined';
+    }
     if(currentSaved?.accounts&&Object.keys(currentSaved.accounts).length){
       state.accounts={};
       for(const [id,raw] of Object.entries(currentSaved.accounts))state.accounts[id]=hydrateAccount({...raw,id});
@@ -1020,21 +1024,33 @@ function openOptimizerModal(){
   document.body.classList.add('optimizer-modal-open');
   updateOptimizerProgress({phase:'loading',progressPct:0,evaluations:0});
 }
+function chartStyle(){return state.preferences.chartStyle==='separated'?'separated':'combined';}
+let lastOptimizerHealthLadderRows=[];let lastLayerChartResult=null;
+function setChartStyle(style,{persist=true}={}){
+  state.preferences.chartStyle=style==='separated'?'separated':'combined';
+  document.querySelectorAll('[data-chart-style]').forEach(button=>{const active=button.dataset.chartStyle===state.preferences.chartStyle;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+  const description=document.getElementById('layerChartDescription');if(description)description.textContent=state.preferences.chartStyle==='separated'?'Squad health within each army type. Select a point to view unit details.':'Squad health by predicted death order. Select a point to view unit details.';
+  renderOptimizerHealthLadder(lastOptimizerHealthLadderRows);
+  if(lastLayerChartResult)renderLayerHealthChart(lastLayerChartResult);
+  if(persist)saveState();
+}
 function renderOptimizerHealthLadder(rows=[]){
+  lastOptimizerHealthLadderRows=Array.isArray(rows)?rows:[];
   const svg=document.getElementById('optimizerHealthLadder');
   if(!svg)return;
   svg.replaceChildren();
   const data=(Array.isArray(rows)?rows:[]).filter(row=>Number(row?.effectiveHealth)>0);
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
   const yLabel=make('text',{x:9,y:105,transform:'rotate(-90 9 105)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
-  const xLabel=make('text',{x:300,y:215,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent='DEATH ORDER →';svg.append(xLabel);
+  const xLabel=make('text',{x:300,y:215,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent=chartStyle()==='separated'?'POSITION WITHIN ARMY TYPE →':'DEATH ORDER →';svg.append(xLabel);
   if(!data.length){const label=make('text',{x:300,y:103,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
   for(const y of [20,100,180])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
   for(const category of ['troop','monster','mercenary']){
-    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:32+(Number(row.deathPosition)-1)/(count-1)*532,y:18+(high-Number(row.effectiveHealth))/range*158}));
+    const categoryRows=ordered.filter(row=>row.category===category);
+    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(Number(row.deathPosition)-1)/(count-1))*532,y:18+(high-Number(row.effectiveHealth))/range*158}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
@@ -2313,6 +2329,7 @@ function svgEl(name,attrs={}){
 }
 
 function renderLayerHealthChart(result){
+  lastLayerChartResult=result;
   const source={
     troop:[...(result?.categories?.troop?.results??[])],
     monster:[...(result?.categories?.monster?.results??[])],
@@ -2367,8 +2384,9 @@ function renderLayerHealthChart(result){
     svg.appendChild(label);
   }
   const baselineY=y(0);
-  for(let death=5;death<=combinedOrder.length;death+=5){
-    const xx=x(death-1,combinedOrder.length);
+  const horizontalCount=chartStyle()==='separated'?Math.max(...Object.values(source).map(rows=>rows.length)):combinedOrder.length;
+  for(let death=5;death<=horizontalCount;death+=5){
+    const xx=x(death-1,horizontalCount);
     svg.appendChild(svgEl('line',{x1:xx,x2:xx,y1:margin.top,y2:baselineY,class:'chart-grid-line chart-grid-line-vertical'}));
     const label=svgEl('text',{x:xx,y:baselineY+19,'text-anchor':'middle',class:'chart-axis-label'});
     label.textContent=String(death);
@@ -2380,13 +2398,13 @@ function renderLayerHealthChart(result){
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);
   const xTitle=svgEl('text',{x:margin.left+plotW/2,y:height-13,'text-anchor':'middle',class:'chart-y-title'});
-  xTitle.textContent='Death Order →';
+  xTitle.textContent=chartStyle()==='separated'?'Position Within Army Type →':'Death Order →';
   svg.appendChild(xTitle);
 
   for(const [category,rows] of Object.entries(source)){
     if(!rows.length)continue;
     const meta=CHART_SERIES[category];
-    const points=rows.map(row=>({row,x:x(deathPosition.get(row),combinedOrder.length),y:y(row.squadHealth)})).sort((a,b)=>a.x-b.x);
+    const points=rows.map((row,index)=>({row,x:x(chartStyle()==='separated'?index:deathPosition.get(row),chartStyle()==='separated'?rows.length:combinedOrder.length),y:y(row.squadHealth)})).sort((a,b)=>a.x-b.x);
     const path=svgEl('polyline',{
       points:points.map(p=>`${p.x},${p.y}`).join(' '),
       class:'chart-series-line',
@@ -2411,7 +2429,8 @@ function renderLayerHealthChart(result){
 
       const showTip=(evt)=>{
         const tip=els.layerChartTooltip;
-        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Death Order: ${deathPosition.get(p.row)+1} of ${combinedOrder.length}</span></div>`;
+        const positionText=chartStyle()==='separated'?`Position in ${meta.label}: ${rows.indexOf(p.row)+1} of ${rows.length}`:`Death Order: ${deathPosition.get(p.row)+1} of ${combinedOrder.length}`;
+        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>${positionText}</span></div>`;
         iconFallback(tip.querySelector('img'));
         tip.hidden=false;
         const wrap=svg.parentElement.getBoundingClientRect();
@@ -2778,6 +2797,7 @@ function closeBattleGuide(){
   const target=battleGuideReturnFocus;battleGuideReturnFocus=null;if(target&&typeof target.focus==='function')target.focus();
 }
 function wireStatHelp(){
+  document.querySelectorAll('[data-chart-style]').forEach(button=>button.addEventListener('click',()=>setChartStyle(button.dataset.chartStyle)));
   document.querySelectorAll('[data-stat-help]').forEach(button=>button.addEventListener('click',e=>{e.preventDefault();openStatHelp(button.dataset.statHelp,button);}));
   document.querySelectorAll('[data-stat-help-close]').forEach(button=>button.addEventListener('click',closeStatHelp));
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('statHelpModal')?.hidden)closeStatHelp();});
@@ -3109,6 +3129,7 @@ async function init(){
   if(activeMode==='battle')ensureBattleWorkspace();
   loadSavedOptimizerResult();
   applyStateToInputs();
+  setChartStyle(state.preferences.chartStyle,{persist:false});
   wireEvents();
   wireCustomOrderFloatingMetric();
 
