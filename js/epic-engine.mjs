@@ -89,6 +89,85 @@ function roundingMultiple(capacityEach, roundingTable) {
   return match.roundTo;
 }
 
+function strictHealthCeiling(previousHealth){
+  const health=Number(previousHealth||0);
+  return health-Math.max(1e-6,Math.abs(health)*1e-10);
+}
+
+function bestReachableRemainder(amount,costs){
+  const limit=Math.max(0,Math.floor(Number(amount)||0)),legal=[...new Set(costs.filter(cost=>Number.isInteger(cost)&&cost>0&&cost<=limit))];
+  if(!legal.length)return limit;
+  if(limit>5000)return limit%legal.reduce((a,b)=>{while(b){const next=a%b;a=b;b=next;}return a;});
+  const reachable=new Uint8Array(limit+1);reachable[0]=1;let best=0;
+  for(let value=1;value<=limit;value++)for(const cost of legal)if(value>=cost&&reachable[value-cost]){reachable[value]=1;best=value;break;}
+  return limit-best;
+}
+
+function topUpCategoryCapacity(results,targetCapacity,deathOrderIds,{minimumSeparation=true,separation=0,globalOrder=null}={}){
+  const target=Math.max(0,Math.floor(Number(targetCapacity)||0)),rows=(results||[]).filter(row=>Number(row.qty)>0);
+  let used=Math.round(rows.reduce((sum,row)=>sum+Number(row.totalCapacity||0),0));
+  const startingUsed=used;
+  if(!rows.length||used>=target)return{units:0,capacity:0};
+  const byId=new Map(rows.map(row=>[row.id,row]));
+  const categoryOrder=(deathOrderIds||[]).map(id=>byId.get(id)).filter(Boolean);
+  const categoryIndex=new Map(categoryOrder.map((row,index)=>[row.id,index]));
+  const combined=(globalOrder?.length?globalOrder:categoryOrder).filter(row=>Number(row.qty)>0);
+  const globalIndex=new Map(combined.map((row,index)=>[row.id,index]));
+  const fixedSeparation=minimumSeparation?0:Math.max(0,Number(separation)||0);
+  let addedUnits=0,guard=0;
+  while(used<target&&guard++<100000){
+    const remaining=target-used,candidates=[];
+    for(const row of rows){
+      const step=Math.max(1,Number(row.roundTo||1)),capEach=Number(row.capEach??row.unitCapacityEach??0),cost=step*capEach;
+      if(!Number.isInteger(cost)||cost<=0||cost>remaining)continue;
+      const each=Number(row.physicalHealthEach??row.effectiveEach??row.unitEffectiveHealthEach??0),nextQty=Number(row.qty)+step,nextHealth=nextQty*each;
+      if(!(each>0))continue;
+      let ceiling=Infinity;
+      const categoryPosition=categoryIndex.get(row.id),categoryPrevious=categoryPosition>0?categoryOrder[categoryPosition-1]:null;
+      if(categoryPrevious){const previousHealth=Number(categoryPrevious.squadHealth);ceiling=Math.min(ceiling,fixedSeparation>0?previousHealth/(1+fixedSeparation):strictHealthCeiling(previousHealth));}
+      const globalPosition=globalIndex.get(row.id),globalPrevious=globalPosition>0?combined[globalPosition-1]:null;
+      if(globalPrevious)ceiling=Math.min(ceiling,strictHealthCeiling(globalPrevious.squadHealth));
+      if(nextHealth>ceiling+1e-9)continue;
+      candidates.push({row,step,cost,nextQty,nextHealth,relativeIncrease:step/Math.max(1,Number(row.qty))});
+    }
+    if(!candidates.length)break;
+    const costs=candidates.map(candidate=>candidate.cost);
+    for(const candidate of candidates)candidate.projectedRemainder=bestReachableRemainder(remaining-candidate.cost,costs);
+    candidates.sort((a,b)=>a.projectedRemainder-b.projectedRemainder||a.relativeIncrease-b.relativeIncrease||b.cost-a.cost||Number(a.row.displayOrder||0)-Number(b.row.displayOrder||0));
+    const chosen=candidates[0],row=chosen.row;
+    row.qty=chosen.nextQty;row.squadHealth=chosen.nextHealth;row.totalCapacity=chosen.nextQty*Number(row.capEach??row.unitCapacityEach);row.squadStrength=chosen.nextQty*Number(row.unitStrengthEach||0);
+    used+=chosen.cost;addedUnits+=chosen.step;
+  }
+  return{units:addedUnits,capacity:used-startingUsed};
+}
+
+function topUpCombinedCategories(categories){
+  const globalOrder=['troop','monster','mercenary'].flatMap(category=>categories?.[category]?.results||[])
+    .filter(row=>Number(row.qty)>0)
+    .sort((a,b)=>Number(b.squadHealth)-Number(a.squadHealth)||
+      Number(a.deathIndex??a.rank??999)-Number(b.deathIndex??b.rank??999)||
+      Number(a.displayOrder||0)-Number(b.displayOrder||0));
+  let units=0,capacity=0;
+  for(let pass=0;pass<3;pass++){
+    let changed=false;
+    for(const category of ['troop','monster','mercenary']){
+      const result=categories?.[category];
+      if(!result?.results?.length)continue;
+      const target=Number(result.capacityLimit||0)*Math.max(0,Math.min(1,Number(result.requestedFill)||0));
+      const added=topUpCategoryCapacity(result.results,target,result.deathOrderIds,{
+        minimumSeparation:result.minimumSeparation,
+        separation:result.separation,
+        globalOrder,
+      });
+      units+=added.units;
+      capacity+=added.capacity;
+      if(added.capacity>0)changed=true;
+    }
+    if(!changed)break;
+  }
+  return{units,capacity};
+}
+
 export function calculateCategory({
   category,
   units,
@@ -210,6 +289,12 @@ export function calculateCategory({
     enforceRequestedCapacity(results,requestedCapacity,standardDeathIds);
   }
   const strictHealth=legalizePhysicalCategoryRows(results,standardDeathIds,{minimumSeparation:Boolean(inputs.minimumSeparation),separation:Number(inputs.rankSeparation||0)});
+  const capacityTopUp=inputs._skipHardCapacity
+    ?{units:0,capacity:0}
+    :topUpCategoryCapacity(results,capacityLimit*Math.max(0,Math.min(1,Number(fill)||0)),standardDeathIds,{
+      minimumSeparation:Boolean(inputs.minimumSeparation),
+      separation:Number(inputs.rankSeparation||0),
+    });
   const totalCapacity = results.reduce((sum, row) => sum + row.totalCapacity, 0);
   const displayResults = [...results].sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -224,6 +309,11 @@ export function calculateCategory({
     capacityPercent: capacityLimit ? totalCapacity / capacityLimit : 0,
     strictHealthAdjustments:strictHealth.adjustments,
     strictHealthUnresolved:strictHealth.unresolved,
+    capacityTopUpUnits:capacityTopUp.units,
+    capacityTopUpUsed:capacityTopUp.capacity,
+    deathOrderIds:[...standardDeathIds],
+    minimumSeparation:Boolean(inputs.minimumSeparation),
+    separation:Number(inputs.rankSeparation||0),
     results: displayResults,
   };
 }
@@ -348,6 +438,7 @@ function calculateEpicStackCandidate({troops,monsters,mercenaries,selectedKeys,s
 
   const categories={troop,monster,mercenary};
   const globalStrictHealth=enforceDistinctGlobalHealth(categories);
+  const capacityTopUp=topUpCombinedCategories(categories);
   for(const cat of [troop,monster,mercenary]){
     cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
     cat.capacityPercent=cat.capacityLimit?cat.totalCapacity/cat.capacityLimit:0;
@@ -357,6 +448,8 @@ function calculateEpicStackCandidate({troops,monsters,mercenaries,selectedKeys,s
     categories,
     strictHealthAdjustments:globalStrictHealth.adjustments,
     strictHealthUnresolved:globalStrictHealth.unresolved,
+    capacityTopUpUnits:capacityTopUp.units,
+    capacityTopUpUsed:capacityTopUp.capacity,
     totals: {
       leadership: troop.totalCapacity,
       dominance: monster.totalCapacity,
@@ -623,12 +716,24 @@ export function calculateCustomCategory({
     enforceRequestedCapacity(results,requestedCapacity,customDeathIds);
   }
   const strictHealth=legalizePhysicalCategoryRows(results,customDeathIds,{minimumSeparation:Boolean(inputs.minimumSeparation),separation:Number(Number.isFinite(inputs.rankSeparation)?inputs.rankSeparation:inputs.layerSeparation)||0});
+  const appliedSeparation=Number(Number.isFinite(inputs.rankSeparation)?inputs.rankSeparation:inputs.layerSeparation)||0;
+  const capacityTopUp=inputs._skipHardCapacity
+    ?{units:0,capacity:0}
+    :topUpCategoryCapacity(results,capacityLimit*Math.max(0,Math.min(1,Number(fill)||0)),customDeathIds,{
+      minimumSeparation:Boolean(inputs.minimumSeparation),
+      separation:appliedSeparation,
+    });
   const totalCapacity = results.reduce((s,r)=>s+r.totalCapacity,0);
   return {
     category,selectedCount:selected.length,maxHealthEach,sumD,capacityLimit,requestedFill:fill,
     totalCapacity,capacityPercent:capacityLimit?totalCapacity/capacityLimit:0,
     strictHealthAdjustments:strictHealth.adjustments,
     strictHealthUnresolved:strictHealth.unresolved,
+    capacityTopUpUnits:capacityTopUp.units,
+    capacityTopUpUsed:capacityTopUp.capacity,
+    deathOrderIds:[...customDeathIds],
+    minimumSeparation:Boolean(inputs.minimumSeparation),
+    separation:appliedSeparation,
     results:[...results].sort((a,b)=>a.displayOrder-b.displayOrder)
   };
 }
@@ -640,6 +745,7 @@ export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,or
   const mercenary=calculateCustomCategory({category:'mercenary',units:mercenaries,selectedIds:selectedIds.mercenary,inputs,order:orders.mercenary,unitOrder:flat('mercenary'),roundingTable});
   const categories={troop,monster,mercenary};
   const globalStrictHealth=enforceDistinctGlobalHealth(categories);
+  const capacityTopUp=topUpCombinedCategories(categories);
   for(const cat of [troop,monster,mercenary]){
     cat.totalCapacity=cat.results.reduce((s,r)=>s+Number(r.totalCapacity||0),0);
     cat.capacityPercent=cat.capacityLimit?cat.totalCapacity/cat.capacityLimit:0;
@@ -647,5 +753,7 @@ export function calculateCustomStack({troops,monsters,mercenaries,selectedIds,or
   return {inputs:structuredClone(inputs),orders:structuredClone(orders),categories,
     strictHealthAdjustments:globalStrictHealth.adjustments,
     strictHealthUnresolved:globalStrictHealth.unresolved,
+    capacityTopUpUnits:capacityTopUp.units,
+    capacityTopUpUsed:capacityTopUp.capacity,
     totals:{leadership:troop.totalCapacity,dominance:monster.totalCapacity,authority:mercenary.totalCapacity}};
 }
