@@ -971,8 +971,9 @@ function renderOptimizerHealthLadder(rows=[]){
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
-      svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:colors[category],stroke:'#07131c','stroke-width':1.3}));
-      const label=make('text',{x:point.x,y:Math.max(9,point.y-6),'text-anchor':'middle',fill:colors[category],'font-size':6.5,'font-weight':800});
+      const pointColor=outputRowColors(category,{id:point.row.id,level:point.row.tier}).accent;
+      svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:pointColor,stroke:'#07131c','stroke-width':1.3}));
+      const label=make('text',{x:point.x,y:Math.max(9,point.y-6),'text-anchor':'middle',fill:pointColor,'font-size':6.5,'font-weight':800});
       label.textContent=category==='mercenary'?(mercTierRoman[tierNumber(point.row.tier)]||String(point.row.tier||'')):String(point.row.tier||'');svg.append(label);
     }
   }
