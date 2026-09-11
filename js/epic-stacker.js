@@ -959,18 +959,21 @@ function renderOptimizerHealthLadder(rows=[]){
   svg.replaceChildren();
   const data=(Array.isArray(rows)?rows:[]).filter(row=>Number(row?.effectiveHealth)>0);
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
-  if(!data.length){const label=make('text',{x:220,y:78,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
+  const yLabel=make('text',{x:9,y:105,transform:'rotate(-90 9 105)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
+  const xLabel=make('text',{x:300,y:215,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent='DEATH ORDER →';svg.append(xLabel);
+  if(!data.length){const label=make('text',{x:300,y:103,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
-  for(const y of [20,95,170])svg.append(make('line',{x1:8,y1:y,x2:492,y2:y,stroke:'#203543','stroke-width':1}));
-  const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'};
+  for(const y of [20,100,180])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
+  const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
   for(const category of ['troop','monster','mercenary']){
-    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:14+(Number(row.deathPosition)-1)/(count-1)*472,y:18+(high-Number(row.effectiveHealth))/range*150}));
+    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:32+(Number(row.deathPosition)-1)/(count-1)*532,y:18+(high-Number(row.effectiveHealth))/range*158}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
       svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:colors[category],stroke:'#07131c','stroke-width':1.3}));
-      const label=make('text',{x:point.x,y:Math.max(9,point.y-6),'text-anchor':'middle',fill:colors[category],'font-size':6.5,'font-weight':800});label.textContent=String(point.row.tier||'');svg.append(label);
+      const label=make('text',{x:point.x,y:Math.max(9,point.y-6),'text-anchor':'middle',fill:colors[category],'font-size':6.5,'font-weight':800});
+      label.textContent=category==='mercenary'?(mercTierRoman[tierNumber(point.row.tier)]||String(point.row.tier||'')):String(point.row.tier||'');svg.append(label);
     }
   }
 }
