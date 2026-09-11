@@ -1041,16 +1041,16 @@ function renderOptimizerHealthLadder(rows=[]){
   svg.replaceChildren();
   const data=(Array.isArray(rows)?rows:[]).filter(row=>Number(row?.effectiveHealth)>0);
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
-  const yLabel=make('text',{x:9,y:132,transform:'rotate(-90 9 132)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
-  const xLabel=make('text',{x:300,y:270,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent=chartStyle()==='separated'?'POSITION WITHIN ARMY TYPE →':'DEATH ORDER →';svg.append(xLabel);
-  if(!data.length){const label=make('text',{x:300,y:130,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
+  const yLabel=make('text',{x:9,y:150,transform:'rotate(-90 9 150)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
+  const xLabel=make('text',{x:300,y:305,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent=chartStyle()==='separated'?'POSITION WITHIN ARMY TYPE →':'DEATH ORDER →';svg.append(xLabel);
+  if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
-  for(const y of [20,127,235])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
+  for(const y of [20,145,270])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
   for(const category of ['troop','monster','mercenary']){
     const categoryRows=ordered.filter(row=>row.category===category);
-    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(Number(row.deathPosition)-1)/(count-1))*532,y:18+(high-Number(row.effectiveHealth))/range*213}));
+    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(Number(row.deathPosition)-1)/(count-1))*532,y:18+(high-Number(row.effectiveHealth))/range*248}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
