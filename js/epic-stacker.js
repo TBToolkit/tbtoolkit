@@ -900,7 +900,8 @@ function showReviewProposal(payload){
   if(els.reviewProposedEld)els.reviewProposedEld.textContent=formatDamage(proposal.eld);
   if(els.reviewImprovement)els.reviewImprovement.textContent=`${proposal.improvementPct.toFixed(3)}%`;
   renderReviewList(els.reviewAddedUnits,proposal.added);renderReviewList(els.reviewRemovedUnits,proposal.removed);
-  if(els.reviewProposalSummary)els.reviewProposalSummary.textContent=hasChanges&&worthwhile?'Review Selection found a practical improvement. Accept it to update the shared selection for this workspace.':'Your current selection is already within the practical improvement threshold.';
+  if(els.reviewProposalSummary)els.reviewProposalSummary.textContent=hasChanges&&worthwhile?'Review Selection found a practical improvement. Accept it to update the shared selection for this workspace.':hasChanges?'No meaningful unit-selection improvement was found. Keep your current selection.':'No better unit selection was found. Your current selection is already the strongest practical choice reviewed.';
+  const methodNote=document.getElementById('reviewMethodNote');if(methodNote){const method=state.modes.battle.activeBattleMethod;methodNote.hidden=method==='optimize';methodNote.textContent=`These ELD values use optimized quantities to compare unit selections. They may be higher than the ${method==='custom'?'Custom Order':'Standard'} result currently shown on the page.`;}
   if(els.acceptReviewSelection)els.acceptReviewSelection.hidden=!(hasChanges&&worthwhile);
   els.reviewProposalDialog?.showModal();
 }

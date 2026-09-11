@@ -20,6 +20,17 @@ function retainBest(map,row,limit){
   map.clear();for(const candidate of keep)map.set(compositionSignature(candidate.selectedIds),candidate);
 }
 
+export function canonicalizeReviewCandidates(currentIds,rows){
+  const bySignature=new Map();
+  for(const row of rows){
+    const signature=compositionSignature(row.selectedIds),previous=bySignature.get(signature);
+    if(!previous||row.result.expectedTotalLifetimeDamage>previous.result.expectedTotalLifetimeDamage)bySignature.set(signature,row);
+  }
+  const current=bySignature.get(compositionSignature(currentIds));
+  if(!current)throw new Error('Review Selection could not evaluate the current unit selection.');
+  return{current,candidates:[...bySignature.values()]};
+}
+
 export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,fixedQuantities={},timeBudgetMs=120_000,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+Math.max(1_000,Number(timeBudgetMs)||120_000);
   const shouldAbort=()=>performance.now()>deadline;
@@ -70,8 +81,11 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
     onProgress({phase:'strong-refinement',progressPct:68+Math.round((index/survivors.length)*25),candidate:index+1,candidateCount:survivors.length,evaluations});
     strong.push(refine(candidate,true));
   }
-  const current=refine(quickEvaluate(currentIds));
-  const candidates=[current,...strong].map(row=>({...row,selectionChanges:differences(currentIds,row.selectedIds).added.length+differences(currentIds,row.selectedIds).removed.length}));
+  const currentSignature=compositionSignature(currentIds);
+  const refinedCurrent=strong.find(candidate=>compositionSignature(candidate.selectedIds)===currentSignature)??refine(quickEvaluate(currentIds),true);
+  const canonical=canonicalizeReviewCandidates(currentIds,[refinedCurrent,...strong]);
+  const current=canonical.current;
+  const candidates=canonical.candidates.map(row=>({...row,selectionChanges:differences(currentIds,row.selectedIds).added.length+differences(currentIds,row.selectedIds).removed.length}));
   const decision=choosePracticalComposition(candidates,{units,availableIds:availability.availableIds});
   const changes=differences(currentIds,decision.chosen.selectedIds);
   const selectedMercenaries=new Set(availability.mandatoryIds);

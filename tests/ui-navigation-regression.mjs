@@ -51,6 +51,9 @@ assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encount
 assert.match(html,/hidden id="reviewSelection"/, 'Review Selection must start hidden until an eligible battle is configured');
 assert.match(source,/function isReviewSelectionAvailable\(\)\{return activeMode===['"]battle['"]&&state\.modes\.battle\.activeBattleType===['"]epic['"]/, 'Review Selection must only be available for Epic Monster battles');
 assert.match(source,/els\.reviewSelection\.hidden=!available/, 'Review Selection visibility must follow the Epic-only eligibility rule');
+assert.match(html,/Optimized Potential: Current Selection[\s\S]*?Optimized Potential: Recommended Selection/,'Review Selection must distinguish optimized potential from the currently displayed method result');
+assert.match(html,/id="reviewMethodNote"[\s\S]*?may be higher than the Standard result/,'Standard users must be told why Review Selection ELD may be higher');
+assert.match(source,/No better unit selection was found/,'An unchanged winning selection must not be described as a recommendation');
 assert.match(source,/mercenary=\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]/, 'Accepting a review must preserve the workspace mercenary selection');
 assert.match(source,/row\.icon\|\|unit\?\.icon[\s\S]*?class="result-unit-icon"/, 'Result quantity tiles must render the matching unit icon');
 assert.doesNotMatch(source,/class="result-leader"/, 'Result quantity tiles must not render the old dotted leader');

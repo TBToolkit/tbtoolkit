@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import {calculateEpicStack} from '../js/epic-engine.mjs';
 import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from '../js/epic-quantity-optimizer.mjs';
 import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
+import {canonicalizeReviewCandidates} from '../js/epic-review-engine.mjs';
 import {adaptiveTierLatticeSearch,analyzeTierCompleteness,choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from '../js/epic-composition-search.mjs';
 
 const canonical=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
@@ -89,8 +90,10 @@ for(const testCase of cases){
   const completeCandidates=optimizeShortlist.filter(candidate=>analyzeTierCompleteness({selectedIds:candidate.selectedIds,availableIds:availability.availableIds,units:canonical}).partialTierGroups===0);
   const optimizeSurvivors=[...new Map([...optimizeShortlist.slice(0,4),...completeCandidates.slice(0,2)].map(row=>[compositionSignature(row.selectedIds),row])).values()].slice(0,6);
   const optimizeIntermediateCandidates=optimizeSurvivors.map(candidate=>optimizeStrongerIntermediate(candidate,testCase));
-  const optimizeCurrent=optimizeIntermediate(optimizeReviewEvaluate(originalIds,testCase),testCase);
-  const optimizeCandidates=[optimizeCurrent,...optimizeIntermediateCandidates].map(row=>({...row,selectionChanges:differences(originalIds,row.selectedIds).added.length+differences(originalIds,row.selectedIds).removed.length}));
+  const refinedCurrent=optimizeStrongerIntermediate(optimizeReviewEvaluate(originalIds,testCase),testCase);
+  const canonical=canonicalizeReviewCandidates(originalIds,[refinedCurrent,...optimizeIntermediateCandidates]);
+  const optimizeCurrent=canonical.current;
+  const optimizeCandidates=canonical.candidates.map(row=>({...row,selectionChanges:differences(originalIds,row.selectedIds).added.length+differences(originalIds,row.selectedIds).removed.length}));
   const optimizeDecision=choosePracticalComposition(optimizeCandidates,{units:canonical,availableIds:availability.availableIds});
 
   const summarize=(decision,current)=>({currentEld:current.result.expectedTotalLifetimeDamage,recommendedEld:decision.chosen.eld,estimatedImprovementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,tiers:tierSummary(decision.chosen.selectedIds),selectedUnits:decision.chosen.selectedIds.length,partialTierGroups:decision.chosen.partialTierGroups,selectionChanges:decision.chosen.selectionChanges,differences:differences(originalIds,decision.chosen.selectedIds)});
