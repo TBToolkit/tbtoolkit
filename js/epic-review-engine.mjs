@@ -30,7 +30,7 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const optimizableIds=ids=>ids.filter(id=>!fixedIds.has(id));
   const combineFixed=quantities=>({...quantities,...fixedQuantities});
   const scoringContext=prepareEpicScoringContext({units,bonuses});
-  const score=quantities=>scoreEpicArmy({units,quantities,bonuses,scoringContext});
+  const score=quantities=>scoreEpicArmy({units,quantities,bonuses,scoringContext,recordEvents:false});
   let evaluations=0;
   const quickEvaluate=ids=>{
     assertWithinDeadline(deadline);evaluations++;

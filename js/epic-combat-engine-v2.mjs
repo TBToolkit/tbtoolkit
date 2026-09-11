@@ -155,7 +155,7 @@ export function measuredHealthSeparations(squads) {
   return rows;
 }
 
-export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1, scoringContext = null }) {
+export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1, scoringContext = null, recordEvents = true }) {
   const prepared=scoringContext?.units===units&&scoringContext?.bonuses===bonuses?scoringContext:null;
   const resolvedBonuses = prepared?.resolvedBonuses??deriveBonusInputs(bonuses);
   const byId = prepared?.byId??new Map(units.map(u => [u.id,u]));
@@ -177,7 +177,7 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
   // Epic battles toss initiative for cycle 1, then the epic starts every later cycle.
   // Keep the old alternating model available only as an explicit offline control.
   const openingCoinToss=bonuses?.initiativeModel!=='alternating';
-  const initiativeOptions=openingCoinToss?{enemyStartsAfterOpening:true}:undefined;
+  const initiativeOptions={enemyStartsAfterOpening:openingCoinToss,recordEvents};
   const friendlyFirst=simulateInitiativeCase(squads,true,enemySquadCount,initiativeOptions);
   const epicFirst=simulateInitiativeCase(squads,false,enemySquadCount,initiativeOptions);
   const expectedTotalLifetimeDamage = (friendlyFirst.totalDamage + epicFirst.totalDamage) / 2;

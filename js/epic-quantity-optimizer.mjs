@@ -19,9 +19,9 @@ function controlledScore(payload){
       context=prepareEpicScoringContext({units:payload.units,bonuses});
       OPTIMIZER_SCORING_CONTEXTS.set(bonuses,context);
     }
-    return scoreEpicArmy({...payload,scoringContext:context});
+    return scoreEpicArmy({...payload,scoringContext:context,recordEvents:false});
   }
-  return scoreEpicArmy(payload);
+  return scoreEpicArmy({...payload,recordEvents:false});
 }
 
 function finite(v, label) {
@@ -1412,5 +1412,8 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.authorityUsed=Number(out.result?.capacities?.AUTHORITY||0);
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
+  // Candidate scoring suppresses event logs to avoid hundreds of thousands of
+  // short-lived objects. Materialize the complete trace only for the winner.
+  out.result=scoreEpicArmy({units:args.units,quantities:out.quantities,bonuses:args.bonuses});
   return out;
 }

@@ -21,7 +21,7 @@ function chooseEnemyTarget(squads,alive){
   return best;
 }
 
-export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4,{enemyStartsAfterOpening=false}={}){
+export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4,{enemyStartsAfterOpening=false,recordEvents=true}={}){
   const enemyCount=Math.max(1,Math.floor(Number(enemySquadCount)||0));
   const alive=new Set(squads.filter(s=>s.quantity>0).map(s=>s.id));
   const attackOpportunities=Object.fromEntries(squads.map(s=>[s.id,0]));
@@ -36,7 +36,7 @@ export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4,{
     attackOpportunities[attacker.id]+=1;
     lifetimeDamage[attacker.id]+=attacker.expectedDamagePerOpportunity;
     totalDamage+=attacker.expectedDamagePerOpportunity;
-    events.push({cycle,side:'FRIENDLY',unitId:attacker.unitId,id:attacker.id,name:attacker.name,expectedDamage:attacker.expectedDamagePerOpportunity});
+    if(recordEvents)events.push({cycle,side:'FRIENDLY',unitId:attacker.unitId,id:attacker.id,name:attacker.name,expectedDamage:attacker.expectedDamagePerOpportunity});
     return true;
   };
   const enemyAttack=()=>{
@@ -44,7 +44,7 @@ export function simulateInitiativeCase(squads,friendlyStarts,enemySquadCount=4,{
     if(!target)return false;
     alive.delete(target.id);deathPosition+=1;
     death[target.id]={cycle,position:deathPosition};
-    events.push({cycle,side:'ENEMY',killedUnitId:target.unitId,killedId:target.id,killedName:target.name,targetHealth:target.effectiveHealth});
+    if(recordEvents)events.push({cycle,side:'ENEMY',killedUnitId:target.unitId,killedId:target.id,killedName:target.name,targetHealth:target.effectiveHealth});
     return true;
   };
 
