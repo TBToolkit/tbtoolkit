@@ -19,8 +19,10 @@ for(const enemySquadTypes of formations){
   assert.deepEqual(prepared,ordinary,'Prepared scoring must be deeply identical to ordinary scoring');
   const eventless=scoreEpicArmy({units,quantities,bonuses,scoringContext:context,recordEvents:false});
   assert.deepEqual({...eventless,cases:undefined},{...ordinary,cases:undefined},'Event suppression must not change scoring output');
-  assert.deepEqual(eventless.cases.friendlyFirst.events,[]);
-  assert.deepEqual(eventless.cases.epicFirst.events,[]);
+  for(const side of ['friendlyFirst','epicFirst']){
+    assert.deepEqual(eventless.cases[side].events,[]);
+    assert.deepEqual({...eventless.cases[side],events:undefined},{...ordinary.cases[side],events:undefined},'Indexed scoring must preserve every non-event simulation detail');
+  }
   const clonedBonuses={...bonuses};
   const safelyIgnored=scoreEpicArmy({units,quantities,bonuses:clonedBonuses,scoringContext:context});
   assert.deepEqual(safelyIgnored,scoreEpicArmy({units,quantities,bonuses:clonedBonuses}),'A context for a different bonus object must be ignored');
