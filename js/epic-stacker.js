@@ -1025,6 +1025,9 @@ function clearPrediction(){
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   if(els.predictionRows)els.predictionRows.innerHTML='';
 }
+// Keep the unusual-sacrifice diagnostics and explanation UI available for a
+// future opt-in experience, but do not surface flags in Battle Details today.
+const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const perThousand=actualGold>0?r.expectedTotalLifetimeDamage/actualGold*1000:0;els.damagePerThousandGold.textContent=formatDamage(perThousand);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
@@ -1092,7 +1095,7 @@ function renderPrediction(opt){
 
   els.predictionRows.innerHTML=rows.map(s=>{
     const note=optimizerContext?unusualMap.get(String(s.id)):null;
-    const flag=note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
+    const flag=SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
     return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
   if(optimizerContext&&unusualMap.size){

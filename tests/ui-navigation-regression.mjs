@@ -56,6 +56,8 @@ assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summar
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
 assert.match(source,/xTitle\.textContent='Death Order →'/, 'The results chart must identify its horizontal death-order axis');
 assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
+assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');
+assert.match(source,/SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note\?` <button class="sacrifice-flag"/, 'Sacrifice flag rendering must remain behind the reversible display switch');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
 assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
 assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');
