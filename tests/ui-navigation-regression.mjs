@@ -84,8 +84,8 @@ assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results 
 assert.match(source,/xTitle\.textContent=chartStyle\(\)==='separated'\?'Position Within Army Type →':'Death Order →'/, 'The results chart must identify the horizontal axis for either chart style');
 assert.match(html,/data-chart-style="combined"/, 'Both visuals must expose the shared chart-style preference');
 assert.match(html,/data-chart-style="separated"/, 'Both visuals must allow the separated army-type chart');
-assert.match(source,/preferences:\{templeLevel:45,chartStyle:'combined'\}/, 'The current combined death-order chart must remain the default');
-assert.match(source,/state\.preferences\.chartStyle=currentSaved\.preferences\.chartStyle==='separated'\?'separated':'combined'/, 'The global chart preference must be restored safely');
+assert.match(source,/preferences:\{templeLevel:45,chartStyle:'separated'\}/, 'The army-type chart must be the default');
+assert.match(source,/state\.preferences\.chartStyle=currentSaved\.preferences\.chartStyle==='combined'\?'combined':'separated'/, 'The global chart preference must be restored safely while defaulting older saved states to army type');
 assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
 assert.match(source,/chartStyle\(\)==='separated'[\s\S]*?suffix[\s\S]*?return`\$\{roman\}-\$\{suffix\}`/, 'Separated Results mercenary labels must retain their subgroup suffix');
 assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');

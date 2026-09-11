@@ -237,7 +237,7 @@ function populateTempleLevel(){
 }
 const initialAccount=makeAccount();
 initialAccount.battle.activeEncounterId='epic-doomsday';
-const state={preferences:{templeLevel:45,chartStyle:'combined'},accounts:{[initialAccount.id]:initialAccount},activeAccountId:initialAccount.id,modes:{
+const state={preferences:{templeLevel:45,chartStyle:'separated'},accounts:{[initialAccount.id]:initialAccount},activeAccountId:initialAccount.id,modes:{
 epic:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('epic')},
 optimizer:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('optimizer')},
 custom:{selectedIds:{troop:[],monster:[],mercenary:[]},inputs:defaultInputs('custom'),orders:{troop:[],monster:[],mercenary:[]},unitOrders:{troop:{},monster:{},mercenary:{}},unitOrderManual:{troop:{},monster:{},mercenary:{}},squadOrder:{troop:[],monster:[],mercenary:[]}},
@@ -459,7 +459,7 @@ function loadSavedState(){
     const currentSaved=loaded?.state;
     if(currentSaved?.preferences){
       if(Number.isFinite(Number(currentSaved.preferences.templeLevel)))state.preferences.templeLevel=Math.max(1,Math.min(45,Number(currentSaved.preferences.templeLevel)||45));
-      state.preferences.chartStyle=currentSaved.preferences.chartStyle==='separated'?'separated':'combined';
+      state.preferences.chartStyle=currentSaved.preferences.chartStyle==='combined'?'combined':'separated';
     }
     if(currentSaved?.accounts&&Object.keys(currentSaved.accounts).length){
       state.accounts={};
