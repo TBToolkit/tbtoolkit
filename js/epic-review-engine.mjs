@@ -1,6 +1,6 @@
 import {adaptiveTierLatticeSearch,analyzeTierCompleteness,choosePracticalComposition,compositionSignature,createCompositionNeighborhood,createReviewTierStructures,inferReviewAvailability} from './epic-composition-search.mjs';
 import {createLegacyHealthLadderSeed,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
-import {scoreEpicArmy} from './epic-combat-engine-v2.mjs';
+import {prepareEpicScoringContext,scoreEpicArmy} from './epic-combat-engine-v2.mjs';
 
 export {EPIC_REVIEW_BUILD} from './build-info.mjs';
 import {EPIC_REVIEW_BUILD} from './build-info.mjs';
@@ -29,11 +29,13 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const fixedIds=new Set(units.filter(unit=>fixedNames.has(unit.name)||fixedNames.has(unit.id)).map(unit=>unit.id));
   const optimizableIds=ids=>ids.filter(id=>!fixedIds.has(id));
   const combineFixed=quantities=>({...quantities,...fixedQuantities});
+  const scoringContext=prepareEpicScoringContext({units,bonuses});
+  const score=quantities=>scoreEpicArmy({units,quantities,bonuses,scoringContext});
   let evaluations=0;
   const quickEvaluate=ids=>{
     assertWithinDeadline(deadline);evaluations++;
     const quantities=combineFixed(createLegacyHealthLadderSeed({units,selectedIds:optimizableIds(ids),bonuses,capacityLimits,separationPct:.05}));
-    return{selectedIds:ids,quantities,result:scoreEpicArmy({units,quantities,bonuses})};
+    return{selectedIds:ids,quantities,result:score(quantities)};
   };
   const refine=(candidate,strong=false)=>{
     assertWithinDeadline(deadline);
@@ -41,7 +43,7 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
     const optimized=optimizeEpicQuantities({units,selectedIds:optimizableIds(candidate.selectedIds),bonuses,capacityLimits,initialQuantities,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:strong?[.05,.02,.01,.005,.002,.001,.0005]:[.02,.005,.001],maxRoundsPerStage:strong?8:3,shouldAbort});
     assertWithinDeadline(deadline);
     const quantities=combineFixed(optimized.quantities);
-    return{selectedIds:candidate.selectedIds,quantities,result:scoreEpicArmy({units,quantities,bonuses})};
+    return{selectedIds:candidate.selectedIds,quantities,result:score(quantities)};
   };
 
   onProgress({phase:'tier-screen',progressPct:5,evaluations});

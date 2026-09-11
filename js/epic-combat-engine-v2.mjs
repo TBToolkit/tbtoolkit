@@ -25,6 +25,25 @@ function enemySquadsForBattle(bonusInputs){
  return squads;
 }
 
+/**
+ * Prepare immutable data shared by repeated scores of the same army database
+ * and bonus payload. Optimizer candidates change quantities, not this context.
+ */
+export function prepareEpicScoringContext({units,bonuses}){
+  const resolvedBonuses=deriveBonusInputs(bonuses);
+  const enemySquads=enemySquadsForBattle(resolvedBonuses);
+  return{
+    units,
+    bonuses,
+    resolvedBonuses,
+    byId:new Map(units.map(unit=>[unit.id,unit])),
+    byUnitId:new Map(units.map(unit=>[unit.unitId,unit])),
+    byName:new Map(units.map(unit=>[unit.name,unit])),
+    enemySquads,
+    squadTemplates:new Map(units.map(unit=>[unit.id,prepareSquadTemplate(unit,resolvedBonuses,enemySquads)]))
+  };
+}
+
 export function validateArmyDatabase(units) {
   if (!Array.isArray(units)) throw new Error('Army database must be an array.');
   const ids = new Set();
@@ -45,8 +64,7 @@ export function validateArmyDatabase(units) {
   return { valid: errors.length === 0, errors, count: units.length, stableIds: ids.size, unitIds: numericIds.size };
 }
 
-export function buildSquad(unit, quantity, bonusInputs) {
-  const q = assertLegalQuantity(quantity, `${unit.name} quantity`);
+function prepareSquadTemplate(unit,bonusInputs,preparedEnemySquads=null){
   const familyName = bonusFamilyForSpecies(unit.species);
   const family = bonusInputs.family[familyName];
   const intrinsicDD = Number(unit.bonuses?.doubleDamage ?? 0);
@@ -54,15 +72,13 @@ export function buildSquad(unit, quantity, bonusInputs) {
   const pST = clampProbability(family.st);
 
   const commonBonus = 1 + family.strength + bonusInputs.strengthAgainstEpic + Number(unit.bonuses?.epic ?? 0) + (bonusInputs.arachne ? Number(unit.bonuses?.arachne ?? 0) : 0);
-  const targetDamages=enemySquadsForBattle(bonusInputs).map((enemy,targetOrder)=>{
+  const targetDamages=(preparedEnemySquads??enemySquadsForBattle(bonusInputs)).map((enemy,targetOrder)=>{
     const matchup=Number(unit.bonuses?.[MATCHUP_KEY[enemy.type]]??0);
     return {target:enemy.type,targetId:enemy.id,targetCopy:enemy.copy,targetOrder,matchup,
-      deterministicDamage:q*Number(unit.baseStrength)*(commonBonus+matchup)};
+      deterministicDamage:Number(unit.baseStrength)*(commonBonus+matchup)};
   }).sort((a,b)=>b.deterministicDamage-a.deterministicDamage||a.targetOrder-b.targetOrder);
   const first=targetDamages[0];
   const second=targetDamages.find(x=>x.targetId!==first.targetId);
-  const expectedDamagePerOpportunity=(1+pDD)*(first.deterministicDamage+pST*(second?.deterministicDamage||0));
-
   return {
     id: unit.id,
     unitId: unit.unitId,
@@ -76,24 +92,30 @@ export function buildSquad(unit, quantity, bonusInputs) {
     name: unit.name,
     tier: unit.tier,
     icon: unit.icon,
-    quantity: q,
     baseStrength: Number(unit.baseStrength),
     baseHealth: Number(unit.baseHealth),
     capacityCost: Number(unit.capacityCost),
-    effectiveHealth: q * Number(unit.baseHealth) * (1 + family.health),
-    nominalSquadStrength: q * Number(unit.baseStrength),
-    capacityUsed: q * Number(unit.capacityCost),
-    rawGoldRevivalCost: q * Number(unit.goldRevivalCost),
+    effectiveHealthEach:Number(unit.baseHealth)*(1+family.health),
+    goldRevivalCostEach:Number(unit.goldRevivalCost),
     pDD,
     pST,
-    firstStrike:{target:first.target,targetId:first.targetId,deterministicDamage:first.deterministicDamage,matchup:first.matchup},
-    secondStrike:second?{target:second.target,targetId:second.targetId,deterministicDamage:second.deterministicDamage,matchup:second.matchup}:null,
-    expectedDamagePerOpportunity,
+    firstStrikePerUnit:first,
+    secondStrikePerUnit:second??null
   };
 }
 
+function buildSquadFromTemplate(template,quantity){
+  const q=assertLegalQuantity(quantity,`${template.name} quantity`),first=template.firstStrikePerUnit,second=template.secondStrikePerUnit;
+  const firstDamage=q*first.deterministicDamage,secondDamage=second?q*second.deterministicDamage:0;
+  return{id:template.id,unitId:template.unitId,displayOrder:template.displayOrder,category:template.category,capacityType:template.capacityType,combatType:template.combatType,unitClass:template.unitClass,species:template.species,bonusFamily:template.bonusFamily,name:template.name,tier:template.tier,icon:template.icon,quantity:q,baseStrength:template.baseStrength,baseHealth:template.baseHealth,capacityCost:template.capacityCost,effectiveHealth:q*template.effectiveHealthEach,nominalSquadStrength:q*template.baseStrength,capacityUsed:q*template.capacityCost,rawGoldRevivalCost:q*template.goldRevivalCostEach,pDD:template.pDD,pST:template.pST,firstStrike:{target:first.target,targetId:first.targetId,deterministicDamage:firstDamage,matchup:first.matchup},secondStrike:second?{target:second.target,targetId:second.targetId,deterministicDamage:secondDamage,matchup:second.matchup}:null,expectedDamagePerOpportunity:(1+template.pDD)*(firstDamage+template.pST*secondDamage)};
+}
 
-function enforceDistinctSquadHealth(squads,byId,resolvedBonuses){
+export function buildSquad(unit, quantity, bonusInputs, preparedEnemySquads=null) {
+  return buildSquadFromTemplate(prepareSquadTemplate(unit,bonusInputs,preparedEnemySquads),quantity);
+}
+
+
+function enforceDistinctSquadHealth(squads,byId,resolvedBonuses,preparedEnemySquads=null,preparedTemplates=null){
   let adjustments=0,unresolved=0;
   for(let pass=0;pass<Math.max(2,squads.length);pass++){
     squads.sort((a,b)=>b.effectiveHealth-a.effectiveHealth||a.unitId-b.unitId);
@@ -112,7 +134,7 @@ function enforceDistinctSquadHealth(squads,byId,resolvedBonuses){
       while(maxQty>=1&&maxQty*perUnit>=strictThreshold)maxQty--;
       const nextQty=Math.max(1,Math.min(row.quantity,maxQty));
       if(nextQty<row.quantity){
-        squads[i]=buildSquad(unit,nextQty,resolvedBonuses);
+        squads[i]=preparedTemplates?.has(unit.id)?buildSquadFromTemplate(preparedTemplates.get(unit.id),nextQty):buildSquad(unit,nextQty,resolvedBonuses,preparedEnemySquads);
         adjustments++;changed=true;
       }else unresolved++;
     }
@@ -133,11 +155,13 @@ export function measuredHealthSeparations(squads) {
   return rows;
 }
 
-export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1 }) {
-  const resolvedBonuses = deriveBonusInputs(bonuses);
-  const byId = new Map(units.map(u => [u.id,u]));
-  const byUnitId = new Map(units.map(u => [u.unitId,u]));
-  const byName = new Map(units.map(u => [u.name,u]));
+export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplier = 1, scoringContext = null }) {
+  const prepared=scoringContext?.units===units&&scoringContext?.bonuses===bonuses?scoringContext:null;
+  const resolvedBonuses = prepared?.resolvedBonuses??deriveBonusInputs(bonuses);
+  const byId = prepared?.byId??new Map(units.map(u => [u.id,u]));
+  const byUnitId = prepared?.byUnitId??new Map(units.map(u => [u.unitId,u]));
+  const byName = prepared?.byName??new Map(units.map(u => [u.name,u]));
+  const preparedEnemySquads=prepared?.enemySquads??enemySquadsForBattle(resolvedBonuses);
   const squads = [];
 
   for (const [key, quantity] of Object.entries(quantities)) {
@@ -145,10 +169,10 @@ export function scoreEpicArmy({ units, quantities, bonuses, goldRevivalMultiplie
     if (!unit && /^\d+$/.test(key)) unit = byUnitId.get(Number(key));
     if (!unit) unit = byName.get(key);
     if (!unit) throw new Error(`Unknown unit quantity key: ${key}`);
-    if (Number(quantity) > 0) squads.push(buildSquad(unit, Number(quantity), resolvedBonuses));
+    if (Number(quantity) > 0) squads.push(prepared?.squadTemplates?.has(unit.id)?buildSquadFromTemplate(prepared.squadTemplates.get(unit.id),Number(quantity)):buildSquad(unit, Number(quantity), resolvedBonuses,preparedEnemySquads));
   }
 
-  const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses);
+  const strictHealth=enforceDistinctSquadHealth(squads,byId,resolvedBonuses,preparedEnemySquads,prepared?.squadTemplates);
   const enemySquadCount=resolvedBonuses.enemySquadTypes.length;
   // Epic battles toss initiative for cycle 1, then the epic starts every later cycle.
   // Keep the old alternating model available only as an explicit offline control.

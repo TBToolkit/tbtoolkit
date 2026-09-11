@@ -1,15 +1,25 @@
-import { buildSquad, deriveBonusInputs, scoreEpicArmy } from './epic-combat-engine-v2.mjs';
+import { buildSquad, deriveBonusInputs, prepareEpicScoringContext, scoreEpicArmy } from './epic-combat-engine-v2.mjs';
 
 export {EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 import {EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 
 const CAPACITY_TYPES=Object.freeze(['LEADERSHIP','DOMINANCE','AUTHORITY']);
+const OPTIMIZER_SCORING_CONTEXTS=new WeakMap();
 
 function controlledScore(payload){
   const shouldAbort=payload?.bonuses?.__shouldAbort;
   if(typeof shouldAbort==='function'&&shouldAbort()){
     const error=new Error('Optimization stopped because its time budget was reached.');
     error.code='TIME_BUDGET';throw error;
+  }
+  const bonuses=payload?.bonuses;
+  if(bonuses&&typeof bonuses==='object'){
+    let context=OPTIMIZER_SCORING_CONTEXTS.get(bonuses);
+    if(!context||context.units!==payload.units){
+      context=prepareEpicScoringContext({units:payload.units,bonuses});
+      OPTIMIZER_SCORING_CONTEXTS.set(bonuses,context);
+    }
+    return scoreEpicArmy({...payload,scoringContext:context});
   }
   return scoreEpicArmy(payload);
 }
