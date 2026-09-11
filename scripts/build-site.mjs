@@ -7,6 +7,7 @@ import {SAVED_STATE_SCHEMA_VERSION} from '../js/saved-state-schema.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const output=path.join(root,'dist');
 const sourceDirectories=['assets','css','data','downloads','js'];
+const deploymentFiles=['_headers'];
 const htmlFiles=(await readdir(root)).filter(name=>name.endsWith('.html'));
 const runtimeFiles=[];
 
@@ -37,6 +38,7 @@ const commit=process.env.GITHUB_SHA||process.env.COMMIT_SHA||'local';
 await rm(output,{recursive:true,force:true});
 await mkdir(output,{recursive:true});
 for(const directory of sourceDirectories)await cp(path.join(root,directory),path.join(output,directory),{recursive:true});
+for(const file of deploymentFiles)await cp(path.join(root,file),path.join(output,file));
 
 const localAsset=/\b((?:src|href)=["'])(?!https?:|#|mailto:)([^"']+?\.(?:css|js))(?:\?[^"']*)?(["'])/gi;
 for(const name of htmlFiles){
