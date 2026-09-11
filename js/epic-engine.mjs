@@ -255,6 +255,20 @@ function canonicalEpicUnit(unit,category){
 function epicBonusPayloadFromEngineInputs(inputs){
   const required=[inputs?.monsterStrengthPct,inputs?.strengthAgainstEpicPct,inputs?.monsterDDPct,inputs?.monsterSTPct];
   if(required.some(value=>!Number.isFinite(Number(value))))return null;
+  const monsterProfiles=new Set(['beast','dragon','elemental','giant']);
+  const customProfileBonuses=Object.fromEntries(['beast','dragon','elemental','giant','guardsman','specialist','engineer'].flatMap(profile=>{
+    const monster=monsterProfiles.has(profile);
+    const healthFallback=inputs.healthInputs?.[monster?'MONSTER':'HUMAN'];
+    const strengthFallback=inputs[monster?'monsterStrengthPct':'humanStrengthPct'];
+    const ddFallback=inputs[monster?'monsterDDPct':'humanDDPct'];
+    const stFallback=inputs[monster?'monsterSTPct':'humanSTPct'];
+    return[
+      [`${profile}HealthPct`,Number((inputs.healthInputs?.[profile.toUpperCase()]??healthFallback)||0)],
+      [`${profile}StrengthPct`,Number(inputs[`${profile}StrengthPct`]??strengthFallback)],
+      [`${profile}DDPct`,Number(inputs[`${profile}DDPct`]??ddFallback)],
+      [`${profile}STPct`,Number(inputs[`${profile}STPct`]??stFallback)],
+    ];
+  }));
   return{
     monsterHealthPct:Number(inputs.healthInputs?.MONSTER||0),
     monsterStrengthPct:Number(inputs.monsterStrengthPct),
@@ -274,12 +288,7 @@ function epicBonusPayloadFromEngineInputs(inputs){
       epicHunterSTPct:Number(inputs.epicHunterSTPct),
     },
     useCustomProfileBonuses:true,
-    customProfileBonuses:Object.fromEntries(['guardsman','specialist','engineer'].flatMap(profile=>[
-      [`${profile}HealthPct`,Number((inputs.healthInputs?.[profile.toUpperCase()]??inputs.healthInputs?.HUMAN)||0)],
-      [`${profile}StrengthPct`,Number(inputs[`${profile}StrengthPct`]??inputs.humanStrengthPct)],
-      [`${profile}DDPct`,Number(inputs[`${profile}DDPct`]??inputs.humanDDPct)],
-      [`${profile}STPct`,Number(inputs[`${profile}STPct`]??inputs.humanSTPct)],
-    ])),
+    customProfileBonuses,
   };
 }
 

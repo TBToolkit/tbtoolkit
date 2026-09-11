@@ -32,6 +32,22 @@ export function deriveBonusInputs(input) {
   const monsterSTPct = finiteNumber(input.monsterSTPct, 'Monster Strike Twice %');
 
   const defaults = {
+    beastHealthPct: monsterHealthPct,
+    dragonHealthPct: monsterHealthPct,
+    elementalHealthPct: monsterHealthPct,
+    giantHealthPct: monsterHealthPct,
+    beastStrengthPct: monsterStrengthPct,
+    dragonStrengthPct: monsterStrengthPct,
+    elementalStrengthPct: monsterStrengthPct,
+    giantStrengthPct: monsterStrengthPct,
+    beastDDPct: monsterDDPct,
+    dragonDDPct: monsterDDPct,
+    elementalDDPct: monsterDDPct,
+    giantDDPct: monsterDDPct,
+    beastSTPct: monsterSTPct,
+    dragonSTPct: monsterSTPct,
+    elementalSTPct: monsterSTPct,
+    giantSTPct: monsterSTPct,
     guardsmanHealthPct: monsterHealthPct - 100,
     specialistHealthPct: monsterHealthPct - 100,
     engineerHealthPct: monsterHealthPct - 100,
@@ -80,6 +96,15 @@ export function deriveBonusInputs(input) {
         dd: clampProbability(pctPoints(monsterDDPct, 'Monster Double Damage %')),
         st: clampProbability(pctPoints(monsterSTPct, 'Monster Strike Twice %')),
       },
+      ...Object.fromEntries(['BEAST','DRAGON','ELEMENTAL','GIANT'].map(profileName=>{
+        const key=profileName.toLowerCase();
+        return[profileName,{
+          health:pctPoints(resolved[`${key}HealthPct`],`${profileName} Health %`),
+          strength:pctPoints(resolved[`${key}StrengthPct`],`${profileName} Strength %`),
+          dd:clampProbability(pctPoints(resolved[`${key}DDPct`],`${profileName} Double Damage %`)),
+          st:clampProbability(pctPoints(resolved[`${key}STPct`],`${profileName} Strike Twice %`)),
+        }];
+      })),
       GUARDSMAN: {
         health: pctPoints(resolved.guardsmanHealthPct, 'Guardsman Health %'),
         strength: pctPoints(resolved.guardsmanStrengthPct, 'Guardsman Strength %'),
@@ -134,7 +159,8 @@ export function effectiveHealthEachFromResolved(unit, resolvedBonuses) {
  */
 export function effectiveHealthEachFromHealthInputs(unit, healthInputs) {
   const profileName = bonusProfileForUnit(unit);
-  const pct = finiteNumber(healthInputs?.[profileName]??healthInputs?.HUMAN, `${profileName} Health %`);
+  const fallback=['BEAST','DRAGON','ELEMENTAL','GIANT'].includes(profileName)?healthInputs?.MONSTER:healthInputs?.HUMAN;
+  const pct = finiteNumber(healthInputs?.[profileName]??fallback, `${profileName} Health %`);
   const base = Number(unit.baseHealth ?? unit.healthEach);
   return finiteNumber(base, `${unit.name ?? unit.id} base health`) * (1 + pct / 100);
 }

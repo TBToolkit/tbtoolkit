@@ -8,7 +8,7 @@ const account={
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -26,6 +26,8 @@ assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
 assert.equal(raw.account.workspaces[0].inputs.autoHumanBonuses,false);
+assert.equal(raw.account.workspaces[0].inputs.beastHealth,'2525');
+assert.equal(raw.account.workspaces[0].inputs.autoBeastBonuses,false);
 assert.doesNotMatch(text,/resultCache|must not export/);
 
 const parsed=parseBiff(text);
@@ -42,6 +44,8 @@ assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.specialistHealth,'2345');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoSpecialistBonuses,false);
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.beastHealth,'2525');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoBeastBonuses,false);
 assert.deepEqual(imported.account.battle.workspaces['raid-2'].selectedIds.troop,['known']);
 assert.deepEqual(imported.account.battle.workspaces['raid-2'].methods.custom.squadOrder.troop,['known']);
 assert.equal(imported.account.battle.workspaces['raid-2'].methods.custom.unitOrderManual.troop.G9,true);

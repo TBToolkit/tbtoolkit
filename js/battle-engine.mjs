@@ -29,24 +29,25 @@ function familyKey(u){
   const profile=bonusProfileForUnit(u);
   return profile==='EPIC_HUNTER'?'epicHunter':profile.toLowerCase();
 }
+function monsterSpeciesProfile(u){return ['BEAST','DRAGON','ELEMENTAL','GIANT'].includes(bonusProfileForUnit(u));}
 function familyStrengthPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}StrengthPct`]??i.humanStrengthPct??0);
+  return Number(i[`${k}StrengthPct`]??(monsterSpeciesProfile(u)?i.monsterStrengthPct:i.humanStrengthPct)??0);
 }
 function familyHealthPct(u,i){
   const profile=bonusProfileForUnit(u);
-  return Number(i.healthInputs?.[profile]??i.healthInputs?.HUMAN??0);
+  return Number(i.healthInputs?.[profile]??i.healthInputs?.[monsterSpeciesProfile(u)?'MONSTER':'HUMAN']??0);
 }
 function pvpEffectiveHealthEach(u,i){
   return finiteNumber(u.healthEach,`${u.name||u.id} base health`)*(1+finiteNumber(familyHealthPct(u,i),`${u.name||u.id} health bonus`)/100);
 }
 function familyDdPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}DDPct`]??i.humanDDPct??0);
+  return Number(i[`${k}DDPct`]??(monsterSpeciesProfile(u)?i.monsterDDPct:i.humanDDPct)??0);
 }
 function familyStPct(u,i){
   const k=familyKey(u);
-  return Number(i[`${k}STPct`]??i.humanSTPct??0);
+  return Number(i[`${k}STPct`]??(monsterSpeciesProfile(u)?i.monsterSTPct:i.humanSTPct)??0);
 }
 function bonusValue(u,key){
   return Number(u.bonuses?.[String(key||'').toLowerCase()]??0);

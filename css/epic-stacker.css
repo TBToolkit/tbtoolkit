@@ -1663,7 +1663,7 @@ body.sacrifice-help-modal-open{overflow:hidden}
 /* v111 — compact unit bonus matrix */
 .bonus-matrix-heading{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .bonus-matrix-heading h3{margin:0}
-.bonus-matrix{overflow:hidden;border:1px solid #304658;border-radius:10px;background:#0a1722}
+.bonus-matrix{overflow-x:auto;overflow-y:hidden;border:1px solid #304658;border-radius:10px;background:#0a1722}
 .bonus-matrix-header,.bonus-matrix-row{display:grid;grid-template-columns:minmax(96px,1.25fr) repeat(4,minmax(68px,1fr)) 56px;gap:8px;align-items:center;padding:8px 10px}
 .bonus-matrix-header{min-height:38px;background:#0d1d29;color:#91a4b4;font-size:.61rem;font-weight:900;text-transform:uppercase;letter-spacing:.035em}
 .bonus-matrix-header>span:not(:first-child){display:flex;align-items:center;justify-content:center;gap:4px;text-align:center}
@@ -1671,9 +1671,9 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .bonus-matrix-row{border-top:1px solid #263a4a}
 .bonus-matrix-row>strong{color:#edf2f6;font-size:.72rem;text-transform:uppercase}
 .bonus-profile-name{display:flex;align-items:center;gap:6px;min-width:0}
-.human-bonus-disclosure{display:flex;align-items:center;gap:5px;min-width:0;padding:0;border:0;background:none;color:#edf2f6;font:900 .72rem/1.2 inherit;text-align:left;text-transform:uppercase;cursor:pointer}
-.human-bonus-disclosure>span{color:#f0a51a;font-size:1rem;transition:transform .15s ease}
-.human-bonus-disclosure[aria-expanded="true"]>span{transform:rotate(90deg)}
+.bonus-profile-disclosure{display:flex;align-items:center;gap:5px;min-width:0;padding:0;border:0;background:none;color:#edf2f6;font-family:inherit;font-size:.72rem;font-weight:700;line-height:1.2;text-align:left;text-transform:uppercase;cursor:pointer}
+.bonus-profile-disclosure>span{color:#f0a51a;font-size:1rem;transition:transform .15s ease}
+.bonus-profile-disclosure[aria-expanded="true"]>span{transform:rotate(90deg)}
 .bonus-profile-name small{padding:2px 5px;border:1px solid #a97820;border-radius:999px;background:#2b210e;color:#ffc85c;font-size:.5rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
 .bonus-child-row{background:#08141e}
 .bonus-child-row>strong{padding-left:20px;color:#bdcad3}
@@ -3940,5 +3940,15 @@ body.battle-mode-active .compact-limit-list .limit-name{
 body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   flex:0 0 auto;
   justify-self:auto!important;
+}
+
+/* v197 — preserve readable bonus values before the calculator reaches mobile layout */
+@media (min-width:1101px) and (max-width:1320px){
+  body.battle-mode-active .battle-top-layout{
+    grid-template-columns:minmax(260px,.8fr) minmax(440px,1.2fr)!important;
+  }
+  body.battle-mode-active #battleBetaPanel{grid-column:1!important;grid-row:1!important}
+  body.battle-mode-active .battle-top-layout .setup-block{grid-column:2!important;grid-row:1!important}
+  body.battle-mode-active .battle-top-layout .advanced-settings-column{grid-column:1/-1!important;grid-row:2!important}
 }
 

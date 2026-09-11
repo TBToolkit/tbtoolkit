@@ -21,14 +21,21 @@ let appInitialized=false;let optimizerBestEldSoFar=0;
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 const HUMAN_BONUS_ROW=Object.freeze({key:'human',auto:'autoHumanBonuses',healthOffset:100,strengthOffset:100});
+const MONSTER_CHILD_BONUS_ROWS=Object.freeze([
+  {key:'beast',auto:'autoBeastBonuses'},
+  {key:'dragon',auto:'autoDragonBonuses'},
+  {key:'elemental',auto:'autoElementalBonuses'},
+  {key:'giant',auto:'autoGiantBonuses'},
+]);
 const HUMAN_CHILD_BONUS_ROWS=Object.freeze([
   {key:'guardsman',auto:'autoGuardsmanBonuses'},
   {key:'specialist',auto:'autoSpecialistBonuses'},
   {key:'engineer',auto:'autoEngineerBonuses'},
 ]);
 const EPIC_HUNTER_BONUS_ROW=Object.freeze({key:'epicHunter',auto:'autoEpicHunterBonuses',healthOffset:741,strengthOffset:741});
-const BONUS_PROFILE_ROWS=Object.freeze([...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
-const BONUS_INPUT_ROWS=Object.freeze([HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
+const LINKED_BONUS_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,...HUMAN_CHILD_BONUS_ROWS]);
+const BONUS_PROFILE_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
+const BONUS_INPUT_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
 const BONUS_PROFILE_FIELD_IDS=Object.freeze(BONUS_INPUT_ROWS.flatMap(({key})=>['DD','ST','Health','Strength'].map(stat=>`${key}${stat}`)));
 function updateOptimizerElapsed(){
   if(!optimizerStartedAt)return;
@@ -56,12 +63,16 @@ authority:'',authorityFill:'10.00',autoAuthority:false,
 dominance:'',dominanceFill:'99.99',autoDominance:true,
 monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'1600',
 monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10',
+beastHealth:'1600',dragonHealth:'1600',elementalHealth:'1600',giantHealth:'1600',
+beastStrength:'2000',dragonStrength:'2000',elementalStrength:'2000',giantStrength:'2000',
+beastDD:'10',dragonDD:'10',elementalDD:'10',giantDD:'10',beastST:'10',dragonST:'10',elementalST:'10',giantST:'10',
 humanStrength:'1900',epicHunterStrength:'1259',
 humanDD:'10',epicHunterDD:'10',humanST:'5',epicHunterST:'5',
 guardsmanHealth:'1500',specialistHealth:'1500',engineerHealth:'1500',
 guardsmanStrength:'1900',specialistStrength:'1900',engineerStrength:'1900',
 guardsmanDD:'10',specialistDD:'10',engineerDD:'10',
 guardsmanST:'5',specialistST:'5',engineerST:'5',
+autoBeastBonuses:true,autoDragonBonuses:true,autoElementalBonuses:true,autoGiantBonuses:true,
 autoHumanBonuses:true,autoGuardsmanBonuses:true,autoSpecialistBonuses:true,autoEngineerBonuses:true,autoEpicHunterBonuses:true,
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
 arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
@@ -69,6 +80,13 @@ arachne:false,battleType:'epic_standard',battleMethod:'basic',enemyUnitId:'troop
 function normalizeBonusProfileInputs(inputs){
   const i=inputs??{},mh=parseNumber(i.monsterHealth??1600),ms=parseNumber(i.monsterStrength??2000),dd=parseNumber(i.monsterDD??10),st=parseNumber(i.monsterST??10);
   const legacyManual=!!i.useCustomFamilyBonuses;
+  for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){
+    for(const stat of ['Health','Strength','DD','ST']){
+      const monster=stat==='Health'?mh:stat==='Strength'?ms:stat==='DD'?dd:st;
+      if(i[`${key}${stat}`]===undefined)i[`${key}${stat}`]=String(monster);
+    }
+    if(i[auto]===undefined)i[auto]=true;
+  }
   for(const stat of ['Health','Strength','DD','ST']){
     const offset=stat==='Health'||stat==='Strength'?100:stat==='ST'?5:0;
     const monster=stat==='Health'?mh:stat==='Strength'?ms:stat==='DD'?dd:st;
@@ -763,21 +781,23 @@ function syncDerivedHealthInputs(){syncDerivedEpicBonuses();}
 function copyBonusRow(targetKey,sourceKey,readonly){
   for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${targetKey}${stat}`,parseNumber(els[`${sourceKey}${stat}`]?.value),readonly);
 }
-function updateHumanProfileStatus(){
-  const mixed=HUMAN_CHILD_BONUS_ROWS.some(({auto})=>!els[auto]?.checked);
-  if(els.humanProfileStatus){els.humanProfileStatus.hidden=!mixed;els.humanProfileStatus.textContent='Mixed';}
-  document.querySelector('[data-bonus-profile="human"]')?.classList.toggle('has-mixed-profiles',mixed);
+function updateBonusGroupStatus(rows,statusId,profile){
+  const mixed=rows.some(({auto})=>!els[auto]?.checked);
+  if(els[statusId]){els[statusId].hidden=!mixed;els[statusId].textContent='Mixed';}
+  document.querySelector(`[data-bonus-profile="${profile}"]`)?.classList.toggle('has-mixed-profiles',mixed);
 }
 function syncDerivedEpicBonuses(){
   const mh=parseNumber(els.monsterHealth?.value),ms=parseNumber(els.monsterStrength?.value),dd=parseNumber(els.monsterDD?.value),st=parseNumber(els.monsterST?.value);
+  for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'monster',true);else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);}
   if(els.autoHumanBonuses?.checked){setDerivedField('humanHealth',Math.max(0,mh-100),true);setDerivedField('humanStrength',Math.max(0,ms-100),true);setDerivedField('humanDD',dd,true);setDerivedField('humanST',Math.max(0,st-5),true);}
   else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`human${stat}`,parseNumber(els[`human${stat}`]?.value),false);
   for(const {key,auto} of HUMAN_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'human',true);else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);}
   const {key,auto,healthOffset,strengthOffset}=EPIC_HUNTER_BONUS_ROW;
   if(els[auto]?.checked){setDerivedField(`${key}Health`,Math.max(0,mh-healthOffset),true);setDerivedField(`${key}Strength`,Math.max(0,ms-strengthOffset),true);setDerivedField(`${key}DD`,dd,true);setDerivedField(`${key}ST`,Math.max(0,st-5),true);}
   else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);
-  for(const row of BONUS_INPUT_ROWS){const label=els[row.auto]?.nextElementSibling;if(label)label.textContent=els[row.auto].checked?(HUMAN_CHILD_BONUS_ROWS.includes(row)?'Linked':'Auto'):'Manual';}
-  updateHumanProfileStatus();
+  for(const row of BONUS_INPUT_ROWS){const label=els[row.auto]?.nextElementSibling;if(label)label.textContent=els[row.auto].checked?(LINKED_BONUS_ROWS.includes(row)?'Linked':'Auto'):'Manual';}
+  updateBonusGroupStatus(MONSTER_CHILD_BONUS_ROWS,'monsterProfileStatus','monster');
+  updateBonusGroupStatus(HUMAN_CHILD_BONUS_ROWS,'humanProfileStatus','human');
 }
 function epicBonusPayload(){
   const i=modeState().inputs;
@@ -946,16 +966,20 @@ function currentEpicEffectiveSignature(){
     arachne:activeMode!=='custom'&&!!i.arachne,
     enemySquadTypes:i.enemySquadTypes,
     monsterHealth:parseNumber(i.monsterHealth),
+    beastHealth:parseNumber(i.beastHealth),dragonHealth:parseNumber(i.dragonHealth),elementalHealth:parseNumber(i.elementalHealth),giantHealth:parseNumber(i.giantHealth),
     epicHunterHealth:parseNumber(i.epicHunterHealth),
     guardsmanHealth:parseNumber(i.guardsmanHealth),specialistHealth:parseNumber(i.specialistHealth),engineerHealth:parseNumber(i.engineerHealth),
     monsterStrength:parseNumber(i.monsterStrength),
+    beastStrength:parseNumber(i.beastStrength),dragonStrength:parseNumber(i.dragonStrength),elementalStrength:parseNumber(i.elementalStrength),giantStrength:parseNumber(i.giantStrength),
     epicHunterStrength:parseNumber(i.epicHunterStrength),
     guardsmanStrength:parseNumber(i.guardsmanStrength),specialistStrength:parseNumber(i.specialistStrength),engineerStrength:parseNumber(i.engineerStrength),
     strengthAgainstEpic:parseNumber(i.strengthAgainstEpic),
     monsterDD:parseNumber(i.monsterDD),
+    beastDD:parseNumber(i.beastDD),dragonDD:parseNumber(i.dragonDD),elementalDD:parseNumber(i.elementalDD),giantDD:parseNumber(i.giantDD),
     epicHunterDD:parseNumber(i.epicHunterDD),
     guardsmanDD:parseNumber(i.guardsmanDD),specialistDD:parseNumber(i.specialistDD),engineerDD:parseNumber(i.engineerDD),
     monsterST:parseNumber(i.monsterST),
+    beastST:parseNumber(i.beastST),dragonST:parseNumber(i.dragonST),elementalST:parseNumber(i.elementalST),giantST:parseNumber(i.giantST),
     epicHunterST:parseNumber(i.epicHunterST),
     guardsmanST:parseNumber(i.guardsmanST),specialistST:parseNumber(i.specialistST),engineerST:parseNumber(i.engineerST)
   };
@@ -2063,6 +2087,10 @@ function baseEngineInputs(){
     enemySquadTypes:i.enemySquadTypes,
     healthInputs:{
       MONSTER:parseNumber(i.monsterHealth)+pvpHealth,
+      BEAST:parseNumber(i.beastHealth)+pvpHealth,
+      DRAGON:parseNumber(i.dragonHealth)+pvpHealth,
+      ELEMENTAL:parseNumber(i.elementalHealth)+pvpHealth,
+      GIANT:parseNumber(i.giantHealth)+pvpHealth,
       GUARDSMAN:parseNumber(i.guardsmanHealth)+pvpHealth,
       SPECIALIST:parseNumber(i.specialistHealth)+pvpHealth,
       ENGINEER:parseNumber(i.engineerHealth)+pvpHealth,
@@ -2070,6 +2098,7 @@ function baseEngineInputs(){
       EPIC_HUNTER:parseNumber(i.epicHunterHealth)+pvpHealth
     },
     monsterStrengthPct:parseNumber(i.monsterStrength)+pvpStrength,
+    beastStrengthPct:parseNumber(i.beastStrength)+pvpStrength,dragonStrengthPct:parseNumber(i.dragonStrength)+pvpStrength,elementalStrengthPct:parseNumber(i.elementalStrength)+pvpStrength,giantStrengthPct:parseNumber(i.giantStrength)+pvpStrength,
     strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic),
     guardsmanStrengthPct:parseNumber(i.guardsmanStrength)+pvpStrength,
     specialistStrengthPct:parseNumber(i.specialistStrength)+pvpStrength,
@@ -2077,8 +2106,8 @@ function baseEngineInputs(){
     humanStrengthPct:parseNumber(i.guardsmanStrength)+pvpStrength,
     epicHunterStrengthPct:parseNumber(i.epicHunterStrength)+pvpStrength,
     pvpHealthPct:pvpHealth,pvpStrengthPct:pvpStrength,
-    monsterDDPct:parseNumber(i.monsterDD),guardsmanDDPct:parseNumber(i.guardsmanDD),specialistDDPct:parseNumber(i.specialistDD),engineerDDPct:parseNumber(i.engineerDD),humanDDPct:parseNumber(i.guardsmanDD),epicHunterDDPct:parseNumber(i.epicHunterDD),
-    monsterSTPct:parseNumber(i.monsterST),guardsmanSTPct:parseNumber(i.guardsmanST),specialistSTPct:parseNumber(i.specialistST),engineerSTPct:parseNumber(i.engineerST),humanSTPct:parseNumber(i.guardsmanST),epicHunterSTPct:parseNumber(i.epicHunterST),
+    monsterDDPct:parseNumber(i.monsterDD),beastDDPct:parseNumber(i.beastDD),dragonDDPct:parseNumber(i.dragonDD),elementalDDPct:parseNumber(i.elementalDD),giantDDPct:parseNumber(i.giantDD),guardsmanDDPct:parseNumber(i.guardsmanDD),specialistDDPct:parseNumber(i.specialistDD),engineerDDPct:parseNumber(i.engineerDD),humanDDPct:parseNumber(i.guardsmanDD),epicHunterDDPct:parseNumber(i.epicHunterDD),
+    monsterSTPct:parseNumber(i.monsterST),beastSTPct:parseNumber(i.beastST),dragonSTPct:parseNumber(i.dragonST),elementalSTPct:parseNumber(i.elementalST),giantSTPct:parseNumber(i.giantST),guardsmanSTPct:parseNumber(i.guardsmanST),specialistSTPct:parseNumber(i.specialistST),engineerSTPct:parseNumber(i.engineerST),humanSTPct:parseNumber(i.guardsmanST),epicHunterSTPct:parseNumber(i.epicHunterST),
     templeLevel:templeLevel(),templeRevivalDivisor:templeRevivalDivisor(),
     enemyUnitId:i.enemyUnitId||'troop-g9-flying-corax-2',
     minimumSeparation:!!i.minimumSeparation,
@@ -2684,7 +2713,7 @@ function switchMode(mode){
 function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
-  unitBonusProfiles:{title:'Unit bonus profiles',text:'Human Units provides one simple shared row. Expand it only when your Guardsmen, Specialists, and Engineers have different bonuses. Beasts, Dragons, Elementals, and Giants use Monster bonuses. Cursed, Demons, Elves, Undead, and Barbarians use Guardsman bonuses. Epic Hunters use their own row.',images:[]},
+  unitBonusProfiles:{title:'Unit bonus profiles',text:'Monsters and Humans provide simple shared rows. Expand Monsters only when Beasts, Dragons, Elementals, or Giants differ. Expand Humans only when Guardsmen, Specialists, or Engineers differ. Cursed, Demons, Elves, Undead, and Barbarians use Guardsman bonuses. Epic Hunters use their own row.',images:[]},
   bonusDD:{title:'Double Damage',text:'This Monster screenshot is an example of where to find Double Damage. To enter another unit type’s bonus, open a unit of that type and use the corresponding value in its Bonuses section. Intrinsic unit Double Damage is added separately.',images:[['monster-dd.webp','Monster example: Double Damage']]},
   bonusST:{title:'Strike Twice',text:'This Monster screenshot is an example of where to find Strike Twice. To enter another unit type’s bonus, open a unit of that type and use the corresponding value in its Bonuses section.',images:[['monster-st.webp','Monster example: Strike Twice']]},
   bonusHealth:{title:'Health',text:'This Monster screenshot is an example of where to find Health. To enter another unit type’s bonus, open a unit of that type and use the corresponding value in its Bonuses section.',images:[['monster-health.webp','Monster example: Health']]},
@@ -2925,11 +2954,13 @@ function wireEvents(){
     });
   }
 
-  els.humanBonusDisclosure?.addEventListener('click',()=>{
-    const expanded=els.humanBonusDisclosure.getAttribute('aria-expanded')==='true';
-    els.humanBonusDisclosure.setAttribute('aria-expanded',String(!expanded));
-    els.humanBonusDetails.hidden=expanded;
-  });
+  for(const [disclosureId,detailsId] of [['monsterBonusDisclosure','monsterBonusDetails'],['humanBonusDisclosure','humanBonusDetails']]){
+    els[disclosureId]?.addEventListener('click',()=>{
+      const expanded=els[disclosureId].getAttribute('aria-expanded')==='true';
+      els[disclosureId].setAttribute('aria-expanded',String(!expanded));
+      els[detailsId].hidden=expanded;
+    });
+  }
 
   for(const {auto} of BONUS_INPUT_ROWS){
     els[auto]?.addEventListener('change',()=>{
@@ -3029,6 +3060,7 @@ document.addEventListener('visibilitychange',()=>{
 
 async function init(){
   cacheElements();
+  for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
   loadSavedState();
   if(activeMode==='battle')ensureBattleWorkspace();
   loadSavedOptimizerResult();

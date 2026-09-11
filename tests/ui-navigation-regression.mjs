@@ -26,12 +26,15 @@ assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesS
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
 assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
-assert.equal((html.match(/data-bonus-profile=/g)||[]).length,6,'Unit bonuses must include three simple rows plus the expandable Human profiles');
-assert.match(html,/data-bonus-profile="monster"[\s\S]*?data-bonus-profile="human"[\s\S]*?hidden id="humanBonusDetails"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'The default matrix must show Monsters, Human Units, and Epic Hunters with G/S/E nested under Human Units');
+assert.equal((html.match(/data-bonus-profile=/g)||[]).length,10,'Unit bonuses must include shared Monster and Human rows plus their expandable profiles');
+assert.match(html,/data-bonus-profile="monster"[\s\S]*?hidden id="monsterBonusDetails"[\s\S]*?data-bonus-profile="beast"[\s\S]*?data-bonus-profile="dragon"[\s\S]*?data-bonus-profile="elemental"[\s\S]*?data-bonus-profile="giant"[\s\S]*?data-bonus-profile="human"[\s\S]*?hidden id="humanBonusDetails"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'The default matrix must show Monsters, Humans, and Epic Hunters with species and classes nested under their shared rows');
+assert.match(html,/id="humanBonusDisclosure"[^>]*>[\s\S]*?Humans<\/button>/,'The shared Human profile must use the concise Humans label');
 assert.match(html,/<h2>Unit Bonuses<\/h2><button[^>]+data-stat-help="unitBonusProfiles"/,'Section 3 must be named Unit Bonuses and carry the profile help control');
 assert.doesNotMatch(html,/<h2>Health &amp; Combat<\/h2>/,'The old section name must not remain');
 assert.match(source,/bonusDD:[\s\S]*?monster-dd\.webp[\s\S]*?bonusST:[\s\S]*?monster-st\.webp[\s\S]*?bonusHealth:[\s\S]*?monster-health\.webp[\s\S]*?bonusStrength:[\s\S]*?monster-strength\.webp/,'Each column help topic must include its Monster example screenshot');
-assert.match(source,/function updateHumanProfileStatus\(\)[\s\S]*?textContent='Mixed'/,'Collapsed Human Units must disclose customized child profiles');
+assert.match(source,/function updateBonusGroupStatus\([\s\S]*?textContent='Mixed'/,'Collapsed Monster and Human rows must disclose customized child profiles');
+assert.match(css,/\.bonus-profile-disclosure\{[\s\S]*?font-family:inherit/,'Expandable profile labels must inherit the calculator typography');
+assert.match(css,/@media \(min-width:1101px\) and \(max-width:1320px\)[\s\S]*?advanced-settings-column\{grid-column:1\/-1/,'Unit Bonuses must move below sections 1 and 2 before its values become cramped');
 assert.doesNotMatch(html,/id="useCustomFamilyBonuses"/,'The old all-or-nothing custom-family control must not remain');
 assert.match(source,/useCustomProfileBonuses:true/,'Optimizer and Review Selection must receive the resolved profile matrix');
 assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');
