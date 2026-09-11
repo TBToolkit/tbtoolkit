@@ -60,6 +60,7 @@ assert.match(source,/const REVIEW_SELECTION_UI_ENABLED=false;/, 'Review Selectio
 assert.match(source,/function isReviewSelectionAvailable\(\)\{return REVIEW_SELECTION_UI_ENABLED&&/, 'Review Selection visibility must require the feature flag');
 assert.match(source,/if\(REVIEW_SELECTION_UI_ENABLED\)els\.reviewSelection\?\.addEventListener/, 'Dormant Review Selection must not initialize its launch listener');
 assert.doesNotMatch(html,/<option value="basic">/, 'Standard must not appear in the calculation-method selector');
+assert.doesNotMatch(html,/<strong>Standard<\/strong>/, 'Standard must not appear as a user-facing calculation method in the Guide');
 assert.match(html,/<option value="custom">Custom<\/option>/, 'Custom must be the visible default-order method');
 assert.match(source,/source\.activeBattleMethod===['"]optimize['"]\?['"]optimize['"]:['"]custom['"]/, 'Saved Standard workspaces must remain compatible by opening in Custom');
 assert.match(html,/Optimized Potential: Current Selection[\s\S]*?Optimized Potential: Recommended Selection/,'Review Selection must distinguish optimized potential from the currently displayed method result');
