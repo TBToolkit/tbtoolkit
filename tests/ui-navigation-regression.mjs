@@ -90,7 +90,7 @@ assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent
 assert.match(source,/chartStyle\(\)==='separated'[\s\S]*?suffix[\s\S]*?return`\$\{roman\}-\$\{suffix\}`/, 'Separated Results mercenary labels must retain their subgroup suffix');
 assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');
 assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
-assert.match(source,/for\(let death=5;death<=horizontalCount;death\+=5\)/, 'Both horizontal-axis styles must use five-position increments');
+assert.match(source,/for\(let death=5;chartStyle\(\)==='combined'&&death<=horizontalCount;death\+=5\)/, 'Only the combined death-order axis should render numbered five-position increments');
 assert.equal((source.match(/class:'chart-axis-line'/g)||[]).length,2,'The results chart must draw explicit horizontal and vertical axes');
 assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative gridlines must not extend outside the chart axes');
 assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');

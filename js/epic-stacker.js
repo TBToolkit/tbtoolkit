@@ -2396,7 +2396,7 @@ function renderLayerHealthChart(result){
   }
   const baselineY=y(0);
   const horizontalCount=chartStyle()==='separated'?Math.max(...Object.values(source).map(rows=>rows.length)):combinedOrder.length;
-  for(let death=5;death<=horizontalCount;death+=5){
+  for(let death=5;chartStyle()==='combined'&&death<=horizontalCount;death+=5){
     const xx=x(death-1,horizontalCount);
     svg.appendChild(svgEl('line',{x1:xx,x2:xx,y1:margin.top,y2:baselineY,class:'chart-grid-line chart-grid-line-vertical'}));
     const label=svgEl('text',{x:xx,y:baselineY+19,'text-anchor':'middle',class:'chart-axis-label'});
