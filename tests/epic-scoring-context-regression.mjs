@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {prepareEpicScoringContext,scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
+import {createLegacyHealthLadderSeed} from '../js/epic-quantity-optimizer.mjs';
 
 const units=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const chosen=units.filter(unit=>['G9','S9','E9','M9'].includes(unit.tier)).slice(0,10);
@@ -15,6 +16,8 @@ for(const enemySquadTypes of formations){
   chosen.forEach((unit,index)=>{const key=index%3===0?unit.id:index%3===1?unit.name:String(unit.unitId);quantities[key]=1000-index*37;});
   const ordinary=scoreEpicArmy({units,quantities,bonuses});
   const context=prepareEpicScoringContext({units,bonuses});
+  const seedArgs={units,selectedIds:chosen.map(unit=>unit.id),bonuses,capacityLimits:{LEADERSHIP:100000,DOMINANCE:50000,AUTHORITY:25000},separationPct:.05};
+  assert.deepEqual(createLegacyHealthLadderSeed({...seedArgs,scoringContext:context}),createLegacyHealthLadderSeed(seedArgs),'Prepared seed data must preserve quantities');
   const prepared=scoreEpicArmy({units,quantities,bonuses,scoringContext:context});
   assert.deepEqual(prepared,ordinary,'Prepared scoring must be deeply identical to ordinary scoring');
   const eventless=scoreEpicArmy({units,quantities,bonuses,scoringContext:context,recordEvents:false});

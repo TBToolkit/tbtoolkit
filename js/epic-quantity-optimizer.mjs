@@ -63,12 +63,13 @@ function normalizedLimits(limits) {
  * calculator, but is used only as a starting point for the new optimizer.
  * The optimizer objective remains expected lifetime damage from the discrete simulator.
  */
-export function createLegacyHealthLadderSeed({ units, selectedIds, selectedNames, bonuses, capacityLimits, separationPct = 0.10 }) {
+export function createLegacyHealthLadderSeed({ units, selectedIds, selectedNames, bonuses, capacityLimits, separationPct = 0.10, scoringContext = null }) {
   const selectedIdSet = new Set(selectedIds ?? []);
   const selectedNameSet = new Set(selectedNames ?? []);
   const selected = units.filter(u => selectedIdSet.size ? selectedIdSet.has(u.id) : selectedNameSet.has(u.name));
   if (!selected.length) return {};
-  const resolved = deriveBonusInputs(bonuses);
+  const prepared=scoringContext?.units===units&&scoringContext?.bonuses===bonuses?scoringContext:null;
+  const resolved = prepared?.resolvedBonuses??deriveBonusInputs(bonuses);
   const limits = normalizedLimits(capacityLimits);
   const separation = Math.max(0, Number(separationPct)) / 100;
   const q = {};
@@ -78,11 +79,11 @@ export function createLegacyHealthLadderSeed({ units, selectedIds, selectedNames
     const limit = limits[capacityType];
     if (!group.length || limit <= 0) continue;
 
-    const oneUnit = new Map(group.map(u => [u.id, buildSquad(u, 1, resolved)]));
-    const maxHealthEach = Math.max(...group.map(u => oneUnit.get(u.id).effectiveHealth));
+    const healthEach=new Map(group.map(u=>[u.id,prepared?.squadTemplates?.get(u.id)?.effectiveHealthEach??buildSquad(u,1,resolved,prepared?.enemySquads).effectiveHealth]));
+    const maxHealthEach = Math.max(...healthEach.values());
     const ranked = group.slice().sort((a,b) => pveSeedScore(b) - pveSeedScore(a) || a.displayOrder - b.displayOrder || a.unitId - b.unitId);
     const rows = ranked.map((u, index) => {
-      const h = oneUnit.get(u.id).effectiveHealth;
+      const h = healthEach.get(u.id);
       const C = ((1 + index * separation) * maxHealthEach) / h;
       const D = C * Number(u.capacityCost);
       return { u, D };

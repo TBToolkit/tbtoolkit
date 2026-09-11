@@ -34,7 +34,7 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   let evaluations=0;
   const quickEvaluate=ids=>{
     assertWithinDeadline(deadline);evaluations++;
-    const quantities=combineFixed(createLegacyHealthLadderSeed({units,selectedIds:optimizableIds(ids),bonuses,capacityLimits,separationPct:.05}));
+    const quantities=combineFixed(createLegacyHealthLadderSeed({units,selectedIds:optimizableIds(ids),bonuses,capacityLimits,separationPct:.05,scoringContext}));
     return{selectedIds:ids,quantities,result:score(quantities)};
   };
   const refine=(candidate,strong=false)=>{
