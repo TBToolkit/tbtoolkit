@@ -2198,6 +2198,18 @@ function compactHealth(value){
   return Math.round(n).toLocaleString('en-US');
 }
 
+function niceHealthAxisStep(maxValue,targetIntervals=5){
+  const rough=Math.max(Number(maxValue)||1,1)/Math.max(targetIntervals,1);
+  const magnitude=10**Math.floor(Math.log10(rough));
+  const normalized=rough/magnitude;
+  const factor=normalized<=1?1:normalized<=2?2:normalized<=5?5:10;
+  return factor*magnitude;
+}
+
+function compactAxisHealth(value){
+  return compactHealth(value).replace(/\.0+(?=[KMB]$)/,'');
+}
+
 function chartUnitLabel(category,row){
   if(category==='mercenary')return['','I','II','III','IV','V','VI','VII','VIII','IX'][tierNumber(row.level)]||row.level;
   return row.level;
@@ -2243,9 +2255,9 @@ function renderLayerHealthChart(result){
   svg.setAttribute('preserveAspectRatio','none');
 
   const vals=all.map(r=>r.squadHealth).filter(Number.isFinite);
-  let min=0,max=Math.max(...vals);
-  const span=Math.max(max,1);
-  max=max+span*.08;
+  const min=0,rawMax=Math.max(...vals);
+  const healthStep=niceHealthAxisStep(rawMax);
+  const max=Math.max(healthStep,Math.ceil(rawMax/healthStep)*healthStep);
 
   const y=v=>margin.top+(max-v)/(max-min)*plotH;
   const x=(i,count)=>{
@@ -2262,16 +2274,24 @@ function renderLayerHealthChart(result){
   const combinedOrder=all.slice().sort((a,b)=>deathValue(a)-deathValue(b)||b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
   const deathPosition=new Map(combinedOrder.map((row,index)=>[row,index]));
 
-  // Y grid / labels.
-  const ticks=6;
-  for(let i=0;i<ticks;i++){
-    const value=max-(i/(ticks-1))*(max-min);
+  // Rounded health intervals create one clean, predictable horizontal grid.
+  for(let value=0;value<=max+healthStep*.001;value+=healthStep){
     const yy=y(value);
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:yy,y2:yy,class:'chart-grid-line'}));
+    if(value>0)svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:yy,y2:yy,class:'chart-grid-line'}));
     const label=svgEl('text',{x:margin.left-10,y:yy+4,'text-anchor':'end',class:'chart-axis-label'});
-    label.textContent=compactHealth(value);
+    label.textContent=compactAxisHealth(value);
     svg.appendChild(label);
   }
+  const baselineY=y(0);
+  for(let death=5;death<=combinedOrder.length;death+=5){
+    const xx=x(death-1,combinedOrder.length);
+    svg.appendChild(svgEl('line',{x1:xx,x2:xx,y1:margin.top,y2:baselineY,class:'chart-grid-line chart-grid-line-vertical'}));
+    const label=svgEl('text',{x:xx,y:baselineY+19,'text-anchor':'middle',class:'chart-axis-label'});
+    label.textContent=String(death);
+    svg.appendChild(label);
+  }
+  svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left,y1:margin.top,y2:baselineY,class:'chart-axis-line'}));
+  svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:baselineY,y2:baselineY,class:'chart-axis-line'}));
   const yTitle=svgEl('text',{x:15,y:height/2,transform:`rotate(-90 15 ${height/2})`,'text-anchor':'middle',class:'chart-y-title'});
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);

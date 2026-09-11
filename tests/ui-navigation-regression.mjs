@@ -56,6 +56,10 @@ assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summar
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
 assert.match(source,/xTitle\.textContent='Death Order →'/, 'The results chart must identify its horizontal death-order axis');
 assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
+assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
+assert.match(source,/for\(let death=5;death<=combinedOrder\.length;death\+=5\)/, 'The death-order axis must use five-position increments');
+assert.equal((source.match(/class:'chart-axis-line'/g)||[]).length,2,'The results chart must draw explicit horizontal and vertical axes');
+assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative gridlines must not extend outside the chart axes');
 assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');
 assert.match(source,/SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note\?` <button class="sacrifice-flag"/, 'Sacrifice flag rendering must remain behind the reversible display switch');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');

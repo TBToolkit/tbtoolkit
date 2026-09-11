@@ -132,11 +132,7 @@
   border:1px solid #293e50;
   border-radius:9px;
   overflow:hidden;
-  background:
-    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
-    #04111b;
-  background-size:100% 40px,80px 100%,auto;
+  background:#04111b;
 }
 .layer-health-chart{
   display:block;
@@ -180,6 +176,8 @@
 
 .chart-axis-label{fill:#8292a1;font-size:11px;font-weight:700}
 .chart-grid-line{stroke:rgba(180,195,208,.16);stroke-width:1}
+.chart-grid-line-vertical{stroke:rgba(180,195,208,.10)}
+.chart-axis-line{stroke:#627789;stroke-width:1.5}
 .chart-series-line{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .chart-point{stroke:#02080d;stroke-width:2;cursor:pointer}
 .chart-point-label{font-size:10px;font-weight:900;text-anchor:middle}
