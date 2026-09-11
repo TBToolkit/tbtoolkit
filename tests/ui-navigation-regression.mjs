@@ -22,6 +22,7 @@ assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidd
 assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesStandard\(\)/, 'Untouched Epic Custom Order must reuse Standard');
 assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
 assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
+assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
 assert.match(html,/id="biffImportDialog"/, 'Import must provide a preview dialog');
 assert.match(html,/id="biffImportName"/, 'Import preview must require a new Player Account name');
 assert.match(source,/importedAccountNameSuggestion/, 'Import must suggest a unique Player Account name');

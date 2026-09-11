@@ -383,6 +383,11 @@
   <div><span>Current Candidate ELD</span><strong id="optimizerProgressCurrentEld">—</strong></div>
   <div><span>Mathematical Best ELD</span><strong id="optimizerProgressBestEld">—</strong></div>
 </div>
+<section class="optimizer-health-ladder" aria-labelledby="optimizerHealthLadderTitle">
+  <div class="optimizer-health-ladder-heading"><strong id="optimizerHealthLadderTitle">Best Army Health Ladder</strong><span>Updates when a higher ELD is found</span></div>
+  <div class="optimizer-health-ladder-layout"><div class="optimizer-die-direction"><span>Dies First</span><b>↓</b><span>Dies Last</span></div><svg aria-label="Health ladder for the best army found so far" id="optimizerHealthLadder" role="img" viewBox="0 0 440 150"></svg></div>
+  <div class="optimizer-health-legend"><span class="troop">Troops</span><span class="monster">Monsters</span><span class="mercenary">Mercs</span></div>
+</section>
 <p class="optimizer-eld-definition"><strong>ELD = Expected Lifetime Damage.</strong> It is the total damage the army is expected to deal over the full battle.</p>
 <p class="optimizer-progress-note" id="optimizerProgressNote">The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.</p>
 <div class="optimizer-elapsed"><span>Time Elapsed</span><strong id="optimizerElapsedTime">0:00</strong></div>
