@@ -964,7 +964,7 @@ function renderOptimizerHealthLadder(rows=[]){
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
   if(!data.length){const label=make('text',{x:220,y:78,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
-  const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
+  const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),range=Math.max(1,high),count=Math.max(2,ordered.length);
   for(const y of [20,75,130])svg.append(make('line',{x1:8,y1:y,x2:432,y2:y,stroke:'#203543','stroke-width':1}));
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'};
   for(const category of ['troop','monster','mercenary']){
