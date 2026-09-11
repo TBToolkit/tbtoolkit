@@ -331,12 +331,11 @@
 
 <section class="topdown-panel layer-chart-panel battle-sequenced-section" id="layerChartPanel">
 <div class="layer-chart-head">
-<div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Calculated squad health from highest to lowest within each army type. Overlap is shown for reference only.</p></div>
+<div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p>Squad health by predicted death order. Select a point to view unit details.</p></div>
 </div>
-<div class="overlap-summary" id="overlapSummary"><div class="overlap-chip neutral"><span>Troops ↔ Monsters</span><strong>—</strong></div><div class="overlap-chip neutral"><span>Monsters ↔ Mercs</span><strong>—</strong></div></div>
-<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad-health separation.</div>
+<div class="layer-chart-empty" id="layerChartEmpty">Select units and complete the required inputs to view squad health and death order.</div>
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
-<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-layout"><div aria-label="Death order direction" class="die-direction die-direction-vertical"><span>Dies First</span><b>↓</b><span>Dies Last</span></div><div class="layer-chart-wrap"><svg aria-label="Squad health by army type and approximate dying order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div></div>
+<div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by predicted death order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
 </div>
 </div>

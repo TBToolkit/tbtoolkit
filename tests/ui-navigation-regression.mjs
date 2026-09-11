@@ -53,7 +53,9 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
-assert.match(html,/class="die-direction die-direction-vertical"[\s\S]*?<span>Dies First<\/span><b>↓<\/b><span>Dies Last<\/span>/, 'The chart must show a vertical death-order guide');
+assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
+assert.match(source,/xTitle\.textContent='Death Order →'/, 'The results chart must identify its horizontal death-order axis');
+assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent/, 'Results chart points and labels must use established unit colors');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
 assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
 assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');

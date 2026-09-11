@@ -219,7 +219,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','overlapSummary','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST','useCustomFamilyBonuses','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','damagePerThousandGold','predictionMeta','predictionRows','customFamilyBonusFields','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
 function formatFillPercent(el){const n=parseNumber(el.value);el.value=Number.isFinite(n)?n.toFixed(2):'0.00';}
 const TIER_COLORS={9:'#69b85a',8:'#9aa4ad',7:'#d8ad42',6:'#d96858',5:'#d7974b',4:'#9673c8',3:'#55a6cf',2:'#7eae59',1:'#8f9892'};
@@ -2196,31 +2196,8 @@ function compactHealth(value){
 }
 
 function chartUnitLabel(category,row){
-  if(category==='mercenary')return row.level;
+  if(category==='mercenary')return['','I','II','III','IV','V','VI','VII','VIII','IX'][tierNumber(row.level)]||row.level;
   return row.level;
-}
-
-function overlapStatus(upperRows,lowerRows){
-  if(!upperRows.length||!lowerRows.length)return{kind:'neutral',text:'Not enough data'};
-  const upperMin=Math.min(...upperRows.map(r=>r.squadHealth));
-  const lowerMax=Math.max(...lowerRows.map(r=>r.squadHealth));
-  const margin=upperMin-lowerMax;
-  if(margin>0)return{kind:'separated',text:`Separated · ${compactHealth(margin)} gap`};
-  return{kind:'overlap',text:`Overlap · ${compactHealth(Math.abs(margin))}`};
-}
-
-function renderOverlapSummary(result){
-  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
-  if(!chips?.length)return;
-  const troop=result?.categories?.troop?.results??[];
-  const monster=result?.categories?.monster?.results??[];
-  const merc=result?.categories?.mercenary?.results??[];
-  const statuses=[overlapStatus(troop,monster),overlapStatus(monster,merc)];
-  chips.forEach((chip,i)=>{
-    chip.classList.remove('neutral','separated','overlap');
-    chip.classList.add(statuses[i].kind);
-    chip.querySelector('strong').textContent=statuses[i].text;
-  });
 }
 
 function clearLayerChart(){
@@ -2228,12 +2205,6 @@ function clearLayerChart(){
   if(els.layerChartScroll)els.layerChartScroll.hidden=true;
   if(els.layerChartEmpty)els.layerChartEmpty.hidden=false;
   if(els.layerChartTooltip)els.layerChartTooltip.hidden=true;
-  const chips=els.overlapSummary?.querySelectorAll('.overlap-chip');
-  chips?.forEach(chip=>{
-    chip.classList.remove('separated','overlap');
-    chip.classList.add('neutral');
-    chip.querySelector('strong').textContent='—';
-  });
 }
 
 function svgEl(name,attrs={}){
@@ -2255,15 +2226,14 @@ function renderLayerHealthChart(result){
     source[key].sort((a,b)=>b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
   }
 
-  renderOverlapSummary(result);
   els.layerChartEmpty.hidden=true;
   els.layerChartScroll.hidden=false;
 
   const svg=els.layerHealthChart;
   svg.innerHTML='';
   const width=900;
-  const height=430;
-  const margin={top:34,right:35,bottom:48,left:78};
+  const height=480;
+  const margin={top:38,right:24,bottom:58,left:70};
   const plotW=width-margin.left-margin.right;
   const plotH=height-margin.top-margin.bottom;
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
@@ -2280,25 +2250,14 @@ function renderLayerHealthChart(result){
     return margin.left+(i/(count-1))*plotW;
   };
 
-  // Highlight actual overlap health bands, without judging them.
-  const bands=[];
-  const t=source.troop,m=source.monster,q=source.mercenary;
-  if(t.length&&m.length){
-    const low=Math.max(Math.min(...t.map(r=>r.squadHealth)),Math.min(...m.map(r=>r.squadHealth)));
-    const high=Math.min(Math.max(...t.map(r=>r.squadHealth)),Math.max(...m.map(r=>r.squadHealth)));
-    if(high>=low)bands.push({low,high});
-  }
-  if(m.length&&q.length){
-    const low=Math.max(Math.min(...m.map(r=>r.squadHealth)),Math.min(...q.map(r=>r.squadHealth)));
-    const high=Math.min(Math.max(...m.map(r=>r.squadHealth)),Math.max(...q.map(r=>r.squadHealth)));
-    if(high>=low)bands.push({low,high});
-  }
-  for(const band of bands){
-    const y1=y(band.high),y2=y(band.low);
-    svg.appendChild(svgEl('rect',{x:margin.left,y:y1,width:plotW,height:Math.max(2,y2-y1),class:'chart-overlap-band'}));
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y1,y2:y1,class:'chart-overlap-edge'}));
-    svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:y2,y2:y2,class:'chart-overlap-edge'}));
-  }
+  const deathValue=row=>{
+    const explicit=Number(row.predictedDeathPosition);
+    if(Number.isFinite(explicit))return explicit;
+    const index=Number(row.predictedDeathIndex);
+    return Number.isFinite(index)?index+1:Infinity;
+  };
+  const combinedOrder=all.slice().sort((a,b)=>deathValue(a)-deathValue(b)||b.squadHealth-a.squadHealth||a.displayOrder-b.displayOrder);
+  const deathPosition=new Map(combinedOrder.map((row,index)=>[row,index]));
 
   // Y grid / labels.
   const ticks=6;
@@ -2313,11 +2272,14 @@ function renderLayerHealthChart(result){
   const yTitle=svgEl('text',{x:15,y:height/2,transform:`rotate(-90 15 ${height/2})`,'text-anchor':'middle',class:'chart-y-title'});
   yTitle.textContent='Squad Health';
   svg.appendChild(yTitle);
+  const xTitle=svgEl('text',{x:margin.left+plotW/2,y:height-13,'text-anchor':'middle',class:'chart-y-title'});
+  xTitle.textContent='Death Order →';
+  svg.appendChild(xTitle);
 
   for(const [category,rows] of Object.entries(source)){
     if(!rows.length)continue;
     const meta=CHART_SERIES[category];
-    const points=rows.map((row,i)=>({row,x:x(i,rows.length),y:y(row.squadHealth)}));
+    const points=rows.map(row=>({row,x:x(deathPosition.get(row),combinedOrder.length),y:y(row.squadHealth)})).sort((a,b)=>a.x-b.x);
     const path=svgEl('polyline',{
       points:points.map(p=>`${p.x},${p.y}`).join(' '),
       class:'chart-series-line',
@@ -2325,13 +2287,14 @@ function renderLayerHealthChart(result){
     });
     svg.appendChild(path);
 
-    points.forEach((p,i)=>{
+    points.forEach(p=>{
       const g=svgEl('g');
-      const c=svgEl('circle',{cx:p.x,cy:p.y,r:5.3,fill:meta.color,class:'chart-point',tabindex:'0'});
+      const pointColor=outputRowColors(category,p.row).accent;
+      const c=svgEl('circle',{cx:p.x,cy:p.y,r:5.3,fill:pointColor,class:'chart-point',tabindex:'0'});
       const label=svgEl('text',{
         x:p.x,
-        y:p.y+(category==='mercenary'?18:-11),
-        fill:meta.color,
+        y:Math.max(14,p.y-11),
+        fill:pointColor,
         class:'chart-point-label'
       });
       label.textContent=chartUnitLabel(category,p.row);
@@ -2341,7 +2304,7 @@ function renderLayerHealthChart(result){
 
       const showTip=(evt)=>{
         const tip=els.layerChartTooltip;
-        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Position in ${meta.label}: ${i+1} of ${rows.length}</span></div>`;
+        tip.innerHTML=`<img src="${escapeHtml(p.row.icon)}" alt=""><div class="tooltip-copy"><strong>${escapeHtml(p.row.level)} · ${escapeHtml(p.row.type)}</strong><span>${escapeHtml(p.row.name)}</span><span>Quantity: ${formatInteger(p.row.qty)}</span><span>Squad Health: ${Math.round(p.row.squadHealth).toLocaleString('en-US')}</span><span>Death Order: ${deathPosition.get(p.row)+1} of ${combinedOrder.length}</span></div>`;
         iconFallback(tip.querySelector('img'));
         tip.hidden=false;
         const wrap=svg.parentElement.getBoundingClientRect();
