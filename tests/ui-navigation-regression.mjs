@@ -69,7 +69,7 @@ assert.match(source,/function saveState\(\)\{[\s\S]*?catch\(error\)/, 'A browser
 assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
 assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
 assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');
-assert.match(html,/Mathematical Best ELD/, 'Optimizer progress must distinguish the mathematical maximum from the selected practical result');
+assert.match(html,/Current \/ Best/, 'Optimizer progress must distinguish the current candidate from the mathematical best');
 assert.match(source,/Selecting a practical near-optimal army/, 'Optimizer finalization must explain an intentional practical tie-break');
 assert.match(source,/createReviewWorker\(\)/, 'UI must obtain Review Selection through its worker client boundary');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');

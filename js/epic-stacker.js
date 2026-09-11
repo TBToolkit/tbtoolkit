@@ -18,7 +18,6 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
-const OPTIMIZER_PROGRESS_DEFAULT_NOTE='The current candidate changes as the optimizer searches. The final result may use a more practical army within the near-optimal ELD tolerance.';
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 function updateOptimizerElapsed(){
@@ -949,8 +948,6 @@ function openOptimizerModal(){
   renderOptimizerHealthLadder([]);
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
-  const progressNote=document.getElementById('optimizerProgressNote');
-  if(progressNote)progressNote.textContent=OPTIMIZER_PROGRESS_DEFAULT_NOTE;
   if(!els.optimizerModal)return;
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
@@ -964,11 +961,11 @@ function renderOptimizerHealthLadder(rows=[]){
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
   if(!data.length){const label=make('text',{x:220,y:78,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
-  const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),range=Math.max(1,high),count=Math.max(2,ordered.length);
-  for(const y of [20,75,130])svg.append(make('line',{x1:8,y1:y,x2:432,y2:y,stroke:'#203543','stroke-width':1}));
+  const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
+  for(const y of [20,95,170])svg.append(make('line',{x1:8,y1:y,x2:492,y2:y,stroke:'#203543','stroke-width':1}));
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'};
   for(const category of ['troop','monster','mercenary']){
-    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:14+(Number(row.deathPosition)-1)/(count-1)*412,y:18+(high-Number(row.effectiveHealth))/range*110}));
+    const points=ordered.filter(row=>row.category===category).map(row=>({row,x:14+(Number(row.deathPosition)-1)/(count-1)*472,y:18+(high-Number(row.effectiveHealth))/range*150}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
@@ -1018,11 +1015,6 @@ function updateOptimizerProgress(progress={}){
     if(currentEld>previousBest&&Array.isArray(progress.healthLadder))renderOptimizerHealthLadder(progress.healthLadder);
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=formatDamage(currentEld);
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=formatDamage(optimizerBestEldSoFar);
-  }
-  const progressNote=document.getElementById('optimizerProgressNote');
-  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied&&progressNote){
-    const loss=Number(progress.practicalTieBreakLossPct);
-    progressNote.textContent=`The mathematical best remains shown for comparison. The selected practical army gives up ${Number.isFinite(loss)?loss.toFixed(3):'less than 0.250'}% ELD for a more conventional troop death order.`;
   }
 }
 function clearPrediction(){
