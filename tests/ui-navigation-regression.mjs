@@ -56,8 +56,12 @@ assert.match(source,/An encounter named .* already exists/, 'Encounter creation 
 assert.match(source,/biffImportError\.classList\.toggle\(['"]show['"]/, 'Import naming errors must be visibly rendered');
 assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encounter naming errors must be visibly rendered');
 assert.match(html,/hidden id="reviewSelection"/, 'Review Selection must start hidden until an eligible battle is configured');
-assert.match(source,/function isReviewSelectionAvailable\(\)\{return activeMode===['"]battle['"]&&state\.modes\.battle\.activeBattleType===['"]epic['"]/, 'Review Selection must only be available for Epic Monster battles');
-assert.match(source,/els\.reviewSelection\.hidden=!available/, 'Review Selection visibility must follow the Epic-only eligibility rule');
+assert.match(source,/const REVIEW_SELECTION_UI_ENABLED=false;/, 'Review Selection must remain dormant behind a recoverable feature flag');
+assert.match(source,/function isReviewSelectionAvailable\(\)\{return REVIEW_SELECTION_UI_ENABLED&&/, 'Review Selection visibility must require the feature flag');
+assert.match(source,/if\(REVIEW_SELECTION_UI_ENABLED\)els\.reviewSelection\?\.addEventListener/, 'Dormant Review Selection must not initialize its launch listener');
+assert.doesNotMatch(html,/<option value="basic">/, 'Standard must not appear in the calculation-method selector');
+assert.match(html,/<option value="custom">Custom<\/option>/, 'Custom must be the visible default-order method');
+assert.match(source,/source\.activeBattleMethod===['"]optimize['"]\?['"]optimize['"]:['"]custom['"]/, 'Saved Standard workspaces must remain compatible by opening in Custom');
 assert.match(html,/Optimized Potential: Current Selection[\s\S]*?Optimized Potential: Recommended Selection/,'Review Selection must distinguish optimized potential from the currently displayed method result');
 assert.match(html,/id="reviewMethodNote"[\s\S]*?may be higher than the Standard result/,'Standard users must be told why Review Selection ELD may be higher');
 assert.match(source,/No better unit selection was found/,'An unchanged winning selection must not be described as a recommendation');

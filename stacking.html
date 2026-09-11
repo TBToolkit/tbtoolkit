@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Compare Standard, Custom Order, and optimized Epic calculations." name="description"/>
+<meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Customize the default death order or optimize supported Epic battles." name="description"/>
 <title>Battle Calculator | TB Toolkit</title>
 <link href="css/styles.css?v=1.13.1" rel="stylesheet"/>
 <link href="css/epic-stacker.css?v=1.13.1" rel="stylesheet"/>
@@ -64,8 +64,7 @@
 <select id="encounterSelect"></select><span class="workspace-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span></label>
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
 <select id="battleMethodSelect">
-<option value="basic">Standard</option>
-<option value="custom">Custom Order</option>
+<option value="custom">Custom</option>
 <option id="battleMethodOptimizeOption" value="optimize">Optimize</option>
 </select></label>
 <label class="battle-select-field pvp-enemy-field" for="pvpEnemyUnitSelect" hidden id="pvpEnemyUnitField"><span>Enemy Unit</span>
@@ -409,9 +408,8 @@
 <summary><span>6</span>Calculation methods</summary>
 <div class="battle-guide-section-copy battle-guide-methods">
 <div><strong>Standard</strong><p>Builds legal quantities and an automatic death order from the selected units and their matchup value.</p></div>
-<div><strong>Custom Order</strong><p>Uses the death order chosen by the player, then calculates legal quantities that preserve it.</p></div>
+<div><strong>Custom</strong><p>Starts with the default death order, then calculates legal quantities that preserve any changes made by the player.</p></div>
 <div><strong>Optimize</strong><p>Simulates many quantity and death-order structures and keeps the army with the strongest Expected Lifetime Damage.</p></div>
-<div><strong>Review Selection</strong><p>Checks whether a different subset of the units available to the player offers meaningful improvement. Nothing changes unless the recommendation is accepted.</p></div>
 </div>
 </details>
 

@@ -71,7 +71,7 @@ export function makeAccount({id='main',name='Main',templeLevel=45}={}){
       activeBattleType:'epic',
       activeEncounterId:'epic-doomsday',
       activeEncounterByType:{epic:'epic-doomsday',pvp:'pvp-single'},
-      activeBattleMethod:'basic',
+      activeBattleMethod:'custom',
       workspaces:{},
     },
   };
