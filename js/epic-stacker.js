@@ -1195,8 +1195,19 @@ function renderPrediction(opt){
     openingNote.hidden=!openingNotes.length;openingNote.open=false;
     if(openingNotes.length){
       const labels=openingNotes.map(note=>`${note.tier} ${note.name}`);
-      openingSummary.textContent=`Opening sacrifice: ${labels.join(', ')} ${openingNotes.length===1?'does':'do'} not attack`;
-      openingExplanation.innerHTML=openingNotes.map(note=>`<p>${escapeHtml(openingSacrificeText(note))}</p>`).join('');
+      const activeId=String(opt.diagnostics?.displayingOpeningSacrificeAlternativeId??'');
+      const activeNote=openingNotes.find(note=>String(note.id)===activeId);
+      if(activeNote){
+        openingSummary.textContent=`No-sacrifice alternative: ${activeNote.tier} ${activeNote.name} attacks`;
+        openingExplanation.innerHTML=`<p>${escapeHtml(openingSacrificeAlternativeText(activeNote))}</p><button class="opening-sacrifice-action" data-restore-maximum-eld type="button">Restore maximum-ELD army</button>`;
+      }else{
+        openingSummary.textContent=`Opening sacrifice: ${labels.join(', ')} ${openingNotes.length===1?'does':'do'} not attack`;
+        openingExplanation.innerHTML=openingNotes.map(note=>{
+          const hasAlternative=note.alternativeQuantities&&Number(note.alternativeEld)>0&&Number(note.alternativeEld)<=Number(note.originalEld)+1e-6;
+          const button=hasAlternative?`<button class="opening-sacrifice-action" data-opening-alternative-id="${escapeHtml(String(note.id))}" type="button">Use best no-sacrifice alternative — ${formatEldReductionPercent((Number(note.alternativeEld)/Number(note.originalEld)-1)*100)}% less ELD</button>`:'';
+          return `<p>${escapeHtml(openingSacrificeText(note))}</p>${button}`;
+        }).join('');
+      }
     }else{
       openingSummary.textContent='Opening sacrifice';openingExplanation.innerHTML='';
     }
@@ -1204,6 +1215,8 @@ function renderPrediction(opt){
   if(optimizerContext&&unusualMap.size){
     els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(String(button.dataset.sacrificeId)))));
   }
+  openingExplanation?.querySelectorAll('[data-opening-alternative-id]').forEach(button=>button.addEventListener('click',()=>showOpeningSacrificeAlternative(button.dataset.openingAlternativeId)));
+  openingExplanation?.querySelector('[data-restore-maximum-eld]')?.addEventListener('click',restoreMaximumEldArmy);
 }
 
 function formatEldReductionPercent(value){
@@ -1224,6 +1237,24 @@ function openingSacrificeText(note){
     else text+=' The best tested adjustment that gives it an attack produces no measurable ELD change.';
   }
   return text;
+}
+function openingSacrificeAlternativeText(note){
+  const reduction=formatEldReductionPercent((Number(note.alternativeEld)/Number(note.originalEld)-1)*100);
+  return `${note.tier} ${note.name} now receives ${Number(note.alternativeAttacks||0).toFixed(1)} expected attacks. This constrained alternative lowers total ELD by ${reduction}% compared with the maximum-ELD army.`;
+}
+function showOpeningSacrificeAlternative(id){
+  const maximum=lastOptimizedEpicPayload;
+  const note=(maximum?.diagnostics?.unusualSacrifices??[]).find(item=>String(item.id)===String(id));
+  if(!note?.alternativeQuantities||currentEpicEffectiveSignature()!==lastOptimizedEpicSignature)return;
+  const result=scoreEpicArmy({units:armyV2,quantities:note.alternativeQuantities,bonuses:epicBonusPayload()});
+  renderEpicOptimizedResult({
+    ...maximum,quantities:{...note.alternativeQuantities},result,
+    diagnostics:{...(maximum.diagnostics||{}),displayingOpeningSacrificeAlternativeId:String(note.id)}
+  });
+}
+function restoreMaximumEldArmy(){
+  if(!lastOptimizedEpicPayload||currentEpicEffectiveSignature()!==lastOptimizedEpicSignature)return;
+  renderEpicOptimizedResult(lastOptimizedEpicPayload);
 }
 
 function openSacrificeHelp(note){
@@ -1358,9 +1389,10 @@ function renderEpicOptimizedResult(opt){
   updateLiveDamageMetric(Number(opt?.result?.expectedTotalLifetimeDamage||0),false,true);
   const count=result.categories.troop.results.length+result.categories.monster.results.length+result.categories.mercenary.results.length;
   els.resultStatus.classList.remove('optimizing-status');
+  const alternativeShown=!!opt?.diagnostics?.displayingOpeningSacrificeAlternativeId;
   els.resultStatus.textContent=activeMode==='battle'
-    ?`${count} optimized squad${count===1?'':'s'} · Total Battle mobile entry order`
-    :`${count} optimized squad${count===1?'':'s'} · mobile entry order`;
+    ?`${count} optimized squad${count===1?'':'s'}${alternativeShown?' · Best no-sacrifice alternative':''} · Total Battle mobile entry order`
+    :`${count} optimized squad${count===1?'':'s'}${alternativeShown?' · Best no-sacrifice alternative':''} · mobile entry order`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
 }

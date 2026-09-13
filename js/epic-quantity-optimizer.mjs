@@ -1118,6 +1118,7 @@ function analyzeOpeningSacrifices({units,selected,bonuses,capacityLimits,start,s
       alternativeDeath:Number(alternativeSquad.predictedDeathPosition??0),
       alternativeAttacks:Number(alternativeSquad.averageAttackOpportunities||0),
       alternativeEld,
+      alternativeQuantities:{...local.quantities},
       penaltyPct:baseEld>0?Math.max(0,(baseEld-alternativeEld)/baseEld*100):null,
     });
   }
