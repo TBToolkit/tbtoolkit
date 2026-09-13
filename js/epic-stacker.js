@@ -1081,8 +1081,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
   if(progress.phase==='death-position')return 'Testing widely different death-order structures…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
-  if(progress.phase==='finalizing'&&progress.practicalTieBreakApplied)return 'Selecting a practical near-optimal army…';
-  if(progress.phase==='finalizing')return 'Finalizing quantities and battle predictions…';
+  if(progress.phase==='finalizing')return 'Finalizing the highest-damage army…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';
   if(i<5)return 'Refining squad quantities and death order…';
@@ -1112,6 +1111,8 @@ function updateOptimizerProgress(progress={}){
 function clearPrediction(){
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   if(els.predictionRows)els.predictionRows.innerHTML='';
+  const note=document.getElementById('openingSacrificeNote');
+  if(note){note.hidden=true;note.open=false;}
 }
 // Keep the unusual-sacrifice diagnostics and explanation UI available for a
 // future opt-in experience, but do not surface flags in Battle Details today.
@@ -1122,7 +1123,7 @@ function renderPrediction(opt){
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
     : !!modeState().inputs.arachne;
-  if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations,practicalLoss=Number(opt.diagnostics?.practicalTieBreakLossPct),practicalText=opt.diagnostics?.practicalTieBreakApplied?` · Practical near-optimal tie-break used (${practicalLoss<.001?'<'+'0.001':practicalLoss.toFixed(3)}% ELD below maximum)`:'';els.predictionMeta.textContent=`Opening initiative: 50/50 · Epic starts every later cycle · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${practicalText}${timeText}${templeText}${buildText}`;}
+  if(optimizerContext){const improvement=opt.diagnostics?.improvementPct,run=lastEpicRunDiagnostics,elapsedMs=Number(opt.diagnostics?.optimizationElapsedMs??run?.optimizationElapsedMs),timeText=Number.isFinite(elapsedMs)&&elapsedMs>=0?` · Optimization time: ${formatElapsed(elapsedMs)}`:'',buildText=run?` · Optimizer ${run.optimizerBuild} · Engine ${run.engineBuild} · ${run.armyDatabase}`:'',mercText=modeState().inputs.includeMercenariesInOptimization?' · Mercenaries included':' · Mercenaries excluded from optimization',epicTypeText=isArachneBattle?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads',evalCount=opt.diagnostics?.totalEvaluations??opt.diagnostics?.evaluations;els.predictionMeta.textContent=`Opening initiative: 50/50 · Epic starts every later cycle · ${Number.isFinite(improvement)?`Optimizer gain vs best starting population: ${improvement.toFixed(2)}% · `:''}${Number.isFinite(minSep)?`Closest health spacing: ${minSep.toFixed(4)}% · `:''}${evalCount?.toLocaleString('en-US')??'—'} candidates evaluated · Multi-seed global search · Dynamic death & attack order${epicTypeText}${mercText}${timeText}${templeText}${buildText}`;}
   else{const label=activeMode==='epic'?'Epic Stacker':'Custom Stacker',epicTypeText=activeMode==='epic'&&modeState().inputs.arachne?' · Arachne: 8 enemy squads':' · Standard Epic: 4 enemy squads';els.predictionMeta.textContent=`${label} · Opening initiative: 50/50 · Epic starts every later cycle${Number.isFinite(minSep)?` · Closest health spacing: ${minSep.toFixed(4)}%`:''}${epicTypeText}${templeText} · Full battle simulation using the displayed quantities.`;}
   const diagnosticNotes=new Map((opt.diagnostics?.unusualSacrifices??[]).map(n=>[String(n.id),n]));
   const rows=[...(r.squads??[])].sort((a,b)=>(a.predictedDeathPosition??999)-(b.predictedDeathPosition??999)||a.displayOrder-b.displayOrder);
@@ -1186,9 +1187,37 @@ function renderPrediction(opt){
     const flag=SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
     return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
+  const openingNotes=optimizerContext?(opt.diagnostics?.unusualSacrifices??[]).filter(note=>note.reason==='opening-sacrifice'):[];
+  const openingNote=document.getElementById('openingSacrificeNote');
+  const openingSummary=document.getElementById('openingSacrificeSummary');
+  const openingExplanation=document.getElementById('openingSacrificeExplanation');
+  if(openingNote&&openingSummary&&openingExplanation){
+    openingNote.hidden=!openingNotes.length;openingNote.open=false;
+    if(openingNotes.length){
+      const labels=openingNotes.map(note=>`${note.tier} ${note.name}`);
+      openingSummary.textContent=`Opening sacrifice: ${labels.join(', ')} ${openingNotes.length===1?'does':'do'} not attack`;
+      openingExplanation.innerHTML=openingNotes.map(note=>`<p>${escapeHtml(openingSacrificeText(note))}</p>`).join('');
+    }else{
+      openingSummary.textContent='Opening sacrifice';openingExplanation.innerHTML='';
+    }
+  }
   if(optimizerContext&&unusualMap.size){
     els.predictionRows.querySelectorAll('[data-sacrifice-id]').forEach(button=>button.addEventListener('click',()=>openSacrificeHelp(unusualMap.get(String(button.dataset.sacrificeId)))));
   }
+}
+
+function openingSacrificeText(note){
+  const label=`${note.tier} ${note.name}`;
+  let text=`${label} is intentionally acting as an opening shield. The optimizer scores expected damage from the whole army, so keeping this squad alive can reduce attack opportunities for other squads.`;
+  const originalEld=Number(note.originalEld),alternativeEld=Number(note.alternativeEld);
+  if(Number.isFinite(originalEld)&&originalEld>0&&Number.isFinite(alternativeEld)&&alternativeEld>0){
+    const changePct=(alternativeEld/originalEld-1)*100,absolutePct=Math.abs(changePct);
+    const pctText=absolutePct<.001?'<0.001':absolutePct<.01?absolutePct.toFixed(3):absolutePct<.1?absolutePct.toFixed(2):absolutePct.toFixed(1);
+    if(changePct<0)text+=` The best tested adjustment that gives it an attack lowers total ELD by ${pctText}%.`;
+    else if(changePct>0)text+=` A tested adjustment that gives it an attack raises total ELD by ${pctText}%; this may indicate another optimization basin worth testing.`;
+    else text+=' The best tested adjustment that gives it an attack produces no measurable ELD change.';
+  }
+  return text;
 }
 
 function openSacrificeHelp(note){
@@ -1410,8 +1439,7 @@ function startEpicOptimization(){
         epicResultCurrent=false;
       }finally{
         if(epicWorker){epicWorker.terminate();epicWorker=null;}
-        const closeDelay=msg.payload?.diagnostics?.practicalTieBreakApplied?1400:180;
-        setTimeout(closeOptimizerModal,closeDelay);
+        setTimeout(closeOptimizerModal,180);
         setOptimizeButtonState();
       }
     }

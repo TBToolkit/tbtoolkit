@@ -1734,6 +1734,12 @@ body.sacrifice-help-modal-open{overflow:hidden}
 .sacrifice-help-close{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #40566a;border-radius:9px;background:#111f2b;color:#dbe4eb;font-size:1.5rem;line-height:1;cursor:pointer}
 @media(max-width:760px){.sacrifice-help-modal{padding:10px}.sacrifice-help-dialog{padding:14px;border-radius:11px}.sacrifice-flag{width:24px;height:24px}}
 
+.opening-sacrifice-note{margin:0 12px 10px;border:1px solid rgba(213,154,53,.55);border-radius:8px;background:rgba(36,25,10,.42);color:#dbe4eb}
+.opening-sacrifice-note[hidden]{display:none!important}
+.opening-sacrifice-note>summary{padding:8px 11px;color:#ffc45b;font-size:.76rem;font-weight:800;cursor:pointer;list-style-position:inside}
+.opening-sacrifice-note>div{border-top:1px solid rgba(213,154,53,.28);padding:2px 11px 8px}
+.opening-sacrifice-note p{margin:7px 0;color:#c7d2da;font-size:.76rem;line-height:1.45}
+
 /* v111 — compact unit bonus matrix */
 .bonus-matrix-heading{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .bonus-matrix-heading h3{margin:0}

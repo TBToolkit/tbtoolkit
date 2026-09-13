@@ -9,10 +9,8 @@ worker.onmessage=event=>{
   if(message.type==='error'){output.textContent=JSON.stringify(message,null,2);return;}
   const result=message.payload;
   const diagnostics=result?.diagnostics??{};
-  const opening=(result?.result?.squads??[]).filter(row=>Number(row.predictedDeathPosition)<=8);
-  const s9FlyingOpens=opening.some(row=>row.tier==='S9'&&String(row.combatType||'').toUpperCase()==='FLYING');
   output.textContent=JSON.stringify({
-    passed:diagnostics.practicalTieBreakApplied===true&&Number(diagnostics.practicalTieBreakLossPct)<=.25&&!s9FlyingOpens,
+    passed:diagnostics.practicalTieBreakApplied===false&&Number(diagnostics.practicalTieBreakLossPct)===0&&Number(result?.result?.expectedTotalLifetimeDamage)===Number(diagnostics.maximumExpectedLifetimeDamage),
     optimizerBuild:message.diagnostics?.optimizerBuild,
     eld:result?.result?.expectedTotalLifetimeDamage,
     practicalTieBreakApplied:diagnostics.practicalTieBreakApplied,

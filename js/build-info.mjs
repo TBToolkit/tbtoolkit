@@ -6,7 +6,7 @@ export const BATTLE_SIMULATOR_BUILD = '192';
 export const PVP_ENGINE_BUILD = '197';
 export const WORKSPACE_MODEL_BUILD = '191';
 export const EPIC_COMBAT_ENGINE_BUILD = '2.5-deterministic-top-up';
-export const EPIC_OPTIMIZER_BUILD = '2.6-shared-core';
+export const EPIC_OPTIMIZER_BUILD = '2.7-mathematical-maximum';
 export const EPIC_REVIEW_BUILD = '0.4-canonical-current';
 
 export const OPTIMIZER_CACHE_BUILD = [

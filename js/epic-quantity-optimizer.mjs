@@ -1057,6 +1057,73 @@ function analyzeUnusualEarlySacrifices({units,selected,bonuses,capacityLimits,st
   return {notes,alternatives,evaluations};
 }
 
+function analyzeOpeningSacrifices({units,selected,bonuses,capacityLimits,start,structureValidator,minimumQuantity=1,maxNotes=3}){
+  const limits=limitsOf(capacityLimits);
+  const base=start.result??controlledScore({units,quantities:start.quantities,bonuses});
+  const baseEld=Number(base.expectedTotalLifetimeDamage||0);
+  const selectedById=new Map(selected.map(unit=>[unit.id,unit]));
+  const ordered=[...(base.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
+  const enemySquadCount=Array.isArray(bonuses?.enemySquadTypes)&&bonuses.enemySquadTypes.length?bonuses.enemySquadTypes.length:(bonuses?.arachne?8:4);
+  const siegePresent=ordered.some(squad=>String(squad.combatType||'').toUpperCase()==='SIEGE'&&Number(squad.quantity||0)>0);
+  if(!siegePresent)return {notes:[],evaluations:0};
+
+  const candidates=ordered.filter(squad=>{
+    const unit=selectedById.get(squad.id);
+    return !!unit
+      && Number(squad.predictedDeathPosition??999)<=enemySquadCount
+      && String(unit.combatType||'').toUpperCase()!=='SIEGE'
+      && Number(squad.averageAttackOpportunities||0)<=1e-9;
+  }).slice(0,maxNotes);
+  const notes=[];
+  let evaluations=0;
+
+  for(const targetSquad of candidates){
+    const target=selectedById.get(targetSquad.id);
+    const baseNote={
+      id:target.id,name:target.name,tier:target.tier,capacityType:target.capacityType,
+      originalDeath:Number(targetSquad.predictedDeathPosition??0),originalAttacks:Number(targetSquad.averageAttackOpportunities||0),
+      originalEld:baseEld,alternativeDeath:null,alternativeAttacks:null,alternativeEld:null,penaltyPct:null,
+      reason:'opening-sacrifice'
+    };
+    const peers=selected.filter(unit=>unit.capacityType===target.capacityType&&unit.id!==target.id);
+    if(!peers.length){notes.push(baseNote);continue;}
+    let rawBest=null;
+    const later=ordered.filter(squad=>squad.capacityType===target.capacityType&&Number(squad.predictedDeathPosition??0)>Number(targetSquad.predictedDeathPosition??0));
+    for(const other of later){
+      const desiredQty=thresholdQuantityForHealth(target,targetSquad,other,'below');
+      if(!desiredQty||desiredQty>=Number(targetSquad.quantity||0))continue;
+      for(const donor of peers){
+        const quantities=rebalanceThresholdMove({selected,quantities:start.quantities,limits,target,desiredQty,donor,minimumQuantity});
+        if(!quantities)continue;
+        const result=controlledScore({units,quantities,bonuses});evaluations++;
+        if(!candidateFeasible({result,limits}))continue;
+        const after=result.squads.find(squad=>squad.id===target.id);
+        if(!after||Number(after.averageAttackOpportunities||0)<=1e-9)continue;
+        if(!rawBest||Number(result.expectedTotalLifetimeDamage||0)>Number(rawBest.result.expectedTotalLifetimeDamage||0))rawBest={quantities,result};
+      }
+    }
+    if(!rawBest){notes.push(baseNote);continue;}
+    const attackValidator=(result,chosen)=>{
+      if(structureValidator&&!structureValidator(result,chosen))return false;
+      const squad=result.squads.find(item=>item.id===target.id);
+      return !!squad&&Number(squad.averageAttackOpportunities||0)>1e-9;
+    };
+    const local=optimizeFromSeed({units,selectedIds:selected.map(unit=>unit.id),bonuses,capacityLimits:limits,initialQuantities:rawBest.quantities,minimumQuantity,structureValidator:attackValidator,stageFractions:[.002,.001,.0005,.0002],maxRoundsPerStage:3,onProgress:null});
+    evaluations+=Number(local.diagnostics?.evaluations??0);
+    const alternativeSquad=local.result.squads.find(squad=>squad.id===target.id);
+    if(!alternativeSquad||Number(alternativeSquad.averageAttackOpportunities||0)<=1e-9){notes.push(baseNote);continue;}
+    const alternativeEld=Number(local.result.expectedTotalLifetimeDamage||0);
+    notes.push({
+      ...baseNote,
+      alternativeDeath:Number(alternativeSquad.predictedDeathPosition??0),
+      alternativeAttacks:Number(alternativeSquad.averageAttackOpportunities||0),
+      alternativeEld,
+      penaltyPct:baseEld>0?Math.max(0,(baseEld-alternativeEld)/baseEld*100):null,
+    });
+  }
+  return {notes,evaluations};
+}
+
 function scaleAuthoritySeed({units,quantities,factor,minimumQuantity=1}){
   const mercenaryNames=new Set(units.filter(unit=>unit.capacityType==='AUTHORITY').map(unit=>unit.name));
   const scaled={...quantities};
@@ -1328,21 +1395,8 @@ export function optimizeEpicQuantities(args) {
   let finalSearchEvaluations=0;
   let searchPasses=0;
 
-  // Preserve one independently seeded basin in which lower-tier Guardsmen and
-  // Specialists absorb the opening cycle. The final 0.25% gate decides whether
-  // this more familiar ladder is close enough to the mathematical maximum.
-  const conventionalSeed=seedScores
-    .filter(seed=>highestTierGsProtectedInOpening(seed.result,selected,args.bonuses))
-    .sort((a,b)=>Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0))[0];
-  if(conventionalSeed){
-    const conventionalValidator=(result,chosen)=>structureValidator(result,chosen)&&highestTierGsProtectedInOpening(result,selected,args.bonuses);
-    const conventional=optimizeFromSeed({...args,initialQuantities:conventionalSeed.quantities,structureValidator:conventionalValidator,stageFractions:[.005,.002,.001,.0005,.0002],maxRoundsPerStage:4,onProgress:null});
-    totalEvaluations+=Number(conventional.diagnostics?.evaluations||0);
-    practicalPool.push({quantities:{...conventional.quantities},result:conventional.result,source:'conventional-gs-opening'});
-  }
-  const conventionalBeam=searchConventionalGsBasin({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1)});
-  totalEvaluations+=conventionalBeam.evaluations;finalSearchEvaluations+=conventionalBeam.evaluations;
-  practicalPool.push(...conventionalBeam.candidates);
+  // Retain counterfactual basins that can establish a higher maximum, but skip
+  // the conventional-order-only search now that appearance is not a selector.
   for(let pass=0;pass<2;pass++){
     searchPasses++;
     const analysis=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
@@ -1353,11 +1407,10 @@ export function optimizeEpicQuantities(args) {
     mathematicalMaximum=improved;
   }
 
-  // First apply the existing practical tie-break. Optimizer 2.2 then performs a
-  // very fine convergence search from the army we would otherwise return.
-  let practicalChoice=chooseNearOptimalPractical({maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:.25});
-  out.quantities={...practicalChoice.chosen.quantities};
-  out.result=practicalChoice.chosen.result;
+  // Converge from the mathematical maximum. Unusual-looking ladders are
+  // explained after scoring rather than replaced by a lower-ELD candidate.
+  out.quantities={...mathematicalMaximum.quantities};
+  out.result=mathematicalMaximum.result;
 
   const convergence=finalConvergencePolish({
     units:args.units,
@@ -1374,26 +1427,19 @@ export function optimizeEpicQuantities(args) {
   });
   totalEvaluations+=convergence.evaluations;
 
-  // Every convergence result participates in the same near-optimal practical
-  // decision as the rest of the optimizer. A polished result may also establish
-  // a new mathematical maximum.
+  // A polished result may establish a new mathematical maximum.
   practicalPool.push(...convergence.candidates);
   for(const candidate of convergence.candidates){
     if(Number(candidate.result?.expectedTotalLifetimeDamage||0)>Number(mathematicalMaximum.result?.expectedTotalLifetimeDamage||0)+1e-6){
       mathematicalMaximum=candidate;
     }
   }
-  practicalChoice=chooseNearOptimalPractical({
-    maximum:mathematicalMaximum,
-    candidates:practicalPool,
-    tolerancePct:.25
-  });
-  out.quantities={...practicalChoice.chosen.quantities};
-  out.result=practicalChoice.chosen.result;
+  out.quantities={...mathematicalMaximum.quantities};
+  out.result=mathematicalMaximum.result;
 
-  // Explain the final polished/practical army actually returned so the unusual
-  // death-order flags always correspond to the displayed result.
-  const unusualFinal=analyzeUnusualEarlySacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxFlags:3});
+  // Explain only non-siege squads that get no attack in the opening cycle while
+  // siege is present. This diagnostic never substitutes a lower-ELD army.
+  const unusualFinal=analyzeOpeningSacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxNotes:3});
   totalEvaluations+=unusualFinal.evaluations;finalSearchEvaluations+=unusualFinal.evaluations;
   out.diagnostics.unusualSacrifices=unusualFinal.notes;
   out.diagnostics.unusualSacrificeEvaluations=finalSearchEvaluations;
@@ -1401,12 +1447,12 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.finalConvergencePasses=convergence.passes;
   out.diagnostics.finalConvergenceEvaluations=convergence.evaluations;
   out.diagnostics.finalConvergenceBest=Number(convergence.best?.result?.expectedTotalLifetimeDamage||0);
-  out.diagnostics.maximumExpectedLifetimeDamage=Number(practicalChoice.mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
-  out.diagnostics.nearOptimalTolerancePct=.25;
-  out.diagnostics.practicalTieBreakApplied=out.result!==practicalChoice.mathematicalMaximum.result;
-  out.diagnostics.practicalTieBreakLossPct=practicalChoice.lossPct;
-  out.diagnostics.practicalStructureScore=practicalChoice.score;
-  out.diagnostics.maximumPracticalStructureScore=practicalChoice.maximumScore;
+  out.diagnostics.maximumExpectedLifetimeDamage=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
+  out.diagnostics.nearOptimalTolerancePct=0;
+  out.diagnostics.practicalTieBreakApplied=false;
+  out.diagnostics.practicalTieBreakLossPct=0;
+  out.diagnostics.practicalStructureScore=practicalStructureScore(out.result);
+  out.diagnostics.maximumPracticalStructureScore=out.diagnostics.practicalStructureScore;
   out.diagnostics.practicalCandidateSummary=practicalPool.map(candidate=>({
     source:candidate.source||'optimizer-maximum',
     eld:Number(candidate.result?.expectedTotalLifetimeDamage||0),

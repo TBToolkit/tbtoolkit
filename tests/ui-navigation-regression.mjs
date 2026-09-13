@@ -106,7 +106,9 @@ assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Se
 assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible\}/, 'Battle workspace Selection columns must grow without internal vertical scrolling');
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
 assert.match(optimizerWorker,/\['G','S'\]\.includes\(String\(s\.tier\|\|''\)\.slice\(0,1\)\.toUpperCase\(\)\)/, 'Optimizer conventionality must apply only to Guardsmen and Specialists');
-assert.match(optimizerWorker,/chooseNearOptimalPractical\(\{maximum:mathematicalMaximum,candidates:practicalPool,tolerancePct:\.25\}\)/, 'Optimizer must cap the G/S conventionality preference at 0.25% below maximum ELD');
+assert.match(optimizerWorker,/out\.quantities=\{\.\.\.mathematicalMaximum\.quantities\}/, 'Optimizer must return the mathematical maximum rather than a lower-ELD practical tie-break');
+assert.match(optimizerWorker,/function analyzeOpeningSacrifices\(/, 'Optimizer must diagnose narrowly defined zero-attack opening sacrifices');
+assert.match(html,/id="openingSacrificeNote" hidden/, 'Battle Details must provide a collapsed opening-sacrifice disclosure');
 assert.match(source,/createOptimizerWorker\(\)/, 'UI must obtain the shared module optimizer worker from its client boundary');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
@@ -117,7 +119,7 @@ assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedId
 assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
 assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');
 assert.match(html,/Current \/ Best/, 'Optimizer progress must distinguish the current candidate from the mathematical best');
-assert.match(source,/Selecting a practical near-optimal army/, 'Optimizer finalization must explain an intentional practical tie-break');
+assert.match(source,/Finalizing the highest-damage army/, 'Optimizer finalization must describe mathematical-maximum selection');
 assert.match(source,/createReviewWorker\(\)/, 'UI must obtain Review Selection through its worker client boundary');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');
 assert.match(optimizerWorker,/for\(const factor of \[\.75,\.5,\.25\]\)/, 'Mercenary optimization must compare explicit partial-Authority basins');
