@@ -76,7 +76,7 @@ guardsmanST:'5',specialistST:'5',engineerST:'5',
 autoBeastBonuses:true,autoDragonBonuses:true,autoElementalBonuses:true,autoGiantBonuses:true,
 autoHumanBonuses:true,autoGuardsmanBonuses:true,autoSpecialistBonuses:true,autoEngineerBonuses:true,autoEpicHunterBonuses:true,
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
-arachne:false,battleType:'epic_standard',battleMethod:'custom',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
+arachne:false,battleType:'epic_standard',battleMethod:'optimize',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
 
 function normalizeBonusProfileInputs(inputs){
   const i=inputs??{},mh=parseNumber(i.monsterHealth??1600),ms=parseNumber(i.monsterStrength??2000),dd=parseNumber(i.monsterDD??10),st=parseNumber(i.monsterST??10);
@@ -1554,14 +1554,14 @@ function configureModeUI(){
   if(battle){
     refreshWorkspaceSelectors();
     const type=currentEngineBattleType();state.modes.battle.activeBattleType=type;
-    const method=state.modes.battle.activeBattleMethod||'custom';
+    const method=state.modes.battle.activeBattleMethod||'optimize';
     if(els.battleMethodSelect){
       const optimizeOption=els.battleMethodSelect.querySelector('option[value="optimize"]');
       if(optimizeOption)optimizeOption.disabled=type.startsWith('pvp_');
       if(type.startsWith('pvp_')&&state.modes.battle.activeBattleMethod==='optimize'){
         state.modes.battle.activeBattleMethod='custom';ensureBattleWorkspace(type,'custom');
       }
-      els.battleMethodSelect.value=state.modes.battle.activeBattleMethod||'custom';
+      els.battleMethodSelect.value=state.modes.battle.activeBattleMethod||'optimize';
     }
     modeState().inputs.arachne=!!currentEncounter()?.arachneBonus;
     if(currentEncounter()?.battleType==='epic')modeState().inputs.enemySquadTypes=enemySquadTypes(currentEncounter().enemyFormation);

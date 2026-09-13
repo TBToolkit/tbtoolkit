@@ -64,8 +64,8 @@
 <select id="encounterSelect"></select><span class="workspace-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span></label>
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
 <select id="battleMethodSelect">
-<option value="custom">Custom</option>
 <option id="battleMethodOptimizeOption" value="optimize">Optimize</option>
+<option value="custom">Custom</option>
 </select></label>
 <label class="battle-select-field pvp-enemy-field" for="pvpEnemyUnitSelect" hidden id="pvpEnemyUnitField"><span>Enemy Unit</span>
 <select id="pvpEnemyUnitSelect"></select>
@@ -411,8 +411,8 @@
 <details data-guide-panel="methods" id="guide-methods" name="battle-guide-section">
 <summary><span>6</span>Calculation methods</summary>
 <div class="battle-guide-section-copy battle-guide-methods">
+<div><strong>Optimize</strong><p>Simulates many quantity and death-order structures and returns the highest Expected Lifetime Damage found. This is the default method for Epic encounters.</p></div>
 <div><strong>Custom</strong><p>Builds legal quantities and an automatic death order from the selected units. The player can then change the order, and the calculator preserves those changes.</p></div>
-<div><strong>Optimize</strong><p>Simulates many quantity and death-order structures and keeps the army with the strongest Expected Lifetime Damage.</p></div>
 </div>
 </details>
 
@@ -426,9 +426,11 @@
 <li><strong>Local refinement</strong><span>Transfer progressively smaller amounts of capacity between squads and keep improvements.</span></li>
 <li><strong>Structural exploration</strong><span>Test alternate death orders, attack-opportunity thresholds, counterfactual battle basins, and related squad-group redistributions.</span></li>
 <li><strong>Precision polish</strong><span>Revisit the strongest candidates with smaller changes until no tested move improves ELD.</span></li>
-<li><strong>Practical tie-break</strong><span>When armies are nearly equal, prefer a more practical death order within the allowed near-optimal range.</span></li>
+<li><strong>Highest-ELD selection</strong><span>Compare the tested candidates and return the mathematical maximum found. No practical death-order preference is allowed to replace it with a lower-ELD army.</span></li>
+<li><strong>Opening-sacrifice check</strong><span>If a non-siege squad receives no attack during the opening cycle while siege is present, test for the best alternative in which every non-siege squad attacks.</span></li>
 <li><strong>Canonical final score</strong><span>Re-run the selected army through the shared battle simulator and display its quantities, death order, ELD, and revival cost.</span></li>
 </ol>
+<div class="battle-guide-callout"><strong>Unusual opening sacrifices</strong><p>When detected, Battle Details shows one collapsed explanation. If a verified no-sacrifice army exists, the player may preview it together with its exact ELD reduction and restore the maximum-ELD army at any time.</p></div>
 </div>
 </details>
 

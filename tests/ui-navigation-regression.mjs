@@ -6,6 +6,7 @@ const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'ut
 const html=fs.readFileSync(new URL('../stacking.html',import.meta.url),'utf8');
 const optimizerWorker=fs.readFileSync(new URL('../js/epic-quantity-optimizer.mjs',import.meta.url),'utf8');
 const optimizerEntry=fs.readFileSync(new URL('../js/epic-optimizer-worker.mjs',import.meta.url),'utf8');
+const workspaceModel=fs.readFileSync(new URL('../js/workspace-model.mjs',import.meta.url),'utf8');
 const start=source.indexOf('function calculatorNumericNavigationOrder()');
 const end=source.indexOf('function handleCalculatorNumericNavigation',start);
 assert.ok(start>=0&&end>start,'numeric navigation function must exist');
@@ -61,7 +62,11 @@ assert.match(source,/function isReviewSelectionAvailable\(\)\{return REVIEW_SELE
 assert.match(source,/if\(REVIEW_SELECTION_UI_ENABLED\)els\.reviewSelection\?\.addEventListener/, 'Dormant Review Selection must not initialize its launch listener');
 assert.doesNotMatch(html,/<option value="basic">/, 'Standard must not appear in the calculation-method selector');
 assert.doesNotMatch(html,/<strong>Standard<\/strong>/, 'Standard must not appear as a user-facing calculation method in the Guide');
-assert.match(html,/<option value="custom">Custom<\/option>/, 'Custom must be the visible default-order method');
+assert.match(html,/<option id="battleMethodOptimizeOption" value="optimize">Optimize<\/option>\s*<option value="custom">Custom<\/option>/, 'Optimize must be the first calculation method');
+assert.match(source,/battleMethod:'optimize'/, 'New Epic workspaces must default to Optimize');
+assert.match(workspaceModel,/activeBattleMethod:'optimize'/, 'New player accounts must default Epic encounters to Optimize');
+assert.doesNotMatch(html,/Practical tie-break|near-optimal range/, 'The Guide must not describe the removed practical tie-break threshold');
+assert.match(html,/Highest-ELD selection[\s\S]*?Opening-sacrifice check/, 'The Guide must explain mathematical-maximum selection and the constrained sacrifice check');
 assert.match(source,/source\.activeBattleMethod===['"]optimize['"]\?['"]optimize['"]:['"]custom['"]/, 'Saved Standard workspaces must remain compatible by opening in Custom');
 assert.match(html,/Optimized Potential: Current Selection[\s\S]*?Optimized Potential: Recommended Selection/,'Review Selection must distinguish optimized potential from the currently displayed method result');
 assert.match(html,/id="reviewMethodNote"[\s\S]*?may be higher than the Standard result/,'Standard users must be told why Review Selection ELD may be higher');
