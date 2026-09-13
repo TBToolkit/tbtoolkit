@@ -109,6 +109,7 @@ assert.match(optimizerWorker,/\['G','S'\]\.includes\(String\(s\.tier\|\|''\)\.sl
 assert.match(optimizerWorker,/out\.quantities=\{\.\.\.mathematicalMaximum\.quantities\}/, 'Optimizer must return the mathematical maximum rather than a lower-ELD practical tie-break');
 assert.match(optimizerWorker,/function analyzeOpeningSacrifices\(/, 'Optimizer must diagnose narrowly defined zero-attack opening sacrifices');
 assert.match(html,/id="openingSacrificeNote" hidden/, 'Battle Details must provide a collapsed opening-sacrifice disclosure');
+assert.match(source,/function formatEldReductionPercent\(value\)[\s\S]*?percent<\.001[\s\S]*?toFixed\(percent<1\?3:2\)/, 'Opening-sacrifice ELD reductions must retain meaningful precision below one percent');
 assert.match(source,/createOptimizerWorker\(\)/, 'UI must obtain the shared module optimizer worker from its client boundary');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');

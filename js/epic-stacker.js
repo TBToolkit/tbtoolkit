@@ -1206,13 +1206,19 @@ function renderPrediction(opt){
   }
 }
 
+function formatEldReductionPercent(value){
+  const percent=Math.abs(Number(value));
+  if(!Number.isFinite(percent))return '—';
+  if(percent<.001)return '<0.001';
+  return percent.toFixed(percent<1?3:2).replace(/\.?0+$/,'');
+}
 function openingSacrificeText(note){
   const label=`${note.tier} ${note.name}`;
   let text=`${label} is intentionally acting as an opening shield. The optimizer scores expected damage from the whole army, so keeping this squad alive can reduce attack opportunities for other squads.`;
   const originalEld=Number(note.originalEld),alternativeEld=Number(note.alternativeEld);
   if(Number.isFinite(originalEld)&&originalEld>0&&Number.isFinite(alternativeEld)&&alternativeEld>0){
-    const changePct=(alternativeEld/originalEld-1)*100,absolutePct=Math.abs(changePct);
-    const pctText=absolutePct<.001?'<0.001':absolutePct<.01?absolutePct.toFixed(3):absolutePct<.1?absolutePct.toFixed(2):absolutePct.toFixed(1);
+    const changePct=(alternativeEld/originalEld-1)*100;
+    const pctText=formatEldReductionPercent(changePct);
     if(changePct<0)text+=` The best tested adjustment that gives it an attack lowers total ELD by ${pctText}%.`;
     else if(changePct>0)text+=` A tested adjustment that gives it an attack raises total ELD by ${pctText}%; this may indicate another optimization basin worth testing.`;
     else text+=' The best tested adjustment that gives it an attack produces no measurable ELD change.';
@@ -1249,8 +1255,7 @@ function openSacrificeHelp(note){
 
     if(hasEldPair){
       const deltaPct=(alternativeEld/originalEld-1)*100;
-      const absPct=Math.abs(deltaPct);
-      const pctText=absPct<.001?'<0.001':absPct<.01?absPct.toFixed(3):absPct<.1?absPct.toFixed(2):absPct.toFixed(1);
+      const pctText=formatEldReductionPercent(deltaPct);
       const direction=deltaPct>1e-12?'increased':deltaPct<-1e-12?'decreased':'changed';
       text+=`${prefix} changed expected lifetime damage from ${formatDamage(originalEld)} to ${formatDamage(alternativeEld)}`;
       if(direction==='changed')text+=' with no measurable percentage change.';
