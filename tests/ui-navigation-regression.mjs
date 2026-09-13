@@ -110,7 +110,8 @@ assert.match(optimizerWorker,/out\.quantities=\{\.\.\.mathematicalMaximum\.quant
 assert.match(optimizerWorker,/function analyzeOpeningSacrifices\(/, 'Optimizer must diagnose narrowly defined zero-attack opening sacrifices');
 assert.match(html,/id="openingSacrificeNote" hidden/, 'Battle Details must provide a collapsed opening-sacrifice disclosure');
 assert.match(source,/function formatEldReductionPercent\(value\)[\s\S]*?percent<\.001[\s\S]*?toFixed\(percent<1\?3:2\)/, 'Opening-sacrifice ELD reductions must retain meaningful precision below one percent');
-assert.match(optimizerWorker,/alternativeQuantities:\{\.\.\.local\.quantities\}/, 'A verified opening-sacrifice counterfactual must retain its quantities for user selection');
+assert.match(optimizerWorker,/alternativeQuantities:\{\.\.\.alternative\.quantities\}/, 'A verified opening-sacrifice counterfactual must retain its quantities for user selection');
+assert.match(optimizerWorker,/noSacrificeValidator[\s\S]*?!nonSiegeSacrifices\(result\)\.length/, 'A no-sacrifice alternative must require every non-siege squad to attack');
 assert.match(source,/Use best no-sacrifice alternative —/, 'The collapsed explanation must offer the verified constrained alternative');
 assert.match(source,/function restoreMaximumEldArmy\(\)/, 'A user selecting the constrained alternative must be able to restore the maximum-ELD army');
 assert.match(source,/createOptimizerWorker\(\)/, 'UI must obtain the shared module optimizer worker from its client boundary');

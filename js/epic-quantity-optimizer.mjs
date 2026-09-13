@@ -1076,51 +1076,57 @@ function analyzeOpeningSacrifices({units,selected,bonuses,capacityLimits,start,s
   }).slice(0,maxNotes);
   const notes=[];
   let evaluations=0;
+  const nonSiegeSacrifices=result=>(result?.squads??[]).filter(squad=>{
+    const unit=selectedById.get(squad.id);
+    return !!unit&&String(unit.combatType||'').toUpperCase()!=='SIEGE'&&Number(squad.averageAttackOpportunities||0)<=1e-9;
+  });
+  const signature=quantities=>selected.map(unit=>Number(quantities?.[unit.name]||0)).join(',');
+  let frontier=[{quantities:{...start.quantities},result:base}],bestSeed=null;
+  const seen=new Set([signature(start.quantities)]);
+  for(let depth=0;depth<Math.min(8,selected.length)&&frontier.length&&!bestSeed;depth++){
+    const next=[];
+    for(const state of frontier){
+      const stateOrdered=[...(state.result?.squads??[])].sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999));
+      for(const victimSquad of nonSiegeSacrifices(state.result).slice(0,3)){
+        const target=selectedById.get(victimSquad.id);
+        const peers=selected.filter(unit=>unit.capacityType===target.capacityType&&unit.id!==target.id);
+        const later=stateOrdered.filter(squad=>squad.capacityType===target.capacityType&&Number(squad.predictedDeathPosition??0)>Number(victimSquad.predictedDeathPosition??0));
+        for(const other of later){
+          const desiredQty=thresholdQuantityForHealth(target,victimSquad,other,'below');
+          if(!desiredQty||desiredQty>=Number(victimSquad.quantity||0))continue;
+          for(const donor of peers){
+            const quantities=rebalanceThresholdMove({selected,quantities:state.quantities,limits,target,desiredQty,donor,minimumQuantity});
+            if(!quantities)continue;
+            const key=signature(quantities);if(seen.has(key))continue;seen.add(key);
+            const result=controlledScore({units,quantities,bonuses});evaluations++;
+            if(!candidateFeasible({result,limits}))continue;
+            const candidate={quantities,result};
+            if(!nonSiegeSacrifices(result).length){
+              if(!bestSeed||Number(result.expectedTotalLifetimeDamage||0)>Number(bestSeed.result.expectedTotalLifetimeDamage||0))bestSeed=candidate;
+            }else next.push(candidate);
+          }
+        }
+      }
+    }
+    next.sort((a,b)=>nonSiegeSacrifices(a.result).length-nonSiegeSacrifices(b.result).length||Number(b.result.expectedTotalLifetimeDamage||0)-Number(a.result.expectedTotalLifetimeDamage||0));
+    frontier=next.slice(0,12);
+  }
+
+  let alternative=null;
+  if(bestSeed){
+    const noSacrificeValidator=(result,chosen)=>(!structureValidator||structureValidator(result,chosen))&&!nonSiegeSacrifices(result).length;
+    const local=optimizeFromSeed({units,selectedIds:selected.map(unit=>unit.id),bonuses,capacityLimits:limits,initialQuantities:bestSeed.quantities,minimumQuantity,structureValidator:noSacrificeValidator,stageFractions:[.002,.001,.0005,.0002],maxRoundsPerStage:3,onProgress:null});
+    evaluations+=Number(local.diagnostics?.evaluations??0);
+    if(!nonSiegeSacrifices(local.result).length)alternative=local;
+  }
 
   for(const targetSquad of candidates){
     const target=selectedById.get(targetSquad.id);
-    const baseNote={
-      id:target.id,name:target.name,tier:target.tier,capacityType:target.capacityType,
-      originalDeath:Number(targetSquad.predictedDeathPosition??0),originalAttacks:Number(targetSquad.averageAttackOpportunities||0),
-      originalEld:baseEld,alternativeDeath:null,alternativeAttacks:null,alternativeEld:null,penaltyPct:null,
-      reason:'opening-sacrifice'
-    };
-    const peers=selected.filter(unit=>unit.capacityType===target.capacityType&&unit.id!==target.id);
-    if(!peers.length){notes.push(baseNote);continue;}
-    let rawBest=null;
-    const later=ordered.filter(squad=>squad.capacityType===target.capacityType&&Number(squad.predictedDeathPosition??0)>Number(targetSquad.predictedDeathPosition??0));
-    for(const other of later){
-      const desiredQty=thresholdQuantityForHealth(target,targetSquad,other,'below');
-      if(!desiredQty||desiredQty>=Number(targetSquad.quantity||0))continue;
-      for(const donor of peers){
-        const quantities=rebalanceThresholdMove({selected,quantities:start.quantities,limits,target,desiredQty,donor,minimumQuantity});
-        if(!quantities)continue;
-        const result=controlledScore({units,quantities,bonuses});evaluations++;
-        if(!candidateFeasible({result,limits}))continue;
-        const after=result.squads.find(squad=>squad.id===target.id);
-        if(!after||Number(after.averageAttackOpportunities||0)<=1e-9)continue;
-        if(!rawBest||Number(result.expectedTotalLifetimeDamage||0)>Number(rawBest.result.expectedTotalLifetimeDamage||0))rawBest={quantities,result};
-      }
-    }
-    if(!rawBest){notes.push(baseNote);continue;}
-    const attackValidator=(result,chosen)=>{
-      if(structureValidator&&!structureValidator(result,chosen))return false;
-      const squad=result.squads.find(item=>item.id===target.id);
-      return !!squad&&Number(squad.averageAttackOpportunities||0)>1e-9;
-    };
-    const local=optimizeFromSeed({units,selectedIds:selected.map(unit=>unit.id),bonuses,capacityLimits:limits,initialQuantities:rawBest.quantities,minimumQuantity,structureValidator:attackValidator,stageFractions:[.002,.001,.0005,.0002],maxRoundsPerStage:3,onProgress:null});
-    evaluations+=Number(local.diagnostics?.evaluations??0);
-    const alternativeSquad=local.result.squads.find(squad=>squad.id===target.id);
-    if(!alternativeSquad||Number(alternativeSquad.averageAttackOpportunities||0)<=1e-9){notes.push(baseNote);continue;}
-    const alternativeEld=Number(local.result.expectedTotalLifetimeDamage||0);
-    notes.push({
-      ...baseNote,
-      alternativeDeath:Number(alternativeSquad.predictedDeathPosition??0),
-      alternativeAttacks:Number(alternativeSquad.averageAttackOpportunities||0),
-      alternativeEld,
-      alternativeQuantities:{...local.quantities},
-      penaltyPct:baseEld>0?Math.max(0,(baseEld-alternativeEld)/baseEld*100):null,
-    });
+    const baseNote={id:target.id,name:target.name,tier:target.tier,capacityType:target.capacityType,originalDeath:Number(targetSquad.predictedDeathPosition??0),originalAttacks:Number(targetSquad.averageAttackOpportunities||0),originalEld:baseEld,alternativeDeath:null,alternativeAttacks:null,alternativeEld:null,penaltyPct:null,reason:'opening-sacrifice'};
+    if(!alternative){notes.push(baseNote);continue;}
+    const alternativeSquad=alternative.result.squads.find(squad=>squad.id===target.id);
+    const alternativeEld=Number(alternative.result.expectedTotalLifetimeDamage||0);
+    notes.push({...baseNote,alternativeDeath:Number(alternativeSquad?.predictedDeathPosition??0),alternativeAttacks:Number(alternativeSquad?.averageAttackOpportunities||0),alternativeEld,alternativeQuantities:{...alternative.quantities},penaltyPct:baseEld>0?Math.max(0,(baseEld-alternativeEld)/baseEld*100):null});
   }
   return {notes,evaluations};
 }
