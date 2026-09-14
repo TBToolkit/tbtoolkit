@@ -2,6 +2,8 @@ import {optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
 import {ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 
+const OPTIMIZER_TIME_BUDGET_MS=180000;
+
 let armyPromise;
 function loadArmy(){
   if(!armyPromise)armyPromise=fetch(new URL('../data/army-v2.json',import.meta.url),{cache:'no-store'}).then(async response=>{
@@ -45,6 +47,10 @@ function progressPercent(progress){
 self.onmessage=async event=>{
   const message=event.data??{};if(message.type!=='optimize')return;
   const requestId=message.requestId;
+  const startedAt=performance.now();
+  const requestedBudget=Number(message.timeBudgetMs);
+  const timeBudgetMs=Number.isFinite(requestedBudget)&&requestedBudget>0?Math.max(1000,requestedBudget):OPTIMIZER_TIME_BUDGET_MS;
+  const shouldAbort=()=>performance.now()-startedAt>=timeBudgetMs;
   try{
     const units=await loadArmy();
     self.postMessage({type:'progress',requestId,payload:{phase:'loading',progressPct:2}});
@@ -54,7 +60,7 @@ self.onmessage=async event=>{
     const authorityMaximum=Math.max(0,Math.floor(Number(message.fixedAuthorityMaximum)||0));
     if(Object.keys(fixedQuantities).length&&authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9)throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
     let cumulativeEvaluations=0,lastRawEvaluations=0,lastEvaluationScope='';
-    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,onProgress:progress=>{
+    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,shouldAbort,onProgress:progress=>{
       const raw=Math.max(0,Number(progress.evaluations)||0);
       let scope=String(progress.phase||'');
       if(progress.phase==='local'||progress.phase==='polish')scope+=`|seed:${progress.seedIndex??''}`;
@@ -75,6 +81,14 @@ self.onmessage=async event=>{
       result.diagnostics={...(result.diagnostics||{}),fixedMercenaries:Object.keys(fixedQuantities).length,mercenaryOptimizationMode:'standard-live',optimizerCoreExpectedLifetimeDamage:Number(coreResult?.expectedTotalLifetimeDamage||0),combinedExpectedLifetimeDamage:Number(combinedResult.expectedTotalLifetimeDamage||0)};
     }
     self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
-    self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,mechanicsBuild:COMBAT_MECHANICS_BUILD,armyDatabase:ARMY_DATABASE_BUILD,armyCount:units.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,inputPayload:message.bonuses,capacityLimits:message.capacityLimits,fixedCapacityUsage:fixedUsage}});
-  }catch(error){self.postMessage({type:'error',requestId,message:error?.message||String(error),stack:error?.stack||''});}
+    self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,mechanicsBuild:COMBAT_MECHANICS_BUILD,armyDatabase:ARMY_DATABASE_BUILD,armyCount:units.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,inputPayload:message.bonuses,capacityLimits:message.capacityLimits,fixedCapacityUsage:fixedUsage,timeBudgetMs}});
+  }catch(error){
+    const timedOut=error?.code==='TIME_BUDGET'||shouldAbort();
+    self.postMessage({
+      type:'error',requestId,
+      code:timedOut?'TIME_BUDGET':error?.code,
+      message:timedOut?'Optimization reached its 3-minute safety limit. Try reducing the number of selected squads or run Optimize again.':(error?.message||String(error)),
+      stack:error?.stack||''
+    });
+  }
 };
