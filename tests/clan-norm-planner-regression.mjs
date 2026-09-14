@@ -46,6 +46,8 @@ assert.match(script,/\[\'Crypts\'.*\[\'Citadels\'/,'Crypts and Citadels must rem
 assert.doesNotMatch(script,/Other activities/,'Event charts must identify every contributing activity.');
 assert.match(html,/All resource values are per member per 6-day cycle/,'The dashboard must make its per-member cycle scope explicit.');
 assert.doesNotMatch(html,/id="normResourceCards"/,'Resource totals must not be repeated above the donut charts.');
+assert.doesNotMatch(html,/class="norm-kpis"/,'The dashboard must open directly with its resource visuals.');
+assert.doesNotMatch(script,/proratedChestTotal|dashboardRecipients|dashboardActivities/,'Removed dashboard KPI cards must not retain update logic.');
 assert.match(html,/<details class="norm-data-details"><summary>/,'The detailed activity table must be collapsed by default.');
 assert.match(script,/contrastingActivityColors/,'Activity colors must be coordinated across resource charts.');
 assert.match(script,/neighbors\.get\(name\)\.add\(next\)/,'The palette must account for activities that touch in each donut.');

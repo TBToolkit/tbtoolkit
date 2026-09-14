@@ -331,6 +331,7 @@
 .norm-total-row td{background:#102030;color:#fff;font-weight:900}.norm-total-row small{display:block;margin-top:3px;color:#8fa0ad;font-size:.6rem}
 
 .norm-visual-section{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.09)}
+.norm-dashboard .norm-panel-body>.norm-visual-section:first-child{margin-top:0;padding-top:0;border-top:0}
 .norm-visual-heading h3{margin:0;color:#fff;font-size:.88rem;text-transform:uppercase}.norm-visual-heading p{margin:4px 0 0;color:#8192a0;font-size:.68rem}
 .resource-donut-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:10px;margin-top:12px}
 .resource-donut-card{padding:13px;border:1px solid #2e4254;border-radius:8px;background:#07131e}.resource-donut-card h4{margin:0 0 10px;color:#f2f5f7;font-size:.76rem;text-transform:uppercase}.resource-donut-card>p{color:#788997;font-size:.7rem}
