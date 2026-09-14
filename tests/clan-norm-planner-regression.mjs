@@ -54,7 +54,8 @@ assert.match(script,/class="donut-label".*transform="rotate/s,'Donut labels must
 assert.match(script,/text-anchor="\$\{flip\?'end':'start'\}"/,'Radial labels must extend away from the donut rather than across it.');
 assert.match(script,/pct<4.*pct\.toFixed\(1\)/s,'Small-slice percentages must move beside their external labels.');
 assert.match(script,/class="epic-basis" type="checkbox" role="switch"/,'Epic norm basis must use the compact points/chests switch.');
-assert.match(script,/unit\.closest\('label'\)\.hidden=!points/,'Point units must be hidden when the norm is entered as chests.');
+assert.match(script,/unitField\.classList\.toggle\('is-hidden',!points\)/,'Chest mode must visually hide the point unit without removing its grid column.');
+assert.match(script,/unit\.disabled=!points/,'The invisible point unit must not remain keyboard-focusable in chest mode.');
 assert.match(script,/chests per player.*points per player/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
 assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
 assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
