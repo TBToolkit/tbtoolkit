@@ -36,5 +36,9 @@ assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normal
 assert.match(script,/resourcePreset=.*same\(coreKeys\)/,'Saved resource selections must restore the matching highlighted preset.');
 assert.match(script,/amount\/totals\[k\]\*100/,'Dashboard activity cells must calculate their share of each resource total.');
 assert.match(html,/<details class="norm-activity" open><summary><span>Tinman \/ Ancients/,'Tinman controls must be expanded by default.');
+assert.match(script,/filter\(x=>x\.monster!==\'ASHEN\'\)/,'Ashen must be hidden in a new plan by default.');
+assert.match(script,/sortedEpics\(\).*monster\.localeCompare/s,'Epic controls must be alphabetized.');
+assert.match(html,/id="resourceDonutCharts"/,'The dashboard must include per-resource event charts.');
+assert.match(html,/id="resourceCategoryChart"/,'The dashboard must include a resource-category summary chart.');
 
 console.log('Clan norm planner regression checks passed.');
