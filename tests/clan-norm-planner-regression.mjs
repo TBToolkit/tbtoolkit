@@ -32,5 +32,9 @@ assert.match(script,/Math\.min\(250,start\+i\)/,'Tinman sequences must advance b
 assert.match(script,/event\.key!==\'Enter\'&&event\.key!==\'Tab\'/,'Epic value fields must support direct Enter and Tab navigation.');
 assert.match(script,/r\.type===\'CRYPT\'\|\|r\.type===\'CITADEL\'/,'The norm planner must offer Crypt and Citadel chests.');
 assert.match(script,/focusin.*\.select\(\)/,'Numeric inputs must select their full value on focus.');
+assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normalize to the next smaller unit.');
+assert.match(script,/resourcePreset=.*same\(coreKeys\)/,'Saved resource selections must restore the matching highlighted preset.');
+assert.match(script,/amount\/totals\[k\]\*100/,'Dashboard activity cells must calculate their share of each resource total.');
+assert.match(html,/<details class="norm-activity" open><summary><span>Tinman \/ Ancients/,'Tinman controls must be expanded by default.');
 
 console.log('Clan norm planner regression checks passed.');
