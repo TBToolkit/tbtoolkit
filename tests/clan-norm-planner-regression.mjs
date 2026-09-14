@@ -30,6 +30,7 @@ assert.match(html,/id="normBreakdownHead"/,'The breakdown must support dynamic r
 assert.match(script,/multipliers=\{B:1e9,M:1e6,K:1e3\}/,'Point norms must support B, M, and K units.');
 assert.match(script,/Math\.min\(250,start\+i\)/,'Tinman sequences must advance by level and cap at 250.');
 assert.match(script,/event\.key!==\'Enter\'&&event\.key!==\'Tab\'/,'Epic value fields must support direct Enter and Tab navigation.');
+assert.match(script,/\.epic-norm-row:not\(\[hidden\]\) \.epic-value/,'Epic value navigation must skip hidden events.');
 assert.match(script,/r\.type===\'CRYPT\'\|\|r\.type===\'CITADEL\'/,'The norm planner must offer Crypt and Citadel chests.');
 assert.match(script,/focusin.*\.select\(\)/,'Numeric inputs must select their full value on focus.');
 assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normalize to the next smaller unit.');
@@ -47,10 +48,14 @@ assert.match(html,/All resource values are per member per 6-day cycle/,'The dash
 assert.doesNotMatch(html,/id="normResourceCards"/,'Resource totals must not be repeated above the donut charts.');
 assert.match(html,/<details class="norm-data-details"><summary>/,'The detailed activity table must be collapsed by default.');
 assert.match(script,/stableActivityColor/,'Activity colors must remain stable across resource charts.');
+assert.match(script,/while\(used\.some/,'Every visible activity must receive a distinct chart color.');
 assert.match(script,/class="slice-percent"/,'Donut percentages must be rendered within sufficiently large slices.');
 assert.match(script,/class="donut-label".*transform="rotate/s,'Donut labels must follow a radial orientation.');
 assert.match(script,/text-anchor="\$\{flip\?'end':'start'\}"/,'Radial labels must extend away from the donut rather than across it.');
 assert.match(script,/pct<4.*pct\.toFixed\(1\)/s,'Small-slice percentages must move beside their external labels.');
+assert.match(script,/class="epic-basis" type="checkbox" role="switch"/,'Epic norm basis must use the compact points/chests switch.');
+assert.match(script,/unit\.closest\('label'\)\.hidden=!points/,'Point units must be hidden when the norm is entered as chests.');
+assert.match(script,/chests per player.*points per player/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
 assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
 assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
 
