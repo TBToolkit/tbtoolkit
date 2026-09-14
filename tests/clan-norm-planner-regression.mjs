@@ -21,6 +21,12 @@ assert.equal(data.tinman.at(-1).level,250);
 assert.equal(data.tinmanCadenceDays,6);
 assert.match(script,/Math\.floor\(value\/item\.pointsPerChest\)/,'Point norms must round chest payouts down.');
 assert.match(script,/actual\*period\/item\.cadenceDays/,'Epic resource estimates must be prorated by cadence.');
-assert.match(script,/plannerKeys=resourceKeys\.filter\(k=>k!==\'clanWealth\'\)/,'Clan Wealth must remain outside the first planner version.');
+assert.doesNotMatch(script,/const plannerKeys=.*clanWealth/,'Clan Wealth must remain outside the first planner version.');
+assert.match(html,/accept="\.norms,application\/json"/,'Clan profiles must support portable .norms files.');
+assert.match(html,/id="clanContributors"/,'Contributor count must be a single plan-level input.');
+assert.doesNotMatch(html,/id="cryptContributors"/,'Crypting must use the shared contributor count.');
+assert.match(script,/multipliers=\{B:1e9,M:1e6,K:1e3\}/,'Point norms must support B, M, and K units.');
+assert.match(script,/Math\.min\(250,start\+i\)/,'Tinman sequences must advance by level and cap at 250.');
+assert.match(script,/event\.key!==\'Enter\'&&event\.key!==\'Tab\'/,'Epic value fields must support direct Enter and Tab navigation.');
 
 console.log('Clan norm planner regression checks passed.');

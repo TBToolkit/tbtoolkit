@@ -286,3 +286,18 @@
 @media(max-width:1050px){.norm-resource-options{grid-template-columns:repeat(4,1fr)}.norm-resource-cards{grid-template-columns:repeat(3,1fr)}.norm-epic-header,.epic-norm-row{grid-template-columns:minmax(160px,1.3fr) .8fr .9fr .75fr minmax(140px,1fr)}.norm-inline-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.norm-layout>.card{padding:15px}.norm-section-heading,.norm-resource-head{align-items:flex-start}.norm-section-heading p,.norm-reference-heading p{line-height:1.4}.norm-setup-grid,.norm-inline-grid,.tinman-slots{grid-template-columns:1fr}.norm-resource-head{display:block}.norm-resource-presets{justify-content:flex-start;margin-top:12px}.norm-resource-options{grid-template-columns:repeat(2,1fr)}.norm-epic-header{display:none}.epic-norm-row{grid-template-columns:1fr 1fr;gap:9px;padding:13px 2px}.epic-event,.epic-result{grid-column:1/-1}.epic-result{padding:4px 2px 2px}.norm-kpis{grid-template-columns:1fr}.norm-resource-cards{grid-template-columns:repeat(2,1fr)}.norm-results-table,.reference-table{min-width:680px}.norm-activity summary small,.reference-tile summary small{display:none}}
 @media(max-width:420px){.norm-resource-options,.norm-resource-cards{grid-template-columns:1fr}.norm-section-heading>div>span,.norm-reference-heading>span{width:27px;height:27px}}
+
+.norm-layout [hidden]{display:none!important}
+.norm-panel{overflow:hidden}
+.norm-panel>.norm-section-heading{margin:-20px;padding:20px;cursor:pointer;list-style:none}
+.norm-panel>.norm-section-heading::-webkit-details-marker{display:none}
+.norm-panel>.norm-section-heading:after{content:'+';color:var(--orange);font-size:1.35rem}
+.norm-panel[open]>.norm-section-heading:after{content:'−'}
+.norm-panel[open]>.norm-section-heading{margin-bottom:0;border-bottom:1px solid rgba(255,255,255,.08)}
+.norm-panel-body{padding-top:20px}
+.norm-profile-row{display:grid;grid-template-columns:minmax(220px,1fr) 2fr;gap:12px;align-items:end;margin-bottom:17px}
+.norm-profile-actions{display:flex;flex-wrap:wrap;gap:7px}
+.norm-profile-actions button{min-height:44px;padding:0 12px;border:1px solid #405267;border-radius:7px;background:#0a1621;color:#d4dce3;font-weight:800;cursor:pointer}
+.norm-profile-actions button:hover{border-color:var(--orange);color:#fff}
+.norm-profile-actions button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:760px){.norm-panel>.norm-section-heading{margin:-15px;padding:15px}.norm-profile-row{grid-template-columns:1fr}}
