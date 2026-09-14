@@ -47,8 +47,10 @@ assert.doesNotMatch(script,/Other activities/,'Event charts must identify every 
 assert.match(html,/All resource values are per member per 6-day cycle/,'The dashboard must make its per-member cycle scope explicit.');
 assert.doesNotMatch(html,/id="normResourceCards"/,'Resource totals must not be repeated above the donut charts.');
 assert.match(html,/<details class="norm-data-details"><summary>/,'The detailed activity table must be collapsed by default.');
-assert.match(script,/stableActivityColor/,'Activity colors must remain stable across resource charts.');
-assert.match(script,/while\(used\.some/,'Every visible activity must receive a distinct chart color.');
+assert.match(script,/contrastingActivityColors/,'Activity colors must be coordinated across resource charts.');
+assert.match(script,/neighbors\.get\(name\)\.add\(next\)/,'The palette must account for activities that touch in each donut.');
+assert.match(script,/Math\.min\(\.\.\.adjacent\.map\(color=>distance\(candidate,color\)\)\)/,'Adjacent donut slices must maximize their color contrast.');
+assert.match(script,/used\.add\(bestIndex\)/,'Every visible activity must receive a unique chart color.');
 assert.match(script,/class="slice-percent"/,'Donut percentages must be rendered within sufficiently large slices.');
 assert.match(script,/class="donut-label".*transform="rotate/s,'Donut labels must follow a radial orientation.');
 assert.match(script,/text-anchor="\$\{flip\?'end':'start'\}"/,'Radial labels must extend away from the donut rather than across it.');
