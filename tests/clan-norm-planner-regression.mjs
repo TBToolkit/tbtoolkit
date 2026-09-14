@@ -43,5 +43,13 @@ assert.match(html,/id="resourceCategoryChart"/,'The dashboard must include a res
 assert.match(script,/part\.category===\'Tinman\'\?\'Tinman\':part\.name/,'All Tinman levels must share one event-chart slice.');
 assert.match(script,/\[\'Crypts\'.*\[\'Citadels\'/,'Crypts and Citadels must remain separate summary categories.');
 assert.match(script,/Other activities/,'Crowded callout charts must consolidate excess small slices.');
+assert.match(html,/All resource values are per member per 6-day cycle/,'The dashboard must make its per-member cycle scope explicit.');
+assert.doesNotMatch(html,/id="normResourceCards"/,'Resource totals must not be repeated above the donut charts.');
+assert.match(html,/<details class="norm-data-details"><summary>/,'The detailed activity table must be collapsed by default.');
+assert.match(script,/stableActivityColor/,'Activity colors must remain stable across resource charts.');
+assert.match(script,/class="slice-percent"/,'Donut percentages must be rendered within sufficiently large slices.');
+assert.match(script,/class="donut-label".*transform="rotate/s,'Donut labels must follow a radial orientation.');
+assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
+assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
 
 console.log('Clan norm planner regression checks passed.');
