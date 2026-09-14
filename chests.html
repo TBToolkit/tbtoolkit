@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="Search average Total Battle chest rewards by chest type and resource." name="description"/>
-<title>Chest Data | TB Toolkit</title>
+<meta content="Plan Total Battle clan norms and estimate chest resources by member and clan." name="description"/>
+<title>Clan Norms | TB Toolkit</title>
 <link href="css/styles.css" rel="stylesheet"/>
 <link href="css/chests.css" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
@@ -23,7 +23,7 @@
 <nav aria-label="Main navigation" class="nav" data-nav>
 <a href="index.html">Home</a>
 <a href="stacking.html">Stacking</a>
-<a aria-current="page" href="chests.html">Chest Data</a>
+<a aria-current="page" href="chests.html">Clan Norms</a>
 <a href="calendar.html">Event Calendar</a>
 <a href="research.html">Research</a>
 <a href="resources.html">Resources</a>
@@ -35,19 +35,50 @@
 <main>
 <section class="page-hero">
 <div class="container">
-<div class="breadcrumb">Home / Chest Data</div>
-<h1 class="page-title">Chest Data</h1>
-<p class="page-intro">Average rewards from Total Battle chests, based on compiled opening data.</p>
+<div class="breadcrumb">Home / Clan Norms</div>
+<h1 class="page-title">Clan Norm Planner</h1>
+<p class="page-intro">Turn Epic, crypting, and Tinman requirements into expected resources for every member and the whole clan.</p>
 </div>
 </section>
 
 <section class="section chest-section">
 <div class="container">
-<div class="card chest-explainer">
-<h2>How to read this table</h2>
-<p>Values shown are the <strong>average amount received per chest</strong>. Actual rewards may vary from chest to chest.</p>
-<p class="chest-caution">Blank cells mean there is no compiled average for that reward in the current dataset.</p>
+<div class="norm-layout">
+<section class="card norm-setup" aria-labelledby="normSetupTitle">
+<div class="norm-section-heading"><div><span>1</span><div><h2 id="normSetupTitle">Plan Setup</h2><p>Choose the planning period, clan size, and resources that matter to your clan.</p></div></div><button class="norm-reset" id="resetNormPlan" type="button">Reset</button></div>
+<div class="norm-setup-grid">
+<label>Planning period<select id="normPeriod"><option value="6">6 days · one cycle</option><option value="24">24 days · four cycles</option><option value="custom">Custom</option></select></label>
+<label id="customPeriodField" hidden>Custom days<input id="customPeriodDays" min="1" step="1" type="number" value="12"/></label>
+<label>Clan members receiving chests<input id="clanRecipients" min="1" max="100" step="1" type="number" value="100"/></label>
 </div>
+<div class="norm-resource-picker">
+<div class="norm-resource-head"><div><strong>Resources to display</strong><small>The selection changes the dashboard only—not the norm calculations.</small></div><div class="norm-resource-presets"><button data-resource-preset="core" type="button">Gold &amp; progression</button><button data-resource-preset="growth" type="button">Growth resources</button><button data-resource-preset="all" type="button">All</button><button data-resource-preset="none" type="button">None</button></div></div>
+<div class="norm-resource-options" id="normResourceOptions"></div>
+</div>
+</section>
+
+<section class="card norm-inputs" aria-labelledby="normInputsTitle">
+<div class="norm-section-heading"><div><span>2</span><div><h2 id="normInputsTitle">Clan Norms</h2><p>Mix point and chest requirements. Zero values are excluded from the plan.</p></div></div></div>
+<details class="norm-activity" open><summary><span>Epic Monster Events</span><small>6-day and 24-day cadence</small></summary><div class="norm-activity-body"><div class="norm-epic-header"><span>Event</span><span>Norm</span><span>Value</span><span>Contributors</span><span>Calculated result</span></div><div id="epicNormRows"></div></div></details>
+<details class="norm-activity" open><summary><span>Crypting</span><small>One completed crypt produces one chest</small></summary><div class="norm-activity-body norm-inline-grid"><label>Chest<select id="cryptChest"></select></label><label>Crypts per contributor<input id="cryptCount" min="0" step="1" type="number" value="300"/></label><label>Contributors<input id="cryptContributors" min="0" max="100" step="1" type="number" value="100"/></label><label>Norm duration<select id="cryptCadence"><option value="6">6 days</option><option value="12">12 days</option><option value="24">24 days</option><option value="custom">Custom</option></select></label><label id="customCryptCadenceField" hidden>Custom days<input id="customCryptCadence" min="1" step="1" type="number" value="6"/></label></div></details>
+<details class="norm-activity"><summary><span>Tinman / Ancients</span><small>Choose up to eight defeated Golden Guardians</small></summary><div class="norm-activity-body"><div class="tinman-slots" id="tinmanSlots"></div><div class="tinman-summary" id="tinmanSummary"></div></div></details>
+</section>
+
+<section class="card norm-dashboard" aria-labelledby="normDashboardTitle">
+<div class="norm-section-heading"><div><span>3</span><div><h2 id="normDashboardTitle">Norm Dashboard</h2><p id="normDashboardScope">Average resource value for one 6-day cycle.</p></div></div></div>
+<div class="norm-kpis"><article><small>Prorated chests/member</small><strong id="proratedChestTotal">0</strong></article><article><small>Receiving members</small><strong id="dashboardRecipients">100</strong></article><article><small>Activities included</small><strong id="dashboardActivities">0</strong></article></div>
+<div class="norm-resource-cards" id="normResourceCards"></div>
+<div class="norm-table-scroll"><table class="norm-results-table"><thead><tr><th>Activity</th><th>Cadence</th><th>Actual chests/member</th><th>Prorated chests</th><th>Norm equivalent</th></tr></thead><tbody id="normBreakdownRows"></tbody></table></div>
+<p class="norm-assumption">Resource totals use average rewards per chest. Missing reward values are treated as zero. A 24-day event contributes one quarter of its resource value to a 6-day planning period; actual chest payouts remain whole numbers.</p>
+</section>
+</div>
+
+<section class="norm-reference" aria-labelledby="normReferenceTitle">
+<div class="norm-reference-heading"><span>4</span><div><h2 id="normReferenceTitle">Reference Data</h2><p>Expand a source table to review the values used by the planner.</p></div></div>
+<details class="card reference-tile"><summary><span>Epic Monster Norm Data</span><small>Points, chests, and cadence</small></summary><div class="reference-table-scroll"><table class="reference-table"><thead><tr><th>Event</th><th>Epic</th><th>Cadence</th><th>Total points</th><th>Total chests</th><th>Points/chest</th></tr></thead><tbody id="epicReferenceRows"></tbody></table></div></details>
+<details class="card reference-tile"><summary><span>Tinman Level Data</span><small>Levels 1–250</small></summary><div class="reference-table-scroll tall"><table class="reference-table"><thead><tr><th>Level</th><th>Points</th><th>Chest type</th><th>Kill chests</th></tr></thead><tbody id="tinmanReferenceRows"></tbody></table></div></details>
+<details class="card reference-tile"><summary><span>Chest Reward Averages</span><small>Search and filter compiled opening data</small></summary><div class="reference-chest-content">
+<div class="card chest-explainer"><p>Values are the <strong>average amount received per chest</strong>. Missing rewards are treated as zero by the planner.</p></div>
 
 <div class="card chest-toolbar">
 <div class="chest-search-wrap">
@@ -111,6 +142,8 @@
 <strong>Mobile tip</strong>
 <p>Swipe left and right across the table to see additional reward columns. Selecting a specific reward above reduces the table to the chest information plus that reward.</p>
 </div>
+</div></details>
+</section>
 </div>
 </section>
 </main>
@@ -120,7 +153,7 @@
 <div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
 <nav aria-label="Footer navigation" class="footer-links">
 <a href="stacking.html">Stacking</a>
-<a href="chests.html">Chest Data</a>
+<a href="chests.html">Clan Norms</a>
 <a href="calendar.html">Event Calendar</a>
 <a href="research.html">Research</a>
 <a href="resources.html">Resources</a>

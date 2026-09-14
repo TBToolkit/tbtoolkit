@@ -1,0 +1,1641 @@
+{
+  "version": 1,
+  "source": "NORM CALC.xlsx / NORMS DATA TABLES",
+  "epicMonsters": [
+    {
+      "tier": 1,
+      "event": "Arachne's Swarm",
+      "monster": "ARACHNE",
+      "source": "Arachne's Swarm Epic squad",
+      "chestName": "Arachne Chest",
+      "cadenceDays": 6,
+      "totalChests": 35,
+      "totalPoints": 300000000,
+      "pointsPerChest": 8571428.57142857
+    },
+    {
+      "tier": 1,
+      "event": "Armageddon",
+      "monster": "ARMAGEDDON",
+      "source": "Epic Inferno squad",
+      "chestName": "Fire Hydra Chest",
+      "cadenceDays": 24,
+      "totalChests": 35,
+      "totalPoints": 750000000,
+      "pointsPerChest": 21428571.42857143
+    },
+    {
+      "tier": 1,
+      "event": "Dark Omens",
+      "monster": "ARCANOMANCER",
+      "source": "Dark Omens event",
+      "chestName": "Arcane Chest",
+      "cadenceDays": 24,
+      "totalChests": 52,
+      "totalPoints": 800000000,
+      "pointsPerChest": 15384615.384615384
+    },
+    {
+      "tier": 1,
+      "event": "Doomsday",
+      "monster": "DOOMSDAY",
+      "source": "Epic Undead squad",
+      "chestName": "Epic Monster Chest",
+      "cadenceDays": 6,
+      "totalChests": 7,
+      "totalPoints": 50000000,
+      "pointsPerChest": 7142857.142857143
+    },
+    {
+      "tier": 1,
+      "event": "Hellforge",
+      "monster": "HELLFORGE",
+      "source": "Epic inferno Squad",
+      "chestName": "Hell's Blacksmith's chest",
+      "cadenceDays": 24,
+      "totalChests": 7,
+      "totalPoints": 150000000,
+      "pointsPerChest": 21428571.42857143
+    },
+    {
+      "tier": 1,
+      "event": "Olympus",
+      "monster": "BASILISK",
+      "source": "Epic Basilisk squad",
+      "chestName": "Basilisk Chest",
+      "cadenceDays": 24,
+      "totalChests": 35,
+      "totalPoints": 750000000,
+      "pointsPerChest": 21428571.42857143
+    },
+    {
+      "tier": 1,
+      "event": "Olympus",
+      "monster": "BRIAREUS",
+      "source": "Epic Briareus squad",
+      "chestName": "Briareus Chest",
+      "cadenceDays": 24,
+      "totalChests": 52,
+      "totalPoints": 800000000,
+      "pointsPerChest": 15384615.384615384
+    },
+    {
+      "tier": 2,
+      "event": "Olympus",
+      "monster": "CHIMERA",
+      "source": "Epic Chimera squad",
+      "chestName": "Chimera Chest",
+      "cadenceDays": 24,
+      "totalChests": 375,
+      "totalPoints": 750000000,
+      "pointsPerChest": 2000000
+    },
+    {
+      "tier": 2,
+      "event": "Ragnarok",
+      "monster": "FENRIR",
+      "source": "Epic Fenrir squad",
+      "chestName": "Fenrir's Chest",
+      "cadenceDays": 24,
+      "totalChests": 125,
+      "totalPoints": 250000000,
+      "pointsPerChest": 2000000
+    },
+    {
+      "tier": 2,
+      "event": "Ragnarok",
+      "monster": "JORMUNGANDR",
+      "source": "Epic Jormungandr squad",
+      "chestName": "Jormungandr's Chest",
+      "cadenceDays": 24,
+      "totalChests": 375,
+      "totalPoints": 750000000,
+      "pointsPerChest": 2000000
+    },
+    {
+      "tier": 1,
+      "event": "Shadow Invasion",
+      "monster": "SHADOW CITY",
+      "source": "Shadow City",
+      "chestName": "Shadow Chest",
+      "cadenceDays": 24,
+      "totalChests": 75,
+      "totalPoints": 14000000000,
+      "pointsPerChest": 186666666.66666666
+    },
+    {
+      "tier": 1,
+      "event": "Sands of Eternity",
+      "monster": "ASHEN",
+      "source": "Epic Ashen Squad",
+      "chestName": "Legendary Ashen Chest",
+      "cadenceDays": 24,
+      "totalChests": 0,
+      "totalPoints": 0,
+      "pointsPerChest": 0
+    }
+  ],
+  "tinmanCadenceDays": 6,
+  "tinman": [
+    {
+      "level": 1,
+      "points": 1000,
+      "chestType": "EPIC",
+      "killChestQuantity": 1
+    },
+    {
+      "level": 2,
+      "points": 1500,
+      "chestType": "EPIC",
+      "killChestQuantity": 2
+    },
+    {
+      "level": 3,
+      "points": 2250,
+      "chestType": "EPIC",
+      "killChestQuantity": 3
+    },
+    {
+      "level": 4,
+      "points": 3380,
+      "chestType": "EPIC",
+      "killChestQuantity": 4
+    },
+    {
+      "level": 5,
+      "points": 5060,
+      "chestType": "EPIC",
+      "killChestQuantity": 5
+    },
+    {
+      "level": 6,
+      "points": 7590,
+      "chestType": "EPIC",
+      "killChestQuantity": 6
+    },
+    {
+      "level": 7,
+      "points": 9870,
+      "chestType": "EPIC",
+      "killChestQuantity": 7
+    },
+    {
+      "level": 8,
+      "points": 12800,
+      "chestType": "EPIC",
+      "killChestQuantity": 8
+    },
+    {
+      "level": 9,
+      "points": 16700,
+      "chestType": "EPIC",
+      "killChestQuantity": 9
+    },
+    {
+      "level": 10,
+      "points": 21700,
+      "chestType": "EPIC",
+      "killChestQuantity": 10
+    },
+    {
+      "level": 11,
+      "points": 28200,
+      "chestType": "EPIC",
+      "killChestQuantity": 11
+    },
+    {
+      "level": 12,
+      "points": 33800,
+      "chestType": "EPIC",
+      "killChestQuantity": 12
+    },
+    {
+      "level": 13,
+      "points": 40600,
+      "chestType": "EPIC",
+      "killChestQuantity": 13
+    },
+    {
+      "level": 14,
+      "points": 48700,
+      "chestType": "EPIC",
+      "killChestQuantity": 14
+    },
+    {
+      "level": 15,
+      "points": 58500,
+      "chestType": "EPIC",
+      "killChestQuantity": 15
+    },
+    {
+      "level": 16,
+      "points": 70200,
+      "chestType": "EPIC",
+      "killChestQuantity": 16
+    },
+    {
+      "level": 17,
+      "points": 84200,
+      "chestType": "EPIC",
+      "killChestQuantity": 17
+    },
+    {
+      "level": 18,
+      "points": 101000,
+      "chestType": "EPIC",
+      "killChestQuantity": 18
+    },
+    {
+      "level": 19,
+      "points": 121000,
+      "chestType": "EPIC",
+      "killChestQuantity": 19
+    },
+    {
+      "level": 20,
+      "points": 145000,
+      "chestType": "EPIC",
+      "killChestQuantity": 20
+    },
+    {
+      "level": 21,
+      "points": 175000,
+      "chestType": "EPIC",
+      "killChestQuantity": 21
+    },
+    {
+      "level": 22,
+      "points": 209000,
+      "chestType": "EPIC",
+      "killChestQuantity": 22
+    },
+    {
+      "level": 23,
+      "points": 251000,
+      "chestType": "EPIC",
+      "killChestQuantity": 23
+    },
+    {
+      "level": 24,
+      "points": 302000,
+      "chestType": "EPIC",
+      "killChestQuantity": 24
+    },
+    {
+      "level": 25,
+      "points": 362000,
+      "chestType": "EPIC",
+      "killChestQuantity": 25
+    },
+    {
+      "level": 26,
+      "points": 434000,
+      "chestType": "EPIC",
+      "killChestQuantity": 26
+    },
+    {
+      "level": 27,
+      "points": 521000,
+      "chestType": "EPIC",
+      "killChestQuantity": 27
+    },
+    {
+      "level": 28,
+      "points": 626000,
+      "chestType": "EPIC",
+      "killChestQuantity": 28
+    },
+    {
+      "level": 29,
+      "points": 751000,
+      "chestType": "EPIC",
+      "killChestQuantity": 29
+    },
+    {
+      "level": 30,
+      "points": 901000,
+      "chestType": "EPIC",
+      "killChestQuantity": 30
+    },
+    {
+      "level": 31,
+      "points": 1080000,
+      "chestType": "EPIC",
+      "killChestQuantity": 31
+    },
+    {
+      "level": 32,
+      "points": 1210000,
+      "chestType": "EPIC",
+      "killChestQuantity": 32
+    },
+    {
+      "level": 33,
+      "points": 1360000,
+      "chestType": "EPIC",
+      "killChestQuantity": 33
+    },
+    {
+      "level": 34,
+      "points": 1520000,
+      "chestType": "EPIC",
+      "killChestQuantity": 34
+    },
+    {
+      "level": 35,
+      "points": 1700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 35
+    },
+    {
+      "level": 36,
+      "points": 1900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 36
+    },
+    {
+      "level": 37,
+      "points": 2130000,
+      "chestType": "EPIC",
+      "killChestQuantity": 37
+    },
+    {
+      "level": 38,
+      "points": 2390000,
+      "chestType": "EPIC",
+      "killChestQuantity": 38
+    },
+    {
+      "level": 39,
+      "points": 2680000,
+      "chestType": "EPIC",
+      "killChestQuantity": 39
+    },
+    {
+      "level": 40,
+      "points": 3000000,
+      "chestType": "EPIC",
+      "killChestQuantity": 40
+    },
+    {
+      "level": 41,
+      "points": 3360000,
+      "chestType": "EPIC",
+      "killChestQuantity": 41
+    },
+    {
+      "level": 42,
+      "points": 3760000,
+      "chestType": "EPIC",
+      "killChestQuantity": 51
+    },
+    {
+      "level": 43,
+      "points": 4210000,
+      "chestType": "EPIC",
+      "killChestQuantity": 57
+    },
+    {
+      "level": 44,
+      "points": 4720000,
+      "chestType": "EPIC",
+      "killChestQuantity": 63
+    },
+    {
+      "level": 45,
+      "points": 5280000,
+      "chestType": "EPIC",
+      "killChestQuantity": 71
+    },
+    {
+      "level": 46,
+      "points": 5920000,
+      "chestType": "EPIC",
+      "killChestQuantity": 79
+    },
+    {
+      "level": 47,
+      "points": 6630000,
+      "chestType": "EPIC",
+      "killChestQuantity": 89
+    },
+    {
+      "level": 48,
+      "points": 7420000,
+      "chestType": "EPIC",
+      "killChestQuantity": 99
+    },
+    {
+      "level": 49,
+      "points": 8310000,
+      "chestType": "EPIC",
+      "killChestQuantity": 111
+    },
+    {
+      "level": 50,
+      "points": 9310000,
+      "chestType": "EPIC",
+      "killChestQuantity": 125
+    },
+    {
+      "level": 51,
+      "points": 10400000,
+      "chestType": "EPIC",
+      "killChestQuantity": 140
+    },
+    {
+      "level": 52,
+      "points": 10900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 146
+    },
+    {
+      "level": 53,
+      "points": 11500000,
+      "chestType": "EPIC",
+      "killChestQuantity": 154
+    },
+    {
+      "level": 54,
+      "points": 12100000,
+      "chestType": "EPIC",
+      "killChestQuantity": 161
+    },
+    {
+      "level": 55,
+      "points": 12700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 169
+    },
+    {
+      "level": 56,
+      "points": 13300000,
+      "chestType": "EPIC",
+      "killChestQuantity": 178
+    },
+    {
+      "level": 57,
+      "points": 14000000,
+      "chestType": "EPIC",
+      "killChestQuantity": 187
+    },
+    {
+      "level": 58,
+      "points": 14700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 196
+    },
+    {
+      "level": 59,
+      "points": 15400000,
+      "chestType": "EPIC",
+      "killChestQuantity": 206
+    },
+    {
+      "level": 60,
+      "points": 16200000,
+      "chestType": "EPIC",
+      "killChestQuantity": 216
+    },
+    {
+      "level": 61,
+      "points": 17000000,
+      "chestType": "EPIC",
+      "killChestQuantity": 227
+    },
+    {
+      "level": 62,
+      "points": 17800000,
+      "chestType": "EPIC",
+      "killChestQuantity": 238
+    },
+    {
+      "level": 63,
+      "points": 18700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 250
+    },
+    {
+      "level": 64,
+      "points": 19700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 263
+    },
+    {
+      "level": 65,
+      "points": 20600000,
+      "chestType": "EPIC",
+      "killChestQuantity": 276
+    },
+    {
+      "level": 66,
+      "points": 21700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 290
+    },
+    {
+      "level": 67,
+      "points": 22800000,
+      "chestType": "EPIC",
+      "killChestQuantity": 304
+    },
+    {
+      "level": 68,
+      "points": 23900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 319
+    },
+    {
+      "level": 69,
+      "points": 25100000,
+      "chestType": "EPIC",
+      "killChestQuantity": 335
+    },
+    {
+      "level": 70,
+      "points": 26300000,
+      "chestType": "EPIC",
+      "killChestQuantity": 352
+    },
+    {
+      "level": 71,
+      "points": 27700000,
+      "chestType": "EPIC",
+      "killChestQuantity": 369
+    },
+    {
+      "level": 72,
+      "points": 29000000,
+      "chestType": "EPIC",
+      "killChestQuantity": 388
+    },
+    {
+      "level": 73,
+      "points": 30500000,
+      "chestType": "EPIC",
+      "killChestQuantity": 407
+    },
+    {
+      "level": 74,
+      "points": 32000000,
+      "chestType": "EPIC",
+      "killChestQuantity": 428
+    },
+    {
+      "level": 75,
+      "points": 33600000,
+      "chestType": "EPIC",
+      "killChestQuantity": 449
+    },
+    {
+      "level": 76,
+      "points": 35300000,
+      "chestType": "EPIC",
+      "killChestQuantity": 471
+    },
+    {
+      "level": 77,
+      "points": 37100000,
+      "chestType": "EPIC",
+      "killChestQuantity": 495
+    },
+    {
+      "level": 78,
+      "points": 38900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 520
+    },
+    {
+      "level": 79,
+      "points": 40900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 546
+    },
+    {
+      "level": 80,
+      "points": 42900000,
+      "chestType": "EPIC",
+      "killChestQuantity": 573
+    },
+    {
+      "level": 81,
+      "points": 45100000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 121
+    },
+    {
+      "level": 82,
+      "points": 47300000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 127
+    },
+    {
+      "level": 83,
+      "points": 49700000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 133
+    },
+    {
+      "level": 84,
+      "points": 52200000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 140
+    },
+    {
+      "level": 85,
+      "points": 54800000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 147
+    },
+    {
+      "level": 86,
+      "points": 57500000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 154
+    },
+    {
+      "level": 87,
+      "points": 60400000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 162
+    },
+    {
+      "level": 88,
+      "points": 63400000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 170
+    },
+    {
+      "level": 89,
+      "points": 66600000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 178
+    },
+    {
+      "level": 90,
+      "points": 69900000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 187
+    },
+    {
+      "level": 91,
+      "points": 73400000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 196
+    },
+    {
+      "level": 92,
+      "points": 77100000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 206
+    },
+    {
+      "level": 93,
+      "points": 80900000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 216
+    },
+    {
+      "level": 94,
+      "points": 85000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 227
+    },
+    {
+      "level": 95,
+      "points": 89200000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 238
+    },
+    {
+      "level": 96,
+      "points": 93700000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 250
+    },
+    {
+      "level": 97,
+      "points": 98400000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 263
+    },
+    {
+      "level": 98,
+      "points": 103000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 276
+    },
+    {
+      "level": 99,
+      "points": 108000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 290
+    },
+    {
+      "level": 100,
+      "points": 114000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 304
+    },
+    {
+      "level": 101,
+      "points": 118000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 316
+    },
+    {
+      "level": 102,
+      "points": 123000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 329
+    },
+    {
+      "level": 103,
+      "points": 128000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 342
+    },
+    {
+      "level": 104,
+      "points": 133000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 356
+    },
+    {
+      "level": 105,
+      "points": 139000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 370
+    },
+    {
+      "level": 106,
+      "points": 144000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 385
+    },
+    {
+      "level": 107,
+      "points": 150000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 400
+    },
+    {
+      "level": 108,
+      "points": 156000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 416
+    },
+    {
+      "level": 109,
+      "points": 162000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 433
+    },
+    {
+      "level": 110,
+      "points": 169000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 450
+    },
+    {
+      "level": 111,
+      "points": 175000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 468
+    },
+    {
+      "level": 112,
+      "points": 182000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 487
+    },
+    {
+      "level": 113,
+      "points": 190000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 506
+    },
+    {
+      "level": 114,
+      "points": 197000000,
+      "chestType": "LEGENDARY",
+      "killChestQuantity": 526
+    },
+    {
+      "level": 115,
+      "points": 205000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 187
+    },
+    {
+      "level": 116,
+      "points": 214000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 191
+    },
+    {
+      "level": 117,
+      "points": 222000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 196
+    },
+    {
+      "level": 118,
+      "points": 231000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 201
+    },
+    {
+      "level": 119,
+      "points": 240000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 206
+    },
+    {
+      "level": 120,
+      "points": 250000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 211
+    },
+    {
+      "level": 121,
+      "points": 260000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 216
+    },
+    {
+      "level": 122,
+      "points": 270000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 222
+    },
+    {
+      "level": 123,
+      "points": 281000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 227
+    },
+    {
+      "level": 124,
+      "points": 292000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 233
+    },
+    {
+      "level": 125,
+      "points": 304000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 238
+    },
+    {
+      "level": 126,
+      "points": 316000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 247
+    },
+    {
+      "level": 127,
+      "points": 329000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 256
+    },
+    {
+      "level": 128,
+      "points": 342000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 264
+    },
+    {
+      "level": 129,
+      "points": 356000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 274
+    },
+    {
+      "level": 130,
+      "points": 370000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 283
+    },
+    {
+      "level": 131,
+      "points": 385000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 293
+    },
+    {
+      "level": 132,
+      "points": 400000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 303
+    },
+    {
+      "level": 133,
+      "points": 416000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 314
+    },
+    {
+      "level": 134,
+      "points": 433000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 326
+    },
+    {
+      "level": 135,
+      "points": 450000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 337
+    },
+    {
+      "level": 136,
+      "points": 468000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 348
+    },
+    {
+      "level": 137,
+      "points": 487000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 361
+    },
+    {
+      "level": 138,
+      "points": 507000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 373
+    },
+    {
+      "level": 139,
+      "points": 527000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 387
+    },
+    {
+      "level": 140,
+      "points": 548000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 399
+    },
+    {
+      "level": 141,
+      "points": 570000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 414
+    },
+    {
+      "level": 142,
+      "points": 593000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 428
+    },
+    {
+      "level": 143,
+      "points": 616000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 443
+    },
+    {
+      "level": 144,
+      "points": 641000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 459
+    },
+    {
+      "level": 145,
+      "points": 667000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 474
+    },
+    {
+      "level": 146,
+      "points": 693000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 492
+    },
+    {
+      "level": 147,
+      "points": 721000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 508
+    },
+    {
+      "level": 148,
+      "points": 750000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 526
+    },
+    {
+      "level": 149,
+      "points": 780000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 544
+    },
+    {
+      "level": 150,
+      "points": 811000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 563
+    },
+    {
+      "level": 151,
+      "points": 843000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 583
+    },
+    {
+      "level": 152,
+      "points": 871000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 591
+    },
+    {
+      "level": 153,
+      "points": 900000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 599
+    },
+    {
+      "level": 154,
+      "points": 931000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 607
+    },
+    {
+      "level": 155,
+      "points": 963000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 615
+    },
+    {
+      "level": 156,
+      "points": 996000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 623
+    },
+    {
+      "level": 157,
+      "points": 1030000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 631
+    },
+    {
+      "level": 158,
+      "points": 1060000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 640
+    },
+    {
+      "level": 159,
+      "points": 1100000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 649
+    },
+    {
+      "level": 160,
+      "points": 1140000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 657
+    },
+    {
+      "level": 161,
+      "points": 1180000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 666
+    },
+    {
+      "level": 162,
+      "points": 1220000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 675
+    },
+    {
+      "level": 163,
+      "points": 1260000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 684
+    },
+    {
+      "level": 164,
+      "points": 1300000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 694
+    },
+    {
+      "level": 165,
+      "points": 1340000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 703
+    },
+    {
+      "level": 166,
+      "points": 1390000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 712
+    },
+    {
+      "level": 167,
+      "points": 1440000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 722
+    },
+    {
+      "level": 168,
+      "points": 1480000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 732
+    },
+    {
+      "level": 169,
+      "points": 1530000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 742
+    },
+    {
+      "level": 170,
+      "points": 1590000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 752
+    },
+    {
+      "level": 171,
+      "points": 1640000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 762
+    },
+    {
+      "level": 172,
+      "points": 1700000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 772
+    },
+    {
+      "level": 173,
+      "points": 1750000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 783
+    },
+    {
+      "level": 174,
+      "points": 1810000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 793
+    },
+    {
+      "level": 175,
+      "points": 1870000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 804
+    },
+    {
+      "level": 176,
+      "points": 1940000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 815
+    },
+    {
+      "level": 177,
+      "points": 2000000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 826
+    },
+    {
+      "level": 178,
+      "points": 2070000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 837
+    },
+    {
+      "level": 179,
+      "points": 2140000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 848
+    },
+    {
+      "level": 180,
+      "points": 2210000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 860
+    },
+    {
+      "level": 181,
+      "points": 2280000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 872
+    },
+    {
+      "level": 182,
+      "points": 2360000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 884
+    },
+    {
+      "level": 183,
+      "points": 2440000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 896
+    },
+    {
+      "level": 184,
+      "points": 2540000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 908
+    },
+    {
+      "level": 185,
+      "points": 2640000000,
+      "chestType": "ASCENDANT",
+      "killChestQuantity": 920
+    },
+    {
+      "level": 186,
+      "points": 2720000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 224
+    },
+    {
+      "level": 187,
+      "points": 2810000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 226
+    },
+    {
+      "level": 188,
+      "points": 2890000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 228
+    },
+    {
+      "level": 189,
+      "points": 2980000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 230
+    },
+    {
+      "level": 190,
+      "points": 3070000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 232
+    },
+    {
+      "level": 191,
+      "points": 3160000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 234
+    },
+    {
+      "level": 192,
+      "points": 3250000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 236
+    },
+    {
+      "level": 193,
+      "points": 3350000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 238
+    },
+    {
+      "level": 194,
+      "points": 3450000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 240
+    },
+    {
+      "level": 195,
+      "points": 3550000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 242
+    },
+    {
+      "level": 196,
+      "points": 3660000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 244
+    },
+    {
+      "level": 197,
+      "points": 3770000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 246
+    },
+    {
+      "level": 198,
+      "points": 3880000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 248
+    },
+    {
+      "level": 199,
+      "points": 4000000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 250
+    },
+    {
+      "level": 200,
+      "points": 4120000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 255
+    },
+    {
+      "level": 201,
+      "points": 4240000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 258
+    },
+    {
+      "level": 202,
+      "points": 4370000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 261
+    },
+    {
+      "level": 203,
+      "points": 4500000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 264
+    },
+    {
+      "level": 204,
+      "points": 4640000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 267
+    },
+    {
+      "level": 205,
+      "points": 4780000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 270
+    },
+    {
+      "level": 206,
+      "points": 4920000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 273
+    },
+    {
+      "level": 207,
+      "points": 5070000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 276
+    },
+    {
+      "level": 208,
+      "points": 5220000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 279
+    },
+    {
+      "level": 209,
+      "points": 5380000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 282
+    },
+    {
+      "level": 210,
+      "points": 5540000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 285
+    },
+    {
+      "level": 211,
+      "points": 5700000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 288
+    },
+    {
+      "level": 212,
+      "points": 5870000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 291
+    },
+    {
+      "level": 213,
+      "points": 6050000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 294
+    },
+    {
+      "level": 214,
+      "points": 6230000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 297
+    },
+    {
+      "level": 215,
+      "points": 6420000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 300
+    },
+    {
+      "level": 216,
+      "points": 6610000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 304
+    },
+    {
+      "level": 217,
+      "points": 6810000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 304
+    },
+    {
+      "level": 218,
+      "points": 7010000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 308
+    },
+    {
+      "level": 219,
+      "points": 7220000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 312
+    },
+    {
+      "level": 220,
+      "points": 7440000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 316
+    },
+    {
+      "level": 221,
+      "points": 7660000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 316
+    },
+    {
+      "level": 222,
+      "points": 7890000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 320
+    },
+    {
+      "level": 223,
+      "points": 8130000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 324
+    },
+    {
+      "level": 224,
+      "points": 8370000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 328
+    },
+    {
+      "level": 225,
+      "points": 8630000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 328
+    },
+    {
+      "level": 226,
+      "points": 8880000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 332
+    },
+    {
+      "level": 227,
+      "points": 9150000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 336
+    },
+    {
+      "level": 228,
+      "points": 9430000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 340
+    },
+    {
+      "level": 229,
+      "points": 9710000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 340
+    },
+    {
+      "level": 230,
+      "points": 10000000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 345
+    },
+    {
+      "level": 231,
+      "points": 10300000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 350
+    },
+    {
+      "level": 232,
+      "points": 10600000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 350
+    },
+    {
+      "level": 233,
+      "points": 10900000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 355
+    },
+    {
+      "level": 234,
+      "points": 11200000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 360
+    },
+    {
+      "level": 235,
+      "points": 11600000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 360
+    },
+    {
+      "level": 236,
+      "points": 11900000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 375
+    },
+    {
+      "level": 237,
+      "points": 12300000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 385
+    },
+    {
+      "level": 238,
+      "points": 12700000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 395
+    },
+    {
+      "level": 239,
+      "points": 13000000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 405
+    },
+    {
+      "level": 240,
+      "points": 13400000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 420
+    },
+    {
+      "level": 241,
+      "points": 13800000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 430
+    },
+    {
+      "level": 242,
+      "points": 14300000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 445
+    },
+    {
+      "level": 243,
+      "points": 14700000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 460
+    },
+    {
+      "level": 244,
+      "points": 15100000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 470
+    },
+    {
+      "level": 245,
+      "points": 15600000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 485
+    },
+    {
+      "level": 246,
+      "points": 16000000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 500
+    },
+    {
+      "level": 247,
+      "points": 16500000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 515
+    },
+    {
+      "level": 248,
+      "points": 17000000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 530
+    },
+    {
+      "level": 249,
+      "points": 17500000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 545
+    },
+    {
+      "level": 250,
+      "points": 18100000000,
+      "chestType": "GODLIKE",
+      "killChestQuantity": 565
+    }
+  ]
+}

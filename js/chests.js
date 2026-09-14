@@ -1,239 +1,63 @@
 (() => {
 const $=id=>document.getElementById(id);
-let payload={records:[],fields:[]},records=[],filtered=[];
-let columnSort={key:null,direction:null};
+let records=[],filtered=[],normData={epicMonsters:[],tinman:[]},columnSort={key:null,direction:null};
 const fixedKeys=['type','chest'];
-const numberFormat=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
-const resourceKeys=[
-  'clanWealth','gold','potion','talentReset','cityTeleport','epicTar','rareTar','commonTar',
-  'silver','wood','iron','stone','food','speedupDays','clanSpeedupDays','dragonCoins','summonsScroll','marchSpeed50'
-];
-
-const labels={
-  clanWealth:'Clan Wealth',gold:'Gold',potion:'Potion',talentReset:'Talent Reset',
-  cityTeleport:'City Teleport',epicTar:'Epic Tar',rareTar:'Rare Tar',commonTar:'Common Tar',
-  silver:'Silver',wood:'Wood',iron:'Iron',stone:'Stone',food:'Food',
-  speedupDays:'Speedup (days)',clanSpeedupDays:'Clan Speedup (days)',
-  dragonCoins:'Dragon Coins',summonsScroll:'Summons Scroll',marchSpeed50:'50% March Speed'
-};
-
+const resourceKeys=['clanWealth','gold','potion','talentReset','cityTeleport','epicTar','rareTar','commonTar','silver','wood','iron','stone','food','speedupDays','clanSpeedupDays','dragonCoins','summonsScroll','marchSpeed50'];
+const plannerKeys=resourceKeys.filter(k=>k!=='clanWealth');
+const labels={clanWealth:'Clan Wealth',gold:'Gold',potion:'Potion',talentReset:'Talent Reset',cityTeleport:'City Teleport',epicTar:'Epic Tar',rareTar:'Rare Tar',commonTar:'Common Tar',silver:'Silver',wood:'Wood',iron:'Iron',stone:'Stone',food:'Food',speedupDays:'Speedup (days)',clanSpeedupDays:'Clan Speedup (days)',dragonCoins:'Dragon Coins',summonsScroll:'Summons Scroll',marchSpeed50:'50% March Speed'};
+const coreKeys=['gold','potion','silver','dragonCoins'],growthKeys=['commonTar','rareTar','epicTar','speedupDays','wood','iron','stone'];
+const selectedRewards=new Set(),selectedPlannerResources=new Set(coreKeys),storageKey='tbtoolkit-clan-norm-planner-v1';
 const isDayKey=k=>k==='speedupDays'||k==='clanSpeedupDays';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const positive=(v,f=0)=>{const n=Number(v);return Number.isFinite(n)&&n>=0?n:f;};
+const whole=(v,f=0)=>Math.floor(positive(v,f));
+const formatNumber=v=>Number(v||0).toLocaleString('en-US',{maximumFractionDigits:2});
+const formatCompact=v=>{const n=Number(v)||0,a=Math.abs(n);if(a>=1e12)return `${(n/1e12).toLocaleString('en-US',{maximumFractionDigits:2})}T`;if(a>=1e9)return `${(n/1e9).toLocaleString('en-US',{maximumFractionDigits:2})}B`;if(a>=1e6)return `${(n/1e6).toLocaleString('en-US',{maximumFractionDigits:2})}M`;if(a>=1e3)return `${(n/1e3).toLocaleString('en-US',{maximumFractionDigits:2})}K`;return formatNumber(n);};
+function formatChestValue(v){if(v===null||v===undefined||v==='')return '—';const n=Number(v);return n>10?n.toLocaleString('en-US',{maximumFractionDigits:0}):n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
-function fmt(value,key){
-  if(value===null||value===undefined||value==='')return '—';
-  if(isDayKey(key)){
-    const n=Number(value);
-    return `${n.toLocaleString('en-US',{minimumFractionDigits:n<1?2:0,maximumFractionDigits:3})}`;
-  }
-  return Number(value).toLocaleString('en-US',{maximumFractionDigits:2});
-}
-
-const selectedRewards=new Set();
-
-function rewardOptionLabel(key){return labels[key]||key;}
-
-function updateRewardButton(){
-  const text=$('rewardFilterButtonText');
-  if(selectedRewards.size===0){
-    text.textContent='All rewards';
-  }else if(selectedRewards.size===1){
-    text.textContent=rewardOptionLabel([...selectedRewards][0]);
-  }else if(selectedRewards.size<=3){
-    text.textContent=[...selectedRewards].map(rewardOptionLabel).join(', ');
-  }else{
-    text.textContent=`${selectedRewards.size} rewards selected`;
-  }
-}
-
+function updateRewardButton(){const text=$('rewardFilterButtonText');if(!selectedRewards.size)text.textContent='All rewards';else if(selectedRewards.size===1)text.textContent=labels[[...selectedRewards][0]];else if(selectedRewards.size<=3)text.textContent=[...selectedRewards].map(k=>labels[k]).join(', ');else text.textContent=`${selectedRewards.size} rewards selected`;}
 function populateFilters(){
-  [...new Set(records.map(r=>r.type))].sort().forEach(v=>{
-    const o=document.createElement('option');o.value=v;o.textContent=v;$('chestTypeFilter').appendChild(o);
-  });
-
-  $('rewardFilterOptions').innerHTML=resourceKeys.map(k=>`
-    <label class="reward-option">
-      <input type="checkbox" value="${k}">
-      <span>${labels[k]}</span>
-    </label>`).join('');
-
-  $('rewardFilterOptions').querySelectorAll('input[type="checkbox"]').forEach(box=>{
-    box.addEventListener('change',()=>{
-      if(box.checked)selectedRewards.add(box.value);
-      else selectedRewards.delete(box.value);
-      updateRewardButton();
-      apply();
-    });
-  });
+  [...new Set(records.map(r=>r.type))].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;$('chestTypeFilter').appendChild(o);});
+  $('rewardFilterOptions').innerHTML=resourceKeys.map(k=>`<label class="reward-option"><input type="checkbox" value="${k}"><span>${labels[k]}</span></label>`).join('');
+  $('rewardFilterOptions').querySelectorAll('input').forEach(box=>box.addEventListener('change',()=>{box.checked?selectedRewards.add(box.value):selectedRewards.delete(box.value);updateRewardButton();apply();}));
 }
-
-function getVisibleKeys(){
-  return selectedRewards.size ? [...fixedKeys,...resourceKeys.filter(k=>selectedRewards.has(k))] : [...fixedKeys,...resourceKeys];
-}
-
-function formatChestValue(value,key){
-  if(value===null||value===undefined||value==='')return '—';
-  const n=Number(value);
-  if(isDayKey(key)){
-    return n>10
-      ? n.toLocaleString('en-US',{maximumFractionDigits:0})
-      : n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  }
-  return n>10
-    ? n.toLocaleString('en-US',{maximumFractionDigits:0})
-    : n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
+function visibleKeys(){return selectedRewards.size?[...fixedKeys,...resourceKeys.filter(k=>selectedRewards.has(k))]:[...fixedKeys,...resourceKeys];}
 function apply(){
-  const q=$('chestSearch').value.trim().toLowerCase();
-  const type=$('chestTypeFilter').value;
-
-  filtered=records.filter(r=>{
-    if(q && !`${r.type} ${r.chest}`.toLowerCase().includes(q))return false;
-    if(type && r.type!==type)return false;
-    return true;
-  });
-
-  if(columnSort.key){
-    const key=columnSort.key;
-    const dir=columnSort.direction==='desc'?-1:1;
-    filtered.sort((a,b)=>{
-      if(key==='type'||key==='chest'){
-        return dir*String(a[key]??'').localeCompare(String(b[key]??''),undefined,{numeric:true,sensitivity:'base'});
-      }
-      const av=Number(a[key]),bv=Number(b[key]);
-      const aMissing=a[key]===null||a[key]===undefined||a[key]===''||!Number.isFinite(av);
-      const bMissing=b[key]===null||b[key]===undefined||b[key]===''||!Number.isFinite(bv);
-      if(aMissing&&bMissing)return a.chest.localeCompare(b.chest,undefined,{numeric:true});
-      if(aMissing)return 1;
-      if(bMissing)return -1;
-      if(av!==bv)return dir*(av-bv);
-      return a.chest.localeCompare(b.chest,undefined,{numeric:true});
-    });
-  }else{
-    const sort=$('chestSort').value;
-    if(sort==='name')filtered.sort((a,b)=>a.chest.localeCompare(b.chest));
-    else if(sort==='type')filtered.sort((a,b)=>a.type.localeCompare(b.type)||a.chest.localeCompare(b.chest));
-  }
-
-  render();
+  const q=$('chestSearch').value.trim().toLowerCase(),type=$('chestTypeFilter').value;
+  filtered=records.filter(r=>(!q||`${r.type} ${r.chest}`.toLowerCase().includes(q))&&(!type||r.type===type));
+  if(columnSort.key){const {key}=columnSort,dir=columnSort.direction==='desc'?-1:1;filtered.sort((a,b)=>{if(fixedKeys.includes(key))return dir*String(a[key]??'').localeCompare(String(b[key]??''),undefined,{numeric:true,sensitivity:'base'});const av=Number(a[key]),bv=Number(b[key]);if(!Number.isFinite(av))return 1;if(!Number.isFinite(bv))return -1;return dir*(av-bv)||a.chest.localeCompare(b.chest,undefined,{numeric:true});});}
+  else{const sort=$('chestSort').value;if(sort==='name')filtered.sort((a,b)=>a.chest.localeCompare(b.chest));else if(sort==='type')filtered.sort((a,b)=>a.type.localeCompare(b.type)||a.chest.localeCompare(b.chest));}
+  renderChestTable();
+}
+function renderChestTable(){
+  $('visibleChestCount').textContent=filtered.length.toLocaleString();$('visibleTypeCount').textContent=new Set(filtered.map(r=>r.type)).size;$('clearChestSearch').hidden=!$('chestSearch').value;$('chestEmpty').hidden=!!filtered.length;$('chestTableShell').hidden=!filtered.length;
+  const keys=visibleKeys();document.querySelector('.chest-table')?.classList.toggle('compact-reward-view',selectedRewards.size>0);$('activeRewardSummary').textContent=selectedRewards.size?`Showing selected reward columns: ${[...selectedRewards].map(k=>labels[k]).join(', ')}`:'Showing all compiled rewards';
+  $('chestTableHead').innerHTML=`<tr>${keys.map(k=>{const active=columnSort.key===k,arrow=active?(columnSort.direction==='asc'?'▲':'▼'):'';return `<th class="sortable-header${active?' is-sorted':''}" data-sort-key="${k}" tabindex="0" aria-sort="${active?(columnSort.direction==='asc'?'ascending':'descending'):'none'}"><span>${k==='type'?'Type':k==='chest'?'Chest':labels[k]}</span><span class="sort-arrow">${arrow}</span></th>`;}).join('')}</tr>`;
+  $('chestTableBody').innerHTML=filtered.map(r=>`<tr>${keys.map(k=>{const missing=r[k]===null||r[k]===undefined||r[k]==='',display=selectedRewards.has(k)&&missing?0:r[k],cls=[k==='type'?'type-cell':'',k==='chest'?'chest-cell':'',missing?'blank':'',isDayKey(k)?'days':'',selectedRewards.has(k)?'reward-highlight':''].filter(Boolean).join(' ');return `<td class="${cls}">${fixedKeys.includes(k)?esc(display??'—'):formatChestValue(display)}</td>`;}).join('')}</tr>`).join('');
 }
 
-function render(){
-  $('visibleChestCount').textContent=filtered.length.toLocaleString('en-US');
-  $('visibleTypeCount').textContent=new Set(filtered.map(r=>r.type)).size;
-  $('clearChestSearch').hidden=!$('chestSearch').value;
-  $('chestEmpty').hidden=filtered.length!==0;
-  $('chestTableShell').hidden=filtered.length===0;
-
-  const keys=getVisibleKeys();
-
-  const chestTable=document.querySelector('.chest-table');
-  if(chestTable)chestTable.classList.toggle('compact-reward-view',selectedRewards.size>0);
-
-  if(selectedRewards.size===0){
-    $('activeRewardSummary').textContent='Showing all compiled rewards';
-  }else{
-    const names=[...selectedRewards].map(rewardOptionLabel);
-    $('activeRewardSummary').textContent=`Showing selected reward columns: ${names.join(', ')}`;
-  }
-
-  $('chestTableHead').innerHTML=`<tr>${keys.map(k=>{
-    const active=columnSort.key===k;
-    const arrow=active?(columnSort.direction==='asc'?'▲':'▼'):'';
-    const label=k==='type'?'Type':k==='chest'?'Chest':labels[k];
-    const title=(k==='type'||k==='chest')?'Sort A–Z / Z–A':'Sort smallest to largest / largest to smallest';
-    return `<th class="sortable-header${active?' is-sorted':''}" data-sort-key="${k}" title="${title}" aria-sort="${active?(columnSort.direction==='asc'?'ascending':'descending'):'none'}" tabindex="0"><span>${label}</span><span class="sort-arrow" aria-hidden="true">${arrow}</span></th>`;
-  }).join('')}</tr>`;
-  $('chestTableBody').innerHTML=filtered.map(r=>`<tr>${keys.map(k=>{
-    const val=r[k];
-    const cls=[
-      k==='type'?'type-cell':'',
-      k==='chest'?'chest-cell':'',
-      val===null||val===undefined?'blank':'',
-      isDayKey(k)?'days':'',
-      selectedRewards.has(k)?'reward-highlight':''
-    ].filter(Boolean).join(' ');
-    const displayValue=(selectedRewards.has(k) && (val===null||val===undefined||val==='')) ? 0 : val;
-    return `<td class="${cls}">${k==='type'||k==='chest'?String(displayValue??'—'):formatChestValue(displayValue,k)}</td>`;
-  }).join('')}</tr>`).join('');
+function plannerPeriod(){return $('normPeriod').value==='custom'?Math.max(1,whole($('customPeriodDays').value,1)):Number($('normPeriod').value);}
+function plannerState(){return {period:$('normPeriod').value,customPeriodDays:$('customPeriodDays').value,recipients:$('clanRecipients').value,resources:[...selectedPlannerResources],epics:[...document.querySelectorAll('.epic-norm-row')].map(row=>({monster:row.dataset.monster,basis:row.querySelector('.epic-basis').value,value:row.querySelector('.epic-value').value,contributors:row.querySelector('.epic-contributors').value})),crypt:{chest:$('cryptChest').value,count:$('cryptCount').value,contributors:$('cryptContributors').value,cadence:$('cryptCadence').value,customCadence:$('customCryptCadence').value},tinman:[...document.querySelectorAll('.tinman-level')].map(el=>el.value)};}
+function savePlanner(){try{localStorage.setItem(storageKey,JSON.stringify(plannerState()));}catch{}}
+function loadPlanner(){try{return JSON.parse(localStorage.getItem(storageKey)||'null');}catch{return null;}}
+function renderPlannerResources(){$('normResourceOptions').innerHTML=plannerKeys.map(k=>`<label><input type="checkbox" value="${k}" ${selectedPlannerResources.has(k)?'checked':''}><span>${labels[k]}</span></label>`).join('');$('normResourceOptions').querySelectorAll('input').forEach(box=>box.addEventListener('change',()=>{box.checked?selectedPlannerResources.add(box.value):selectedPlannerResources.delete(box.value);calculatePlanner();}));}
+function renderEpicRows(saved=[]){const map=new Map(saved.map(x=>[x.monster,x]));$('epicNormRows').innerHTML=normData.epicMonsters.map(item=>{const s=map.get(item.monster)||{};return `<div class="epic-norm-row" data-monster="${esc(item.monster)}"><div class="epic-event"><strong>${esc(item.monster)}</strong><small>${esc(item.event)} · every ${item.cadenceDays} days</small></div><label><span class="sr-only">Norm basis</span><select class="epic-basis"><option value="points" ${s.basis!=='chests'?'selected':''}>Points</option><option value="chests" ${s.basis==='chests'?'selected':''}>Chests</option></select></label><label><span class="sr-only">Norm value</span><input class="epic-value" type="number" min="0" step="1" value="${esc(s.value??0)}"></label><label><span class="sr-only">Contributors</span><input class="epic-contributors" type="number" min="0" max="100" step="1" value="${esc(s.contributors??100)}"></label><output class="epic-result">Excluded</output></div>`;}).join('');}
+function renderTinman(saved=[]){const options=`<option value="">Not included</option>${normData.tinman.map(x=>`<option value="${x.level}">Level ${x.level} · ${x.chestType} · ${x.killChestQuantity} chests</option>`).join('')}`;$('tinmanSlots').innerHTML=Array.from({length:8},(_,i)=>`<label><span>Tinman ${i+1}</span><select class="tinman-level">${options}</select></label>`).join('');document.querySelectorAll('.tinman-level').forEach((el,i)=>{el.value=String(saved[i]??'');});}
+function renderReferences(){$('epicReferenceRows').innerHTML=normData.epicMonsters.map(x=>`<tr><td>${esc(x.event)}</td><td>${esc(x.monster)}</td><td>${x.cadenceDays} days</td><td>${formatNumber(x.totalPoints)}</td><td>${formatNumber(x.totalChests)}</td><td>${formatNumber(x.pointsPerChest)}</td></tr>`).join('');$('tinmanReferenceRows').innerHTML=normData.tinman.map(x=>`<tr><td>${x.level}</td><td>${formatNumber(x.points)}</td><td>${esc(x.chestType)}</td><td>${formatNumber(x.killChestQuantity)}</td></tr>`).join('');}
+function rewardRecord(type,chest){return records.find(r=>r.type===type&&String(r.chest).toUpperCase()===String(chest).toUpperCase());}
+function calculatePlanner(){
+  const period=plannerPeriod(),recipients=Math.max(1,whole($('clanRecipients').value,100)),activities=[];$('customPeriodField').hidden=$('normPeriod').value!=='custom';$('customCryptCadenceField').hidden=$('cryptCadence').value!=='custom';
+  document.querySelectorAll('.epic-norm-row').forEach(row=>{const item=normData.epicMonsters.find(x=>x.monster===row.dataset.monster),basis=row.querySelector('.epic-basis').value,value=positive(row.querySelector('.epic-value').value),contributors=Math.min(100,whole(row.querySelector('.epic-contributors').value)),chests=basis==='points'?Math.floor(value/item.pointsPerChest):Math.floor(value),points=basis==='points'?value:Math.ceil(chests*item.pointsPerChest),actual=chests*contributors;row.querySelector('.epic-result').innerHTML=actual?`<strong>${formatNumber(actual)}</strong> chests/member<small>${formatCompact(points)} points/contributor</small>`:'Excluded';if(actual)activities.push({name:item.monster,cadence:item.cadenceDays,actual,prorated:actual*period/item.cadenceDays,equivalent:`${formatCompact(points)} points/contributor`,reward:rewardRecord('EPIC',item.monster)});});
+  const cryptCount=whole($('cryptCount').value),cryptContributors=Math.min(100,whole($('cryptContributors').value)),cryptCadence=$('cryptCadence').value==='custom'?Math.max(1,whole($('customCryptCadence').value,1)):Number($('cryptCadence').value),cryptActual=cryptCount*cryptContributors;if(cryptActual)activities.push({name:`${$('cryptChest').value} crypts`,cadence:cryptCadence,actual:cryptActual,prorated:cryptActual*period/cryptCadence,equivalent:`${formatNumber(cryptCount)} crypts/contributor`,reward:rewardRecord('CRYPT',$('cryptChest').value)});
+  let tinmanPoints=0,tinmanChests=0;document.querySelectorAll('.tinman-level').forEach(el=>{const t=normData.tinman.find(x=>String(x.level)===el.value);if(!t)return;tinmanPoints+=t.points;tinmanChests+=t.killChestQuantity;const cadence=normData.tinmanCadenceDays||6;activities.push({name:`Tinman level ${t.level}`,cadence,actual:t.killChestQuantity,prorated:t.killChestQuantity*period/cadence,equivalent:`${formatCompact(t.points)} points to defeat`,reward:rewardRecord('EVENT',`${t.chestType} TINMAN`)});});$('tinmanSummary').textContent=tinmanChests?`${formatNumber(tinmanChests)} total chests/member · ${formatCompact(tinmanPoints)} total points`:'No Tinmen included.';
+  $('normDashboardScope').textContent=`Average resource value for ${period} day${period===1?'':'s'}.`;$('dashboardRecipients').textContent=formatNumber(recipients);$('dashboardActivities').textContent=formatNumber(activities.length);$('proratedChestTotal').textContent=formatNumber(activities.reduce((s,a)=>s+a.prorated,0));
+  $('normResourceCards').innerHTML=selectedPlannerResources.size?[...selectedPlannerResources].map(key=>{const perMember=activities.reduce((sum,a)=>sum+a.prorated*positive(a.reward?.[key]),0);return `<article><small>${labels[key]}</small><strong>${formatCompact(perMember)}</strong><span>per member</span><em>${formatCompact(perMember*recipients)} clan-wide</em></article>`;}).join(''):'<p class="norm-no-resources">Choose at least one resource above to display resource totals.</p>';
+  $('normBreakdownRows').innerHTML=activities.length?activities.map(a=>`<tr><td>${esc(a.name)}</td><td>${a.cadence} days</td><td>${formatNumber(a.actual)}</td><td>${formatNumber(a.prorated)}</td><td>${esc(a.equivalent)}</td></tr>`).join(''):'<tr><td colspan="5" class="norm-empty-row">Enter a norm above to include it in the plan.</td></tr>';savePlanner();
 }
-
-function reset(){
-  $('chestSearch').value='';
-  $('chestTypeFilter').value='';
-  $('chestSort').value='source';
-  columnSort={key:null,direction:null};
-  selectedRewards.clear();
-  $('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=false);
-  updateRewardButton();
-  apply();
-}
-
-async function init(){
-  try{
-    const res=await fetch('data/chest-data.json',{cache:'no-store'});
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    payload=await res.json();records=payload.records||[];
-    populateFilters();apply();
-  }catch(err){
-    console.error(err);
-    $('chestTableShell').innerHTML='<div class="chest-empty"><h2>Chest data could not be loaded.</h2><p>Refresh the page and try again.</p></div>';
-  }
-}
-$('chestSearch').addEventListener('input',apply);
-$('chestTypeFilter').addEventListener('change',apply);
-$('chestSort').addEventListener('change',()=>{columnSort={key:null,direction:null};apply();});
-
-function activateColumnSort(th){
-  const key=th?.dataset?.sortKey;
-  if(!key)return;
-  if(columnSort.key===key){
-    columnSort.direction=columnSort.direction==='asc'?'desc':'asc';
-  }else{
-    columnSort={key,direction:'asc'};
-  }
-  apply();
-}
-$('chestTableHead').addEventListener('click',evt=>activateColumnSort(evt.target.closest('.sortable-header')));
-$('chestTableHead').addEventListener('keydown',evt=>{
-  if(evt.key!=='Enter'&&evt.key!==' ')return;
-  const th=evt.target.closest('.sortable-header');
-  if(!th)return;
-  evt.preventDefault();
-  activateColumnSort(th);
-});
-
-$('rewardFilterButton').addEventListener('click',()=>{
-  const menu=$('rewardFilterMenu');
-  const open=menu.hidden;
-  menu.hidden=!open;
-  $('rewardFilterButton').setAttribute('aria-expanded',String(open));
-});
-
-$('selectAllRewards').addEventListener('click',()=>{
-  resourceKeys.forEach(k=>selectedRewards.add(k));
-  $('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=true);
-  updateRewardButton();
-  apply();
-});
-
-$('clearAllRewards').addEventListener('click',()=>{
-  selectedRewards.clear();
-  $('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=false);
-  updateRewardButton();
-  apply();
-});
-
-document.addEventListener('pointerdown',evt=>{
-  const menu=$('rewardFilterMenu');
-  const button=$('rewardFilterButton');
-  if(menu.hidden)return;
-  if(menu.contains(evt.target)||button.contains(evt.target))return;
-  menu.hidden=true;
-  button.setAttribute('aria-expanded','false');
-});
-
-$('clearChestSearch').addEventListener('click',()=>{$('chestSearch').value='';apply();$('chestSearch').focus();});
-$('resetChestFilters').addEventListener('click',reset);
-init();
+function restorePlanner(saved){if(!saved)return;$('normPeriod').value=saved.period||'6';$('customPeriodDays').value=saved.customPeriodDays||12;$('clanRecipients').value=saved.recipients||100;selectedPlannerResources.clear();(saved.resources||coreKeys).filter(k=>plannerKeys.includes(k)).forEach(k=>selectedPlannerResources.add(k));if(saved.crypt){$('cryptChest').value=saved.crypt.chest||$('cryptChest').value;$('cryptCount').value=saved.crypt.count??300;$('cryptContributors').value=saved.crypt.contributors??100;$('cryptCadence').value=saved.crypt.cadence||'6';$('customCryptCadence').value=saved.crypt.customCadence||6;}}
+function initPlanner(saved){const crypts=records.filter(r=>r.type==='CRYPT').sort((a,b)=>a.chest.localeCompare(b.chest,undefined,{numeric:true}));$('cryptChest').innerHTML=crypts.map(r=>`<option value="${esc(r.chest)}" ${r.chest==='EPIC 35'?'selected':''}>${esc(r.chest)}</option>`).join('');renderEpicRows(saved?.epics);renderTinman(saved?.tinman);restorePlanner(saved);renderPlannerResources();renderReferences();document.querySelector('.norm-layout').addEventListener('input',calculatePlanner);document.querySelector('.norm-layout').addEventListener('change',calculatePlanner);$('resetNormPlan').addEventListener('click',()=>{try{localStorage.removeItem(storageKey);}catch{}location.reload();});document.querySelectorAll('[data-resource-preset]').forEach(button=>button.addEventListener('click',()=>{selectedPlannerResources.clear();const preset=button.dataset.resourcePreset,keys=preset==='core'?coreKeys:preset==='growth'?growthKeys:preset==='all'?plannerKeys:[];keys.forEach(k=>selectedPlannerResources.add(k));renderPlannerResources();calculatePlanner();}));calculatePlanner();}
+function resetChestFilters(){$('chestSearch').value='';$('chestTypeFilter').value='';$('chestSort').value='source';columnSort={key:null,direction:null};selectedRewards.clear();$('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=false);updateRewardButton();apply();}
+function activateColumnSort(th){const key=th?.dataset?.sortKey;if(!key)return;columnSort=columnSort.key===key?{key,direction:columnSort.direction==='asc'?'desc':'asc'}:{key,direction:'asc'};apply();}
+async function init(){try{const [chestRes,normRes]=await Promise.all([fetch('data/chest-data.json',{cache:'no-store'}),fetch('data/norm-planner-data.json',{cache:'no-store'})]);if(!chestRes.ok||!normRes.ok)throw new Error('Planner data could not be loaded.');records=(await chestRes.json()).records||[];normData=await normRes.json();populateFilters();apply();initPlanner(loadPlanner());}catch(err){console.error(err);$('epicNormRows').innerHTML='<p class="norm-load-error">Planner data could not be loaded. Refresh the page and try again.</p>';}}
+$('chestSearch').addEventListener('input',apply);$('chestTypeFilter').addEventListener('change',apply);$('chestSort').addEventListener('change',()=>{columnSort={key:null,direction:null};apply();});$('chestTableHead').addEventListener('click',e=>activateColumnSort(e.target.closest('.sortable-header')));$('chestTableHead').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activateColumnSort(e.target.closest('.sortable-header'));}});$('rewardFilterButton').addEventListener('click',()=>{const menu=$('rewardFilterMenu'),open=menu.hidden;menu.hidden=!open;$('rewardFilterButton').setAttribute('aria-expanded',String(open));});$('selectAllRewards').addEventListener('click',()=>{resourceKeys.forEach(k=>selectedRewards.add(k));$('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=true);updateRewardButton();apply();});$('clearAllRewards').addEventListener('click',()=>{selectedRewards.clear();$('rewardFilterOptions').querySelectorAll('input').forEach(b=>b.checked=false);updateRewardButton();apply();});document.addEventListener('pointerdown',e=>{const menu=$('rewardFilterMenu'),button=$('rewardFilterButton');if(!menu.hidden&&!menu.contains(e.target)&&!button.contains(e.target)){menu.hidden=true;button.setAttribute('aria-expanded','false');}});$('clearChestSearch').addEventListener('click',()=>{$('chestSearch').value='';apply();$('chestSearch').focus();});$('resetChestFilters').addEventListener('click',resetChestFilters);init();
 })();
