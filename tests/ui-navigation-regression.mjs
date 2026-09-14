@@ -34,6 +34,10 @@ assert.match(html,/<h2>Unit Bonuses<\/h2><button[^>]+data-stat-help="unitBonusPr
 assert.doesNotMatch(html,/<h2>Health &amp; Combat<\/h2>/,'The old section name must not remain');
 assert.match(source,/bonusDD:[\s\S]*?monster-dd\.webp[\s\S]*?bonusST:[\s\S]*?monster-st\.webp[\s\S]*?bonusHealth:[\s\S]*?monster-health\.webp[\s\S]*?bonusStrength:[\s\S]*?monster-strength\.webp/,'Each column help topic must include its Monster example screenshot');
 assert.match(html,/<span>Unit <button[^>]+data-stat-help="bonusUnit"/,'The Unit column must provide contextual profile-selection help');
+for(const key of ['bonusDD','bonusST','bonusHealth','bonusStrength']){
+  const helpPattern=new RegExp(`${key}:\\{[^\\n]+this encounter[^\\n]+images:\\[\\['monster-click\\.webp'`);
+  assert.match(source,helpPattern,`${key} help must explain the matching encounter/loadout and begin with the unit-selection example.`);
+}
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
 assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
 assert.equal((html.match(/data-guide-panel=/g)||[]).length,8,'The mechanics guide must contain all eight reference sections');
