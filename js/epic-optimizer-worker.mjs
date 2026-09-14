@@ -1,6 +1,6 @@
 import {optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
-import {ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
+import {APP_BUILD,ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 
 const OPTIMIZER_TIME_BUDGET_MS=180000;
 
@@ -47,6 +47,16 @@ function progressPercent(progress){
 self.onmessage=async event=>{
   const message=event.data??{};if(message.type!=='optimize')return;
   const requestId=message.requestId;
+  if(message.appBuild!==APP_BUILD){
+    self.postMessage({
+      type:'error',requestId,
+      code:'BUILD_MISMATCH',
+      message:'The calculator was updated while this page was open. Refresh the page and run Optimize again.',
+      pageBuild:message.appBuild??null,
+      workerBuild:APP_BUILD
+    });
+    return;
+  }
   const startedAt=performance.now();
   const requestedBudget=Number(message.timeBudgetMs);
   const timeBudgetMs=Number.isFinite(requestedBudget)&&requestedBudget>0?Math.max(1000,requestedBudget):OPTIMIZER_TIME_BUDGET_MS;

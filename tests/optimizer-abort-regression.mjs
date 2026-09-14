@@ -20,5 +20,6 @@ const workerFactorySource=fs.readFileSync(new URL('../js/calculator-workers.mjs'
 assert.match(workerFactorySource,/OPTIMIZER_WATCHDOG_MS\s*=\s*195000/,'Optimizer worker must have a main-thread watchdog.');
 assert.match(workerFactorySource,/WORKER_WATCHDOG/,'Watchdog termination must surface a distinct worker error code.');
 assert.match(workerFactorySource,/nativeTerminate\(\)/,'Watchdog must terminate a nonresponsive worker.');
+assert.match(workerFactorySource,/appBuild:APP_BUILD/,'Optimizer requests must identify the page build for the worker handshake.');
 
 console.log(JSON.stringify({ok:true}));

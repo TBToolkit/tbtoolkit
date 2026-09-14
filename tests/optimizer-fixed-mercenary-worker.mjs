@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {Worker} from 'node:worker_threads';
+import {APP_BUILD} from '../js/build-info.mjs';
 
 const army=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const troop=army.find(unit=>unit.id==='troop-g9-flying-corax-2');
@@ -21,7 +22,7 @@ const result=await new Promise((resolve,reject)=>{
     worker.terminate();
   });
   worker.on('error',reject);
-  worker.postMessage({type:'optimize',requestId,selectedIds:[troop.id,monster.id],fixedQuantities:{[mercenary.name]:fixedQuantity},fixedMercenaryIds:[mercenary.id],fixedAuthorityMaximum:mercenary.capacityCost*fixedQuantity,bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:3800,monsterDDPct:12,monsterSTPct:18,arachne:false,useCustomFamilyBonuses:false},capacityLimits:{LEADERSHIP:25_000,DOMINANCE:10_000,AUTHORITY:0}});
+  worker.postMessage({type:'optimize',requestId,appBuild:APP_BUILD,selectedIds:[troop.id,monster.id],fixedQuantities:{[mercenary.name]:fixedQuantity},fixedMercenaryIds:[mercenary.id],fixedAuthorityMaximum:mercenary.capacityCost*fixedQuantity,bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:3800,monsterDDPct:12,monsterSTPct:18,arachne:false,useCustomFamilyBonuses:false},capacityLimits:{LEADERSHIP:25_000,DOMINANCE:10_000,AUTHORITY:0}});
 });
 const fixed=result.payload.result.squads.find(squad=>squad.id===mercenary.id);
 assert.ok(fixed,'The fixed mercenary must be added to the final live result');

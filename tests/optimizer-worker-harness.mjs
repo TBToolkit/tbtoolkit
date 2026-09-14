@@ -1,3 +1,5 @@
+import {APP_BUILD} from '../js/build-info.mjs';
+
 const output=document.getElementById('output');
 const army=await fetch('../data/army-v2.json').then(response=>response.json());
 const tiers=new Set(['G9','G8','S9','S8','E9','M9','M8','M7']);
@@ -22,7 +24,7 @@ worker.onmessage=event=>{
   },null,2);
 };
 worker.postMessage({
-  type:'optimize',requestId:'arachne-gs-harness',selectedIds,
+  type:'optimize',requestId:'arachne-gs-harness',appBuild:APP_BUILD,selectedIds,
   bonuses:{monsterHealthPct:2438.5,monsterStrengthPct:5300.5,strengthAgainstEpicPct:6181,monsterDDPct:32,monsterSTPct:30,arachne:true,enemySquadTypes:['FLYING','FLYING','MOUNTED','MOUNTED','MELEE','MELEE','RANGED','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false},
   capacityLimits:{LEADERSHIP:1_326_786,DOMINANCE:270_245,AUTHORITY:0},fixedQuantities:{},fixedAuthorityMaximum:515_385
 });

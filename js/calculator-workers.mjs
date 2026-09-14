@@ -1,3 +1,5 @@
+import {APP_BUILD} from './build-info.mjs';
+
 export const OPTIMIZER_WATCHDOG_MS=195000;
 
 export function createOptimizerWorker({watchdogMs=OPTIMIZER_WATCHDOG_MS}={}){
@@ -23,6 +25,7 @@ export function createOptimizerWorker({watchdogMs=OPTIMIZER_WATCHDOG_MS}={}){
 
   worker.postMessage=(message,transfer)=>{
     if(message?.type==='optimize'){
+      message={...message,appBuild:APP_BUILD};
       clearWatchdog();
       activeRequestId=message.requestId;
       const delay=Math.max(1000,Number(watchdogMs)||OPTIMIZER_WATCHDOG_MS);
