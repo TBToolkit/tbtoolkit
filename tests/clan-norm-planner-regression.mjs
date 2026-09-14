@@ -40,5 +40,8 @@ assert.match(script,/filter\(x=>x\.monster!==\'ASHEN\'\)/,'Ashen must be hidden 
 assert.match(script,/sortedEpics\(\).*monster\.localeCompare/s,'Epic controls must be alphabetized.');
 assert.match(html,/id="resourceDonutCharts"/,'The dashboard must include per-resource event charts.');
 assert.match(html,/id="resourceCategoryChart"/,'The dashboard must include a resource-category summary chart.');
+assert.match(script,/part\.category===\'Tinman\'\?\'Tinman\':part\.name/,'All Tinman levels must share one event-chart slice.');
+assert.match(script,/\[\'Crypts\'.*\[\'Citadels\'/,'Crypts and Citadels must remain separate summary categories.');
+assert.match(script,/Other activities/,'Crowded callout charts must consolidate excess small slices.');
 
 console.log('Clan norm planner regression checks passed.');
