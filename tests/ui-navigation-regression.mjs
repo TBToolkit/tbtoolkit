@@ -24,8 +24,10 @@ assert.match(source,/pvpEnemyUnitField\.hidden=type!==['"]pvp_single_cp['"]/, 'E
 assert.match(css,/#pvpEnemyUnitField\[hidden\][\s\S]*?display:none!important/, 'Hidden Enemy Unit selector must override grid display');
 assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidden PvP encounter model must override dialog label display');
 assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesStandard\(\)/, 'Untouched Epic Custom Order must reuse Standard');
-assert.match(html,/id="exportAccount"/, 'Player Account must expose .biff export');
-assert.match(html,/id="importAccount"/, 'Player Account must expose .biff import');
+assert.match(html,/id="exportAccount"/, 'Player Account must expose .stacks export');
+assert.match(html,/id="importAccount"/, 'Player Account must expose .stacks import');
+assert.match(html,/accept="\.stacks,\.biff,application\/json"/, 'Account import must accept .stacks and legacy .biff files');
+assert.match(source,/return `\$\{stem\}\.stacks`/, 'New account exports must use the .stacks extension');
 assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
 assert.equal((html.match(/data-bonus-profile=/g)||[]).length,10,'Unit bonuses must include shared Monster and Human rows plus their expandable profiles');
 assert.match(html,/data-bonus-profile="monster"[\s\S]*?hidden id="monsterBonusDetails"[\s\S]*?data-bonus-profile="beast"[\s\S]*?data-bonus-profile="dragon"[\s\S]*?data-bonus-profile="elemental"[\s\S]*?data-bonus-profile="giant"[\s\S]*?data-bonus-profile="human"[\s\S]*?hidden id="humanBonusDetails"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'The default matrix must show Monsters, Humans, and Epic Hunters with species and classes nested under their shared rows');

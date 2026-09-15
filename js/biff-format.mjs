@@ -132,18 +132,18 @@ export function serializeAccountToBiff(account,{appBuild='unknown',exportedAt=ne
 
 export function parseBiff(text,{maxBytes=BIFF_MAX_BYTES}={}){
   const source=String(text??'');
-  if(new TextEncoder().encode(source).length>maxBytes)fail('This .biff file is larger than 5 MB.');
-  let raw;try{raw=JSON.parse(source);}catch{fail('This file is not valid .biff JSON.');}
-  if(raw?.format!==BIFF_FORMAT)fail('This is not a TB Toolkit .biff file.');
-  if(!Number.isInteger(raw?.schemaVersion)||raw.schemaVersion<1)fail('This .biff file has an invalid schema version.');
-  if(raw.schemaVersion>BIFF_SCHEMA_VERSION)fail(`This .biff file uses newer schema version ${raw.schemaVersion}.`);
-  if(raw?.kind!=='account')fail('This .biff file does not contain a supported account export.');
+  if(new TextEncoder().encode(source).length>maxBytes)fail('This account file is larger than 5 MB.');
+  let raw;try{raw=JSON.parse(source);}catch{fail('This file is not valid TB Toolkit account JSON.');}
+  if(raw?.format!==BIFF_FORMAT)fail('This is not a TB Toolkit .stacks or legacy .biff file.');
+  if(!Number.isInteger(raw?.schemaVersion)||raw.schemaVersion<1)fail('This account file has an invalid schema version.');
+  if(raw.schemaVersion>BIFF_SCHEMA_VERSION)fail(`This account file uses newer schema version ${raw.schemaVersion}.`);
+  if(raw?.kind!=='account')fail('This file does not contain a supported account export.');
   const rawEncounters=Array.isArray(raw.account?.customEncounters)?raw.account.customEncounters:[];
   const rawEncounterIds=rawEncounters.map(row=>String(row?.id||''));
-  if(new Set(rawEncounterIds).size!==rawEncounterIds.length)fail('This .biff file contains duplicate encounter IDs.');
+  if(new Set(rawEncounterIds).size!==rawEncounterIds.length)fail('This account file contains duplicate encounter IDs.');
   const rawWorkspaces=Array.isArray(raw.account?.workspaces)?raw.account.workspaces:[];
   const rawWorkspaceIds=rawWorkspaces.map(row=>String(row?.encounterId||''));
-  if(new Set(rawWorkspaceIds).size!==rawWorkspaceIds.length)fail('This .biff file contains duplicate workspace IDs.');
+  if(new Set(rawWorkspaceIds).size!==rawWorkspaceIds.length)fail('This account file contains duplicate workspace IDs.');
   const account=canonicalAccount({
     ...raw.account,
     customEncounters:Object.fromEntries(rawEncounters.map(row=>[row?.id,row])),
@@ -173,7 +173,7 @@ function filterKnownIds(ids,known,warnings,label){
 }
 
 export function materializeImportedAccount(parsed,{existingAccountIds=[],existingEncounterIds=[],builtInEncounterIds=[],armyIds=null}={}){
-  const source=parsed?.account||fail('No .biff account is available to import.');
+  const source=parsed?.account||fail('No account is available to import.');
   const warnings=[];
   const accountId=allocateId(source.id,new Set(existingAccountIds));
   if(accountId!==source.id)warnings.push(`Account ID changed from “${source.id}” to “${accountId}” to avoid a collision.`);
