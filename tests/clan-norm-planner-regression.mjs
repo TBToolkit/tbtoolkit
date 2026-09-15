@@ -65,11 +65,15 @@ assert.match(script,/chests per player.*points per player/s,'Calculated Epic res
 assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
 assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
 assert.match(html,/id="enableGoldEconomics"/,'Epic gold economics must be optional.');
-assert.match(html,/Epic Points \/ Attack.*Full Gold Revive.*Gold Revive %/s,'The Epic matrix must include the requested economics columns.');
+assert.match(html,/Epic Points \/ Full Gold Revive.*Gold Revive %/s,'The Epic matrix must include the consolidated efficiency column.');
 assert.match(script,/\[0,25,50,75,100\]/,'Gold revive percentage must provide the five quick choices.');
-assert.match(script,/Math\.ceil\(points\/pointsPerAttack\)/,'Gold economics must round required attacks up.');
-assert.match(script,/attacks\*fullGoldRevive\*\(pct\/100\)\*\(period\/item\.cadenceDays\)/,'Gold spending must account for revive share and event cadence.');
+assert.match(script,/points\/Math\.max\(ratio,1\)\*\(pct\/100\)\*\(period\/item\.cadenceDays\)/,'Gold spending must divide norm points by efficiency and apply revive share and cadence.');
 assert.match(script,/goldEconomicsEnabled:\$\('enableGoldEconomics'\)\.checked/,'Gold economics settings must persist in .norms profiles.');
 assert.match(html,/id="goldEconomicsDashboard" hidden/,'The optional economics dashboard must be hidden by default.');
+assert.match(script,/legacyRatio=.*pointsPerAttack.*fullGoldRevive/,'Previously entered preview values must migrate to the consolidated efficiency ratio.');
+assert.match(script,/style="--activity-color:\$\{colors\.get\(item\.monster\)\}"/,'Epic input rows must use their permanent event colors.');
+assert.match(html,/id="goldEconomicsDashboard"[\s\S]*id="resourceDonutCharts"/,'Gold economics visuals must appear before gross resource visuals.');
+assert.match(html,/id="goldEconomicsChart"/,'Gold economics must include a visual chart.');
+assert.match(html,/id="resourceDonutCharts"[\s\S]*Epic gold profit \/ deficit data[\s\S]*Gross resource data/,'Both visuals must precede the collapsible gold and gross data tables.');
 
 console.log('Clan norm planner regression checks passed.');
