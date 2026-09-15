@@ -31,7 +31,8 @@ assert.match(html,/id="normBreakdownHead"/,'The breakdown must support dynamic r
 assert.match(script,/multipliers=\{B:1e9,M:1e6,K:1e3\}/,'Point norms must support B, M, and K units.');
 assert.match(script,/Math\.min\(250,start\+i\)/,'Tinman sequences must advance by level and cap at 250.');
 assert.match(script,/event\.key!==\'Enter\'&&event\.key!==\'Tab\'/,'Epic value fields must support direct Enter and Tab navigation.');
-assert.match(script,/\.epic-norm-row:not\(\[hidden\]\) \.epic-value/,'Epic value navigation must skip hidden events.');
+assert.match(script,/values=\[\.\.\.document\.querySelectorAll\('\.epic-norm-row:not\(\[hidden\]\) \.epic-value'\)\].*efficiencies=/,'Navigation must move through visible norm values before efficiency values.');
+assert.match(script,/list=\[\.\.\.values,\.\.\.efficiencies\]/,'Navigation must cycle from the norm column through the efficiency column.');
 assert.match(script,/r\.type===\'CRYPT\'\|\|r\.type===\'CITADEL\'/,'The norm planner must offer Crypt and Citadel chests.');
 assert.match(script,/focusin.*\.select\(\)/,'Numeric inputs must select their full value on focus.');
 assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normalize to the next smaller unit.');
@@ -66,7 +67,7 @@ assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All re
 assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
 assert.match(html,/id="enableGoldEconomics"/,'Epic gold economics must be optional.');
 assert.match(html,/Epic Points \/ Full Gold Revive.*Gold Revive %/s,'The Epic matrix must include the consolidated efficiency column.');
-assert.match(script,/\[0,25,50,75,100\]/,'Gold revive percentage must provide the five quick choices.');
+assert.match(script,/\[0,50,100\]/,'Gold revive percentage must provide the three requested quick choices.');
 assert.match(script,/points\/Math\.max\(ratio,1\)\*\(pct\/100\)\*\(period\/item\.cadenceDays\)/,'Gold spending must divide norm points by efficiency and apply revive share and cadence.');
 assert.match(script,/goldEconomicsEnabled:\$\('enableGoldEconomics'\)\.checked/,'Gold economics settings must persist in .norms profiles.');
 assert.match(html,/id="goldEconomicsDashboard" hidden/,'The optional economics dashboard must be hidden by default.');
@@ -75,5 +76,10 @@ assert.match(script,/style="--activity-color:\$\{colors\.get\(item\.monster\)\}"
 assert.match(html,/id="goldEconomicsDashboard"[\s\S]*id="resourceDonutCharts"/,'Gold economics visuals must appear before gross resource visuals.');
 assert.match(html,/id="goldEconomicsChart"/,'Gold economics must include a visual chart.');
 assert.match(html,/id="resourceDonutCharts"[\s\S]*Epic gold profit \/ deficit data[\s\S]*Gross resource data/,'Both visuals must precede the collapsible gold and gross data tables.');
+assert.match(script,/epicEfficiencyDefaults=\{ARACHNE:43.*'SHADOW CITY':760\}/,'The supplied Epic efficiency defaults must be preserved.');
+assert.match(html,/id="resetEpicEfficiencies"/,'Users must be able to reset Epic efficiencies to defaults.');
+assert.match(script,/goldEconomicsSort:\$\('goldEconomicsSort'\)\.value/,'Gold chart sorting must persist with the clan profile.');
+assert.match(script,/sort==='deficit'\?a\.net-b\.net:b\.net-a\.net/,'Gold chart sorting must default to largest profit and support largest deficit.');
+assert.match(html,/id="goldEconomicsMetrics"/,'The gold dashboard must expose summary metrics.');
 
 console.log('Clan norm planner regression checks passed.');
