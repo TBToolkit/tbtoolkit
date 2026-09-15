@@ -24,6 +24,7 @@ assert.match(script,/actual\*period\/item\.cadenceDays/,'Epic resource estimates
 assert.match(script,/plannerKeys=resourceKeys\.filter\(k=>k!==\'clanWealth\'\)/,'Clan Wealth must remain outside the first planner version.');
 assert.match(html,/accept="\.norms,application\/json"/,'Clan profiles must support portable .norms files.');
 assert.doesNotMatch(html,/id="clanContributors"/,'The planner must use one clan member count.');
+assert.match(html,/>Clan Members<input id="clanRecipients"/,'The shared participant count must be labeled Clan Members.');
 assert.match(html,/id="epicVisibilityOptions"/,'Clan leaders must be able to show or hide individual Epic events.');
 assert.match(html,/id="addChestNorm"/,'Clan leaders must be able to add multiple Crypt and Citadel requirements.');
 assert.match(html,/id="normBreakdownHead"/,'The breakdown must support dynamic resource columns.');
@@ -49,10 +50,9 @@ assert.doesNotMatch(html,/id="normResourceCards"/,'Resource totals must not be r
 assert.doesNotMatch(html,/class="norm-kpis"/,'The dashboard must open directly with its resource visuals.');
 assert.doesNotMatch(script,/proratedChestTotal|dashboardRecipients|dashboardActivities/,'Removed dashboard KPI cards must not retain update logic.');
 assert.match(html,/<details class="norm-data-details"><summary>/,'The detailed activity table must be collapsed by default.');
-assert.match(script,/contrastingActivityColors/,'Activity colors must be coordinated across resource charts.');
-assert.match(script,/neighbors\.get\(name\)\.add\(next\)/,'The palette must account for activities that touch in each donut.');
-assert.match(script,/Math\.min\(\.\.\.adjacent\.map\(color=>distance\(candidate,color\)\)\)/,'Adjacent donut slices must maximize their color contrast.');
-assert.match(script,/used\.add\(bestIndex\)/,'Every visible activity must receive a unique chart color.');
+assert.match(script,/function permanentActivityColors/,'Activity colors must come from a permanent registry.');
+assert.match(script,/normData\.epicMonsters\.map\(x=>x\.monster\)/,'The permanent palette must include every Epic even when hidden.');
+assert.match(script,/const colorMap=permanentActivityColors\(\)/,'Every resource chart must use the same permanent activity colors.');
 assert.match(script,/class="slice-percent"/,'Donut percentages must be rendered within sufficiently large slices.');
 assert.match(script,/class="donut-label".*transform="rotate/s,'Donut labels must follow a radial orientation.');
 assert.match(script,/text-anchor="\$\{flip\?'end':'start'\}"/,'Radial labels must extend away from the donut rather than across it.');
@@ -64,5 +64,12 @@ assert.match(script,/unit\.disabled=!points/,'The invisible point unit must not 
 assert.match(script,/chests per player.*points per player/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
 assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
 assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
+assert.match(html,/id="enableGoldEconomics"/,'Epic gold economics must be optional.');
+assert.match(html,/Epic Points \/ Attack.*Full Gold Revive.*Gold Revive %/s,'The Epic matrix must include the requested economics columns.');
+assert.match(script,/\[0,25,50,75,100\]/,'Gold revive percentage must provide the five quick choices.');
+assert.match(script,/Math\.ceil\(points\/pointsPerAttack\)/,'Gold economics must round required attacks up.');
+assert.match(script,/attacks\*fullGoldRevive\*\(pct\/100\)\*\(period\/item\.cadenceDays\)/,'Gold spending must account for revive share and event cadence.');
+assert.match(script,/goldEconomicsEnabled:\$\('enableGoldEconomics'\)\.checked/,'Gold economics settings must persist in .norms profiles.');
+assert.match(html,/id="goldEconomicsDashboard" hidden/,'The optional economics dashboard must be hidden by default.');
 
 console.log('Clan norm planner regression checks passed.');
