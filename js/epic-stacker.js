@@ -595,7 +595,7 @@ function saveState(){
 }
 function safeBiffFileName(name){
   const stem=String(name||'tbtoolkit-account').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'tbtoolkit-account';
-  return `${stem}.biff`;
+  return `${stem}.stacks`;
 }
 function downloadActiveAccountBiff(){
   readInputs();saveState();
@@ -660,14 +660,14 @@ function showBiffImportError(error){
   els.biffImportAccountName.textContent='Could not read file';
   els.biffImportEncounterCount.textContent='—';els.biffImportWorkspaceCount.textContent='—';
   els.biffImportWarnings.hidden=true;els.biffImportWarningList.innerHTML='';
-  els.biffImportError.textContent=error?.message||'The selected .biff file could not be imported.';
+  els.biffImportError.textContent=error?.message||'The selected .stacks or legacy .biff file could not be imported.';
   els.biffImportError.classList.add('show');
   els.confirmBiffImport.disabled=true;
   if(!els.biffImportDialog.open)els.biffImportDialog.showModal();
 }
 async function prepareBiffImport(file){
   if(!file)return;
-  if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error('This .biff file is larger than 5 MB.'));return;}
+  if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error('This account file is larger than 5 MB.'));return;}
   try{
     const parsed=parseBiff(await file.text());
     const materialized=materializeImportedAccount(parsed,{
