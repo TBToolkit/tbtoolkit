@@ -81,5 +81,9 @@ assert.match(html,/id="resetEpicEfficiencies"/,'Users must be able to reset Epic
 assert.match(script,/goldEconomicsSort:\$\('goldEconomicsSort'\)\.value/,'Gold chart sorting must persist with the clan profile.');
 assert.match(script,/sort==='deficit'\?a\.net-b\.net:b\.net-a\.net/,'Gold chart sorting must default to largest profit and support largest deficit.');
 assert.match(html,/id="goldEconomicsMetrics"/,'The gold dashboard must expose summary metrics.');
+assert.match(script,/value>=1000&&unit\.value==='M'.*value\/=1000;unit\.value='B'/s,'Large M values must normalize upward to B.');
+assert.match(html,/id="openEpicEfficiencyHelp"/,'The efficiency column must provide contextual help.');
+assert.match(html,/epic-points\.png[\s\S]*full-gold-revive\.png/,'Efficiency help must show both supplied source screenshots.');
+assert.match(html,/Epic Points ÷ Full Gold Revive = Epic Points \/ Full Gold Revive/,'Efficiency help must state the calculation formula.');
 
 console.log('Clan norm planner regression checks passed.');
