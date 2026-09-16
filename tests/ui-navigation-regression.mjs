@@ -106,6 +106,8 @@ assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
+assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
+assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*writeSavedJson\(localStorage,optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
 assert.match(source,/xTitle\.textContent=chartStyle\(\)==='separated'\?'Position Within Army Type →':'Death Order →'/, 'The results chart must identify the horizontal axis for either chart style');
 assert.match(html,/data-chart-style="combined"/, 'Both visuals must expose the shared chart-style preference');

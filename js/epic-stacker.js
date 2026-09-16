@@ -702,11 +702,26 @@ function optimizerResultStorageKey(){
     ?`tbtoolkit.battleCalculator.optimizerResult.v4.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
     :OPTIMIZER_RESULT_KEY;
 }
+function compactOptimizerPayloadForStorage(payload){
+  if(!payload?.result)return payload;
+  const result={...payload.result};
+  // Initiative event traces are useful while scoring, but the results UI is
+  // fully reconstructed from squads and summary fields. Keeping every trace
+  // for every encounter can exhaust the browser's local-storage quota.
+  delete result.cases;
+  const diagnostics={...(payload.diagnostics||{})};
+  // This search-only list is not rendered after optimization and can contain
+  // hundreds of candidate summaries.
+  delete diagnostics.practicalCandidateSummary;
+  return{...payload,result,diagnostics};
+}
 function loadSavedOptimizerResult(){
   try{
     lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
-    let saved=readSavedJson(localStorage,optimizerResultStorageKey());
-    if(activeMode==='battle'&&!saved)saved=currentBattleWorkspace().resultCache||null;
+    let saved=null;
+    try{saved=readSavedJson(localStorage,optimizerResultStorageKey());}
+    catch(error){console.warn('Could not read persisted optimizer result; trying the encounter workspace.',error);}
+    if((!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)&&activeMode==='battle')saved=currentBattleWorkspace().resultCache||null;
     if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
     lastOptimizedEpicPayload=saved.payload;
     lastOptimizedEpicSignature=saved.signature;
@@ -715,13 +730,15 @@ function loadSavedOptimizerResult(){
   }catch(error){console.warn('Could not restore saved optimizer result.',error);}
 }
 function saveOptimizerResult(){
+  if(!lastOptimizedEpicPayload||!lastOptimizedEpicSignature)return;
+  const saved={build:OPTIMIZER_CACHE_BUILD,payload:compactOptimizerPayloadForStorage(lastOptimizedEpicPayload),signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
+  // Always preserve the encounter result in memory before attempting the
+  // quota-limited local-storage copy, so encounter switching remains safe.
+  if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
   try{
-    if(!lastOptimizedEpicPayload||!lastOptimizedEpicSignature)return;
-    const saved={build:OPTIMIZER_CACHE_BUILD,payload:lastOptimizedEpicPayload,signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
     writeSavedJson(localStorage,optimizerResultStorageKey(),saved);
-    if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
-    saveState();
-  }catch(error){console.warn('Could not save optimizer result.',error);}
+  }catch(error){console.warn('Could not persist optimizer result outside this browser session.',error);}
+  saveState();
 }
 function clearSavedOptimizerResult(){
   lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
