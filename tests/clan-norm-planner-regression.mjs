@@ -78,6 +78,7 @@ assert.match(html,/id="goldEconomicsChart"/,'Gold economics must include a visua
 assert.match(html,/id="resourceDonutCharts"[\s\S]*Epic gold profit \/ deficit data[\s\S]*Gross resource data/,'Both visuals must precede the collapsible gold and gross data tables.');
 assert.match(script,/epicEfficiencyDefaults=\{ARACHNE:43.*'SHADOW CITY':760\}/,'The supplied Epic efficiency defaults must be preserved.');
 assert.match(script,/ASHEN:129/,'Ashen must use the supplied Epic efficiency default.');
+assert.match(script,/BRIAREUS:85/,'Briareus must use the supplied Epic efficiency default.');
 assert.match(script,/defaultHiddenEpicsApplied:true/,'The default-hidden Epic migration must persist with clan profiles.');
 assert.match(html,/id="resetEpicEfficiencies"/,'Users must be able to reset Epic efficiencies to defaults.');
 assert.match(script,/goldEconomicsSort:\$\('goldEconomicsSort'\)\.value/,'Gold chart sorting must persist with the clan profile.');

@@ -1020,8 +1020,9 @@ details.advanced{margin-top:8px;padding-top:7px}
 .prediction-summary strong{
   display:block;
   margin-top:4px;
-  color:#f0f3f5;
-  font-size:.86rem;
+  color:#f0aa28;
+  font-size:1.18rem;
+  line-height:1.15;
 }
 .battle-details{
   margin-top:9px;

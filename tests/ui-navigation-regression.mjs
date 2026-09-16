@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {EPIC_ELD_PER_POINT,estimatedEpicPoints} from '../js/epic-points-estimates.mjs';
 
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
@@ -95,7 +96,16 @@ assert.match(css,/\.compact-limit-list \.limit-title-row\{[\s\S]*?display:flex;[
 assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?width:100%!important;[\s\S]*?max-width:100%!important;/, 'Fill controls must remain bounded by their capacity cards');
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
-assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
+assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
+assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"/,'Result tiles must show Epic points, Gold revival, then ELD.');
+const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details">/)?.[1]||'';
+assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
+assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
+assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
+assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19766,ASHEN:62166,BASILISK:19243,BRIAREUS:56345,CHIMERA:46696,DOOMSDAY:55450,FENRIR:60062,HELLFORGE:18618,JORMUNGANDR:61097,'SHADOW CITY':10559});
+assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
+assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
+assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
 assert.match(source,/xTitle\.textContent=chartStyle\(\)==='separated'\?'Position Within Army Type →':'Death Order →'/, 'The results chart must identify the horizontal axis for either chart style');
 assert.match(html,/data-chart-style="combined"/, 'Both visuals must expose the shared chart-style preference');
@@ -134,7 +144,7 @@ assert.match(source,/function saveState\(\)\{[\s\S]*?catch\(error\)/, 'A browser
 assert.match(source,/mercenary:includeMercs\?\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]\.sort\(\):\[\]/, 'Static mercenary selection changes must not invalidate a troop/monster-only optimization');
 assert.match(source,/authority:includeMercs\?parseNumber\(i\.authority\):null/, 'Static Authority changes must not invalidate a troop/monster-only optimization');
 assert.doesNotMatch(optimizerWorker,/fixedQuantitiesForScoring/, 'Static mercenaries must not influence optimizer candidate scoring');
-assert.match(html,/Current \/ Best/, 'Optimizer progress must distinguish the current candidate from the mathematical best');
+assert.match(html,/Current ELD \/ Best ELD/, 'Optimizer progress must distinguish the current candidate from the mathematical best');
 assert.match(source,/Finalizing the highest-damage army/, 'Optimizer finalization must describe mathematical-maximum selection');
 assert.match(source,/createReviewWorker\(\)/, 'UI must obtain Review Selection through its worker client boundary');
 assert.match(source,/Opening initiative: 50\/50 · Epic starts every later cycle/, 'Epic results must describe the corrected initiative model');
