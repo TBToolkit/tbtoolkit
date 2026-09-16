@@ -1119,7 +1119,7 @@ function clearPrediction(){
 // future opt-in experience, but do not surface flags in Battle Details today.
 const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;
 function renderPrediction(opt){
-  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const pointsEstimate=estimatedEpicPoints(currentEncounter()?.name,r.expectedTotalLifetimeDamage);els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
+  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
@@ -2642,9 +2642,8 @@ function liveDamageKey(){return activeMode==='battle'?`${state.modes.battle.acti
 function updateLiveDamageMetric(value,isPvp,allowOptimize=false){
  const slots=document.querySelectorAll('.live-damage-slot'),method=activeMode==='battle'?state.modes.battle.activeBattleMethod:'';
  if((method==='optimize'&&!allowOptimize)||!Number.isFinite(Number(value))||Number(value)<=0){clearLiveDamageMetrics();return;}
- const key=liveDamageKey(),n=Number(value),prev=liveDamagePrevious.get(key);let delta='';
- if(Number.isFinite(prev)&&prev>0){const pct=(n/prev-1)*100;delta=Math.abs(pct)<0.0005?'<span class="live-damage-change neutral">— 0.000%</span>':`<span class="live-damage-change ${pct>0?'up':'down'}">${pct>0?'▲':'▼'} ${Math.abs(pct).toFixed(3)}%</span>`;}
- liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>${delta}`;slots.forEach(x=>x.innerHTML=markup);
+ const key=liveDamageKey(),n=Number(value);
+ liveDamagePrevious.set(key,n);const label=isPvp?'PLD':'ELD',markup=`<span class="live-damage-label">${label}</span><strong>${isPvp?compactNumber(n):formatDamage(n)}</strong>`;slots.forEach(x=>x.innerHTML=markup);
 }
 function recalculate(){
   readInputs();

@@ -4,7 +4,8 @@ import {BUILT_IN_ENCOUNTERS,makeAccount,encountersForAccount,createCustomEncount
 import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
 
 const epics=BUILT_IN_ENCOUNTERS.filter(row=>row.battleType==='epic');
-assert.deepEqual(encountersForAccount(makeAccount(),'epic').map(row=>row.name),['Arachne','Arcanomancer','Armageddon','Ashen','Basilisk','Briareus','Doomsday','Hellforge','Shadow City','Tinman']);
+assert.deepEqual(encountersForAccount(makeAccount(),'epic').map(row=>row.name),['Arachne','Arcanomancer','Armageddon','Ashen','Basilisk','Briareus','Chimera','Doomsday','Fenrir','Hellforge','Jormungandr','Shadow City','Tinman']);
+for(const protectedName of ['Fenrir','Jormungandr','Chimera'])assert.equal(epics.find(row=>row.name===protectedName)?.builtIn,true,`${protectedName} must be a protected built-in encounter.`);
 for(const encounter of epics){
   assert.equal(enemySquadTypes(encounter.enemyFormation).length,encounter.name==='Arachne'?8:4);
   assert.equal(encounter.arachneBonus,encounter.name==='Arachne');
