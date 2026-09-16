@@ -39,7 +39,7 @@ assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normal
 assert.match(script,/resourcePreset=.*same\(coreKeys\)/,'Saved resource selections must restore the matching highlighted preset.');
 assert.match(script,/amount\/totals\[k\]\*100/,'Dashboard activity cells must calculate their share of each resource total.');
 assert.match(html,/<details class="norm-activity" open><summary><span>Tinman \/ Ancients/,'Tinman controls must be expanded by default.');
-assert.match(script,/filter\(x=>x\.monster!==\'ASHEN\'\)/,'Ashen must be hidden in a new plan by default.');
+assert.match(script,/defaultHiddenEpics=new Set\(\['ASHEN','CHIMERA'\]\)/,'Ashen and Chimera must be hidden in a new plan by default.');
 assert.match(script,/sortedEpics\(\).*monster\.localeCompare/s,'Epic controls must be alphabetized.');
 assert.match(html,/id="resourceDonutCharts"/,'The dashboard must include per-resource event charts.');
 assert.match(html,/id="resourceCategoryChart"/,'The dashboard must include a resource-category summary chart.');
@@ -77,6 +77,8 @@ assert.match(html,/id="goldEconomicsDashboard"[\s\S]*id="resourceDonutCharts"/,'
 assert.match(html,/id="goldEconomicsChart"/,'Gold economics must include a visual chart.');
 assert.match(html,/id="resourceDonutCharts"[\s\S]*Epic gold profit \/ deficit data[\s\S]*Gross resource data/,'Both visuals must precede the collapsible gold and gross data tables.');
 assert.match(script,/epicEfficiencyDefaults=\{ARACHNE:43.*'SHADOW CITY':760\}/,'The supplied Epic efficiency defaults must be preserved.');
+assert.match(script,/ASHEN:129/,'Ashen must use the supplied Epic efficiency default.');
+assert.match(script,/defaultHiddenEpicsApplied:true/,'The default-hidden Epic migration must persist with clan profiles.');
 assert.match(html,/id="resetEpicEfficiencies"/,'Users must be able to reset Epic efficiencies to defaults.');
 assert.match(script,/goldEconomicsSort:\$\('goldEconomicsSort'\)\.value/,'Gold chart sorting must persist with the clan profile.');
 assert.match(script,/sort==='deficit'\?a\.net-b\.net:b\.net-a\.net/,'Gold chart sorting must default to largest profit and support largest deficit.');
