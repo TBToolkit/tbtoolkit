@@ -6,7 +6,7 @@ const resourceKeys=['clanWealth','gold','potion','talentReset','cityTeleport','e
 const plannerKeys=resourceKeys.filter(k=>k!=='clanWealth');
 const labels={clanWealth:'Clan Wealth',gold:'Gold',potion:'Potion',talentReset:'Talent Reset',cityTeleport:'City Teleport',epicTar:'Epic Tar',rareTar:'Rare Tar',commonTar:'Common Tar',silver:'Silver',wood:'Wood',iron:'Iron',stone:'Stone',food:'Food',speedupDays:'Speedup (days)',clanSpeedupDays:'Clan Speedup (days)',dragonCoins:'Dragon Coins',summonsScroll:'Summons Scroll',marchSpeed50:'50% March Speed'};
 const coreKeys=['gold','potion','silver','dragonCoins'],growthKeys=['commonTar','rareTar','epicTar','speedupDays','wood','iron','stone'];
-const epicEfficiencyDefaults={ARACHNE:43,ARCANOMANCER:80,ARMAGEDDON:102,ASHEN:129,BASILISK:105,BRIAREUS:68,CHIMERA:40,DOOMSDAY:34,FENRIR:22,HELLFORGE:100,JORMUNGANDR:31,'SHADOW CITY':760};
+const epicEfficiencyDefaults={ARACHNE:43,ARCANOMANCER:80,ARMAGEDDON:102,ASHEN:129,BASILISK:105,BRIAREUS:85,CHIMERA:40,DOOMSDAY:34,FENRIR:22,HELLFORGE:100,JORMUNGANDR:31,'SHADOW CITY':760};
 const defaultHiddenEpics=new Set(['ASHEN','CHIMERA']);
 const selectedRewards=new Set(),selectedPlannerResources=new Set(coreKeys),storageKey='tbtoolkit-clan-norm-profiles-v1';
 let profiles=[],activeProfileId='';

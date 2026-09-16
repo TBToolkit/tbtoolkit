@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {EPIC_ELD_PER_POINT,estimatedEpicPoints} from '../js/epic-points-estimates.mjs';
 
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
@@ -96,6 +97,11 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/A larger ELD means more points per attack\./, 'The ELD summary must explain what a larger value means');
+assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
+assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
+assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19766,ASHEN:62166,BASILISK:19243,BRIAREUS:56345,CHIMERA:46696,DOOMSDAY:55450,FENRIR:85184,HELLFORGE:18618,JORMUNGANDR:61097,'SHADOW CITY':10559});
+assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
+assert.match(source,/estimatedEpicPoints\(currentEncounter\(\)\?\.name,r\.expectedTotalLifetimeDamage\)/,'The point estimate must use the active encounter and calculated ELD.');
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
 assert.match(source,/xTitle\.textContent=chartStyle\(\)==='separated'\?'Position Within Army Type →':'Death Order →'/, 'The results chart must identify the horizontal axis for either chart style');
 assert.match(html,/data-chart-style="combined"/, 'Both visuals must expose the shared chart-style preference');
