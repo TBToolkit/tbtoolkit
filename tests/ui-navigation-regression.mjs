@@ -115,7 +115,7 @@ assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttac
 assert.equal(REBUILD_COST_UNIT_COUNT,93,'Every trainable troop and monster must have a rebuild-cost record.');
 assert.deepEqual(unitRebuildCost('troop-g9-flying-corax-2'),{quantity:4200,silver:32000000,dragonCoins:0,silverEach:32000000/4200,dragonCoinsEach:0});
 assert.deepEqual(calculateEncounterPlan({normPoints:200,pointsPerAttack:100,goldByCategory:{mercenary:10,monster:20,troop:30},rebuildRows:[{category:'troop',quantity:100,revivableQuantity:90,silverEach:2,dragonCoinsEach:0},{category:'monster',quantity:10,revivableQuantity:9,silverEach:3,dragonCoinsEach:4},{category:'mercenary',quantity:5,revivableQuantity:4}],strategy:'mercenary-monster'}),{hits:2,goldPerHit:30,silverPerHit:203,dragonCoinsPerHit:4,rebuildCostsComplete:true,totalGold:60,totalSilver:406,totalDragonCoins:8,pointsPerGold:100/30});
-assert.match(html,/Estimated attacks[\s\S]*Total Gold spent[\s\S]*Total Silver spent[\s\S]*Total Dragon Coins spent/,'Encounter planning must show the four resource-management metrics.');
+assert.match(html,/Estimated attacks[\s\S]*Gold outcome[\s\S]*Silver outcome[\s\S]*Dragon Coins outcome/,'Encounter planning must show attacks and the three resource-management outcomes.');
 assert.doesNotMatch(html,/Gold per attack|Mercenaries consumed|Epic Points per Gold/,'Encounter planning must omit redundant or misleading metrics.');
 assert.doesNotMatch(html,/value="none">No Gold revival/,'Every offered plan strategy must preserve recoverable Mercenaries.');
 assert.match(html,/<table class="encounter-plan-table">[\s\S]*data-strategy="full"[\s\S]*data-strategy="mercenary-monster"[\s\S]*data-strategy="mercenary-only"/,'Revival strategies must be directly comparable in a matrix.');
@@ -187,6 +187,11 @@ assert.match(source,/CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1'/,'
 assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*stored\.activeProfileId[\s\S]*epic\.basis==='chests'/,'The active profile bridge must support both point and chest-based Epic norms.');
 assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the active clan profile.');
 assert.match(source,/dataset\.source='manual'[\s\S]*Manual norm · clan profile optional/,'Editing a linked encounter norm must turn it into a persistent manual override.');
+assert.match(html,/Gold outcome[\s\S]*Silver outcome[\s\S]*Dragon Coins outcome/,'The strategy matrix must compare net resource outcomes.');
+assert.match(source,/function loadEpicChestRewards\(\)[\s\S]*chest-data\.json[\s\S]*record\.type==='EPIC'/,'Encounter plans must load the shared Epic chest reward averages.');
+assert.match(source,/chestsPerMember\*members\*\(Number\(reward\.gold\)/,'Resource income must reflect every clan member meeting the selected norm.');
+assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
+assert.match(source,/Spend-only estimate\. Link a matching active clan profile/,'Calculator-only players must retain a clear spend-only fallback.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 

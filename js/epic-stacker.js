@@ -25,6 +25,7 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
+let epicChestRewards=new Map();
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 let encounterPlanContext=null;
@@ -460,6 +461,10 @@ async function loadData(){
     }catch(error){lastError=error;}
   }
   throw lastError||new Error('Could not load canonical army database');
+}
+async function loadEpicChestRewards(){
+  for(const source of ['/data/chest-data.json','data/chest-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;const data=await response.json();epicChestRewards=new Map((data.records||[]).filter(record=>record.type==='EPIC').map(record=>[String(record.chest).toUpperCase(),record]));return;}catch{}
+  console.warn('Epic chest rewards could not be loaded; encounter plans will show spending only.');
 }
 function loadSavedState(){
   try{
@@ -1171,13 +1176,14 @@ function activeClanEncounterNorm(encounterName){
     if(!epic||!(Number(epic.value)>0))return null;
     const points=epic.basis==='chests'?Number(epic.value)*(EPIC_NORM_POINTS_PER_CHEST[String(encounterName).toUpperCase()]||0):Number(epic.value)*({B:1e9,M:1e6,K:1e3}[epic.unit]||1);
     if(!(points>0))return null;
-    return {profileId:profile.id,profileName:profile.name||'Active clan',...compactNormPoints(points)};
+    return {profileId:profile.id,profileName:profile.name||'Active clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),...compactNormPoints(points)};
   }catch{return null;}
 }
 function loadEncounterPlanSettings(){
   let saved=null;
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
+  encounterPlanContext.clanProfile=clanNorm;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:{norm:1,unit:'B',source:'default'};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
@@ -1193,6 +1199,8 @@ function updateEncounterPlan(){
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
   const selected=els.encounterPlanStrategies?.querySelector('input:checked')?.value||'full';
   const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
+  const normPoints=settings.norm*multiplier,monster=String(currentEncounter()?.name||'').toUpperCase(),reward=epicChestRewards.get(monster),members=encounterPlanContext.clanProfile?.clanMembers||0,pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
   let sharedHits=0;
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
@@ -1200,12 +1208,12 @@ function updateEncounterPlan(){
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
-    row.querySelector('[data-cost="gold"]').textContent=plan.hits?formatDamage(plan.totalGold):'—';
-    row.querySelector('[data-cost="silver"]').textContent=plan.hits&&plan.rebuildCostsComplete?formatDamage(plan.totalSilver):'—';
-    row.querySelector('[data-cost="dragon"]').textContent=plan.hits&&plan.rebuildCostsComplete?formatDamage(plan.totalDragonCoins):'—';
+    renderOutcome(row.querySelector('[data-cost="gold"]'),plan.hits?plan.totalGold:0,received?.gold||0);
+    renderOutcome(row.querySelector('[data-cost="silver"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalSilver:0,received?.silver||0);
+    renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
-  els.encounterPlanNote.textContent=`${REBUILD_COST_ASSUMPTION} All offered strategies Gold-revive recoverable Mercenaries.`;
+  els.encounterPlanNote.textContent=received?`Estimated rewards use ${encounterPlanContext.clanProfile.clanMembers.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). ${REBUILD_COST_ASSUMPTION}`:`Spend-only estimate. Link a matching active clan profile to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
 }
 function renderPrediction(opt){
@@ -3330,7 +3338,7 @@ async function init(){
   // Only an actual database request/parse failure should produce the
   // "unit database could not be loaded" message.
   try{
-    await loadData();
+    await Promise.all([loadData(),loadEpicChestRewards()]);
   }catch(error){
     console.error('Army database load failed.',error);
     appInitialized=false;
