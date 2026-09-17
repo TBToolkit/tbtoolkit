@@ -88,5 +88,10 @@ assert.match(script,/value>=1000&&unit\.value==='M'.*value\/=1000;unit\.value='B
 assert.match(html,/id="openEpicEfficiencyHelp"/,'The efficiency column must provide contextual help.');
 assert.match(html,/epic-points\.png[\s\S]*full-gold-revive\.png/,'Efficiency help must show both supplied source screenshots.');
 assert.match(html,/Epic Points ÷ Full Gold Revive = Epic Points \/ Full Gold Revive/,'Efficiency help must state the calculation formula.');
+assert.match(script,/encounterResultStoreKey='tbtoolkit\.epicEncounterResults\.v1'/,'Clan Norms must read the saved Epic calculator bridge.');
+assert.match(script,/candidates\.sort\(\(a,b\)=>positive\(b\.estimatedEpicPoints\)-positive\(a\.estimatedEpicPoints\)\)/,'The calculator bridge must prefer the method with the higher estimated Epic Points.');
+assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimize'\?'Optimize':'Custom'\}`/,'Imported calculator efficiencies must identify their method.');
+assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
+assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
 
 console.log('Clan norm planner regression checks passed.');
