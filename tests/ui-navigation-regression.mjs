@@ -182,6 +182,11 @@ assert.match(css,/\.preserve-results-position,\.preserve-results-position \*\{ov
 assert.match(source,/selectBattleMethod\(button\.dataset\.resultsMethod,true\)/,'Only the lower Results switch must request viewport anchoring.');
 assert.match(source,/ENCOUNTER_RESULT_STORE_KEY='tbtoolkit\.epicEncounterResults\.v1'/,'Epic calculator results must be available to the Clan Norm planner.');
 assert.match(source,/saveEncounterResultSnapshot\(\{encounter,method:state\.modes\.battle\.activeBattleMethod/,'Rendered built-in Epic results must be saved with their calculation method.');
+assert.match(html,/id="encounterPlanSource">Optional · no clan profile required/,'The encounter plan must expose whether its norm is standalone or profile-linked.');
+assert.match(source,/CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1'/,'Encounter planning must read the active Clan Norm profile without requiring one.');
+assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*stored\.activeProfileId[\s\S]*epic\.basis==='chests'/,'The active profile bridge must support both point and chest-based Epic norms.');
+assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the active clan profile.');
+assert.match(source,/dataset\.source='manual'[\s\S]*Manual norm · clan profile optional/,'Editing a linked encounter norm must turn it into a persistent manual override.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 
