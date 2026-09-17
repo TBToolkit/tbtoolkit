@@ -118,6 +118,9 @@ assert.deepEqual(calculateEncounterPlan({normPoints:200,pointsPerAttack:100,gold
 assert.match(html,/Estimated attacks[\s\S]*Total Gold spent[\s\S]*Total Silver spent[\s\S]*Total Dragon Coins spent/,'Encounter planning must show the four resource-management metrics.');
 assert.doesNotMatch(html,/Gold per attack|Mercenaries consumed|Epic Points per Gold/,'Encounter planning must omit redundant or misleading metrics.');
 assert.doesNotMatch(html,/value="none">No Gold revival/,'Every offered plan strategy must preserve recoverable Mercenaries.');
+assert.match(html,/<table class="encounter-plan-table">[\s\S]*data-strategy="full"[\s\S]*data-strategy="mercenary-monster"[\s\S]*data-strategy="mercenary-only"/,'Revival strategies must be directly comparable in a matrix.');
+assert.doesNotMatch(html,/<select id="encounterPlanStrategy">/,'Revival strategies must not be hidden in a dropdown.');
+assert.match(source,/for\(const row of els\.encounterPlanStrategies\?\.querySelectorAll\('tr\[data-strategy\]'\)/,'Every strategy row must be recalculated from the same norm and army.');
 assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Tinman and unsupported encounters must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
 assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*writeSavedJson\(localStorage,optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');
