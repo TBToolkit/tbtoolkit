@@ -1001,7 +1001,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 }
 .prediction-summary{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
   gap:8px;
 }
 .prediction-summary>div{
@@ -1171,7 +1171,7 @@ details.advanced{margin-top:8px;padding-top:7px}
     padding:12px 0 0;
   }
   .prediction-side-column .prediction-summary{
-    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-columns:repeat(4,minmax(0,1fr));
   }
 }
 @media(max-width:900px){
@@ -1241,7 +1241,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 
 .result-panel>.epic-prediction-panel{margin:10px 12px 4px}
 .result-panel>.epic-prediction-panel .prediction-summary{
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(4,minmax(0,1fr));
 }
 
 body.optimizer-modal-open{overflow:hidden}
