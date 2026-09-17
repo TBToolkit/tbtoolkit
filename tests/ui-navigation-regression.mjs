@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {EPIC_ELD_PER_POINT,estimatedEpicPoints} from '../js/epic-points-estimates.mjs';
 import {calculateEncounterPlan} from '../js/encounter-plan.mjs';
+import {REBUILD_COST_UNIT_COUNT,unitRebuildCost} from '../js/unit-rebuild-costs.mjs';
 
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
@@ -108,7 +109,11 @@ assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to e
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
 assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
-assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,totalGold:3000,pointsPerGold:100_000_000/300});
+assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,mercenariesConsumedPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,totalMercenariesConsumed:0,pointsPerGold:100_000_000/300});
+assert.equal(REBUILD_COST_UNIT_COUNT,93,'Every trainable troop and monster must have a rebuild-cost record.');
+assert.deepEqual(unitRebuildCost('troop-g9-flying-corax-2'),{quantity:4200,silver:32000000,dragonCoins:0,silverEach:32000000/4200,dragonCoinsEach:0});
+assert.deepEqual(calculateEncounterPlan({normPoints:200,pointsPerAttack:100,goldByCategory:{mercenary:10,monster:20,troop:30},rebuildRows:[{category:'troop',quantity:100,revivableQuantity:90,silverEach:2,dragonCoinsEach:0},{category:'monster',quantity:10,revivableQuantity:9,silverEach:3,dragonCoinsEach:4},{category:'mercenary',quantity:5,revivableQuantity:4}],strategy:'mercenary-monster'}),{hits:2,goldPerHit:30,silverPerHit:203,dragonCoinsPerHit:4,mercenariesConsumedPerHit:1,rebuildCostsComplete:true,totalGold:60,totalSilver:406,totalDragonCoins:8,totalMercenariesConsumed:2,pointsPerGold:100/30});
+assert.match(html,/Total Silver to rebuild[\s\S]*Total Dragon Coins to rebuild[\s\S]*Mercenaries consumed/,'Encounter planning must show rebuild resources and irreplaceable Mercenary losses.');
 assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Tinman and unsupported encounters must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
 assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*writeSavedJson\(localStorage,optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');
