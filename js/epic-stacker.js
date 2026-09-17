@@ -10,6 +10,7 @@ import {readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from '.
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 import {estimatedEpicPoints} from './epic-points-estimates.mjs';
+import {calculateEncounterPlan} from './encounter-plan.mjs';
 
 const STORAGE_KEY=SAVED_STATE_KEY;
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -22,6 +23,7 @@ let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let r
 let appInitialized=false;let optimizerBestEldSoFar=0;
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
+let encounterPlanContext=null;
 const HUMAN_BONUS_ROW=Object.freeze({key:'human',auto:'autoHumanBonuses',healthOffset:100,strengthOffset:100});
 const MONSTER_CHILD_BONUS_ROWS=Object.freeze([
   {key:'beast',auto:'autoBeastBonuses'},
@@ -277,7 +279,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth',...BONUS_PROFILE_FIELD_IDS,...BONUS_INPUT_ROWS.map(row=>row.auto),'humanBonusDisclosure','humanBonusDetails','humanProfileStatus','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','estimatedEpicPoints','predictionMeta','predictionRows','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth',...BONUS_PROFILE_FIELD_IDS,...BONUS_INPUT_ROWS.map(row=>row.auto),'humanBonusDisclosure','humanBonusDetails','humanProfileStatus','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','estimatedEpicPoints','encounterPlanEntry','toggleEncounterPlan','encounterPlanPreview','closeEncounterPlan','encounterPlanTitle','encounterPlanNorm','encounterPlanUnit','encounterPlanStrategy','encounterPlanHits','encounterPlanGoldHit','encounterPlanGoldTotal','encounterPlanEfficiency','encounterPlanNote','predictionMeta','predictionRows','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
 function formatFillPercent(el){const n=parseNumber(el.value);el.value=Number.isFinite(n)?n.toFixed(2):'0.00';}
 const TIER_COLORS={9:'#69b85a',8:'#9aa4ad',7:'#d8ad42',6:'#d96858',5:'#d7974b',4:'#9673c8',3:'#55a6cf',2:'#7eae59',1:'#8f9892'};
@@ -1128,6 +1130,9 @@ function updateOptimizerProgress(progress={}){
 }
 function clearPrediction(){
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
+  encounterPlanContext=null;
+  if(els.encounterPlanEntry)els.encounterPlanEntry.hidden=true;
+  if(els.encounterPlanPreview)els.encounterPlanPreview.hidden=true;
   if(els.predictionRows)els.predictionRows.innerHTML='';
   const note=document.getElementById('openingSacrificeNote');
   if(note){note.hidden=true;note.open=false;}
@@ -1135,8 +1140,27 @@ function clearPrediction(){
 // Keep the unusual-sacrifice diagnostics and explanation UI available for a
 // future opt-in experience, but do not surface flags in Battle Details today.
 const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;
+function encounterPlanStorageKey(){return`tbtoolkit.encounterPlan.v1.${state.activeAccountId}.${state.modes.battle.activeEncounterId}`;}
+function loadEncounterPlanSettings(){
+  let saved=null;
+  try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
+  els.encounterPlanNorm.value=String(saved?.norm??1);
+  els.encounterPlanUnit.value=['B','M','K'].includes(saved?.unit)?saved.unit:'B';
+  els.encounterPlanStrategy.value=['full','mercenary-monster','mercenary-only','none'].includes(saved?.strategy)?saved.strategy:'full';
+}
+function updateEncounterPlan(){
+  if(!encounterPlanContext)return;
+  const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
+  const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,strategy:els.encounterPlanStrategy.value};
+  const plan=calculateEncounterPlan({normPoints:settings.norm*multiplier,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,strategy:settings.strategy});
+  els.encounterPlanHits.textContent=plan.hits?plan.hits.toLocaleString('en-US'):'—';
+  els.encounterPlanGoldHit.textContent=formatDamage(plan.goldPerHit);
+  els.encounterPlanGoldTotal.textContent=plan.hits?formatDamage(plan.totalGold):'—';
+  els.encounterPlanEfficiency.textContent=plan.pointsPerGold===null?'—':plan.pointsPerGold.toFixed(plan.pointsPerGold>=100?0:2);
+  try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
+}
 function renderPrediction(opt){
-  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
+  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const goldByCategory={mercenary:0,monster:0,troop:0};for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} plan`;loadEncounterPlanSettings();updateEncounterPlan();}else els.encounterPlanPreview.hidden=true;const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
@@ -2977,6 +3001,9 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
+  els.toggleEncounterPlan?.addEventListener('click',()=>{const opening=els.encounterPlanPreview.hidden;els.encounterPlanPreview.hidden=!opening;els.toggleEncounterPlan.setAttribute('aria-expanded',String(opening));if(opening)updateEncounterPlan();});
+  els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanPreview.hidden=true;els.toggleEncounterPlan?.setAttribute('aria-expanded','false');});
+  for(const id of ['encounterPlanNorm','encounterPlanUnit','encounterPlanStrategy']){els[id]?.addEventListener('input',updateEncounterPlan);els[id]?.addEventListener('change',updateEncounterPlan);}
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
   const selectionCardMedia=window.matchMedia('(max-width:600px)');
   const syncSelectionCardLayout=()=>{

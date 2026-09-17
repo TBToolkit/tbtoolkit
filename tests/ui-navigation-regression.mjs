@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {EPIC_ELD_PER_POINT,estimatedEpicPoints} from '../js/epic-points-estimates.mjs';
+import {calculateEncounterPlan} from '../js/encounter-plan.mjs';
 
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
@@ -98,7 +99,7 @@ assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill mus
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
 assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"/,'Result tiles must show Epic points, Gold revival, then ELD.');
-const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details">/)?.[1]||'';
+const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<div class="encounter-plan-entry"/)?.[1]||'';
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
 assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
@@ -106,6 +107,9 @@ assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
+assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
+assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,totalGold:3000,pointsPerGold:100_000_000/300});
+assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Tinman and unsupported encounters must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
 assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*writeSavedJson\(localStorage,optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');
 assert.doesNotMatch(html,/overlap-summary|die-direction-vertical/, 'The results chart must not reserve space for overlap summaries or vertical death-order labels');
