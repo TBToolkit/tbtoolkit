@@ -174,7 +174,10 @@ assert.match(source,/maximum>0&&Number\.isFinite\(actual\)\?actual\/maximum:NaN/
 assert.match(source,/if\(master\.checked&&!master\.indeterminate\)\{[\s\S]*?details\.querySelectorAll\('\.hierarchy-unit input\[data-unit-id\]'\)[\s\S]*?next\[category\]\.add\(input\.dataset\.unitId\)/, 'A fully selected rendered group must preserve every descendant unit during reconciliation');
 assert.doesNotMatch(source,/if\(master\.checked&&!master\.indeterminate\)\{\s*for\(const unit of units\[category\]\)if\(String\(unit\.level\)===String\(level\)\)/, 'Selection reconciliation must not compare composite Mercenary levels to their tier label');
 assert.match(html,/id="resultsMethodSwitch"[\s\S]*data-results-method="custom"[\s\S]*data-results-method="optimize"/,'Epic Results must provide a nearby Custom/Optimize switch.');
-assert.match(source,/function selectBattleMethod\(requested\)[\s\S]*activeBattleMethod=method[\s\S]*refreshActiveMode\(\)/,'The Results method switch must use the same Battle workspace transition as the setup control.');
+assert.match(source,/function selectBattleMethod\(requested,preserveResultsPosition=false\)[\s\S]*activeBattleMethod=method[\s\S]*refreshActiveMode\(\)/,'The Results method switch must use the same Battle workspace transition as the setup control.');
+assert.match(html,/class="results-title-group"[\s\S]*<h2>Results<\/h2>[\s\S]*id="resultsMethodSwitch"/,'The method switch must sit beside the Results title.');
+assert.match(source,/selectBattleMethod\(requested,preserveResultsPosition=false\)[\s\S]*getBoundingClientRect\(\)\.top[\s\S]*window\.scrollBy/,'The lower method switch must anchor Results at the same viewport position while the Selection section changes height.');
+assert.match(source,/selectBattleMethod\(button\.dataset\.resultsMethod,true\)/,'Only the lower Results switch must request viewport anchoring.');
 assert.match(source,/ENCOUNTER_RESULT_STORE_KEY='tbtoolkit\.epicEncounterResults\.v1'/,'Epic calculator results must be available to the Clan Norm planner.');
 assert.match(source,/saveEncounterResultSnapshot\(\{encounter,method:state\.modes\.battle\.activeBattleMethod/,'Rendered built-in Epic results must be saved with their calculation method.');
 

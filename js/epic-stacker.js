@@ -1602,8 +1602,9 @@ function syncResultsMethodSwitch(){
   });
 }
 
-function selectBattleMethod(requested){
+function selectBattleMethod(requested,preserveResultsPosition=false){
   if(activeMode!=='battle')return;
+  const resultsTop=preserveResultsPosition&&els.resultsView?els.resultsView.getBoundingClientRect().top:null;
   readInputs();saveState();
   const type=state.modes.battle.activeBattleType||'epic_standard';
   let method=requested==='optimize'?'optimize':'custom';
@@ -1613,6 +1614,7 @@ function selectBattleMethod(requested){
   ensureBattleWorkspace(type,method);
   loadSavedOptimizerResult();
   refreshActiveMode();
+  if(resultsTop!==null)requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollBy(0,els.resultsView.getBoundingClientRect().top-resultsTop)));
 }
 
 function configureModeUI(){
@@ -3165,7 +3167,7 @@ function wireEvents(){
     recalculate();
   });
   if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>selectBattleMethod(els.battleMethodSelect.value));
-  els.resultsMethodSwitch?.addEventListener('click',event=>{const button=event.target.closest('[data-results-method]');if(button)selectBattleMethod(button.dataset.resultsMethod);});
+  els.resultsMethodSwitch?.addEventListener('click',event=>{const button=event.target.closest('[data-results-method]');if(button)selectBattleMethod(button.dataset.resultsMethod,true);});
   const advancedIds=[
     'monsterHealth','pvpHealth',...BONUS_PROFILE_FIELD_IDS,
     'monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
