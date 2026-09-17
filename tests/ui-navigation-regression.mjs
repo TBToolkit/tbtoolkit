@@ -100,7 +100,7 @@ assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill mus
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
 assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"[\s\S]*id="epicPointsPerFullGold"/,'Result tiles must show Epic points, Gold revival, ELD, then points per full Gold revival.');
-const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<div class="encounter-plan-entry"/)?.[1]||'';
+const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details encounter-plan-details"/)?.[1]||'';
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
 assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
@@ -109,6 +109,8 @@ assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to e
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
 assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
+assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
+assert.match(html,/<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>[\s\S]*<summary id="toggleEncounterPlan">/,'Encounter planning must use the same expandable-details pattern as Battle Details.');
 assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,pointsPerGold:100_000_000/300});
 assert.equal(REBUILD_COST_UNIT_COUNT,93,'Every trainable troop and monster must have a rebuild-cost record.');
 assert.deepEqual(unitRebuildCost('troop-g9-flying-corax-2'),{quantity:4200,silver:32000000,dragonCoins:0,silverEach:32000000/4200,dragonCoinsEach:0});

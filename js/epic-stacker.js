@@ -1132,8 +1132,7 @@ function updateOptimizerProgress(progress={}){
 function clearPrediction(){
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   encounterPlanContext=null;
-  if(els.encounterPlanEntry)els.encounterPlanEntry.hidden=true;
-  if(els.encounterPlanPreview)els.encounterPlanPreview.hidden=true;
+  if(els.encounterPlanEntry){els.encounterPlanEntry.hidden=true;els.encounterPlanEntry.open=false;}
   if(els.predictionRows)els.predictionRows.innerHTML='';
   const note=document.getElementById('openingSacrificeNote');
   if(note){note.hidden=true;note.open=false;}
@@ -1162,7 +1161,7 @@ function updateEncounterPlan(){
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
 }
 function renderPrediction(opt){
-  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const pointsPerFullGold=pointsEstimate!==null&&actualGold>0?pointsEstimate/actualGold:null;els.epicPointsPerFullGold.textContent=pointsPerFullGold===null?'—':pointsPerFullGold.toFixed(pointsPerFullGold>=100?0:2);const goldByCategory={mercenary:0,monster:0,troop:0},rebuildRows=[];for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));const cost=unitRebuildCost(squad.id);rebuildRows.push({category:squad.category,quantity:squad.quantity,revivableQuantity:attackingRevivableQuantity(squad),silverEach:cost?.silverEach,dragonCoinsEach:cost?.dragonCoinsEach});}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory,rebuildRows};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} plan`;loadEncounterPlanSettings();updateEncounterPlan();}else els.encounterPlanPreview.hidden=true;const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
+  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const pointsPerFullGold=pointsEstimate!==null&&actualGold>0?pointsEstimate/actualGold:null;els.epicPointsPerFullGold.textContent=pointsPerFullGold===null?'—':pointsPerFullGold.toFixed(pointsPerFullGold>=100?0:2);const goldByCategory={mercenary:0,monster:0,troop:0},rebuildRows=[];for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));const cost=unitRebuildCost(squad.id);rebuildRows.push({category:squad.category,quantity:squad.quantity,revivableQuantity:attackingRevivableQuantity(squad),silverEach:cost?.silverEach,dragonCoinsEach:cost?.dragonCoinsEach});}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory,rebuildRows};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} plan`;loadEncounterPlanSettings();updateEncounterPlan();}else els.encounterPlanEntry.open=false;const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
@@ -3003,8 +3002,8 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
-  els.toggleEncounterPlan?.addEventListener('click',()=>{const opening=els.encounterPlanPreview.hidden;els.encounterPlanPreview.hidden=!opening;els.toggleEncounterPlan.setAttribute('aria-expanded',String(opening));if(opening)updateEncounterPlan();});
-  els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanPreview.hidden=true;els.toggleEncounterPlan?.setAttribute('aria-expanded','false');});
+  els.encounterPlanEntry?.addEventListener('toggle',()=>{if(els.encounterPlanEntry.open)updateEncounterPlan();});
+  els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanEntry.open=false;});
   for(const id of ['encounterPlanNorm','encounterPlanUnit','encounterPlanStrategy']){els[id]?.addEventListener('input',updateEncounterPlan);els[id]?.addEventListener('change',updateEncounterPlan);}
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
   const selectionCardMedia=window.matchMedia('(max-width:600px)');

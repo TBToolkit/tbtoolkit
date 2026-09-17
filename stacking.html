@@ -270,12 +270,13 @@
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
 <div><span>Estimated Epic Points</span><strong id="estimatedEpicPoints">—</strong></div>
-<div><span>Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Full Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
 <div><span>Epic Points / Full Gold Revival</span><strong id="epicPointsPerFullGold">—</strong></div>
 </div>
-<div class="encounter-plan-entry" id="encounterPlanEntry" hidden><button class="toolbar-button" id="toggleEncounterPlan" type="button" aria-expanded="false" aria-controls="encounterPlanPreview">Plan this encounter</button><span>Optional · no clan profile required</span></div>
-<section class="encounter-plan-preview" id="encounterPlanPreview" hidden>
+<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>
+<summary id="toggleEncounterPlan"><span class="battle-details-title">Plan this encounter</span><span class="battle-details-subtitle">Optional · no clan profile required</span></summary>
+<section class="encounter-plan-preview" id="encounterPlanPreview">
 <header><div><span>Encounter plan · first draft</span><h3 id="encounterPlanTitle">Plan this encounter</h3></div><button aria-label="Close encounter plan" id="closeEncounterPlan" type="button">×</button></header>
 <div class="encounter-plan-controls">
 <label><span>My clan norm</span><div class="encounter-plan-norm"><input id="encounterPlanNorm" inputmode="decimal" min="0" step="any" type="number" value="1"><select id="encounterPlanUnit" aria-label="Clan norm unit"><option value="B">B</option><option value="M">M</option><option value="K">K</option></select></div></label>
@@ -284,6 +285,7 @@
 <div class="encounter-plan-results"><article><span>Estimated attacks</span><strong id="encounterPlanHits">—</strong></article><article><span>Total Gold spent</span><strong id="encounterPlanGoldTotal">—</strong></article><article><span>Total Silver spent</span><strong id="encounterPlanSilverTotal">—</strong></article><article><span>Total Dragon Coins spent</span><strong id="encounterPlanDragonTotal">—</strong></article></div>
 <p class="encounter-plan-note" id="encounterPlanNote">Silver and Dragon Coin spending uses minimum observed training costs from a fully developed, fully researched account.</p>
 </section>
+</details>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
 <div class="prediction-meta" id="predictionMeta"></div>
