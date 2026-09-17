@@ -177,6 +177,8 @@ assert.match(html,/id="resultsMethodSwitch"[\s\S]*data-results-method="custom"[\
 assert.match(source,/function selectBattleMethod\(requested,preserveResultsPosition=false\)[\s\S]*activeBattleMethod=method[\s\S]*refreshActiveMode\(\)/,'The Results method switch must use the same Battle workspace transition as the setup control.');
 assert.match(html,/class="results-title-group"[\s\S]*<h2>Results<\/h2>[\s\S]*id="resultsMethodSwitch"/,'The method switch must sit beside the Results title.');
 assert.match(source,/selectBattleMethod\(requested,preserveResultsPosition=false\)[\s\S]*getBoundingClientRect\(\)\.top[\s\S]*window\.scrollBy/,'The lower method switch must anchor Results at the same viewport position while the Selection section changes height.');
+assert.match(source,/classList\.add\('preserve-results-position'\)[\s\S]*window\.scrollBy[\s\S]*classList\.remove\('preserve-results-position'\)/,'Viewport preservation must suppress browser anchoring and correct the position before paint.');
+assert.match(css,/\.preserve-results-position,\.preserve-results-position \*\{overflow-anchor:none!important;scroll-behavior:auto!important\}/,'Method switching must disable native smooth scrolling and browser scroll anchoring.');
 assert.match(source,/selectBattleMethod\(button\.dataset\.resultsMethod,true\)/,'Only the lower Results switch must request viewport anchoring.');
 assert.match(source,/ENCOUNTER_RESULT_STORE_KEY='tbtoolkit\.epicEncounterResults\.v1'/,'Epic calculator results must be available to the Clan Norm planner.');
 assert.match(source,/saveEncounterResultSnapshot\(\{encounter,method:state\.modes\.battle\.activeBattleMethod/,'Rendered built-in Epic results must be saved with their calculation method.');

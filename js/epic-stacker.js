@@ -1605,6 +1605,7 @@ function syncResultsMethodSwitch(){
 function selectBattleMethod(requested,preserveResultsPosition=false){
   if(activeMode!=='battle')return;
   const resultsTop=preserveResultsPosition&&els.resultsView?els.resultsView.getBoundingClientRect().top:null;
+  if(resultsTop!==null)document.documentElement.classList.add('preserve-results-position');
   readInputs();saveState();
   const type=state.modes.battle.activeBattleType||'epic_standard';
   let method=requested==='optimize'?'optimize':'custom';
@@ -1614,7 +1615,10 @@ function selectBattleMethod(requested,preserveResultsPosition=false){
   ensureBattleWorkspace(type,method);
   loadSavedOptimizerResult();
   refreshActiveMode();
-  if(resultsTop!==null)requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollBy(0,els.resultsView.getBoundingClientRect().top-resultsTop)));
+  if(resultsTop!==null){
+    window.scrollBy(0,els.resultsView.getBoundingClientRect().top-resultsTop);
+    requestAnimationFrame(()=>document.documentElement.classList.remove('preserve-results-position'));
+  }
 }
 
 function configureModeUI(){
