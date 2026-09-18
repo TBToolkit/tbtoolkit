@@ -192,6 +192,9 @@ assert.match(source,/function loadEpicChestRewards\(\)[\s\S]*chest-data\.json[\s
 assert.match(source,/chestsPerMember\*members\*\(Number\(reward\.gold\)/,'Resource income must reflect every clan member meeting the selected norm.');
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Spend-only estimate\. Link a matching active clan profile/,'Calculator-only players must retain a clear spend-only fallback.');
+assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
+assert.match(source,/result\.plan=\{profileId:encounterPlanContext\.clanProfile\.profileId[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Shared encounter plans must remain tied to their clan profile and selected strategy.');
+assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 

@@ -93,5 +93,10 @@ assert.match(script,/candidates\.sort\(\(a,b\)=>positive\(b\.estimatedEpicPoints
 assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimize'\?'Optimize':'Custom'\}`/,'Imported calculator efficiencies must identify their method.');
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
+assert.match(script,/function calculatorEncounterPlans\(profileId\)[\s\S]*encounter\.plan\?\.profileId===profileId/,'Calculator strategy plans must only appear in their linked clan profile.');
+assert.match(script,/plan\?\.outcomes\?\.\[plan\.selectedStrategy\]/,'The dashboard must use the player’s selected calculator strategy.');
+assert.match(script,/renderLinkedGoldEconomics\(activities\)/,'The economics dashboard must prefer linked calculator outcomes.');
+assert.match(script,/Planned silver net[\s\S]*Planned dragon coins net[\s\S]*Calculator plans/,'The dashboard must summarize linked Silver and Dragon Coin outcomes and plan coverage.');
+assert.match(script,/strategyLabel=value=>\(\{'full':'Full Gold revival'/,'Detailed economics rows must identify the selected calculator strategy.');
 
 console.log('Clan norm planner regression checks passed.');

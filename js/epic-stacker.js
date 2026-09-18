@@ -1163,6 +1163,17 @@ function saveEncounterResultSnapshot({encounter,method,estimatedPoints,fullGold,
     writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter result bridge.',error);}
 }
+function saveEncounterPlanSnapshot(settings,outcomes){
+  if(!encounterPlanContext?.clanProfile||!currentEncounter()?.builtIn)return;
+  try{
+    const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{},accountId=state.activeAccountId,encounter=currentEncounter();
+    stored.schemaVersion=1;stored.activeAccountId=accountId;stored.accounts=stored.accounts||{};
+    const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.encounters=account.encounters||{};
+    const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
+    result.plan={profileId:encounterPlanContext.clanProfile.profileId,profileName:encounterPlanContext.clanProfile.profileName,norm:settings.norm,unit:settings.unit,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
+  }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
+}
 function compactNormPoints(points){
   for(const [unit,multiplier] of [['B',1e9],['M',1e6],['K',1e3]])if(points>=multiplier&&Math.abs(points/multiplier-Math.round(points/multiplier))<1e-6)return {norm:points/multiplier,unit};
   if(points>=1e9)return {norm:Number((points/1e9).toFixed(3)),unit:'B'};
@@ -1201,10 +1212,11 @@ function updateEncounterPlan(){
   const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
   const normPoints=settings.norm*multiplier,monster=String(currentEncounter()?.name||'').toUpperCase(),reward=epicChestRewards.get(monster),members=encounterPlanContext.clanProfile?.clanMembers||0,pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
-  let sharedHits=0;
+  let sharedHits=0;const outcomes={};
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
     const plan=calculateEncounterPlan({normPoints:settings.norm*multiplier,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
+    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.gold||0,net:(received?.gold||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
@@ -1214,6 +1226,7 @@ function updateEncounterPlan(){
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
   els.encounterPlanNote.textContent=received?`Estimated rewards use ${encounterPlanContext.clanProfile.clanMembers.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). ${REBUILD_COST_ASSUMPTION}`:`Spend-only estimate. Link a matching active clan profile to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
 }
 function renderPrediction(opt){
