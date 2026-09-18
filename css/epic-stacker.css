@@ -4040,10 +4040,11 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 /* Keep the two setup cards readable and align Battle with the adjacent setup cards. */
 @media(min-width:1321px){
   body.battle-mode-active .battle-top-layout{grid-template-columns:468px 360px minmax(430px,1fr)!important;align-items:stretch}
-  body.battle-mode-active #battleBetaPanel{height:100%;grid-template-rows:auto minmax(0,1fr);align-content:stretch;gap:16px}
-  body.battle-mode-active #battleBetaPanel .battle-settings-panel{height:100%}
+  body.battle-mode-active #battleBetaPanel{grid-template-rows:auto minmax(0,1fr);align-self:stretch;align-content:stretch;row-gap:16px!important}
+  body.battle-mode-active #battleBetaPanel .battle-settings-panel{height:auto;min-height:0}
 }
 .encounter-plan-preview header{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px) auto;align-items:center;gap:12px}
 .encounter-plan-preview header .encounter-plan-attacks{min-width:0;padding:7px 12px}
 @media(max-width:620px){.encounter-plan-preview header{grid-template-columns:minmax(0,1fr) auto}.encounter-plan-preview header .encounter-plan-attacks{grid-column:1/-1;grid-row:2}}
+.output-visual-column{display:grid;min-width:0;gap:18px;align-content:start}.output-visual-column>.topdown-panel{min-width:0;margin-bottom:0}.encounter-plan-standalone{margin-top:0}.encounter-plan-standalone[hidden]{display:none!important}
 

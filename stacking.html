@@ -284,23 +284,6 @@
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
 <div><span>Epic Points / Full Gold Revival</span><strong id="epicPointsPerFullGold">—</strong></div>
 </div>
-<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>
-<summary id="toggleEncounterPlan"><span class="battle-details-title">Plan this encounter</span><span class="battle-details-subtitle" id="encounterPlanSource">Optional · no clan profile required</span></summary>
-<section class="encounter-plan-preview" id="encounterPlanPreview">
-<header><div><span>Encounter plan · first draft</span><h3 id="encounterPlanTitle">Plan this encounter</h3></div><div class="encounter-plan-attacks"><span>Estimated attacks</span><strong id="encounterPlanHits">—</strong></div><button aria-label="Close encounter plan" id="closeEncounterPlan" type="button">×</button></header>
-<div class="encounter-plan-table-wrap">
-<table class="encounter-plan-table">
-<thead><tr><th>Revival strategy</th><th>Gold + Potion outcome</th><th>Silver outcome</th><th>Dragon Coins outcome</th></tr></thead>
-<tbody id="encounterPlanStrategies">
-<tr data-strategy="full"><td><label><input type="radio" name="encounterPlanStrategy" value="full"><span>Full Gold revival</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
-<tr data-strategy="mercenary-monster"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-monster"><span>Gold revive Mercenaries + Monsters</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
-<tr data-strategy="mercenary-only"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-only"><span>Gold revive Mercenaries only</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
-</tbody>
-</table>
-</div>
-<p class="encounter-plan-note" id="encounterPlanNote">Silver and Dragon Coin spending uses minimum observed training costs from a fully developed, fully researched account.</p>
-</section>
-</details>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
 <div class="prediction-meta" id="predictionMeta"></div>
@@ -346,6 +329,24 @@
 <div class="calculator-utility-row result-utility"><div></div><button class="epic-action danger compact-reset" id="resetCalculator" type="button">Reset Calculator</button></div>
 </section>
 
+<div class="output-visual-column">
+<details class="topdown-panel battle-details encounter-plan-details encounter-plan-standalone" id="encounterPlanEntry" hidden>
+<summary id="toggleEncounterPlan"><span class="battle-details-title">Plan this encounter</span><span class="battle-details-subtitle" id="encounterPlanSource">Optional · no clan profile required</span></summary>
+<section class="encounter-plan-preview" id="encounterPlanPreview">
+<header><div><span>Encounter plan · first draft</span><h3 id="encounterPlanTitle">Plan this encounter</h3></div><div class="encounter-plan-attacks"><span>Estimated attacks</span><strong id="encounterPlanHits">—</strong></div><button aria-label="Close encounter plan" id="closeEncounterPlan" type="button">×</button></header>
+<div class="encounter-plan-table-wrap">
+<table class="encounter-plan-table">
+<thead><tr><th>Revival strategy</th><th>Gold + Potion outcome</th><th>Silver outcome</th><th>Dragon Coins outcome</th></tr></thead>
+<tbody id="encounterPlanStrategies">
+<tr data-strategy="full"><td><label><input type="radio" name="encounterPlanStrategy" value="full"><span>Full Gold revival</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+<tr data-strategy="mercenary-monster"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-monster"><span>Gold revive Mercenaries + Monsters</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+<tr data-strategy="mercenary-only"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-only"><span>Gold revive Mercenaries only</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+</tbody>
+</table>
+</div>
+<p class="encounter-plan-note" id="encounterPlanNote">Silver and Dragon Coin spending uses minimum observed training costs from a fully developed, fully researched account.</p>
+</section>
+</details>
 <section class="topdown-panel layer-chart-panel battle-sequenced-section" id="layerChartPanel">
 <div class="layer-chart-head">
 <div><div class="section-number"><span class="section-kicker output-section-number managed-step-number">6</span> Visual</div><p id="layerChartDescription">Squad health by predicted death order. Select a point to view unit details.</p></div>
@@ -355,6 +356,7 @@
 <div aria-label="Chart legend" class="chart-legend"><span><i class="legend-line troop"></i>Troops</span><span><i class="legend-line monster"></i>Monsters</span><span><i class="legend-line mercenary"></i>Mercs</span></div>
 <div class="layer-chart-scroll" hidden id="layerChartScroll"><div class="layer-chart-wrap"><svg aria-label="Squad health by predicted death order" class="layer-health-chart" id="layerHealthChart" role="img"></svg><div class="chart-tooltip" hidden id="layerChartTooltip"></div></div></div>
 </section>
+</div>
 </div>
 </div>
 
