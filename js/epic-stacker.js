@@ -1164,13 +1164,13 @@ function saveEncounterResultSnapshot({encounter,method,estimatedPoints,fullGold,
   }catch(error){console.warn('Could not save the encounter result bridge.',error);}
 }
 function saveEncounterPlanSnapshot(settings,outcomes){
-  if(!encounterPlanContext?.clanProfile||!currentEncounter()?.builtIn)return;
+  if(!currentEncounter()?.builtIn)return;
   try{
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{},accountId=state.activeAccountId,encounter=currentEncounter();
     stored.schemaVersion=1;stored.activeAccountId=accountId;stored.accounts=stored.accounts||{};
     const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
-    result.plan={profileId:encounterPlanContext.clanProfile.profileId,profileName:encounterPlanContext.clanProfile.profileName,norm:settings.norm,unit:settings.unit,basis:settings.basis,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    result.plan={profileId:encounterPlanContext?.clanProfile?.profileId||'',profileName:encounterPlanContext?.clanProfile?.profileName||'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
 }
@@ -1201,6 +1201,7 @@ function loadEncounterNormSettings(){
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
+  document.getElementById('encounterPlanMembers').value=String(Math.min(100,Math.max(1,Math.floor(Number(selected.clanMembers??clanNorm?.clanMembers??saved?.clanMembers??100)||100))));
   const basis=document.getElementById('encounterPlanBasis');basis.checked=selected.basis!=='chests';
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
@@ -1229,7 +1230,7 @@ function normalizeEncounterNorm(){
 }
 function saveManualEncounterNorm(){
   let saved={};try{saved=readSavedJson(localStorage,encounterPlanStorageKey())||{};}catch{}
-  const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',source:'manual',profileId:''};
+  const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),source:'manual',profileId:''};
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
   els.encounterNormSource.textContent='Manual norm · clan profile optional';els.encounterPlanSource.textContent='Manual norm · clan profile optional';
@@ -1239,23 +1240,24 @@ function updateEncounterPlan(){
   if(!encounterPlanContext)return;
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
   const selected=els.encounterPlanStrategies?.querySelector('input:checked')?.value||'full';
-  const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
-  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=encounterPlanContext.clanProfile?.clanMembers||0,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
+  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  if(received)received.revival=received.gold+received.potion;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
   let sharedHits=0;const outcomes={};
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
     const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
-    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.gold||0,net:(received?.gold||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
+    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
-    renderOutcome(row.querySelector('[data-cost="gold"]'),plan.hits?plan.totalGold:0,received?.gold||0);
+    renderOutcome(row.querySelector('[data-cost="gold"]'),plan.hits?plan.totalGold:0,received?.revival||0);
     renderOutcome(row.querySelector('[data-cost="silver"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalSilver:0,received?.silver||0);
     renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
-  els.encounterPlanNote.textContent=received?`Estimated rewards use ${encounterPlanContext.clanProfile.clanMembers.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). ${REBUILD_COST_ASSUMPTION}`:`Spend-only estimate. Link a matching active clan profile to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  els.encounterPlanNote.textContent=received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
 }
@@ -1654,7 +1656,7 @@ function startEpicOptimization(){
 
 function updateVisibleStepNumbers(){
   if(activeMode!=='battle')return;
-  let step=4;
+  let step=5;
   document.querySelectorAll('.battle-sequenced-section').forEach(section=>{
     const style=getComputedStyle(section);
     if(section.hidden||style.display==='none'||style.visibility==='hidden')return;
@@ -1722,7 +1724,7 @@ function configureModeUI(){
   else els.arachneRow.style.removeProperty('display');
   if(els.battleBetaPanel)els.battleBetaPanel.hidden=!battle;
   document.body.classList.toggle('battle-mode-active',battle);
-  if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
+  if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'3':'1';
   if(els.selectionStepNumber&&!battle)els.selectionStepNumber.textContent='2';
   if(battle){
     refreshWorkspaceSelectors();
@@ -3138,6 +3140,8 @@ function wireEvents(){
   els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanEntry.open=false;});
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
   document.getElementById('encounterPlanBasis')?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
+  document.getElementById('encounterPlanMembers')?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});
+  document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanNorm?.addEventListener('blur',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('change',event=>{if(event.target.matches('input[name="encounterPlanStrategy"]'))updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('click',event=>{if(event.target.closest('label'))return;const row=event.target.closest('tr[data-strategy]');if(!row)return;row.querySelector('input').checked=true;updateEncounterPlan();});
