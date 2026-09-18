@@ -98,5 +98,10 @@ assert.match(script,/plan\?\.outcomes\?\.\[plan\.selectedStrategy\]/,'The dashbo
 assert.match(script,/renderLinkedGoldEconomics\(activities\)/,'The economics dashboard must prefer linked calculator outcomes.');
 assert.match(script,/Planned silver net[\s\S]*Planned dragon coins net[\s\S]*Calculator plans/,'The dashboard must summarize linked Silver and Dragon Coin outcomes and plan coverage.');
 assert.match(script,/strategyLabel=value=>\(\{'full':'Full Gold revival'/,'Detailed economics rows must identify the selected calculator strategy.');
+assert.match(html,/Epic encounter planning summary[\s\S]*id="epicPlanSummaryRows"/,'The dashboard must provide a cross-encounter planning summary.');
+assert.match(html,/Event<\/th><th>Norm<\/th><th>Attacks<\/th><th>Selected strategy<\/th><th>Gold net<\/th><th>Silver net<\/th><th>Dragon Coins net<\/th><th>Status/,'The planning summary must expose the core decision fields.');
+assert.match(script,/function renderEpicPlanSummary\(activities\)/,'The Epic planning summary must be rendered from current activities and linked calculator plans.');
+assert.match(script,/ready\?'Ready':'Needs calculator plan'/,'Incomplete encounters must be clearly identified in the planning summary.');
+assert.match(script,/renderLinkedGoldEconomics\(activities\);renderEpicPlanSummary\(activities\)/,'The visual and planning summary must update together.');
 
 console.log('Clan norm planner regression checks passed.');
