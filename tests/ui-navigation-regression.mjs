@@ -108,7 +108,7 @@ assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
-assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
+assert.match(html,/id="encounterPlanSource">Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
 assert.match(html,/battle-settings-panel[\s\S]*Battle Type[\s\S]*Encounter[\s\S]*Clan Norm[\s\S]*Calculation Method/,'Encounter-specific inputs must remain together in the Battle section.');
@@ -126,12 +126,14 @@ assert.match(source,/settings\.basis==='chests'\?settings\.norm\*pointsPerChest:
 assert.match(css,/account-actions\{display:grid;grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/,'Player account actions must remain on one horizontal row.');
 assert.match(css,/encounter-actions\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'Encounter actions must remain on one horizontal row.');
 assert.match(css,/grid-template-columns:468px 360px minmax\(430px,1fr\)/,'Desktop layout must give the Player and Battle cards enough fixed width for every norm control.');
-assert.match(css,/#battleBetaPanel\{grid-template-rows:auto minmax\(0,1fr\);align-self:stretch;align-content:stretch;row-gap:16px!important\}/,'Player and Battle cards must remain separated while Battle aligns with the adjacent card bottoms without overflowing the layout row.');
+assert.match(css,/#battleBetaPanel\{display:grid!important;grid-template-rows:auto minmax\(0,1fr\);align-self:stretch;align-content:stretch;row-gap:16px!important\}/,'Player and Battle cards must remain separated while Battle aligns with the adjacent card bottoms without overflowing the layout row.');
 assert.match(css,/battle-norm-input\{grid-template-columns:minmax\(0,72px\) 56px 82px/,'The K/M/B selector must reserve enough width for its visible unit text.');
 assert.match(css,/battle-norm-basis \.epic-basis-switch input:checked\+i[\s\S]*background:#9b6e18[\s\S]*translateX\(16px\)/,'The calculator basis switch must reproduce the Clan Overview gold track and sliding knob.');
 assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
-assert.match(html,/<div class="output-visual-column">[\s\S]*<details class="topdown-panel battle-details encounter-plan-details encounter-plan-standalone" id="encounterPlanEntry" hidden>[\s\S]*<summary id="toggleEncounterPlan">[\s\S]*<section class="topdown-panel layer-chart-panel/,'Encounter planning must be an expandable standalone block immediately above Visual.');
-assert.match(html,/<header>[\s\S]*id="encounterPlanTitle"[\s\S]*class="encounter-plan-attacks"[\s\S]*id="encounterPlanHits"[\s\S]*id="closeEncounterPlan"/,'Estimated attacks must align with the encounter title in the plan header.');
+assert.match(html,/<div class="output-visual-column">[\s\S]*<section class="topdown-panel encounter-plan-standalone battle-sequenced-section" id="encounterPlanEntry" hidden>[\s\S]*<h2>Encounter Strategy<\/h2>[\s\S]*<section class="topdown-panel layer-chart-panel/,'Encounter Strategy must be a numbered, always-expanded section immediately above Visual.');
+assert.match(html,/<header>[\s\S]*id="encounterPlanTitle"[\s\S]*class="encounter-plan-attacks"[\s\S]*id="encounterPlanHits"/,'Estimated attacks must align with the encounter title in the plan header.');
+assert.doesNotMatch(html,/Encounter plan · first draft|id="toggleEncounterPlan"|id="closeEncounterPlan"/,'Encounter Strategy must not retain draft, close, or collapse controls.');
+assert.match(html,/managed-step-number">7<\/span><h2>Encounter Strategy<\/h2>[\s\S]*managed-step-number">8<\/span> Visual/,'Encounter Strategy and Visual must have sequential fallback section numbers.');
 assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,pointsPerGold:100_000_000/300});
 assert.equal(REBUILD_COST_UNIT_COUNT,93,'Every trainable troop and monster must have a rebuild-cost record.');
 assert.deepEqual(unitRebuildCost('troop-g9-flying-corax-2'),{quantity:4200,silver:32000000,dragonCoins:0,silverEach:32000000/4200,dragonCoinsEach:0});
