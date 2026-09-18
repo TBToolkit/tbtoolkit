@@ -109,6 +109,10 @@ assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to e
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
 assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile required/,'Encounter planning must remain optional for calculator-only visitors.');
+assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
+assert.doesNotMatch(html,/<section class="encounter-plan-preview"[\s\S]*My clan norm[\s\S]*id="encounterPlanNorm"/,'The Results planner must use the shared setup norm rather than duplicate the input.');
+assert.match(source,/function normalizeEncounterNorm\(\)[\s\S]*value>0&&value<1&&unit==='B'[\s\S]*value>=1000&&unit==='M'/,'The setup norm must automatically normalize between K, M, and B.');
+assert.match(source,/loadEncounterNormSettings\(\);[\s\S]*const type=currentEngineBattleType/,'Encounter changes must immediately load the matching saved or linked norm.');
 assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
 assert.match(html,/<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>[\s\S]*<summary id="toggleEncounterPlan">/,'Encounter planning must use the same expandable-details pattern as Battle Details.');
 assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,pointsPerGold:100_000_000/300});

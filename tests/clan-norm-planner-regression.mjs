@@ -61,6 +61,7 @@ assert.match(script,/parts=\[\.\.\.grouped\].*sort\(\(a,b\)=>b\.value-a\.value\)
 assert.match(script,/class="resource-contribution-row"/,'Each activity must render as a readable horizontal bar row.');
 assert.match(script,/part\.value\/total\*100/,'Contribution bars must show each activity share.');
 assert.match(script,/width:\$\{part\.value\/max\*100\}%/,'Bar lengths must scale against the largest contributor for readability.');
+assert.match(await readFile(new URL('css/chests.css',root),'utf8'),/resource-contribution-row>span\{[^}]*font-size:\.72rem[\s\S]*resource-contribution-row>strong\{[^}]*font-size:\.73rem/,'Contribution labels and values must remain comfortably readable.');
 assert.match(script,/class="epic-basis" type="checkbox" role="switch"/,'Epic norm basis must use the compact points/chests switch.');
 assert.doesNotMatch(script,/class="sr-only">(?:Norm value|Point unit)/,'Column headings must not be repeated above every Epic input.');
 assert.match(script,/unitField\.classList\.toggle\('is-hidden',!points\)/,'Chest mode must visually hide the point unit without removing its grid column.');

@@ -284,7 +284,7 @@ function activateAccount(accountId){
   ensureBattleWorkspace();
 }
 function modeState(){return activeMode==='battle'?currentBattleWorkspace():state.modes[activeMode];}
-function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth',...BONUS_PROFILE_FIELD_IDS,...BONUS_INPUT_ROWS.map(row=>row.auto),'humanBonusDisclosure','humanBonusDetails','humanProfileStatus','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultsMethodSwitch','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','estimatedEpicPoints','epicPointsPerFullGold','encounterPlanEntry','toggleEncounterPlan','encounterPlanSource','encounterPlanPreview','closeEncounterPlan','encounterPlanTitle','encounterPlanNorm','encounterPlanUnit','encounterPlanHits','encounterPlanStrategies','encounterPlanNote','predictionMeta','predictionRows','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
+function cacheElements(){['leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority','dominance','dominanceFill','autoDominance','monsterHealth',...BONUS_PROFILE_FIELD_IDS,...BONUS_INPUT_ROWS.map(row=>row.auto),'humanBonusDisclosure','humanBonusDetails','humanProfileStatus','arachne','arachneRow','rankSeparation','rankSeparationValue','resetAdvancedSettings','resetCalculator','modeDescription','separationLabel','separationMin','separationMid','separationMax','orderView','troopOrderList','monsterOrderList','mercenaryOrderList','clearAllSelections','reviewSelection','reviewProgressModal','reviewProgressDetail','reviewProgressTrack','reviewProgressBar','reviewProgressPercent','reviewElapsed','cancelReviewSelection','reviewProposalDialog','reviewProposalSummary','reviewCurrentEld','reviewProposedEld','reviewImprovement','reviewAddedUnits','reviewRemovedUnits','keepCurrentSelection','acceptReviewSelection','guardsmanSelection','specialistSelection','engineerSelection','monsterSelection','mercenarySelection','guardsmanCount','specialistCount','engineerCount','monsterCardCount','mercenaryCardCount','guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster','validationBox','resultsView','resultStatus','resultsMethodSwitch','resultEmpty','resultGroups','troopResults','monsterResults','mercenaryResults','leadershipBar','authorityBar','dominanceBar','leadershipActual','authorityActual','dominanceActual','layerChartPanel','layerChartEmpty','layerChartScroll','layerHealthChart','layerChartTooltip','monsterStrength','strengthAgainstEpic','monsterDD','monsterST','epicPredictionPanel','expectedLifetimeDamage','rawGoldRevival','estimatedEpicPoints','epicPointsPerFullGold','encounterNormField','encounterNormSource','encounterPlanEntry','toggleEncounterPlan','encounterPlanSource','encounterPlanPreview','closeEncounterPlan','encounterPlanTitle','encounterPlanNorm','encounterPlanUnit','encounterPlanHits','encounterPlanStrategies','encounterPlanNote','predictionMeta','predictionRows','optimizeArmy','optimizeHelp','optimizerModal','optimizerProgressHeadline','optimizerProgressTrack','optimizerProgressBar','optimizerProgressPercent','optimizerProgressEvaluations','optimizerProgressDetail','optimizerProgressCurrentEld','optimizerProgressBestEld','optimizerElapsedTime','cancelOptimization','useCustomHealthInputs','classicBattleDetails','classicBattleMeta','classicBattleRows','includeMercenariesInOptimization','battleBetaPanel','battleContextNote','battleMethodNote','battleTypeSelect','battleMethodSelect','pvpEnemyUnitField','pvpEnemyUnitSelect','strengthAgainstEpicField','pvpHealthField','pvpHealth','pvpStrengthField','pvpStrength','pvpCpDetailsPanel','pvpCpLifetimeDamage','pvpCpFullGold','pvpCpEnemyName','pvpCpDetailsMeta','pvpCpDetailsRows','templeLevel','templeMultiplier','pvpCpFullSilver','setupStepNumber','selectionStepNumber','minimumSeparation','fixedSeparationControl','customOrderFloatingMetric','resetCustomOrderDefault','accountSelect','addAccount','duplicateAccount','renameAccount','removeAccount','exportAccount','importAccount','biffFileInput','biffImportDialog','biffImportForm','biffImportAccountName','biffImportName','biffImportEncounterCount','biffImportWorkspaceCount','biffImportWarnings','biffImportWarningList','biffImportError','cancelBiffImport','confirmBiffImport','encounterSelect','addEncounter','duplicateEncounter','editEncounter','removeEncounter','encounterDialog','encounterForm','encounterDialogTitle','encounterName','epicFormationFields','enemyFlying','enemyMounted','enemyMelee','enemyRanged','encounterArachneBonus','pvpModelField','encounterPvpModel','encounterFormError','cancelEncounter'].forEach(id=>els[id]=document.getElementById(id));}
 function formatFieldInteger(el){const n=parseNumber(el.value);el.value=n?Math.round(n).toLocaleString('en-US'):'';}
 function formatFillPercent(el){const n=parseNumber(el.value);el.value=Number.isFinite(n)?n.toFixed(2):'0.00';}
 const TIER_COLORS={9:'#69b85a',8:'#9aa4ad',7:'#d8ad42',6:'#d96858',5:'#d7974b',4:'#9673c8',3:'#55a6cf',2:'#7eae59',1:'#8f9892'};
@@ -1190,20 +1190,44 @@ function activeClanEncounterNorm(encounterName){
     return {profileId:profile.id,profileName:profile.name||'Active clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),...compactNormPoints(points)};
   }catch{return null;}
 }
-function loadEncounterPlanSettings(){
+function loadEncounterNormSettings(){
   let saved=null;
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
-  encounterPlanContext.clanProfile=clanNorm;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:{norm:1,unit:'B',source:'default'};
+  const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
+  if(els.encounterNormField)els.encounterNormField.hidden=!supported;
+  if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
-  els.encounterPlanSource.textContent=selected.source==='clan'?`Using ${selected.profileName} clan norm`:selected.source==='manual'?'Manual norm · clan profile optional':'Optional · no clan profile required';
+  const sourceText=selected.source==='clan'?`Using ${selected.profileName} clan norm`:selected.source==='manual'?'Manual norm · clan profile optional':'Optional · no clan profile required';
+  els.encounterNormSource.textContent=sourceText;
+  els.encounterPlanSource.textContent=sourceText;
+  return {saved,clanNorm,selected};
+}
+function loadEncounterPlanSettings(){
+  const {saved,clanNorm}=loadEncounterNormSettings();
+  encounterPlanContext.clanProfile=clanNorm;
   const strategy=['full','mercenary-monster','mercenary-only'].includes(saved?.strategy)?saved.strategy:(saved?.strategy==='none'?'mercenary-only':'full');
   const radio=els.encounterPlanStrategies?.querySelector(`input[value="${strategy}"]`);
   if(radio)radio.checked=true;
+}
+function normalizeEncounterNorm(){
+  let value=Math.max(0,Number(els.encounterPlanNorm.value)||0),unit=els.encounterPlanUnit.value;
+  if(value>0&&value<1&&unit==='B'){value*=1000;unit='M';}
+  else if(value>0&&value<1&&unit==='M'){value*=1000;unit='K';}
+  else if(value>=1000&&unit==='K'){value/=1000;unit='M';}
+  else if(value>=1000&&unit==='M'){value/=1000;unit='B';}
+  els.encounterPlanNorm.value=String(Number(value.toFixed(6)));els.encounterPlanUnit.value=unit;
+}
+function saveManualEncounterNorm(){
+  let saved={};try{saved=readSavedJson(localStorage,encounterPlanStorageKey())||{};}catch{}
+  const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,source:'manual',profileId:''};
+  els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
+  els.encounterNormSource.textContent='Manual norm · clan profile optional';els.encounterPlanSource.textContent='Manual norm · clan profile optional';
+  try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
 }
 function updateEncounterPlan(){
   if(!encounterPlanContext)return;
@@ -1696,6 +1720,7 @@ function configureModeUI(){
   if(els.selectionStepNumber&&!battle)els.selectionStepNumber.textContent='2';
   if(battle){
     refreshWorkspaceSelectors();
+    loadEncounterNormSettings();
     const type=currentEngineBattleType();state.modes.battle.activeBattleType=type;
     const method=state.modes.battle.activeBattleMethod||'optimize';
     if(els.battleMethodSelect){
@@ -3105,7 +3130,8 @@ function wireEvents(){
   wireStatHelp();
   els.encounterPlanEntry?.addEventListener('toggle',()=>{if(els.encounterPlanEntry.open)updateEncounterPlan();});
   els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanEntry.open=false;});
-  for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';els.encounterPlanSource.textContent='Manual norm · clan profile optional';updateEncounterPlan();});input?.addEventListener('change',updateEncounterPlan);}
+  for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
+  els.encounterPlanNorm?.addEventListener('blur',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('change',event=>{if(event.target.matches('input[name="encounterPlanStrategy"]'))updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('click',event=>{if(event.target.closest('label'))return;const row=event.target.closest('tr[data-strategy]');if(!row)return;row.querySelector('input').checked=true;updateEncounterPlan();});
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
