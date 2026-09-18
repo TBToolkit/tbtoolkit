@@ -195,6 +195,10 @@ assert.match(source,/Spend-only estimate\. Link a matching active clan profile/,
 assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
 assert.match(source,/result\.plan=\{profileId:encounterPlanContext\.clanProfile\.profileId[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Shared encounter plans must remain tied to their clan profile and selected strategy.');
 assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
+assert.match(html,/data-strategy="full"[\s\S]*data-strategy-badges[\s\S]*data-strategy="mercenary-monster"[\s\S]*data-strategy-badges[\s\S]*data-strategy="mercenary-only"[\s\S]*data-strategy-badges/,'Every revival strategy must provide space for resource-specific recommendations.');
+assert.match(source,/bestByResource=\{gold:Math\.max[\s\S]*silver:Math\.max[\s\S]*dragonCoins:Math\.max/,'Strategy guidance must rank each resource independently without an arbitrary exchange rate.');
+assert.match(source,/Best for Gold[\s\S]*Best for Silver[\s\S]*Best for Dragon Coins/,'Strategy guidance must explain which resource each recommendation preserves.');
+assert.match(source,/Math\.abs\(outcome\[resource\]\.net-bestByResource\[resource\]\)<=/,'Tied strategies must receive the same best-resource label.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 

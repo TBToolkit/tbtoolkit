@@ -1224,6 +1224,8 @@ function updateEncounterPlan(){
     renderOutcome(row.querySelector('[data-cost="silver"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalSilver:0,received?.silver||0);
     renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
+  const bestByResource={gold:Math.max(...Object.values(outcomes).map(value=>value.gold.net)),silver:Math.max(...Object.values(outcomes).map(value=>value.silver.net)),dragonCoins:Math.max(...Object.values(outcomes).map(value=>value.dragonCoins.net))},bestLabels={gold:'Best for Gold',silver:'Best for Silver',dragonCoins:'Best for Dragon Coins'};
+  for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){const outcome=outcomes[row.dataset.strategy],badges=Object.keys(bestByResource).filter(resource=>Math.abs(outcome[resource].net-bestByResource[resource])<=Math.max(1,Math.abs(bestByResource[resource])*1e-9));row.querySelector('[data-strategy-badges]').innerHTML=badges.map(resource=>`<span>${bestLabels[resource]}</span>`).join('');}
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
   els.encounterPlanNote.textContent=received?`Estimated rewards use ${encounterPlanContext.clanProfile.clanMembers.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). ${REBUILD_COST_ASSUMPTION}`:`Spend-only estimate. Link a matching active clan profile to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
