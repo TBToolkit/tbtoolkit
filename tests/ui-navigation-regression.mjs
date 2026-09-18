@@ -114,13 +114,14 @@ assert.doesNotMatch(html,/<section class="encounter-plan-preview"[\s\S]*My clan 
 assert.match(source,/function normalizeEncounterNorm\(\)[\s\S]*value>0&&value<1&&unit==='B'[\s\S]*value>=1000&&unit==='M'/,'The setup norm must automatically normalize between K, M, and B.');
 assert.match(html,/id="encounterPlanNorm"[\s\S]*id="encounterPlanUnitSuffix">B<\/span>[\s\S]*id="encounterPlanUnit"/,'The norm input must display its unit suffix separately from the editable number.');
 assert.match(source,/function syncEncounterNormSuffix\(\)[\s\S]*suffix\.textContent=els\.encounterPlanUnit\.value[\s\S]*--norm-chars/,'The displayed suffix must follow unit changes and the entered value.');
-assert.match(css,/v198[\s\S]*battle-encounter-fields\{grid-template-columns:minmax\(0,1fr\) 224px[\s\S]*battle-norm-input\{grid-template-columns:minmax\(0,78px\) 46px 88px/,'The encounter and all three norm controls must remain fully visible.');
+assert.match(css,/v198[\s\S]*battle-encounter-fields\{grid-template-columns:minmax\(0,1fr\) 224px[\s\S]*battle-norm-input\{grid-template-columns:minmax\(0,72px\) 58px 82px/,'The encounter and all three norm controls must remain fully visible.');
 assert.match(css,/battle-norm-input input::-webkit-inner-spin-button[\s\S]*-webkit-appearance:none/,'The compact norm input must not lose space to number spinners.');
 assert.match(source,/loadEncounterNormSettings\(\);[\s\S]*const type=currentEngineBattleType/,'Encounter changes must immediately load the matching saved or linked norm.');
-assert.match(html,/id="encounterPlanBasis"[^>]*>Points<\/button>/,'The encounter norm must provide a direct Points/Chests switch.');
+assert.match(html,/class="epic-basis-switch"><input checked id="encounterPlanBasis" role="switch"[\s\S]*id="encounterPlanBasisMode">Points/,'The encounter norm must use the same Points/Chests switch pattern as Clan Overview.');
 assert.match(source,/settings\.basis==='chests'\?settings\.norm\*pointsPerChest:settings\.norm\*multiplier/,'Chest norms must convert to points using the selected encounter’s points per chest.');
 assert.match(css,/battle-encounter-fields>\.battle-select-field:first-child \.workspace-actions\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'Encounter actions must remain on one horizontal row.');
-assert.match(css,/grid-template-columns:minmax\(470px,1\.15fr\) minmax\(300px,\.72fr\)/,'Desktop layout must give Battle more width and make Army Limits narrower.');
+assert.match(css,/grid-template-columns:minmax\(440px,1\.08fr\) minmax\(320px,\.8fr\)/,'Desktop layout must keep Battle moderately wider than Army Limits.');
+assert.match(css,/battle-norm-input\{grid-template-columns:minmax\(0,72px\) 58px 82px/,'The K/M/B selector must reserve enough width for its visible unit text.');
 assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
 assert.match(html,/<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>[\s\S]*<summary id="toggleEncounterPlan">/,'Encounter planning must use the same expandable-details pattern as Battle Details.');
 assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,pointsPerGold:100_000_000/300});

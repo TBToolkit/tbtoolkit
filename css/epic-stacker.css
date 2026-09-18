@@ -4023,9 +4023,9 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 
 /* v198 — keep the encounter readable beside a compact, fully visible norm. */
 .battle-encounter-fields{grid-template-columns:minmax(0,1fr) 224px;gap:10px}
-.battle-norm-input{grid-template-columns:minmax(0,78px) 46px 88px;gap:6px}
-.battle-norm-basis{min-width:0;min-height:44px;border:1px solid #40576a;border-radius:7px;background:#06121c;color:#c8d3dc;font:inherit;font-size:.68rem;font-weight:850;cursor:pointer}.battle-norm-basis[aria-pressed="true"]{border-color:#d0952e;background:#8a6217;color:#fff}.battle-norm-input.is-chests{grid-template-columns:minmax(0,78px) 88px}.battle-norm-input.is-chests .battle-norm-value>span,.battle-norm-input.is-chests #encounterPlanUnit{display:none}.battle-encounter-fields>.battle-select-field:first-child .workspace-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex-wrap:nowrap}.battle-encounter-fields>.battle-select-field:first-child .workspace-actions button{min-width:0;padding-left:5px;padding-right:5px}
-@media(min-width:1321px){body.battle-mode-active .battle-top-layout{grid-template-columns:minmax(470px,1.15fr) minmax(300px,.72fr) minmax(430px,1.13fr)!important}}
-@media(min-width:1101px) and (max-width:1320px){body.battle-mode-active .battle-top-layout{grid-template-columns:minmax(470px,1.2fr) minmax(300px,.8fr)!important}}
+.battle-norm-input{grid-template-columns:minmax(0,72px) 58px 82px;gap:6px}
+.battle-norm-basis{display:flex;min-width:0;min-height:44px;align-items:center;gap:6px;color:#d8e0e6;font-size:.68rem;font-weight:850;cursor:pointer}.battle-norm-basis .epic-basis-switch{width:38px;height:22px}.battle-norm-input.is-chests{grid-template-columns:minmax(0,72px) 82px}.battle-norm-input.is-chests .battle-norm-value>span,.battle-norm-input.is-chests #encounterPlanUnit{display:none}.battle-encounter-fields>.battle-select-field:first-child .workspace-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex-wrap:nowrap}.battle-encounter-fields>.battle-select-field:first-child .workspace-actions button{min-width:0;padding-left:5px;padding-right:5px}
+@media(min-width:1321px){body.battle-mode-active .battle-top-layout{grid-template-columns:minmax(440px,1.08fr) minmax(320px,.8fr) minmax(430px,1.12fr)!important}}
+@media(min-width:1101px) and (max-width:1320px){body.battle-mode-active .battle-top-layout{grid-template-columns:minmax(440px,1.12fr) minmax(320px,.88fr)!important}}
 @media(max-width:520px){.battle-encounter-fields{grid-template-columns:1fr}.battle-norm-field{max-width:224px}}
 
