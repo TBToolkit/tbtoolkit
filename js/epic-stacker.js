@@ -1170,7 +1170,7 @@ function saveEncounterPlanSnapshot(settings,outcomes){
     stored.schemaVersion=1;stored.activeAccountId=accountId;stored.accounts=stored.accounts||{};
     const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
-    result.plan={profileId:encounterPlanContext.clanProfile.profileId,profileName:encounterPlanContext.clanProfile.profileName,norm:settings.norm,unit:settings.unit,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    result.plan={profileId:encounterPlanContext.clanProfile.profileId,profileName:encounterPlanContext.clanProfile.profileName,norm:settings.norm,unit:settings.unit,basis:settings.basis,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
 }
@@ -1187,7 +1187,8 @@ function activeClanEncounterNorm(encounterName){
     if(!epic||!(Number(epic.value)>0))return null;
     const points=epic.basis==='chests'?Number(epic.value)*(EPIC_NORM_POINTS_PER_CHEST[String(encounterName).toUpperCase()]||0):Number(epic.value)*({B:1e9,M:1e6,K:1e3}[epic.unit]||1);
     if(!(points>0))return null;
-    return {profileId:profile.id,profileName:profile.name||'Active clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),...compactNormPoints(points)};
+    const displayed=epic.basis==='chests'?{norm:Number(epic.value),unit:'B',basis:'chests'}:{...compactNormPoints(points),basis:'points'};
+    return {profileId:profile.id,profileName:profile.name||'Active clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),...displayed};
   }catch{return null;}
 }
 function loadEncounterNormSettings(){
@@ -1200,6 +1201,7 @@ function loadEncounterNormSettings(){
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
+  const basis=document.getElementById('encounterPlanBasis');basis.dataset.basis=selected.basis==='chests'?'chests':'points';
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
@@ -1215,8 +1217,9 @@ function loadEncounterPlanSettings(){
   const radio=els.encounterPlanStrategies?.querySelector(`input[value="${strategy}"]`);
   if(radio)radio.checked=true;
 }
-function syncEncounterNormSuffix(){const suffix=document.getElementById('encounterPlanUnitSuffix');if(!suffix||!els.encounterPlanNorm||!els.encounterPlanUnit)return;suffix.textContent=els.encounterPlanUnit.value;els.encounterPlanNorm.parentElement.style.setProperty('--norm-chars',String(Math.max(1,String(els.encounterPlanNorm.value||'').length)));}
+function syncEncounterNormSuffix(){const suffix=document.getElementById('encounterPlanUnitSuffix'),basis=document.getElementById('encounterPlanBasis'),inputGroup=els.encounterPlanNorm?.closest('.battle-norm-input');if(!suffix||!basis||!inputGroup||!els.encounterPlanUnit)return;const chests=basis.dataset.basis==='chests';suffix.textContent=els.encounterPlanUnit.value;els.encounterPlanNorm.parentElement.style.setProperty('--norm-chars',String(Math.max(1,String(els.encounterPlanNorm.value||'').length)));basis.textContent=chests?'Chests':'Points';basis.setAttribute('aria-pressed',String(chests));inputGroup.classList.toggle('is-chests',chests);els.encounterPlanUnit.disabled=chests;els.encounterPlanNorm.step=chests?'1':'any';}
 function normalizeEncounterNorm(){
+  if(document.getElementById('encounterPlanBasis').dataset.basis==='chests'){els.encounterPlanNorm.value=String(Math.max(0,Math.floor(Number(els.encounterPlanNorm.value)||0)));syncEncounterNormSuffix();return;}
   let value=Math.max(0,Number(els.encounterPlanNorm.value)||0),unit=els.encounterPlanUnit.value;
   if(value>0&&value<1&&unit==='B'){value*=1000;unit='M';}
   else if(value>0&&value<1&&unit==='M'){value*=1000;unit='K';}
@@ -1226,7 +1229,7 @@ function normalizeEncounterNorm(){
 }
 function saveManualEncounterNorm(){
   let saved={};try{saved=readSavedJson(localStorage,encounterPlanStorageKey())||{};}catch{}
-  const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,source:'manual',profileId:''};
+  const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').dataset.basis||'points',source:'manual',profileId:''};
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
   els.encounterNormSource.textContent='Manual norm · clan profile optional';els.encounterPlanSource.textContent='Manual norm · clan profile optional';
@@ -1236,13 +1239,13 @@ function updateEncounterPlan(){
   if(!encounterPlanContext)return;
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
   const selected=els.encounterPlanStrategies?.querySelector('input:checked')?.value||'full';
-  const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
-  const normPoints=settings.norm*multiplier,monster=String(currentEncounter()?.name||'').toUpperCase(),reward=epicChestRewards.get(monster),members=encounterPlanContext.clanProfile?.clanMembers||0,pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').dataset.basis||'points',strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
+  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=encounterPlanContext.clanProfile?.clanMembers||0,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
   let sharedHits=0;const outcomes={};
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
-    const plan=calculateEncounterPlan({normPoints:settings.norm*multiplier,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
+    const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
     outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.gold||0,net:(received?.gold||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
@@ -3134,6 +3137,7 @@ function wireEvents(){
   els.encounterPlanEntry?.addEventListener('toggle',()=>{if(els.encounterPlanEntry.open)updateEncounterPlan();});
   els.closeEncounterPlan?.addEventListener('click',()=>{els.encounterPlanEntry.open=false;});
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
+  document.getElementById('encounterPlanBasis')?.addEventListener('click',event=>{event.currentTarget.dataset.basis=event.currentTarget.dataset.basis==='chests'?'points':'chests';normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanNorm?.addEventListener('blur',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('change',event=>{if(event.target.matches('input[name="encounterPlanStrategy"]'))updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('click',event=>{if(event.target.closest('label'))return;const row=event.target.closest('tr[data-strategy]');if(!row)return;row.querySelector('input').checked=true;updateEncounterPlan();});
