@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="Plan Total Battle clan norms and estimate chest resources by member and clan." name="description"/>
-<title>Clan Norms | TB Toolkit</title>
+<meta content="Review Total Battle clan requirements, encounter plans, and expected resources across clan activities." name="description"/>
+<title>Clan Overview | TB Toolkit</title>
 <link href="css/styles.css" rel="stylesheet"/>
 <link href="css/chests.css" rel="stylesheet"/>
 <script defer src="js/site.js"></script>
@@ -23,7 +23,7 @@
 <nav aria-label="Main navigation" class="nav" data-nav>
 <a href="index.html">Home</a>
 <a href="stacking.html">Stacking</a>
-<a aria-current="page" href="chests.html">Clan Norms</a>
+<a aria-current="page" href="chests.html">Clan Overview</a>
 <a href="calendar.html">Event Calendar</a>
 <a href="research.html">Research</a>
 <a href="resources.html">Resources</a>
@@ -35,9 +35,9 @@
 <main>
 <section class="page-hero">
 <div class="container">
-<div class="breadcrumb">Home / Clan Norms</div>
-<h1 class="page-title">Clan Norm Planner</h1>
-<p class="page-intro">Turn Epic, crypting, and Tinman requirements into expected resources received by each clan member.</p>
+<div class="breadcrumb">Home / Clan Overview</div>
+<h1 class="page-title">Clan Overview</h1>
+<p class="page-intro">Review clan requirements, expected rewards, and saved Epic encounter plans across the full activity cycle.</p>
 </div>
 </section>
 
@@ -60,14 +60,14 @@
 </div></details>
 
 <details class="card norm-panel norm-inputs" open>
-<summary class="norm-section-heading"><div><span>2</span><div><h2 id="normInputsTitle">Clan Norms</h2><p>Mix point and chest requirements. Zero values are excluded.</p></div></div></summary><div class="norm-panel-body">
-<details class="norm-activity" open><summary><span>Epic Monster Events</span><small>6-day and 24-day cadence</small></summary><div class="norm-activity-body" id="epicNormActivityBody"><div class="epic-visibility"><strong>Events shown</strong><div id="epicVisibilityOptions"></div><button id="showAllEpics" type="button">Show all</button><button id="hideAllEpics" type="button">Hide all</button></div><div class="gold-economics-toolbar"><label class="gold-economics-toggle"><input id="enableGoldEconomics" type="checkbox"/><span><strong>Include Gold Economics</strong><small>Estimate each player’s gold profit or deficit from Epic norms.</small></span></label><button id="resetEpicEfficiencies" type="button">Reset efficiency defaults</button></div><div class="norm-epic-scroll"><div class="norm-epic-header"><span>Event</span><span>Norm value</span><span>Unit</span><span>Basis</span><span class="epic-economics-column">Epic Points / Full Gold Revive <button aria-label="How to calculate Epic Points per Full Gold Revive" class="norm-help-button" id="openEpicEfficiencyHelp" type="button">?</button></span><span class="epic-economics-column">Gold Revive %</span><span>Calculated result</span></div><div id="epicNormRows"></div></div></div></details>
+<summary class="norm-section-heading"><div><span>2</span><div><h2 id="normInputsTitle">Clan Requirements</h2><p>Record the clan’s point and chest requirements. Zero values are excluded.</p></div></div></summary><div class="norm-panel-body">
+<details class="norm-activity" open><summary><span>Epic Monster Events</span><small>6-day and 24-day cadence</small></summary><div class="norm-activity-body" id="epicNormActivityBody"><div class="norm-authority-note"><div><strong>Plan Epic encounters in the Battle Calculator</strong><span>The calculator is the authoritative place to compare armies, revival strategies, costs, and net resources. Saved plans flow back into this overview.</span></div><a href="stacking.html">Open Battle Calculator</a></div><div class="epic-visibility"><strong>Events shown</strong><div id="epicVisibilityOptions"></div><button id="showAllEpics" type="button">Show all</button><button id="hideAllEpics" type="button">Hide all</button></div><div class="gold-economics-toolbar"><label class="gold-economics-toggle"><input id="enableGoldEconomics" type="checkbox"/><span><strong>Include Epic Economics</strong><small>Use saved calculator plans when available and estimates as a fallback.</small></span></label><button id="resetEpicEfficiencies" type="button">Reset efficiency defaults</button></div><div class="norm-epic-scroll"><div class="norm-epic-header"><span>Event</span><span>Norm value</span><span>Unit</span><span>Basis</span><span class="epic-economics-column">Epic Points / Full Gold Revive <button aria-label="How to calculate Epic Points per Full Gold Revive" class="norm-help-button" id="openEpicEfficiencyHelp" type="button">?</button></span><span class="epic-economics-column">Gold Revive %</span><span>Calculated result</span></div><div id="epicNormRows"></div></div></div></details>
 <details class="norm-activity" open><summary><span>Crypts &amp; Citadels</span><small>Add each chest requirement used by the clan</small></summary><div class="norm-activity-body"><div class="chest-norm-toolbar"><p>Each completed activity produces one chest for every clan member.</p><button id="addChestNorm" type="button">+ Add chest</button></div><div id="chestNormRows"></div></div></details>
 <details class="norm-activity" open><summary><span>Tinman / Ancients</span><small>Each defeated Tinman advances one level, capped at 250</small></summary><div class="norm-activity-body norm-inline-grid"><label>Starting level<select id="tinmanStartLevel"></select></label><label>Number of summons<input id="tinmanSummons" min="0" max="8" step="1" type="number" value="0"/></label><div class="tinman-summary" id="tinmanSummary"></div></div></details>
 </div></details>
 
 <details class="card norm-panel norm-dashboard" open>
-<summary class="norm-section-heading"><div><span>3</span><div><h2 id="normDashboardTitle">Norm Dashboard</h2><p id="normDashboardScope">All resource values are per member per 6-day cycle.</p></div></div></summary><div class="norm-panel-body">
+<summary class="norm-section-heading"><div><span>3</span><div><h2 id="normDashboardTitle">Overview Dashboard</h2><p id="normDashboardScope">All resource values are per member per 6-day cycle.</p></div></div></summary><div class="norm-panel-body">
 <div class="norm-visual-section" id="goldEconomicsDashboard" hidden><div class="norm-visual-heading gold-visual-heading"><div><h3>Epic Gold Profit / Deficit</h3><p>Estimated per player for the selected planning period.</p></div><label>Sort by<select id="goldEconomicsSort"><option value="profit">Largest profit</option><option value="deficit">Largest deficit</option><option value="event">Event name</option></select></label></div><div class="gold-economics-metrics" id="goldEconomicsMetrics"></div><div id="goldEconomicsChart"></div><details class="epic-plan-summary"><summary>Epic encounter planning summary</summary><div class="epic-plan-summary-scroll"><table><thead><tr><th>Event</th><th>Norm</th><th>Attacks</th><th>Selected strategy</th><th>Gold net</th><th>Silver net</th><th>Dragon Coins net</th><th>Status</th></tr></thead><tbody id="epicPlanSummaryRows"></tbody></table></div></details></div>
 <div class="norm-visual-section"><div class="norm-visual-heading"><h3>Gross Resources</h3><p>Resources received before player costs.</p></div><div class="resource-donut-grid" id="resourceDonutCharts"></div><div class="resource-category-chart" id="resourceCategoryChart"></div></div>
 <details class="norm-data-details" id="goldEconomicsData" hidden><summary>Epic gold profit / deficit data</summary><div class="gold-economics-dashboard" id="goldEconomicsRows"></div></details>
@@ -158,7 +158,7 @@
 <div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div>
 <nav aria-label="Footer navigation" class="footer-links">
 <a href="stacking.html">Stacking</a>
-<a href="chests.html">Clan Norms</a>
+<a href="chests.html">Clan Overview</a>
 <a href="calendar.html">Event Calendar</a>
 <a href="research.html">Research</a>
 <a href="resources.html">Resources</a>

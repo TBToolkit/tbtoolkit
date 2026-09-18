@@ -8,7 +8,11 @@ const [html,script,data]=await Promise.all([
   readFile(new URL('data/norm-planner-data.json',root),'utf8').then(JSON.parse)
 ]);
 
-assert.match(html,/Clan Norm Planner/);
+assert.match(html,/<title>Clan Overview \| TB Toolkit<\/title>/);
+assert.match(html,/<h1 class="page-title">Clan Overview<\/h1>/);
+assert.match(html,/Plan Epic encounters in the Battle Calculator[\s\S]*calculator is the authoritative place[\s\S]*Open Battle Calculator/,'Clan Overview must direct encounter decisions to the authoritative Battle Calculator planner.');
+assert.match(html,/id="normInputsTitle">Clan Requirements/,'The editable section must be framed as clan requirements rather than the primary planner.');
+assert.match(html,/id="normDashboardTitle">Overview Dashboard/,'The dashboard must be framed as a cross-event overview.');
 assert.match(html,/id="epicNormRows"/);
 assert.match(html,/id="normResourceOptions"/);
 assert.match(html,/Chest Reward Averages/);
