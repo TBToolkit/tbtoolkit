@@ -112,6 +112,10 @@ assert.match(html,/id="toggleEncounterPlan"[\s\S]*Optional · no clan profile re
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.doesNotMatch(html,/<section class="encounter-plan-preview"[\s\S]*My clan norm[\s\S]*id="encounterPlanNorm"/,'The Results planner must use the shared setup norm rather than duplicate the input.');
 assert.match(source,/function normalizeEncounterNorm\(\)[\s\S]*value>0&&value<1&&unit==='B'[\s\S]*value>=1000&&unit==='M'/,'The setup norm must automatically normalize between K, M, and B.');
+assert.match(html,/id="encounterPlanNorm"[\s\S]*id="encounterPlanUnitSuffix">B<\/span>[\s\S]*id="encounterPlanUnit"/,'The norm input must display its unit suffix separately from the editable number.');
+assert.match(source,/function syncEncounterNormSuffix\(\)[\s\S]*suffix\.textContent=els\.encounterPlanUnit\.value[\s\S]*--norm-chars/,'The displayed suffix must follow unit changes and the entered value.');
+assert.match(css,/v198[\s\S]*battle-encounter-fields\{grid-template-columns:minmax\(0,1fr\) 132px[\s\S]*battle-norm-input\{grid-template-columns:minmax\(0,80px\) 46px/,'The encounter must retain the available width while the norm and unit remain compact and visible.');
+assert.match(css,/battle-norm-input input::-webkit-inner-spin-button[\s\S]*-webkit-appearance:none/,'The compact norm input must not lose space to number spinners.');
 assert.match(source,/loadEncounterNormSettings\(\);[\s\S]*const type=currentEngineBattleType/,'Encounter changes must immediately load the matching saved or linked norm.');
 assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
 assert.match(html,/<details class="battle-details encounter-plan-details" id="encounterPlanEntry" hidden>[\s\S]*<summary id="toggleEncounterPlan">/,'Encounter planning must use the same expandable-details pattern as Battle Details.');

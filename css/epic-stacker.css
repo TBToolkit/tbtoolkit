@@ -2166,7 +2166,7 @@ body.sacrifice-help-modal-open{overflow:hidden}
   outline-offset:1px;
   border-color:#d0952e;
 }
-.battle-encounter-fields{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(180px,.7fr);gap:14px;align-items:start}.battle-norm-input{display:grid;grid-template-columns:minmax(0,1fr) 68px;gap:6px}.battle-norm-input input{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #3a5265;border-radius:7px;padding:0 11px;background:#091925;color:#f0f4f7;font:inherit;font-size:.84rem;font-weight:800}.battle-norm-input input:focus{outline:2px solid rgba(239,167,39,.34);outline-offset:1px;border-color:#d0952e}.battle-norm-field>small{color:#91a3b2;font-size:.6rem;line-height:1.35}.battle-norm-field[hidden]{display:none!important}
+.battle-encounter-fields{display:grid;grid-template-columns:minmax(190px,1fr) 138px;gap:8px;align-items:start}.battle-norm-input{display:grid;grid-template-columns:minmax(0,84px) 46px;gap:6px}.battle-norm-value{position:relative;display:block;min-width:0}.battle-norm-input input{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #3a5265;border-radius:7px;padding:0 25px 0 11px;background:#091925;color:#f0f4f7;font:inherit;font-size:.84rem;font-weight:800;-moz-appearance:textfield}.battle-norm-input input::-webkit-inner-spin-button,.battle-norm-input input::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}.battle-norm-value>span{position:absolute;top:50%;left:calc(11px + var(--norm-chars,1)*.52em);pointer-events:none;transform:translateY(-50%);color:#f0aa28;font-size:.84rem;font-weight:900}.battle-norm-input select{min-width:0!important;padding:0 18px 0 7px!important;font-size:.78rem!important}.battle-norm-input input:focus{outline:2px solid rgba(239,167,39,.34);outline-offset:1px;border-color:#d0952e}.battle-norm-field>small{color:#91a3b2;font-size:.6rem;line-height:1.35}.battle-norm-field[hidden]{display:none!important}
 .battle-selection-summary{
   display:grid;
   grid-template-columns:1.25fr 1fr;
@@ -2194,7 +2194,7 @@ body.sacrifice-help-modal-open{overflow:hidden}
   .battle-select-grid{gap:10px;padding-left:12px;padding-right:12px}
   .battle-selection-summary{gap:4px;padding-left:12px;padding-right:12px}
 }
-@media(max-width:620px){.battle-encounter-fields{grid-template-columns:1fr}}
+@media(max-width:420px){.battle-encounter-fields{grid-template-columns:minmax(160px,1fr) 138px}}
 
 
 /* ==========================================================================
@@ -4020,4 +4020,9 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   body.battle-mode-active .battle-top-layout .setup-block{grid-column:2!important;grid-row:1!important}
   body.battle-mode-active .battle-top-layout .advanced-settings-column{grid-column:1/-1!important;grid-row:2!important}
 }
+
+/* v198 — keep the encounter readable beside a compact, fully visible norm. */
+.battle-encounter-fields{grid-template-columns:minmax(0,1fr) 132px;gap:8px}
+.battle-norm-input{grid-template-columns:minmax(0,80px) 46px;gap:6px}
+@media(max-width:360px){.battle-encounter-fields{grid-template-columns:minmax(0,1fr) 126px}.battle-norm-input{grid-template-columns:minmax(0,74px) 46px}}
 

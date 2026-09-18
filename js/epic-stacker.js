@@ -1200,6 +1200,7 @@ function loadEncounterNormSettings(){
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
+  syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
   const sourceText=selected.source==='clan'?`Using ${selected.profileName} clan norm`:selected.source==='manual'?'Manual norm · clan profile optional':'Optional · no clan profile required';
@@ -1214,17 +1215,19 @@ function loadEncounterPlanSettings(){
   const radio=els.encounterPlanStrategies?.querySelector(`input[value="${strategy}"]`);
   if(radio)radio.checked=true;
 }
+function syncEncounterNormSuffix(){const suffix=document.getElementById('encounterPlanUnitSuffix');if(!suffix||!els.encounterPlanNorm||!els.encounterPlanUnit)return;suffix.textContent=els.encounterPlanUnit.value;els.encounterPlanNorm.parentElement.style.setProperty('--norm-chars',String(Math.max(1,String(els.encounterPlanNorm.value||'').length)));}
 function normalizeEncounterNorm(){
   let value=Math.max(0,Number(els.encounterPlanNorm.value)||0),unit=els.encounterPlanUnit.value;
   if(value>0&&value<1&&unit==='B'){value*=1000;unit='M';}
   else if(value>0&&value<1&&unit==='M'){value*=1000;unit='K';}
   else if(value>=1000&&unit==='K'){value/=1000;unit='M';}
   else if(value>=1000&&unit==='M'){value/=1000;unit='B';}
-  els.encounterPlanNorm.value=String(Number(value.toFixed(6)));els.encounterPlanUnit.value=unit;
+  els.encounterPlanNorm.value=String(Number(value.toFixed(6)));els.encounterPlanUnit.value=unit;syncEncounterNormSuffix();
 }
 function saveManualEncounterNorm(){
   let saved={};try{saved=readSavedJson(localStorage,encounterPlanStorageKey())||{};}catch{}
   const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,source:'manual',profileId:''};
+  syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
   els.encounterNormSource.textContent='Manual norm · clan profile optional';els.encounterPlanSource.textContent='Manual norm · clan profile optional';
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
