@@ -4037,3 +4037,13 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 @media(max-width:520px){.battle-encounter-fields{grid-template-columns:1fr}.battle-encounter-fields>.battle-select-field:first-child{max-width:180px}.battle-norm-field{max-width:222px}.account-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .battle-mode-active #battleBetaPanel{display:grid!important;align-content:start;gap:12px}.battle-mode-active #battleBetaPanel .battle-config-panel{height:auto}.player-clan-panel .battle-select-grid,.battle-settings-panel .battle-select-grid{padding-top:12px!important}
 
+/* Keep the two setup cards readable and align Battle with the adjacent setup cards. */
+@media(min-width:1321px){
+  body.battle-mode-active .battle-top-layout{grid-template-columns:468px 360px minmax(430px,1fr)!important;align-items:stretch}
+  body.battle-mode-active #battleBetaPanel{height:100%;grid-template-rows:auto minmax(0,1fr);align-content:stretch;gap:16px}
+  body.battle-mode-active #battleBetaPanel .battle-settings-panel{height:100%}
+}
+.encounter-plan-preview header{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px) auto;align-items:center;gap:12px}
+.encounter-plan-preview header .encounter-plan-attacks{min-width:0;padding:7px 12px}
+@media(max-width:620px){.encounter-plan-preview header{grid-template-columns:minmax(0,1fr) auto}.encounter-plan-preview header .encounter-plan-attacks{grid-column:1/-1;grid-row:2}}
+
