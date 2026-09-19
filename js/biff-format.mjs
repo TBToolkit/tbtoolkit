@@ -18,7 +18,8 @@ const INPUT_KEYS=new Set([
   'guardsmanDD','specialistDD','engineerDD','guardsmanST','specialistST','engineerST',
   'autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses',
   'useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','arachne',
-  'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes'
+  'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes',
+  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterPlanStrategy'
 ]);
 
 function fail(message){throw new Error(message);}
@@ -62,7 +63,7 @@ function cleanInputs(value){
     if(!INPUT_KEYS.has(key))continue;
     if(key==='enemySquadTypes')output[key]=cleanStringArray(raw).filter(type=>['FLYING','MOUNTED','MELEE','RANGED'].includes(type)).slice(0,8);
     else if(['autoLeadership','autoAuthority','autoDominance','autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses','useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','arachne','minimumSeparation'].includes(key))output[key]=!!raw;
-    else if(['battleType','battleMethod','enemyUnitId'].includes(key))output[key]=String(raw??'');
+    else if(['battleType','battleMethod','enemyUnitId','encounterNormUnit','encounterNormBasis','encounterPlanStrategy'].includes(key))output[key]=String(raw??'');
     else if(typeof raw==='string'||typeof raw==='number')output[key]=raw;
   }
   return output;

@@ -4039,7 +4039,7 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 
 /* Keep the two setup cards readable and align Battle with the adjacent setup cards. */
 @media(min-width:1321px){
-  body.battle-mode-active .battle-top-layout{grid-template-columns:468px 360px minmax(430px,1fr)!important;align-items:stretch}
+  body.battle-mode-active .battle-top-layout{grid-template-columns:480px 360px minmax(430px,1fr)!important;align-items:stretch}
   body.battle-mode-active #battleBetaPanel{display:grid!important;grid-template-rows:auto minmax(0,1fr);align-self:stretch;align-content:stretch;row-gap:16px!important}
   body.battle-mode-active #battleBetaPanel .battle-settings-panel{height:auto;min-height:0}
 }
@@ -4047,4 +4047,10 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 .encounter-plan-preview header .encounter-plan-attacks{min-width:0;padding:7px 12px}
 @media(max-width:620px){.encounter-plan-preview header{grid-template-columns:minmax(0,1fr) auto}.encounter-plan-preview header .encounter-plan-attacks{grid-column:1/-1;grid-row:2}}
 .output-visual-column{display:grid;min-width:0;gap:18px;align-content:start}.output-visual-column>.topdown-panel{min-width:0;margin-bottom:0}.encounter-plan-standalone{margin-top:0}.encounter-plan-standalone[hidden]{display:none!important}.encounter-plan-heading>div{display:flex;align-items:center;gap:10px}.encounter-plan-heading h2{margin:0}.encounter-plan-source{color:#8fa2b2;font-size:.62rem}.encounter-plan-standalone>.encounter-plan-preview{padding:12px;background:#07131e}
+
+/* Give four-digit norms, their suffix, and the unit selector distinct space. */
+.battle-encounter-fields{grid-template-columns:180px 250px}
+.battle-norm-input{grid-template-columns:minmax(0,84px) 62px 88px;gap:8px}
+.battle-norm-input.is-chests{grid-template-columns:minmax(0,84px) 88px}
+.battle-norm-value>span{left:calc(11px + var(--norm-chars,1)*.62em)}
 

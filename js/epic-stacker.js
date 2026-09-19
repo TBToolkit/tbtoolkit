@@ -1194,6 +1194,8 @@ function activeClanEncounterNorm(encounterName){
 function loadEncounterNormSettings(){
   let saved=null;
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
+  const portable=currentBattleWorkspace()?.inputs||{};
+  if(Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:'manual',profileId:''};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:{norm:1,unit:'B',source:'default'};
   const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
@@ -1206,9 +1208,8 @@ function loadEncounterNormSettings(){
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
-  const sourceText=selected.source==='clan'?`Using ${selected.profileName} clan norm`:selected.source==='manual'?'Manual norm · clan profile optional':'Optional · no clan profile required';
-  els.encounterNormSource.textContent=sourceText;
-  els.encounterPlanSource.textContent=sourceText;
+  if(els.encounterNormSource)els.encounterNormSource.textContent='';
+  if(els.encounterPlanSource)els.encounterPlanSource.textContent='';
   return {saved,clanNorm,selected};
 }
 function loadEncounterPlanSettings(){
@@ -1233,14 +1234,17 @@ function saveManualEncounterNorm(){
   const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),source:'manual',profileId:''};
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
-  els.encounterNormSource.textContent='Manual norm · clan profile optional';els.encounterPlanSource.textContent='Manual norm · clan profile optional';
+  const inputs=currentBattleWorkspace().inputs;inputs.clanMembers=settings.clanMembers;inputs.encounterNorm=settings.norm;inputs.encounterNormUnit=settings.unit;inputs.encounterNormBasis=settings.basis;inputs.encounterPlanStrategy=settings.strategy||inputs.encounterPlanStrategy||'full';
+  if(els.encounterNormSource)els.encounterNormSource.textContent='';if(els.encounterPlanSource)els.encounterPlanSource.textContent='';
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
+  saveState();
 }
 function updateEncounterPlan(){
   if(!encounterPlanContext)return;
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
   const selected=els.encounterPlanStrategies?.querySelector('input:checked')?.value||'full';
   const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
+  const portable=currentBattleWorkspace().inputs;portable.clanMembers=settings.clanMembers;portable.encounterNorm=settings.norm;portable.encounterNormUnit=settings.unit;portable.encounterNormBasis=settings.basis;portable.encounterPlanStrategy=settings.strategy;
   const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   if(received)received.revival=received.gold+received.potion;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
@@ -1260,6 +1264,7 @@ function updateEncounterPlan(){
   els.encounterPlanNote.textContent=received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
+  saveState();
 }
 function renderPrediction(opt){
   if(!opt?.result){clearPrediction();updateVisibleStepNumbers();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const pointsPerFullGold=pointsEstimate!==null&&actualGold>0?pointsEstimate/actualGold:null;els.epicPointsPerFullGold.textContent=pointsPerFullGold===null?'—':pointsPerFullGold.toFixed(pointsPerFullGold>=100?0:2);if(pointsPerFullGold!==null)saveEncounterResultSnapshot({encounter,method:state.modes.battle.activeBattleMethod,estimatedPoints:pointsEstimate,fullGold:actualGold,eld:r.expectedTotalLifetimeDamage,ratio:pointsPerFullGold});const goldByCategory={mercenary:0,monster:0,troop:0},rebuildRows=[];for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));const cost=unitRebuildCost(squad.id);rebuildRows.push({category:squad.category,quantity:squad.quantity,revivableQuantity:attackingRevivableQuantity(squad),silverEach:cost?.silverEach,dragonCoinsEach:cost?.dragonCoinsEach});}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory,rebuildRows};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} strategy`;loadEncounterPlanSettings();updateEncounterPlan();}updateVisibleStepNumbers();const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
