@@ -114,6 +114,7 @@ assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSe
 assert.match(html,/battle-settings-panel[\s\S]*Battle Type[\s\S]*Encounter[\s\S]*Clan Norm[\s\S]*Calculation Method/,'Encounter-specific inputs must remain together in the Battle section.');
 assert.match(html,/id="encounterPlanMembers"[^>]*max="100"[^>]*min="1"[^>]*value="100"/,'Clan members must default to 100 and be capped at 100.');
 assert.match(source,/let step=5;/,'Dynamic Battle sections must continue numbering after the four fixed setup sections.');
+assert.match(source,/function clearPrediction\(\)[\s\S]*encounterPlanEntry\)els\.encounterPlanEntry\.hidden=true[\s\S]*updateVisibleStepNumbers\(\)/,'Hiding Epic-only planning must immediately renumber PvP and unsupported encounter sections.');
 assert.doesNotMatch(html,/<section class="encounter-plan-preview"[\s\S]*My clan norm[\s\S]*id="encounterPlanNorm"/,'The Results planner must use the shared setup norm rather than duplicate the input.');
 assert.match(source,/function normalizeEncounterNorm\(\)[\s\S]*value>0&&value<1&&unit==='B'[\s\S]*value>=1000&&unit==='M'/,'The setup norm must automatically normalize between K, M, and B.');
 assert.match(html,/id="encounterPlanNorm"[\s\S]*id="encounterPlanUnitSuffix">B<\/span>[\s\S]*id="encounterPlanUnit"/,'The norm input must display its unit suffix separately from the editable number.');
