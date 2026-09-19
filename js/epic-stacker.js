@@ -724,7 +724,52 @@ function compactOptimizerPayloadForStorage(payload){
   // This search-only list is not rendered after optimization and can contain
   // hundreds of candidate summaries.
   delete diagnostics.practicalCandidateSummary;
-  return{...payload,result,diagnostics};
+  // The optimizer also returns its initial scored army and many search-only
+  // diagnostics. Neither is needed to reconstruct the Results UI. Retaining
+  // them made each encounter cache much larger than necessary and could fill
+  // the origin's local-storage quota after several optimized encounters.
+  const persistedDiagnostics={};
+  for(const key of [
+    'displayingOpeningSacrificeAlternativeId','evaluations','improvementPct',
+    'maximumExpectedLifetimeDamage','mercenaryOptimizationMode',
+    'optimizationElapsedMs','practicalTieBreakApplied',
+    'practicalTieBreakLossPct','totalEvaluations','unusualSacrifices',
+    'fixedMercenaries','optimizerCoreExpectedLifetimeDamage',
+    'combinedExpectedLifetimeDamage'
+  ])if(diagnostics[key]!==undefined)persistedDiagnostics[key]=diagnostics[key];
+  return{quantities:{...(payload.quantities||{})},result,diagnostics:persistedDiagnostics};
+}
+function optimizerResultCacheKeys(){
+  const prefix='tbtoolkit.battleCalculator.optimizerResult.v4.';
+  const keys=[];
+  for(let index=0;index<localStorage.length;index++){
+    const key=localStorage.key(index);
+    if(key?.startsWith(prefix))keys.push(key);
+  }
+  return keys;
+}
+function writeOptimizerResultWithQuotaRecovery(key,saved){
+  try{
+    writeSavedJson(localStorage,key,saved);
+    return;
+  }catch(firstError){
+    // Optimizer results are reproducible caches. If accumulated caches fill
+    // browser storage, discard the oldest other encounter cache and retry so
+    // the result the player just waited for is the one that survives.
+    const candidates=optimizerResultCacheKeys().filter(candidate=>candidate!==key).map(candidate=>{
+      let savedAt=0;
+      try{savedAt=Number(readSavedJson(localStorage,candidate)?.savedAt)||0;}catch{}
+      return{key:candidate,savedAt};
+    }).sort((a,b)=>a.savedAt-b.savedAt);
+    for(const candidate of candidates){
+      localStorage.removeItem(candidate.key);
+      try{
+        writeSavedJson(localStorage,key,saved);
+        return;
+      }catch{}
+    }
+    throw firstError;
+  }
 }
 function loadSavedOptimizerResult(){
   try{
@@ -747,7 +792,7 @@ function saveOptimizerResult(){
   // quota-limited local-storage copy, so encounter switching remains safe.
   if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
   try{
-    writeSavedJson(localStorage,optimizerResultStorageKey(),saved);
+    writeOptimizerResultWithQuotaRecovery(optimizerResultStorageKey(),saved);
   }catch(error){console.warn('Could not persist optimizer result outside this browser session.',error);}
   saveState();
 }
