@@ -79,7 +79,14 @@ if (Number.isFinite(savedPageView?.scrollY)) {
   requestAnimationFrame(restorePageScroll);
   window.addEventListener('load', () => {
     restorePageScroll();
-    setTimeout(restorePageScroll, 150);
-    setTimeout(restorePageScroll, 600);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      restorePageScroll();
+      setTimeout(() => {
+        restorePageScroll();
+        document.documentElement.classList.remove('is-restoring-page');
+      }, 120);
+    }));
   }, {once: true});
+} else {
+  document.documentElement.classList.remove('is-restoring-page');
 }

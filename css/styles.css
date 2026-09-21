@@ -563,6 +563,7 @@ button { font: inherit; }
   -webkit-backdrop-filter:blur(14px);
 }
 body{padding-top:var(--header-height)}
+html.is-restoring-page body{visibility:hidden}
 .header-row{
   min-height:var(--header-height);
   display:flex;
