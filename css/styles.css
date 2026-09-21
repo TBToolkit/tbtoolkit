@@ -550,8 +550,11 @@ button { font: inherit; }
 
 /* Header / logo — identical on every page */
 .site-header{
-  position:sticky;
+  position:fixed;
   top:0;
+  left:0;
+  right:0;
+  width:100%;
   z-index:1000;
   min-height:var(--header-height);
   background:var(--header-bg);
@@ -559,6 +562,7 @@ button { font: inherit; }
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
 }
+body{padding-top:var(--header-height)}
 .header-row{
   min-height:var(--header-height);
   display:flex;

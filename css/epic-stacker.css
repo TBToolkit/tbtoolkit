@@ -4054,3 +4054,79 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 .battle-norm-input.is-chests{grid-template-columns:minmax(0,84px) 88px}
 .battle-norm-value>span{left:calc(11px + var(--norm-chars,1)*.62em)}
 
+/* Player & Clan owns account-wide revival settings. */
+.player-clan-secondary{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.player-clan-panel .temple-setting{
+  flex:1 1 250px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  flex-wrap:nowrap;
+}
+.player-clan-panel .temple-setting label{
+  flex:1 1 150px;
+  min-width:0;
+}
+.player-clan-panel .temple-level-select{
+  width:100%;
+  min-width:0;
+}
+.player-clan-panel .temple-bonus-copy{
+  flex:0 0 auto;
+  min-width:102px;
+  padding-bottom:8px;
+}
+
+/* Keep every Battle control inside the viewport on narrow phones. */
+@media(max-width:600px){
+  body.battle-mode-active .battle-settings-panel,
+  body.battle-mode-active .battle-settings-panel *{
+    min-width:0;
+    box-sizing:border-box;
+  }
+  body.battle-mode-active .battle-settings-panel .battle-select-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  body.battle-mode-active .battle-encounter-fields{
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%;
+  }
+  body.battle-mode-active .battle-encounter-fields>.battle-select-field:first-child,
+  body.battle-mode-active .battle-norm-field{
+    width:100%;
+    max-width:none!important;
+  }
+  body.battle-mode-active .battle-norm-input{
+    grid-template-columns:minmax(0,1fr) 58px minmax(78px,88px)!important;
+    width:100%;
+  }
+  body.battle-mode-active .battle-norm-input.is-chests{
+    grid-template-columns:minmax(0,1fr) minmax(78px,88px)!important;
+  }
+  body.battle-mode-active .battle-settings-panel select,
+  body.battle-mode-active .battle-settings-panel input{
+    width:100%;
+    max-width:100%;
+  }
+  .player-clan-secondary{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .player-clan-panel .temple-setting{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:end;
+    width:100%;
+  }
+}
+

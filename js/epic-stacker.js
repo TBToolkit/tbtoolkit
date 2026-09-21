@@ -3188,6 +3188,8 @@ function handleCalculatorNumericNavigation(id,input,e){
 function wireEvents(){
   wireStatHelp();
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
+  els.encounterPlanNorm?.addEventListener('focus',()=>selectWholeFieldOnFocus(els.encounterPlanNorm));
+  els.encounterPlanNorm?.addEventListener('click',()=>els.encounterPlanNorm.select());
   document.getElementById('encounterPlanBasis')?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   document.getElementById('encounterPlanMembers')?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});
   document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
