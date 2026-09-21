@@ -19,9 +19,11 @@ assert.ok(start>=0&&end>start,'numeric navigation function must exist');
 assert.match(siteCss,/\.site-header\{[\s\S]*?position:fixed;[\s\S]*?left:0;[\s\S]*?right:0;/,'The site header must remain visible while every page scrolls.');
 assert.match(siteCss,/body\{padding-top:var\(--header-height\)\}/,'Fixed navigation must reserve its original document space.');
 assert.match(siteScript,/sessionStorage\.setItem\(pageViewKey[\s\S]*scrollY:[\s\S]*details/,'Page navigation must preserve scroll position and disclosure state for the current tab.');
-assert.match(pageStateBootstrap,/documentElement\.classList\.add\('is-restoring-page'\)/,'Returning pages must enter restoration mode before their first paint.');
+assert.match(pageStateBootstrap,/root\.classList\.add\('is-restoring-page'\)/,'Returning pages must enter restoration mode before their first paint.');
+assert.match(pageStateBootstrap,/visibility', 'hidden', 'important'[\s\S]*min-height[\s\S]*scrollTo\(0, state\.scrollY\)/,'The bootstrap must hide the document and reserve enough height to establish its saved position before paint.');
 assert.match(siteCss,/html\.is-restoring-page body\{visibility:hidden\}/,'A returning page must not expose the intermediate top-of-page render.');
 assert.match(siteScript,/history\.scrollRestoration = 'manual'[\s\S]*restorePageScroll\(\);[\s\S]*classList\.remove\('is-restoring-page'\)/,'The page must become visible only after its saved scroll position is restored.');
+assert.match(siteScript,/revealRestoredPage[\s\S]*removeProperty\('visibility'\)[\s\S]*removeProperty\('min-height'\)/,'Revealing a restored page must remove all temporary pre-paint layout guards.');
 assert.match(html,/<head>\s*<script src="js\/page-state-bootstrap\.js"><\/script>/,'Stacking must initialize page restoration before styles can paint.');
 const navigation=source.slice(start,end);
 

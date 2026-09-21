@@ -76,6 +76,12 @@ document.addEventListener('visibilitychange', () => {
 if (Number.isFinite(savedPageView?.scrollY)) {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   const restorePageScroll = () => window.scrollTo({top: savedPageView.scrollY, behavior: 'auto'});
+  const revealRestoredPage = () => {
+    document.documentElement.classList.remove('is-restoring-page');
+    document.documentElement.style.removeProperty('visibility');
+    document.documentElement.style.removeProperty('min-height');
+    document.documentElement.style.removeProperty('scroll-behavior');
+  };
   requestAnimationFrame(restorePageScroll);
   window.addEventListener('load', () => {
     restorePageScroll();
@@ -83,10 +89,11 @@ if (Number.isFinite(savedPageView?.scrollY)) {
       restorePageScroll();
       setTimeout(() => {
         restorePageScroll();
-        document.documentElement.classList.remove('is-restoring-page');
+        revealRestoredPage();
       }, 120);
     }));
   }, {once: true});
 } else {
   document.documentElement.classList.remove('is-restoring-page');
+  document.documentElement.style.removeProperty('visibility');
 }
