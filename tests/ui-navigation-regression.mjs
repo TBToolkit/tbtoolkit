@@ -124,6 +124,9 @@ assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no cl
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
 assert.match(html,/player-clan-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');
+assert.match(html,/class="player-clan-primary">[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"[\s\S]*<\/div>\s*<span class="workspace-actions account-actions">/,'Account, temple level, and divisor must share a row with account actions underneath.');
+assert.match(css,/\.player-clan-primary\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 76px 112px/,'The account selector must shrink to make room for the compact temple selector and divisor.');
+assert.match(css,/\.player-clan-panel \.temple-level-select\{[\s\S]*?width:76px/,'Temple Level needs only a compact two-digit selector.');
 assert.doesNotMatch(html,/temple-setting-note/,'The obsolete Temple Level description must be removed.');
 assert.match(html,/battle-settings-panel[\s\S]*Battle Type[\s\S]*Encounter[\s\S]*Clan Norm[\s\S]*Calculation Method/,'Encounter-specific inputs must remain together in the Battle section.');
 assert.match(html,/id="encounterPlanMembers"[^>]*max="100"[^>]*min="1"[^>]*value="100"/,'Clan members must default to 100 and be capped at 100.');

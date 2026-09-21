@@ -4054,34 +4054,39 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 .battle-norm-input.is-chests{grid-template-columns:minmax(0,84px) 88px}
 .battle-norm-value>span{left:calc(11px + var(--norm-chars,1)*.62em)}
 
-/* Player & Clan owns account-wide revival settings. */
-.player-clan-secondary{
-  display:flex;
-  align-items:flex-end;
+/* Keep the account, compact temple selector, and divisor on one line. */
+.player-clan-primary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 76px 112px;
   gap:12px;
-  flex-wrap:wrap;
+  align-items:end;
+  min-width:0;
 }
+.player-clan-primary>.battle-select-field{min-width:0}
+.player-clan-primary #accountSelect{width:100%;min-width:0}
 .player-clan-panel .temple-setting{
-  flex:1 1 250px;
-  margin:0;
-  padding:0;
-  border:0;
-  border-radius:0;
-  background:transparent;
-  flex-wrap:nowrap;
+  display:contents;
 }
 .player-clan-panel .temple-setting label{
-  flex:1 1 150px;
   min-width:0;
+  width:76px;
 }
 .player-clan-panel .temple-level-select{
-  width:100%;
+  box-sizing:border-box;
+  width:76px;
   min-width:0;
+  padding-left:10px;
+  padding-right:20px;
 }
 .player-clan-panel .temple-bonus-copy{
-  flex:0 0 auto;
-  min-width:102px;
-  padding-bottom:8px;
+  min-width:0;
+  align-self:end;
+  padding-bottom:7px;
+}
+.player-clan-panel .account-actions{margin-top:0}
+@media(max-width:430px){
+  .player-clan-primary{grid-template-columns:76px minmax(0,1fr)}
+  .player-clan-primary>.battle-select-field{grid-column:1/-1}
 }
 
 /* Keep every Battle control inside the viewport on narrow phones. */
@@ -4117,16 +4122,6 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   body.battle-mode-active .battle-settings-panel input{
     width:100%;
     max-width:100%;
-  }
-  .player-clan-secondary{
-    display:grid;
-    grid-template-columns:minmax(0,1fr);
-  }
-  .player-clan-panel .temple-setting{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:end;
-    width:100%;
   }
 }
 

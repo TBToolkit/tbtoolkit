@@ -54,16 +54,17 @@
 
 </div>
 <div class="battle-select-grid">
+<div class="player-clan-primary">
 <label class="battle-select-field" for="accountSelect"><span>Player Account</span>
-<select id="accountSelect"></select><span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span></label>
-<div class="player-clan-secondary">
-<label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label>
+<select id="accountSelect"></select></label>
 <div class="global-player-setting temple-setting">
 <label for="templeLevel"><span class="field-label">Temple Level</span>
 <select class="epic-input temple-level-select" id="templeLevel"></select></label>
 <div class="temple-bonus-copy"><span>Revival cost divisor</span><strong id="templeMultiplier">1.00×</strong></div>
 </div>
 </div>
+<span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span>
+<label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label>
 </div>
 </section>
 <section class="topdown-panel battle-config-panel battle-settings-panel">
