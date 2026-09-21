@@ -1,5 +1,5 @@
 export const BIFF_FORMAT='tbtoolkit-biff';
-export const BIFF_SCHEMA_VERSION=1;
+export const BIFF_SCHEMA_VERSION=2;
 export const BIFF_MAX_BYTES=5*1024*1024;
 
 const CATEGORIES=Object.freeze(['troop','monster','mercenary']);
@@ -92,6 +92,7 @@ function normalizeEncounter(raw){
 function normalizeWorkspace(raw){
   const encounterId=cleanId(raw?.encounterId,'Workspace encounter ID');
   const custom=raw?.customOrder||{};
+  const resultCache=normalizeOptimizerResultCache(raw?.resultCache);
   return{
     encounterId,
     inputs:cleanInputs(raw?.inputs),
@@ -101,15 +102,28 @@ function normalizeWorkspace(raw){
       unitOrders:cleanNestedOrders(custom?.unitOrders),
       unitOrderManual:cleanNestedOrders(custom?.unitOrderManual,{booleans:true}),
       squadOrder:cleanOrders(custom?.squadOrder)
-    }
+    },
+    ...(resultCache?{resultCache}:{})
   };
+}
+function normalizeOptimizerResultCache(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+  if(typeof raw.build!=='string'||raw.build.length>200||typeof raw.signature!=='string'||raw.signature.length>20_000)return null;
+  if(!raw.payload?.result||typeof raw.payload.result!=='object'||Array.isArray(raw.payload.result))return null;
+  if(!raw.payload?.quantities||typeof raw.payload.quantities!=='object'||Array.isArray(raw.payload.quantities))return null;
+  try{
+    const json=JSON.stringify(raw);
+    if(json.length>1_000_000)return null;
+    return JSON.parse(json);
+  }catch{return null;}
 }
 function canonicalAccount(raw){
   const battle=raw?.battle||{};
   const customEncounters=Object.values(raw?.customEncounters||{}).map(normalizeEncounter).sort((a,b)=>a.id.localeCompare(b.id));
   const workspaces=ownEntries(battle.workspaces).map(([encounterId,workspace])=>normalizeWorkspace({
     encounterId,inputs:workspace?.inputs,selectedIds:workspace?.selectedIds,
-    customOrder:workspace?.methods?.custom||workspace
+    customOrder:workspace?.methods?.custom||workspace,
+    resultCache:workspace?.methods?.optimize?.resultCache??workspace?.resultCache
   })).sort((a,b)=>a.encounterId.localeCompare(b.encounterId));
   return{
     id:cleanId(raw?.id,'Account ID'),
@@ -152,7 +166,7 @@ export function parseBiff(text,{maxBytes=BIFF_MAX_BYTES}={}){
       activeBattleCategory:raw.account?.activeBattleCategory,
       activeBattleMethod:raw.account?.activeBattleMethod,
       activeEncounterByType:raw.account?.activeEncounterByType,
-      workspaces:Object.fromEntries(rawWorkspaces.map(row=>[row?.encounterId,{...row,methods:{custom:row?.customOrder}}]))
+      workspaces:Object.fromEntries(rawWorkspaces.map(row=>[row?.encounterId,{...row,methods:{custom:row?.customOrder,optimize:{resultCache:row?.resultCache??null}}}]))
     }
   });
   return{format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION,exportedAt:String(raw.exportedAt||''),appBuild:String(raw.appBuild||''),kind:'account',account};
@@ -173,7 +187,7 @@ function filterKnownIds(ids,known,warnings,label){
   return output;
 }
 
-export function materializeImportedAccount(parsed,{existingAccountIds=[],existingEncounterIds=[],builtInEncounterIds=[],armyIds=null}={}){
+export function materializeImportedAccount(parsed,{existingAccountIds=[],existingEncounterIds=[],builtInEncounterIds=[],armyIds=null,optimizerCacheBuild=null}={}){
   const source=parsed?.account||fail('No account is available to import.');
   const warnings=[];
   const accountId=allocateId(source.id,new Set(existingAccountIds));
@@ -190,6 +204,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   const workspaces={};
   for(const workspace of source.workspaces){
     const encounterId=encounterIdMap.get(workspace.encounterId)||workspace.encounterId;
+    const resultCache=normalizeOptimizerResultCache(workspace.resultCache);
     const selectedIds={};const custom=workspace.customOrder;
     for(const category of CATEGORIES)selectedIds[category]=filterKnownIds(workspace.selectedIds[category],knownUnits,warnings,`${encounterId} ${category} selection`);
     const allowedByCategory=Object.fromEntries(CATEGORIES.map(category=>[category,new Set(selectedIds[category])]));
@@ -206,7 +221,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
     };
     workspaces[encounterId]={
       inputs:{...workspace.inputs},selectedIds,
-      methods:{basic:{},custom:{orders:cleanCategoryOrder(custom.orders),unitOrders:cleanNested(custom.unitOrders),unitOrderManual:cleanManual(custom.unitOrderManual),squadOrder:cleanCategoryOrder(custom.squadOrder)},optimize:{resultCache:null}}
+      methods:{basic:{},custom:{orders:cleanCategoryOrder(custom.orders),unitOrders:cleanNested(custom.unitOrders),unitOrderManual:cleanManual(custom.unitOrderManual),squadOrder:cleanCategoryOrder(custom.squadOrder)},optimize:{resultCache:resultCache?.build===optimizerCacheBuild?resultCache:null}}
     };
   }
   const mapEncounter=id=>encounterIdMap.get(id)||id;
