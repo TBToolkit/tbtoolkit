@@ -13,7 +13,7 @@ const account={
       methods:{
         basic:{},
         custom:{orders:{troop:['G9'],monster:[],mercenary:[]},unitOrders:{troop:{G9:['known','missing']},monster:{},mercenary:{}},unitOrderManual:{troop:{G9:true},monster:{},mercenary:{}},squadOrder:{troop:['known','missing'],monster:[],mercenary:[]}},
-        optimize:{resultCache:{large:'must not export'}}
+        optimize:{resultCache:{build:'optimizer-current',signature:'matching-inputs',payload:{result:{expectedTotalLifetimeDamage:123},quantities:{known:42}},savedAt:1}}
       }
     }}
   }
@@ -29,7 +29,8 @@ assert.equal(raw.account.workspaces[0].inputs.autoHumanBonuses,false);
 assert.equal(raw.account.workspaces[0].inputs.beastHealth,'2525');
 assert.equal(raw.account.workspaces[0].inputs.autoBeastBonuses,false);
 assert.deepEqual({clanMembers:raw.account.workspaces[0].inputs.clanMembers,norm:raw.account.workspaces[0].inputs.encounterNorm,unit:raw.account.workspaces[0].inputs.encounterNormUnit,basis:raw.account.workspaces[0].inputs.encounterNormBasis,strategy:raw.account.workspaces[0].inputs.encounterPlanStrategy},{clanMembers:88,norm:500,unit:'M',basis:'points',strategy:'mercenary-monster'});
-assert.doesNotMatch(text,/resultCache|must not export/);
+assert.equal(raw.account.workspaces[0].resultCache.build,'optimizer-current');
+assert.equal(raw.account.workspaces[0].resultCache.payload.result.expectedTotalLifetimeDamage,123);
 
 const parsed=parseBiff(text);
 assert.equal(parsed.account.name,'Main Account');
@@ -37,12 +38,14 @@ assert.deepEqual(parsed.account.customEncounters.map(row=>row.name),['Raid']);
 assert.equal(parsed.account.workspaces[0].customOrder.unitOrderManual.troop.G9,true);
 
 const imported=materializeImportedAccount(parsed,{
-  existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],armyIds:['known']
+  existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],armyIds:['known'],optimizerCacheBuild:'optimizer-current'
 });
 assert.equal(imported.account.id,'main-2');
 assert.equal(imported.account.battle.activeEncounterId,'raid-2');
 assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);
+assert.equal(imported.account.battle.workspaces['raid-2'].methods.optimize.resultCache.signature,'matching-inputs');
+assert.equal(materializeImportedAccount(parsed,{optimizerCacheBuild:'optimizer-new'}).account.battle.workspaces.raid.methods.optimize.resultCache,null,'A different optimizer build must discard the saved result.');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.specialistHealth,'2345');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoSpecialistBonuses,false);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.beastHealth,'2525');
@@ -54,7 +57,7 @@ assert.equal(imported.account.battle.workspaces['raid-2'].methods.custom.unitOrd
 assert.ok(imported.warnings.some(message=>message.includes('unknown unit')));
 
 assert.throws(()=>parseBiff('{}'),/not a TB Toolkit/);
-assert.throws(()=>parseBiff(JSON.stringify({format:BIFF_FORMAT,schemaVersion:2,kind:'account'})),/newer schema/);
+assert.throws(()=>parseBiff(JSON.stringify({format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION+1,kind:'account'})),/newer schema/);
 assert.throws(()=>parseBiff(text,{maxBytes:10}),/larger than 5 MB/);
 const duplicate=structuredClone(raw);duplicate.account.customEncounters.push(structuredClone(duplicate.account.customEncounters[0]));
 assert.throws(()=>parseBiff(JSON.stringify(duplicate)),/duplicate encounter IDs/);

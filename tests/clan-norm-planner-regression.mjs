@@ -9,6 +9,7 @@ const [html,script,data]=await Promise.all([
 ]);
 
 assert.match(html,/<title>Clan Overview \| TB Toolkit<\/title>/);
+assert.match(html,/<head>\s*<script src="js\/page-state-bootstrap\.js"><\/script>/,'Clan Overview must initialize page restoration before styles can paint.');
 assert.match(html,/<h1 class="page-title">Clan Overview<\/h1>/);
 assert.match(html,/Plan Epic encounters in the Battle Calculator[\s\S]*calculator is the authoritative place[\s\S]*Open Battle Calculator/,'Clan Overview must direct encounter decisions to the authoritative Battle Calculator planner.');
 assert.match(html,/id="normInputsTitle">Clan Requirements/,'The editable section must be framed as clan requirements rather than the primary planner.');

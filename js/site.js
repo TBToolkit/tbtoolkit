@@ -33,3 +33,67 @@ if (menuToggle && nav) {
 document.querySelectorAll('[data-year]').forEach((el) => {
   el.textContent = new Date().getFullYear();
 });
+
+// Keep each page exactly where the user left it while navigating within the site.
+const pageViewKey = `tbtoolkit.page-view.v1:${location.pathname}`;
+const statefulDetails = [...document.querySelectorAll('details')];
+let savedPageView = null;
+
+try {
+  savedPageView = JSON.parse(sessionStorage.getItem(pageViewKey) || 'null');
+} catch {
+  savedPageView = null;
+}
+
+const detailKey = (detail, index) => detail.dataset.pageState || detail.id || `details-${index}`;
+
+statefulDetails.forEach((detail, index) => {
+  const open = savedPageView?.details?.[detailKey(detail, index)];
+  if (typeof open === 'boolean') detail.open = open;
+});
+
+const savePageView = () => {
+  const details = {};
+  statefulDetails.forEach((detail, index) => {
+    details[detailKey(detail, index)] = detail.open;
+  });
+  try {
+    sessionStorage.setItem(pageViewKey, JSON.stringify({
+      scrollY: Math.max(0, Math.round(window.scrollY)),
+      details
+    }));
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
+statefulDetails.forEach((detail) => detail.addEventListener('toggle', savePageView));
+window.addEventListener('pagehide', savePageView);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') savePageView();
+});
+
+if (Number.isFinite(savedPageView?.scrollY)) {
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const restorePageScroll = () => window.scrollTo({top: savedPageView.scrollY, behavior: 'auto'});
+  const revealRestoredPage = () => {
+    document.documentElement.classList.remove('is-restoring-page');
+    document.documentElement.style.removeProperty('visibility');
+    document.documentElement.style.removeProperty('min-height');
+    document.documentElement.style.removeProperty('scroll-behavior');
+  };
+  requestAnimationFrame(restorePageScroll);
+  window.addEventListener('load', () => {
+    restorePageScroll();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      restorePageScroll();
+      setTimeout(() => {
+        restorePageScroll();
+        revealRestoredPage();
+      }, 120);
+    }));
+  }, {once: true});
+} else {
+  document.documentElement.classList.remove('is-restoring-page');
+  document.documentElement.style.removeProperty('visibility');
+}

@@ -611,7 +611,16 @@ function safeBiffFileName(name){
 }
 function downloadActiveAccountBiff(){
   readInputs();saveState();
-  const text=serializeAccountToBiff(currentAccount(),{appBuild:APP_BUILD});
+  const account=currentAccount();
+  const workspaces=Object.fromEntries(Object.entries(account.battle.workspaces).map(([encounterId,workspace])=>{
+    let cached=workspace.resultCache;
+    if(!cached){
+      try{cached=readSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${encounterId}`);}
+      catch(error){console.warn(`Could not read optimized result for ${encounterId}.`,error);}
+    }
+    return[encounterId,{...workspace,methods:{...workspace.methods,optimize:{...workspace.methods?.optimize,resultCache:cached?.build===OPTIMIZER_CACHE_BUILD?cached:null}}}];
+  }));
+  const text=serializeAccountToBiff({...account,battle:{...account.battle,workspaces}},{appBuild:APP_BUILD});
   const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'}));
   const link=document.createElement('a');link.href=url;link.download=safeBiffFileName(currentAccount().name);
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -686,7 +695,8 @@ async function prepareBiffImport(file){
       existingAccountIds:Object.keys(state.accounts),
       existingEncounterIds:allCustomEncounterIds(),
       builtInEncounterIds:BUILT_IN_ENCOUNTERS.map(row=>row.id),
-      armyIds:armyV2.map(row=>row.id)
+      armyIds:armyV2.map(row=>row.id),
+      optimizerCacheBuild:OPTIMIZER_CACHE_BUILD
     });
     showBiffImportPreview(materialized);
   }catch(error){showBiffImportError(error);}
@@ -700,6 +710,12 @@ function confirmPendingBiffImport(){
     const candidate={...state.accounts,[imported.id]:imported};
     validateAccountCollection(candidate,imported.id);
     state.accounts=candidate;activateAccount(imported.id);saveState();
+    for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
+      const cache=workspace.methods?.optimize?.resultCache;
+      if(!cache||cache.build!==OPTIMIZER_CACHE_BUILD)continue;
+      try{writeSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${imported.id}.${encounterId}`,cache);}
+      catch(error){console.warn(`Could not persist imported optimized result for ${encounterId}; it remains available for this session.`,error);}
+    }
     pendingBiffImport=null;els.biffImportDialog.close();els.biffFileInput.value='';
     loadSavedOptimizerResult();refreshActiveMode();
   }catch(error){
@@ -774,10 +790,10 @@ function writeOptimizerResultWithQuotaRecovery(key,saved){
 function loadSavedOptimizerResult(){
   try{
     lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
-    let saved=null;
-    try{saved=readSavedJson(localStorage,optimizerResultStorageKey());}
+    let saved=activeMode==='battle'?currentBattleWorkspace().resultCache:null;
+    if(saved?.build!==OPTIMIZER_CACHE_BUILD)saved=null;
+    try{if(!saved)saved=readSavedJson(localStorage,optimizerResultStorageKey());}
     catch(error){console.warn('Could not read persisted optimizer result; trying the encounter workspace.',error);}
-    if((!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)&&activeMode==='battle')saved=currentBattleWorkspace().resultCache||null;
     if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
     lastOptimizedEpicPayload=saved.payload;
     lastOptimizedEpicSignature=saved.signature;
@@ -3188,6 +3204,8 @@ function handleCalculatorNumericNavigation(id,input,e){
 function wireEvents(){
   wireStatHelp();
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
+  els.encounterPlanNorm?.addEventListener('focus',()=>selectWholeFieldOnFocus(els.encounterPlanNorm));
+  els.encounterPlanNorm?.addEventListener('click',()=>els.encounterPlanNorm.select());
   document.getElementById('encounterPlanBasis')?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   document.getElementById('encounterPlanMembers')?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});
   document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
