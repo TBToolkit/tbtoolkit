@@ -16,6 +16,7 @@ assert.match(html,/id="normInputsTitle">Clan Requirements/,'The editable section
 assert.match(html,/id="normDashboardTitle">Overview Dashboard/,'The dashboard must be framed as a cross-event overview.');
 assert.match(html,/id="epicNormRows"/);
 assert.match(html,/id="normResourceOptions"/);
+assert.match(html,/data-resource-preset="core"[^>]*>Fully Developed<\/button>.*data-resource-preset="growth"[^>]*>Developing<\/button>.*data-resource-preset="custom"[^>]*>Custom<\/button>/,'Resource preset labels must reflect the player’s development stage.');
 assert.match(html,/Chest Reward Averages/);
 assert.equal(data.epicMonsters.length,12);
 assert.equal(data.tinman.length,250);
@@ -40,7 +41,14 @@ assert.match(script,/const list=\[\.\.\.document\.querySelectorAll\('\.epic-norm
 assert.match(script,/r\.type===\'CRYPT\'\|\|r\.type===\'CITADEL\'/,'The norm planner must offer Crypt and Citadel chests.');
 assert.match(script,/focusin.*\.select\(\)/,'Numeric inputs must select their full value on focus.');
 assert.match(script,/normalizeEpicValue/,'Fractional B and M entries must normalize to the next smaller unit.');
+assert.match(script,/const coreKeys=\['gold','potion','silver','dragonCoins'\]/,'Fully Developed must show the four recovery resources in order.');
+assert.match(script,/const growthKeys=\[\.\.\.coreKeys,'epicTar','rareTar','commonTar','speedupDays','clanSpeedupDays','wood','iron','stone'\]/,'Developing must append progression resources in the requested order.');
+assert.match(script,/const plannerDisplayKeys=\[\.\.\.growthKeys,'food','talentReset','cityTeleport','summonsScroll','marchSpeed50'\]/,'Custom must append the remaining planner resources in order.');
 assert.match(script,/resourcePreset=.*same\(coreKeys\)/,'Saved resource selections must restore the matching highlighted preset.');
+assert.match(script,/saved\.resourcePreset==='all'\?'custom'/,'Old All presets must restore as Custom.');
+assert.match(script,/same\(legacyGrowthKeys\)\?growthKeys/,'Old Growth selections must expand to the new Developing preset.');
+assert.match(script,/plannerDisplayKeys\.filter\(k=>shown\.has\(k\)\)/,'Every preset must use the same canonical resource order.');
+assert.match(await readFile(new URL('css/chests.css',root),'utf8'),/\.norm-resource-options\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'Resource tiles must retain a fixed desktop width across presets.');
 assert.match(script,/amount\/totals\[k\]\*100/,'Dashboard activity cells must calculate their share of each resource total.');
 assert.match(html,/<details class="norm-activity" open><summary><span>Tinman \/ Ancients/,'Tinman controls must be expanded by default.');
 assert.match(script,/defaultHiddenEpics=new Set\(\['ASHEN','CHIMERA'\]\)/,'Ashen and Chimera must be hidden in a new plan by default.');
@@ -68,8 +76,9 @@ assert.doesNotMatch(script,/class="sr-only">(?:Norm value|Point unit)/,'Column h
 assert.match(script,/unitField\.classList\.toggle\('is-hidden',!points\)/,'Chest mode must visually hide the point unit without removing its grid column.');
 assert.match(script,/unit\.disabled=!points/,'The invisible point unit must not remain keyboard-focusable in chest mode.');
 assert.match(script,/chests per player.*points per player/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
-assert.match(script,/allResources:\[\.\.\.allResourceSelection\]/,'Custom All resource selections must be saved with each clan profile.');
-assert.match(script,/resourcePreset==='all'\?\[\.\.\.allResourceSelection\]/,'Returning to All must restore the clan profile’s custom resource choices.');
+assert.match(script,/allResources:plannerDisplayKeys\.filter\(k=>allResourceSelection\.has\(k\)\)/,'Custom resource selections must be saved in display order with each clan profile.');
+assert.match(script,/const selected=plannerDisplayKeys\.filter\(k=>selectedPlannerResources\.has\(k\)\)/,'Dashboard resources must retain the same order as the picker.');
+assert.match(script,/resourcePreset==='custom'\?\[\.\.\.allResourceSelection\]/,'Returning to Custom must restore the clan profile’s resource choices.');
 assert.doesNotMatch(html,/id="enableGoldEconomics"/,'Clan Overview must not duplicate Battle Calculator economics controls.');
 assert.doesNotMatch(html,/Epic Points \/ Full Gold Revive.*Gold Revive %/s,'Clan Overview must not expose duplicate efficiency inputs.');
 assert.doesNotMatch(html,/id="goldEconomicsDashboard"/,'Clan Overview must not duplicate the Epic gold profit and deficit dashboard.');
