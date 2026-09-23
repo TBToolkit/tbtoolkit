@@ -41,6 +41,7 @@ function progressPercent(progress){
   if(progress.phase==='group-redistribution')return 92+Math.round(fraction(progress.groupIndex,progress.groupCount)*2);
   if(progress.phase==='polish')return 95;
   if(progress.phase==='death-position'||progress.phase==='convergence-polish')return 96;
+  if(progress.phase==='second-pass')return 97;
   return 10;
 }
 
@@ -70,7 +71,7 @@ self.onmessage=async event=>{
     const authorityMaximum=Math.max(0,Math.floor(Number(message.fixedAuthorityMaximum)||0));
     if(Object.keys(fixedQuantities).length&&authorityMaximum>0&&fixedUsage.AUTHORITY>authorityMaximum+1e-9)throw new Error(`The Standard mercenary stack uses ${Math.round(fixedUsage.AUTHORITY).toLocaleString()} Authority, which exceeds the entered maximum of ${authorityMaximum.toLocaleString()}. Reduce the Authority fill or selected mercenaries.`);
     let cumulativeEvaluations=0,lastRawEvaluations=0,lastEvaluationScope='';
-    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,shouldAbort,onProgress:progress=>{
+    const result=optimizeEpicQuantities({units,selectedIds:message.selectedIds,bonuses:message.bonuses,capacityLimits:{...(message.capacityLimits||{})},minimumHealthSeparationPct:.01,minimumQuantity:1,remainingTimeMs:()=>timeBudgetMs-(performance.now()-startedAt),shouldAbort,onProgress:progress=>{
       const raw=Math.max(0,Number(progress.evaluations)||0);
       let scope=String(progress.phase||'');
       if(progress.phase==='local'||progress.phase==='polish')scope+=`|seed:${progress.seedIndex??''}`;
@@ -78,6 +79,7 @@ self.onmessage=async event=>{
       else if(progress.phase==='paired-counterfactual')scope+=`|pair:${progress.pairIndex??''}`;
       else if(progress.phase==='group-redistribution')scope+=`|group:${progress.groupIndex??''}`;
       else if(progress.phase==='convergence-polish')scope+=`|pass:${progress.passIndex??''}`;
+      else if(progress.phase==='second-pass')scope+=`|seed:${progress.seedIndex??''}`;
       if(scope!==lastEvaluationScope){cumulativeEvaluations+=raw;lastEvaluationScope=scope;}else cumulativeEvaluations+=Math.max(0,raw-lastRawEvaluations);
       lastRawEvaluations=raw;
       self.postMessage({type:'progress',requestId,payload:{...progress,evaluations:cumulativeEvaluations,healthLadder:mergeFixedMercenaryLadder(progress.healthLadder,fixedMercenaryRows),progressPct:Math.min(97,progressPercent(progress))}});

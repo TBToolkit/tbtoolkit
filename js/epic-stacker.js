@@ -1171,6 +1171,7 @@ function optimizationHeadline(progress){
   if(progress.phase==='group-redistribution')return 'Redistributing capacity across related squad groups…';
   if(progress.phase==='death-position')return 'Testing widely different death-order structures…';
   if(progress.phase==='polish')return 'Precision-polishing the best discovered army…';
+  if(progress.phase==='second-pass')return 'Checking strong alternate death orders…';
   if(progress.phase==='finalizing')return 'Finalizing the highest-damage army…';
   const i=Number(progress.stageIndex||0),n=Math.max(1,Number(progress.stageCount||1));
   if(i<2)return 'Testing broad quantity reallocations…';

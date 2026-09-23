@@ -1283,6 +1283,67 @@ function finalConvergencePolish({
   return{best,candidates,passes,evaluations};
 }
 
+function refineDistinctFinalists({units,selected,selectedIds,selectedNames,bonuses,capacityLimits,start,earlierCandidates=[],structureValidator,minimumQuantity=1,remainingTimeMs=null,onProgress=null}){
+  const limits=limitsOf(capacityLimits),baselineEld=Number(start.result.expectedTotalLifetimeDamage||0);
+  const baselineOrder=deathSignature(start.result),groups=CAPACITY_TYPES.map(type=>({type,units:selected.filter(unit=>unit.capacityType===type)})).filter(group=>group.units.length>1&&limits[group.type]>0);
+  const nearBest=[],seenOrders=new Set([baselineOrder]);
+  let evaluations=0,localEvaluations=0,attempted=0,completed=0,timedOut=false;
+  let best={quantities:{...start.quantities},result:start.result};
+  const remaining=()=>typeof remainingTimeMs==='function'?Number(remainingTimeMs()):Infinity;
+  // Leave time for the final explanation and complete winner trace.
+  if(remaining()<=20000)return{best,evaluations,localEvaluations,attempted,completed,timedOut,skipped:'time-reserve'};
+  const stop=()=>remaining()<=15000||typeof bonuses.__shouldAbort==='function'&&bonuses.__shouldAbort();
+  const scoringBonuses={...bonuses,__shouldAbort:stop};
+
+  try{
+    // A nearby capacity transfer can change the death order while keeping a
+    // strong army. Rank those basins before spending local-search time on them.
+    for(const {type,units:group} of groups){
+      for(const fraction of [.005,.015,.04]){
+        for(const donor of group){
+          for(const receiver of group){
+            if(donor.id===receiver.id)continue;
+            const movedCapacity=Math.round(limits[type]*fraction);
+            const give=Math.min(Number(start.quantities[donor.name]??0)-minimumQuantity,Math.max(1,Math.floor(movedCapacity/Number(donor.capacityCost))));
+            if(give<1)continue;
+            const receive=Math.floor(give*Number(donor.capacityCost)/Number(receiver.capacityCost));
+            if(receive<1)continue;
+            const quantities={...start.quantities,[donor.name]:Number(start.quantities[donor.name])-give,[receiver.name]:Number(start.quantities[receiver.name])+receive};
+            const result=controlledScore({units,quantities,bonuses:scoringBonuses});evaluations++;
+            if(candidateFeasible({result,limits})&&structureValidator(result,selected)&&Number(result.expectedTotalLifetimeDamage)>=baselineEld*.98){
+              nearBest.push({quantities,result,source:'nearby-death-order'});
+            }
+          }
+        }
+      }
+    }
+    nearBest.sort((a,b)=>Number(b.result.expectedTotalLifetimeDamage)-Number(a.result.expectedTotalLifetimeDamage));
+    const seeds=[];
+    for(const candidate of nearBest){
+      const order=deathSignature(candidate.result);
+      if(seenOrders.has(order))continue;
+      seeds.push(candidate);seenOrders.add(order);
+      if(seeds.length>=3)break;
+    }
+    // Preserve one strong, structurally different finalist from the original
+    // search when available; the nearby variants still have their own slots.
+    const prior=earlierCandidates.filter(candidate=>candidate?.result&&candidate?.quantities&&candidateFeasible({result:candidate.result,limits})&&structureValidator(candidate.result,selected)&&Number(candidate.result.expectedTotalLifetimeDamage)>=baselineEld*.98).sort((a,b)=>Number(b.result.expectedTotalLifetimeDamage)-Number(a.result.expectedTotalLifetimeDamage)).find(candidate=>!seenOrders.has(deathSignature(candidate.result)));
+    if(prior)seeds.push({...prior,source:'earlier-finalist'});
+
+    for(const [index,seed] of seeds.entries()){
+      if(stop())break;
+      attempted++;
+      const local=optimizeFromSeed({units,selectedIds,selectedNames,bonuses:scoringBonuses,capacityLimits:limits,initialQuantities:seed.quantities,minimumHealthSeparationPct:.01,stageFractions:[.01,.005,.001,.0002],maxRoundsPerStage:4,minimumQuantity,structureValidator,onProgress:typeof onProgress==='function'?progress=>onProgress({...progress,phase:'second-pass',seedIndex:index,seedCount:seeds.length,bestExpectedLifetimeDamage:best.result.expectedTotalLifetimeDamage}):null});
+      completed++;localEvaluations+=Number(local.diagnostics?.evaluations||0);
+      if(compareScore(Number(local.result.expectedTotalLifetimeDamage),Number(best.result.expectedTotalLifetimeDamage)))best={quantities:{...local.quantities},result:local.result,source:'second-pass'};
+    }
+  }catch(error){
+    if(error?.code!=='TIME_BUDGET')throw error;
+    timedOut=true;
+  }
+  return{best,evaluations,localEvaluations,attempted,completed,timedOut,screened:nearBest.length};
+}
+
 export function optimizeEpicQuantities(args) {
   args={...args,bonuses:{...(args.bonuses||{}),__shouldAbort:args.shouldAbort}};
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
@@ -1371,10 +1432,13 @@ export function optimizeEpicQuantities(args) {
     adaptiveDeathPolishSeedsMax:3,
     finalConvergencePassesMax:3,
     finalConvergenceContinuePct:.01,
-    finalConvergenceFractions:[.002,.001,.0005,.0002,.0001,.00005]
+    finalConvergenceFractions:[.002,.001,.0005,.0002,.0001,.00005],
+    secondPassNearBestFloorPct:98,
+    secondPassNearbySeedsMax:3,
+    secondPassEarlierFinalistsMax:1
   };
   out.diagnostics.optimizerVersion=EPIC_OPTIMIZER_BUILD;
-  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish + final convergence polish';
+  out.diagnostics.seedStrategy='multi-seed + evolutionary + attack-opportunity thresholds + single/paired counterfactuals + capacity-group redistribution + adaptive death-position basins + exact-engine polish + final convergence polish + distinct death-order second pass';
   out.diagnostics.seedCandidates=seedScores.map(s=>({name:s.name,eld:s.result.expectedTotalLifetimeDamage}));
   out.diagnostics.authorityCeiling=limits.AUTHORITY;
   out.diagnostics.localFinalists=finalists.map(f=>({name:f.name,eld:f.result.expectedTotalLifetimeDamage}));
@@ -1444,6 +1508,18 @@ export function optimizeEpicQuantities(args) {
   out.quantities={...mathematicalMaximum.quantities};
   out.result=mathematicalMaximum.result;
 
+  const secondPassStartEld=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
+  const secondPass=refineDistinctFinalists({
+    units:args.units,selected,selectedIds:args.selectedIds,selectedNames:args.selectedNames,
+    bonuses:args.bonuses,capacityLimits:limits,start:mathematicalMaximum,
+    earlierCandidates:[...finalists,...evo.population,threshold,counterfactual.best,paired.best,groupRedistribution.best,adaptive.best,...practicalPool],
+    structureValidator,minimumQuantity:Number(args.minimumQuantity??1),remainingTimeMs:args.remainingTimeMs,onProgress:args.onProgress
+  });
+  totalEvaluations+=secondPass.evaluations+secondPass.localEvaluations;
+  if(compareScore(Number(secondPass.best.result.expectedTotalLifetimeDamage),Number(mathematicalMaximum.result.expectedTotalLifetimeDamage))){mathematicalMaximum=secondPass.best;practicalPool.push(secondPass.best);}
+  out.quantities={...mathematicalMaximum.quantities};
+  out.result=mathematicalMaximum.result;
+
   // Explain only non-siege squads that get no attack in the opening cycle while
   // siege is present. This diagnostic never substitutes a lower-ELD army.
   const unusualFinal=analyzeOpeningSacrifices({units:args.units,selected,bonuses:args.bonuses,capacityLimits:limits,start:{quantities:out.quantities,result:out.result},structureValidator,minimumQuantity:Number(args.minimumQuantity??1),maxNotes:3});
@@ -1454,6 +1530,7 @@ export function optimizeEpicQuantities(args) {
   out.diagnostics.finalConvergencePasses=convergence.passes;
   out.diagnostics.finalConvergenceEvaluations=convergence.evaluations;
   out.diagnostics.finalConvergenceBest=Number(convergence.best?.result?.expectedTotalLifetimeDamage||0);
+  out.diagnostics.secondPass={screened:secondPass.screened??0,attempted:secondPass.attempted,completed:secondPass.completed,timedOut:secondPass.timedOut,skipped:secondPass.skipped??null,gainPct:secondPassStartEld>0?(Number(mathematicalMaximum.result.expectedTotalLifetimeDamage)/secondPassStartEld-1)*100:0};
   out.diagnostics.maximumExpectedLifetimeDamage=Number(mathematicalMaximum.result.expectedTotalLifetimeDamage||0);
   out.diagnostics.nearOptimalTolerancePct=0;
   out.diagnostics.practicalTieBreakApplied=false;
