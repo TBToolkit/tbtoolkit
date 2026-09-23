@@ -10,7 +10,7 @@ const functionSource=name=>{
 };
 
 const storage=new Map();
-const workspaces={arachne:{resultCache:null},doomsday:{resultCache:null}};
+const workspaces={arachne:{inputs:{shareEpicArmy:false},resultCache:null},doomsday:{inputs:{shareEpicArmy:false},resultCache:null}};
 let encounterId='arachne';
 let failStorage=false;
 const context=vm.createContext({
@@ -19,7 +19,10 @@ const context=vm.createContext({
   lastOptimizedEpicPayload:null,
   lastOptimizedEpicSignature:'',
   lastEpicRunDiagnostics:null,
+  state:{modes:{battle:{get activeEncounterId(){return encounterId}}}},
   currentBattleWorkspace:()=>workspaces[encounterId],
+  canReuseEpicOptimizerResult:()=>false,
+  optimizerResultStorageKeyFor:id=>`optimizer.${id}`,
   optimizerResultStorageKey:()=>`optimizer.${encounterId}`,
   compactOptimizerPayloadForStorage:payload=>payload,
   writeOptimizerResultWithQuotaRecovery:(key,value)=>{
@@ -73,5 +76,19 @@ workspaces.doomsday.resultCache={build:'old-optimizer',signature:'stale',payload
 storage.delete('optimizer.doomsday');
 vm.runInContext('loadSavedOptimizerResult()',context);
 assert.equal(context.lastOptimizedEpicPayload,null,'An incompatible optimizer build must never restore a result.');
+
+workspaces.hellforge={inputs:{shareEpicArmy:true},resultCache:null};
+workspaces.doomsday.inputs.shareEpicArmy=true;
+workspaces.doomsday.resultCache={build:'optimizer:test-build',signature:'shared-inputs',payload:{result:{eld:44}},savedAt:10};
+context.canReuseEpicOptimizerResult=id=>id!=='arachne';
+context.linkedEpicArmyWorkspaces=()=>[{id:'doomsday',workspace:workspaces.doomsday},{id:'hellforge',workspace:workspaces.hellforge}];
+context.currentEpicEffectiveSignature=()=>currentSignature;
+let currentSignature='shared-inputs';
+encounterId='hellforge';
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload.result.eld,44,'A linked encounter must reuse a matching optimizer result.');
+currentSignature='changed-inputs';
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload,null,'Shared results must not appear after the army inputs change.');
 
 console.log(JSON.stringify({ok:true,encounters:['arachne','doomsday'],quotaFallback:true}));
