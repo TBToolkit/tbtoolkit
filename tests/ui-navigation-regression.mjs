@@ -116,7 +116,7 @@ const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
 assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
-assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19766,ASHEN:62166,BASILISK:19243,BRIAREUS:56345,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
+assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
@@ -138,7 +138,7 @@ assert.match(html,/id="encounterPlanNorm"[\s\S]*id="encounterPlanUnitSuffix">B<\
 assert.match(source,/function syncEncounterNormSuffix\(\)[\s\S]*suffix\.textContent=els\.encounterPlanUnit\.value[\s\S]*--norm-chars/,'The displayed suffix must follow unit changes and the entered value.');
 assert.match(source,/encounterPlanNorm\?\.addEventListener\('click',[\s\S]*encounterPlanNorm\.select\(\)/,'Clicking the clan norm must select the complete value for immediate replacement.');
 assert.match(source,/function downloadActiveAccountBiff\(\)[\s\S]*optimizerResult\.v4\.[\s\S]*resultCache:cached\?\.build===OPTIMIZER_CACHE_BUILD\?cached:null/,'Account exports must include compatible optimized results for each saved encounter.');
-assert.match(source,/function loadSavedOptimizerResult\(\)[\s\S]*currentBattleWorkspace\(\)\.resultCache[\s\S]*saved\?\.build!==OPTIMIZER_CACHE_BUILD/,'Imported optimized results must be preferred only when the optimizer build matches.');
+assert.match(source,/function loadSavedOptimizerResult\(\)[\s\S]*candidate\.workspace\?\.resultCache[\s\S]*cache\?\.build!==OPTIMIZER_CACHE_BUILD/,'Imported optimized results must be preferred only when the optimizer build matches.');
 assert.match(source,/function confirmPendingBiffImport\(\)[\s\S]*writeSavedJson\(localStorage,`tbtoolkit\.battleCalculator\.optimizerResult\.v4\.\$\{imported\.id\}\.\$\{encounterId\}`,cache\)/,'Compatible imported results must remain available after a page reload.');
 assert.match(source,/currentEpicEffectiveSignature\(\)===lastOptimizedEpicSignature/,'Restored results must only render when their saved input signature matches the current inputs.');
 assert.match(css,/Keep every Battle control inside the viewport on narrow phones[\s\S]*battle-encounter-fields\{[\s\S]*grid-template-columns:minmax\(0,1fr\)!important[\s\S]*battle-norm-input\{[\s\S]*minmax\(0,1fr\) 58px minmax\(78px,88px\)/,'Mobile Battle controls must use a bounded single-column layout without truncation.');

@@ -8,7 +8,7 @@ const account={
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -23,6 +23,7 @@ const text=serializeAccountToBiff(account,{appBuild:'test',exportedAt:'2026-09-0
 const raw=JSON.parse(text);
 assert.equal(raw.format,BIFF_FORMAT);assert.equal(raw.schemaVersion,BIFF_SCHEMA_VERSION);
 assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
+assert.equal(raw.account.workspaces[0].inputs.shareEpicArmy,true);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
 assert.equal(raw.account.workspaces[0].inputs.autoHumanBonuses,false);
@@ -47,6 +48,7 @@ assert.ok(imported.account.battle.workspaces['raid-2']);
 assert.equal(imported.account.battle.workspaces['raid-2'].methods.optimize.resultCache.signature,'matching-inputs');
 assert.equal(materializeImportedAccount(parsed,{optimizerCacheBuild:'optimizer-new'}).account.battle.workspaces.raid.methods.optimize.resultCache,null,'A different optimizer build must discard the saved result.');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.specialistHealth,'2345');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.shareEpicArmy,true);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoSpecialistBonuses,false);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.beastHealth,'2525');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoBeastBonuses,false);

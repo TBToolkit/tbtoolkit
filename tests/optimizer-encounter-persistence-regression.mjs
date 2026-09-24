@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {normalizeEpicOptimizerSignature} from '../js/epic-optimizer-signature.mjs';
 
 const source=readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const functionSource=name=>{
@@ -10,7 +11,7 @@ const functionSource=name=>{
 };
 
 const storage=new Map();
-const workspaces={arachne:{resultCache:null},doomsday:{resultCache:null}};
+const workspaces={arachne:{inputs:{shareEpicArmy:false},resultCache:null},doomsday:{inputs:{shareEpicArmy:false},resultCache:null}};
 let encounterId='arachne';
 let failStorage=false;
 const context=vm.createContext({
@@ -19,7 +20,11 @@ const context=vm.createContext({
   lastOptimizedEpicPayload:null,
   lastOptimizedEpicSignature:'',
   lastEpicRunDiagnostics:null,
+  state:{modes:{battle:{get activeEncounterId(){return encounterId}}}},
   currentBattleWorkspace:()=>workspaces[encounterId],
+  canReuseEpicOptimizerResult:()=>false,
+  normalizeEpicOptimizerSignature,
+  optimizerResultStorageKeyFor:id=>`optimizer.${id}`,
   optimizerResultStorageKey:()=>`optimizer.${encounterId}`,
   compactOptimizerPayloadForStorage:payload=>payload,
   writeOptimizerResultWithQuotaRecovery:(key,value)=>{
@@ -73,5 +78,54 @@ workspaces.doomsday.resultCache={build:'old-optimizer',signature:'stale',payload
 storage.delete('optimizer.doomsday');
 vm.runInContext('loadSavedOptimizerResult()',context);
 assert.equal(context.lastOptimizedEpicPayload,null,'An incompatible optimizer build must never restore a result.');
+
+workspaces.hellforge={inputs:{shareEpicArmy:true},resultCache:null};
+workspaces.doomsday.inputs.shareEpicArmy=true;
+workspaces.doomsday.resultCache={build:'optimizer:test-build',signature:'shared-inputs',payload:{result:{eld:44}},savedAt:10};
+context.canReuseEpicOptimizerResult=id=>id!=='arachne';
+context.linkedEpicArmyWorkspaces=()=>[{id:'doomsday',workspace:workspaces.doomsday},{id:'hellforge',workspace:workspaces.hellforge}];
+context.currentEpicEffectiveSignature=()=>currentSignature;
+let currentSignature='shared-inputs';
+encounterId='hellforge';
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload.result.eld,44,'A linked encounter must reuse a matching optimizer result.');
+currentSignature='changed-inputs';
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload,null,'Shared results must not appear after the army inputs change.');
+
+const canonicalSignature=JSON.stringify({selected:{troop:['corax'],monster:[],mercenary:[]},monsterDD:14});
+const legacySignature=JSON.stringify({selected:{troop:['corax'],monster:[],mercenary:[]},rankSeparation:0.05,monsterDD:14});
+workspaces.doomsday.resultCache={build:'optimizer:test-build',signature:legacySignature,payload:{result:{eld:55}},savedAt:20};
+currentSignature=canonicalSignature;
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload.result.eld,55,'A linked encounter must reuse a legacy result whose only extra fingerprint field is Custom separation.');
+assert.equal(context.lastOptimizedEpicSignature,canonicalSignature,'Restored legacy signatures must be canonicalized in memory.');
+
+const inputs={leadership:'450000',rankSeparation:'0.05',minimumSeparation:true,monsterDD:'14'};
+const signatureContext=vm.createContext({
+  activeMode:'battle',
+  isAnyEpicOptimizeMode:()=>true,
+  modeState:()=>({inputs,selectedIds:{troop:['corax'],monster:[],mercenary:[]}}),
+  parseNumber:value=>Number(value)||0
+});
+vm.runInContext(functionSource('currentEpicEffectiveSignature'),signatureContext);
+const before=vm.runInContext('currentEpicEffectiveSignature()',signatureContext);
+inputs.minimumSeparation=false;inputs.rankSeparation='0.75';
+assert.equal(vm.runInContext('currentEpicEffectiveSignature()',signatureContext),before,'Changing Custom separation must not invalidate an Epic optimizer result.');
+inputs.monsterDD='15';
+assert.notEqual(vm.runInContext('currentEpicEffectiveSignature()',signatureContext),before,'A genuine optimizer input change must invalidate the result.');
+
+let fixedMercenaryInputs=null;
+const fixedMercenaryContext=vm.createContext({
+  modeState:()=>({inputs:{includeMercenariesInOptimization:false,autoAuthority:false,authorityFill:'100'},selectedIds:{mercenary:['merc']}}),
+  baseEngineInputs:()=>({minimumSeparation:false,rankSeparation:0.0075}),
+  resolvedFills:{mercenary:1},
+  parseNumber:value=>Number(value)||0,
+  units:{mercenary:[]},
+  calculateCategory:({inputs:used})=>{fixedMercenaryInputs=used;return{results:[{name:'merc',qty:10}]};}
+});
+vm.runInContext(functionSource('fixedStandardMercenaryQuantitiesForOptimizer'),fixedMercenaryContext);
+vm.runInContext('fixedStandardMercenaryQuantitiesForOptimizer()',fixedMercenaryContext);
+assert.equal(fixedMercenaryInputs.minimumSeparation,true,'Fixed mercenary quantities in Optimize must ignore the Custom separation setting.');
 
 console.log(JSON.stringify({ok:true,encounters:['arachne','doomsday'],quotaFallback:true}));

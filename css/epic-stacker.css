@@ -4050,6 +4050,8 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 
 /* Give four-digit norms, their suffix, and the unit selector distinct space. */
 .battle-encounter-fields{grid-template-columns:180px 250px}
+.epic-army-sharing{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #3b5364;border-radius:8px;background:#0b1c29}.epic-army-sharing[hidden]{display:none!important}.epic-army-sharing>div:first-child{display:grid;gap:2px;min-width:0}.epic-army-sharing strong{color:#f4f6f7;font-size:.72rem}.epic-army-sharing small{color:#9ab0c0;font-size:.64rem;line-height:1.35}.epic-army-sharing-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.epic-army-sharing-actions button{border:1px solid #688096;border-radius:6px;background:#132c3b;color:#fff;padding:6px 9px;font-size:.68rem;font-weight:800;cursor:pointer}.epic-army-sharing-actions button:hover{border-color:#f0ae30;color:#ffca62}.epic-army-sharing-actions button[hidden]{display:none!important}.epic-army-sharing.is-linked{border-color:#a8802f;background:#17281f}
+@media(max-width:520px){.epic-army-sharing{align-items:flex-start;flex-direction:column}.epic-army-sharing-actions{justify-content:flex-start}}
 .battle-norm-input{grid-template-columns:minmax(0,84px) 62px 88px;gap:8px}
 .battle-norm-input.is-chests{grid-template-columns:minmax(0,84px) 88px}
 .battle-norm-value>span{left:calc(11px + var(--norm-chars,1)*.62em)}

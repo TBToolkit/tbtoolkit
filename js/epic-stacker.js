@@ -11,6 +11,8 @@ import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
+import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
+import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
 
 const STORAGE_KEY=SAVED_STATE_KEY;
@@ -84,7 +86,7 @@ guardsmanST:'5',specialistST:'5',engineerST:'5',
 autoBeastBonuses:true,autoDragonBonuses:true,autoElementalBonuses:true,autoGiantBonuses:true,
 autoHumanBonuses:true,autoGuardsmanBonuses:true,autoSpecialistBonuses:true,autoEngineerBonuses:true,autoEpicHunterBonuses:true,
 useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
-arachne:false,battleType:'epic_standard',battleMethod:'optimize',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05'};}
+arachne:false,battleType:'epic_standard',battleMethod:'optimize',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05',shareEpicArmy:false};}
 
 function normalizeBonusProfileInputs(inputs){
   const i=inputs??{},mh=parseNumber(i.monsterHealth??1600),ms=parseNumber(i.monsterStrength??2000),dd=parseNumber(i.monsterDD??10),st=parseNumber(i.monsterST??10);
@@ -271,6 +273,19 @@ function currentBattleWorkspace(){
     state.modes.battle.activeBattleType,
     state.modes.battle.activeBattleMethod
   );
+}
+function linkedEpicArmyWorkspaces(encounterId=state.modes.battle.activeEncounterId){
+  const groupId=epicArmyGroup(encounterId);
+  if(!groupId)return[];
+  return EPIC_ARMY_GROUPS[groupId].encounters.flatMap(id=>{
+    const workspace=state.modes.battle.workspaces[id];
+    return workspace?.inputs?.shareEpicArmy?[{id,workspace}]:[];
+  });
+}
+function propagateSharedEpicArmy(){
+  const id=state.modes.battle.activeEncounterId,source=state.modes.battle.workspaces[id];
+  if(!source?.inputs?.shareEpicArmy||!epicArmyGroup(id))return;
+  for(const peer of linkedEpicArmyWorkspaces(id))if(peer.id!==id)copySharedEpicArmy(source,peer.workspace);
 }
 function activateAccount(accountId){
   if(!state.accounts[accountId])return;
@@ -598,6 +613,7 @@ function loadSavedState(){
 }
 function saveState(){
   try{
+    if(activeMode==='battle')propagateSharedEpicArmy();
     writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
   }catch(error){
     // Persistence must never interrupt a selection or calculation-method UI
@@ -724,9 +740,10 @@ function confirmPendingBiffImport(){
     els.biffImportError.classList.add('show');
   }
 }
+function optimizerResultStorageKeyFor(encounterId){return`tbtoolkit.battleCalculator.optimizerResult.v4.${state.activeAccountId}.${encounterId}`;}
 function optimizerResultStorageKey(){
   return activeMode==='battle'
-    ?`tbtoolkit.battleCalculator.optimizerResult.v4.${state.activeAccountId}.${battleWorkspaceKey(state.modes.battle.activeBattleType)}`
+    ?optimizerResultStorageKeyFor(battleWorkspaceKey(state.modes.battle.activeBattleType))
     :OPTIMIZER_RESULT_KEY;
 }
 function compactOptimizerPayloadForStorage(payload){
@@ -790,10 +807,21 @@ function writeOptimizerResultWithQuotaRecovery(key,saved){
 function loadSavedOptimizerResult(){
   try{
     lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
-    let saved=activeMode==='battle'?currentBattleWorkspace().resultCache:null;
-    if(saved?.build!==OPTIMIZER_CACHE_BUILD)saved=null;
-    try{if(!saved)saved=readSavedJson(localStorage,optimizerResultStorageKey());}
-    catch(error){console.warn('Could not read persisted optimizer result; trying the encounter workspace.',error);}
+    const encounterId=state.modes.battle.activeEncounterId,shared=activeMode==='battle'&&currentBattleWorkspace().inputs.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId);
+    const candidates=shared?linkedEpicArmyWorkspaces(encounterId).filter(peer=>canReuseEpicOptimizerResult(peer.id)):[{id:encounterId,workspace:activeMode==='battle'?currentBattleWorkspace():null}];
+    const signature=shared?currentEpicEffectiveSignature():null;
+    let saved=null;
+    for(const candidate of candidates){
+      const available=[candidate.workspace?.resultCache];
+      try{available.push(readSavedJson(localStorage,activeMode==='battle'?optimizerResultStorageKeyFor(candidate.id):optimizerResultStorageKey()));}
+      catch(error){console.warn(`Could not read persisted optimizer result for ${candidate.id}.`,error);}
+      for(const cache of available){
+        if(cache?.build!==OPTIMIZER_CACHE_BUILD||!cache.payload||!cache.signature)continue;
+        const normalizedSignature=normalizeEpicOptimizerSignature(cache.signature);
+        if(shared&&normalizedSignature!==signature)continue;
+        if(!saved||Number(cache.savedAt)>Number(saved.savedAt))saved={...cache,signature:normalizedSignature};
+      }
+    }
     if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
     lastOptimizedEpicPayload=saved.payload;
     lastOptimizedEpicSignature=saved.signature;
@@ -849,6 +877,23 @@ function refreshWorkspaceSelectors(){
   els.encounterSelect.value=battle.activeEncounterId;
   const builtIn=isBuiltInEncounter(battle.activeEncounterId);
   els.editEncounter.disabled=builtIn;els.removeEncounter.disabled=builtIn;els.removeAccount.disabled=Object.keys(state.accounts).length<=1;
+  renderEpicArmySharing();
+}
+function renderEpicArmySharing(){
+  const panel=els.epicArmySharing,groupId=epicArmyGroup(state.modes.battle.activeEncounterId);
+  if(!panel)return;
+  panel.hidden=activeMode!=='battle'||state.modes.battle.activeBattleCategory!=='epic'||!groupId;
+  if(panel.hidden)return;
+  const linked=!!currentBattleWorkspace().inputs.shareEpicArmy,peers=linkedEpicArmyWorkspaces(),other=peers.filter(peer=>peer.id!==state.modes.battle.activeEncounterId);
+  const group=EPIC_ARMY_GROUPS[groupId];
+  els.epicArmySharingTitle.textContent=`${group.label} army`;
+  const names=other.map(peer=>resolveEncounter(currentAccount(),peer.id)?.name||peer.id);
+  els.epicArmySharingStatus.textContent=linked
+    ?`Linked with ${names.length?names.join(', '):'no other encounters yet'}. Stats and selected units stay in sync.${state.modes.battle.activeEncounterId==='epic-arachne'?' Arachne keeps its own optimizer result.':''}`
+    :`Independent. ${other.length?`Shared army available from ${names.join(', ')}.`:'Start a shared army for this group.'}`;
+  els.toggleEpicArmySharing.textContent=linked?'Edit independently':other.length?'Use shared army':'Share this army';
+  els.replaceSharedEpicArmy.hidden=linked||!other.length;
+  panel.classList.toggle('is-linked',linked);
 }
 function openEncounterEditor(encounter=null,duplicate=false){
   const category=state.modes.battle.activeBattleCategory;
@@ -916,6 +961,9 @@ function fixedStandardMercenaryQuantitiesForOptimizer(){
   if(!selected.length)return {};
 
   const inputs=baseEngineInputs();
+  // Custom's fixed-separation choice must not change the optimizer's fixed
+  // mercenary army or invalidate a saved optimized result.
+  inputs.minimumSeparation=true;
   // resolveAutoFills() has already established the authoritative fill used by
   // the current workspace. Preserve a manual fill exactly; Max Fill uses the
   // safe Standard fill found for the mercenary category.
@@ -1058,7 +1106,6 @@ function currentEpicEffectiveSignature(){
     authorityFill:includeMercs?parseNumber(i.authorityFill):null,
     dominanceFill:parseNumber(i.dominanceFill),
     includeMercenariesInOptimization:includeMercs,
-    rankSeparation:parseNumber(i.rankSeparation),
     arachne:activeMode!=='custom'&&!!i.arachne,
     enemySquadTypes:i.enemySquadTypes,
     monsterHealth:parseNumber(i.monsterHealth),
@@ -3282,6 +3329,36 @@ function wireEvents(){
   if(els.encounterSelect)els.encounterSelect.addEventListener('change',()=>{
     readInputs();saveState();state.modes.battle.activeEncounterId=els.encounterSelect.value;state.modes.battle.activeEncounterByType[state.modes.battle.activeBattleCategory]=els.encounterSelect.value;state.modes.battle.activeBattleType=currentEngineBattleType();ensureBattleWorkspace();loadSavedOptimizerResult();refreshActiveMode();
   });
+  els.toggleEpicArmySharing?.addEventListener('click',()=>{
+    const id=state.modes.battle.activeEncounterId,workspace=currentBattleWorkspace(),groupId=epicArmyGroup(id);
+    if(!groupId)return;
+    readInputs();
+    if(workspace.inputs.shareEpicArmy){
+      if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature===currentEpicEffectiveSignature()){
+        const cache={build:OPTIMIZER_CACHE_BUILD,payload:compactOptimizerPayloadForStorage(lastOptimizedEpicPayload),signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
+        workspace.resultCache=cache;
+        try{writeOptimizerResultWithQuotaRecovery(optimizerResultStorageKey(),cache);}catch(error){console.warn('Could not keep an independent copy of the shared optimizer result.',error);}
+      }
+      workspace.inputs.shareEpicArmy=false;
+    }else{
+      const source=linkedEpicArmyWorkspaces(id).find(peer=>peer.id!==id);
+      if(source){
+        const name=resolveEncounter(currentAccount(),source.id)?.name||source.id;
+        if(!confirm(`Use the shared ${EPIC_ARMY_GROUPS[groupId].label} army from ${name}? This replaces this encounter’s army limits, unit bonuses, selected units, and custom order. Its clan norm and revival strategy stay unchanged.`))return;
+        copySharedEpicArmy(source.workspace,workspace);
+      }
+      workspace.inputs.shareEpicArmy=true;
+    }
+    saveState();loadSavedOptimizerResult();refreshActiveMode();
+  });
+  els.replaceSharedEpicArmy?.addEventListener('click',()=>{
+    const id=state.modes.battle.activeEncounterId,workspace=currentBattleWorkspace(),groupId=epicArmyGroup(id);
+    if(!groupId||workspace.inputs.shareEpicArmy)return;
+    readInputs();
+    if(!confirm(`Replace the shared ${EPIC_ARMY_GROUPS[groupId].label} army with this encounter’s army limits, unit bonuses, selected units, and custom order? Linked encounters will update. Their clan norms and revival strategies stay unchanged.`))return;
+    workspace.inputs.shareEpicArmy=true;
+    saveState();loadSavedOptimizerResult();refreshActiveMode();
+  });
   if(els.addEncounter)els.addEncounter.addEventListener('click',()=>openEncounterEditor());
   if(els.duplicateEncounter)els.duplicateEncounter.addEventListener('click',()=>openEncounterEditor(currentEncounter(),true));
   if(els.editEncounter)els.editEncounter.addEventListener('click',()=>{if(!isBuiltInEncounter(state.modes.battle.activeEncounterId))openEncounterEditor(currentEncounter());});
@@ -3443,6 +3520,7 @@ document.addEventListener('visibilitychange',()=>{
 
 async function init(){
   cacheElements();
+  for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
   loadSavedState();
   if(activeMode==='battle')ensureBattleWorkspace();
