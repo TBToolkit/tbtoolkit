@@ -142,7 +142,10 @@ function canonicalAccount(raw){
 }
 
 export function serializeAccountToBiff(account,{appBuild='unknown',exportedAt=new Date().toISOString()}={}){
-  const envelope={format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION,exportedAt:String(exportedAt),appBuild:String(appBuild),kind:'account',account:canonicalAccount(account)};
+  const portable=canonicalAccount(account);
+  delete portable.clanProfileId;
+  for(const workspace of portable.workspaces)if(workspace.inputs.encounterNormSource==='clan')workspace.inputs.encounterNormSource='default';
+  const envelope={format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION,exportedAt:String(exportedAt),appBuild:String(appBuild),kind:'account',account:portable};
   return `${JSON.stringify(envelope,null,2)}\n`;
 }
 
@@ -221,7 +224,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
       return output;
     };
     workspaces[encounterId]={
-      inputs:{...workspace.inputs},selectedIds,
+      inputs:{...workspace.inputs,encounterNormSource:workspace.inputs.encounterNormSource==='clan'?'default':workspace.inputs.encounterNormSource},selectedIds,
       methods:{basic:{},custom:{orders:cleanCategoryOrder(custom.orders),unitOrders:cleanNested(custom.unitOrders),unitOrderManual:cleanManual(custom.unitOrderManual),squadOrder:cleanCategoryOrder(custom.squadOrder)},optimize:{resultCache:resultCache?.build===optimizerCacheBuild?resultCache:null}}
     };
   }
@@ -240,7 +243,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   }
   for(const encounterId of Object.keys(workspaces))if(!available.has(encounterId))warnings.push(`Saved workspace “${encounterId}” was retained but its encounter is unavailable in this version.`);
   return{
-    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:source.clanProfileId,customEncounters,battle:{
+    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:'',customEncounters,battle:{
       activeBattleCategory:source.activeBattleCategory,
       activeBattleMethod:source.activeBattleMethod,
       activeEncounterByType,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {CLAN_PROFILE_STORE_KEY,readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from '../js/clan-profile-link.mjs';
+import {CLAN_FILE_FORMAT,serializeClanProfile,parseClanProfile} from '../js/clan-profile-file.mjs';
 
 const values=new Map();
 const storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
@@ -25,4 +26,12 @@ assert.equal(clanEncounterNorm(linkedClanProfile(storage,'linked'),'Fenrir').bas
 assert.throws(()=>saveClanEncounterNorm(storage,'missing','Fenrir',{norm:1,unit:'B',basis:'points'}),/unavailable/);
 assert.throws(()=>saveClanEncounterNorm(storage,'linked','Fenrir',{norm:-1,unit:'B',basis:'points'}),/valid clan norm/);
 assert.equal(readClanProfiles(storage).profiles.length,2);
+const portable=JSON.parse(serializeClanProfile({...linked,plan:{...linked.plan,netPlayerAccountId:'browser-player'}},{exportedAt:'2026-09-01T00:00:00Z'}));
+assert.equal(portable.format,CLAN_FILE_FORMAT);
+assert.equal(portable.kind,'clan-profile');
+assert.equal(portable.profile.plan.netPlayerAccountId,undefined,'Portable clan files must not name a local player account.');
+assert.equal(parseClanProfile(JSON.stringify(portable)).plan.epics[0].monster,'DOOMSDAY');
+const legacy={format:'tbtoolkit-norms',kind:'clan-norm-profile',profile:{...linked,plan:{...linked.plan,netPlayerAccountId:'old-player'}}};
+assert.equal(parseClanProfile(JSON.stringify(legacy)).plan.netPlayerAccountId,undefined,'Legacy .norms files remain importable without restoring a stale player link.');
+assert.throws(()=>parseClanProfile('{}'),/valid TB Toolkit/);
 console.log(JSON.stringify({ok:true,profiles:2}));

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {linkedPlayerAccounts,planForMethod,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod} from '../js/clan-net-resources.mjs';
+import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod} from '../js/clan-net-resources.mjs';
+import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
 
 const profileId='norm-clan';
 const accounts=linkedPlayerAccounts({accounts:{one:{id:'one',name:'Biff',clanProfileId:profileId},two:{id:'two',name:'Other',clanProfileId:'elsewhere'}}},profileId);
@@ -11,6 +12,18 @@ assert.equal(planForMethod(bridge,'one','DOOMSDAY','optimize'),optimize);
 assert.equal(planForMethod(bridge,'one','Doomsday','custom'),custom);
 assert.equal(planForMethod(bridge,'two','Doomsday','custom'),null);
 const requirement={basis:'points',value:500,unit:'M',pointsPerChest:50e6/7};
+const importedBridge={accounts:{one:{encounters:{doom:{name:'Doomsday',methods:{optimize:{costModel:{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:100e6,goldByCategory:{troop:2,monster:3,mercenary:0},rebuildRows:[{category:'troop',quantity:10,revivableQuantity:9,silverEach:2,dragonCoinsEach:1}]}}},plansByMethod:{optimize:{selectedStrategy:'mercenary-monster'}}}}}}};
+const savedCostsActivity={name:'Doomsday',norm:requirement,reward:{gold:10,potion:5,silver:8,dragonCoins:4}};
+const linkedPlan=planFromSavedCosts(importedBridge,'one',savedCostsActivity,'optimize',100,profileId);
+assert.equal(linkedPlan.selectedStrategy,'mercenary-monster');
+assert.equal(linkedPlan.outcomes['mercenary-monster'].hits,5);
+assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.spent,15);
+assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.received,105000);
+assert.equal(planMatchesRequirement(linkedPlan,requirement,100,profileId),true);
+assert.equal(planFromSavedCosts(importedBridge,'one',{...savedCostsActivity,norm:{...requirement,value:600}},'optimize',100,profileId).outcomes['mercenary-monster'].hits,6,'A new clan norm must reprice saved battle costs without another optimization.');
+assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'custom',100,profileId),null);
+assert.equal(planFromSavedCosts({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{...importedBridge.accounts.one.encounters.doom.methods.optimize.costModel,build:'older-build'}}}}}}}},'one',savedCostsActivity,'optimize',100,profileId),null,'Stale optimizer cost models must not be reused after the build changes.');
+assert.equal(planForMethod({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{build:'older-build'}}},plansByMethod:{optimize}}}}}},'one','Doomsday','optimize'),null,'A stale cost model must not fall back to an old saved plan.');
 assert.equal(planMatchesRequirement(optimize,requirement,100,profileId),true);
 assert.equal(planMatchesRequirement(optimize,{...requirement,value:600},100,profileId),false);
 assert.equal(planMatchesRequirement(optimize,requirement,99,profileId),false);

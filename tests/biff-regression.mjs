@@ -23,8 +23,10 @@ const text=serializeAccountToBiff(account,{appBuild:'test',exportedAt:'2026-09-0
 const raw=JSON.parse(text);
 assert.equal(raw.format,BIFF_FORMAT);assert.equal(raw.schemaVersion,BIFF_SCHEMA_VERSION);
 assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
-assert.equal(raw.account.clanProfileId,'norm-linked');
-assert.equal(raw.account.workspaces[0].inputs.encounterNormSource,'clan');
+assert.equal(raw.account.clanProfileId,undefined,'A portable player account must not point to a browser-local clan profile.');
+assert.equal(raw.account.workspaces[0].inputs.encounterNormSource,'default','A linked norm becomes a default that can adopt the clan chosen after import.');
+const manualAccount=structuredClone(account);manualAccount.battle.workspaces.raid.inputs.encounterNormSource='manual';
+assert.equal(JSON.parse(serializeAccountToBiff(manualAccount)).account.workspaces[0].inputs.encounterNormSource,'manual','An explicit per-encounter manual override must remain portable.');
 assert.equal(raw.account.workspaces[0].inputs.shareEpicArmy,true);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
@@ -44,8 +46,12 @@ const imported=materializeImportedAccount(parsed,{
   existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],armyIds:['known'],optimizerCacheBuild:'optimizer-current'
 });
 assert.equal(imported.account.id,'main-2');
-assert.equal(imported.account.clanProfileId,'norm-linked');
-assert.equal(imported.account.battle.workspaces['raid-2'].inputs.encounterNormSource,'clan');
+assert.equal(imported.account.clanProfileId,'');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.encounterNormSource,'default');
+const legacyLinked=structuredClone(raw);legacyLinked.account.clanProfileId='norm-old-browser';legacyLinked.account.workspaces[0].inputs.encounterNormSource='clan';
+const legacyImported=materializeImportedAccount(parseBiff(JSON.stringify(legacyLinked)));
+assert.equal(legacyImported.account.clanProfileId,'','Older .stacks files must wait for an explicit local player/clan link.');
+assert.equal(legacyImported.account.battle.workspaces.raid.inputs.encounterNormSource,'default');
 assert.equal(imported.account.battle.activeEncounterId,'raid-2');
 assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);

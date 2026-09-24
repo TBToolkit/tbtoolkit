@@ -251,6 +251,8 @@ assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?
 assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
 assert.match(source,/saved\?\.source==='clan'\?\{\.\.\.saved,source:'clan',profileId:currentAccount\(\)\?\.clanProfileId/,'An imported player must retain the clan norm source even before the clan profile is imported.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\)/,'Import must prepare Clan Overview plans without opening each encounter.');
+assert.doesNotMatch(source,/function publishImportedOptimizerPlans\(imported\)\{\s*if\(!imported\.clanProfileId\)return/,'Import must prepare saved optimizer costs before any clan is linked.');
+assert.match(source,/result\.methods\[method\]\.costModel=\{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:/,'Saved battle costs must be reusable when a clan is linked later.');
 assert.match(source,/lastOptimizedEpicSignature!==currentEpicEffectiveSignature\(\)\)continue/,'Imported plans must only be published when the saved optimizer inputs still match.');
 assert.match(source,/hasSavedOptimizerCacheForEncounter\(imported,encounterId,workspace\)/,'Shared Epic encounters must be prepared from eligible peer optimizer caches.');
 assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');

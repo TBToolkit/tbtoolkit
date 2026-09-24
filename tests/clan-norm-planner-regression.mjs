@@ -28,7 +28,7 @@ assert.equal(data.tinmanCadenceDays,6);
 assert.match(script,/Math\.floor\(value\/item\.pointsPerChest\)/,'Point norms must round chest payouts down.');
 assert.match(script,/actual\*period\/item\.cadenceDays/,'Epic resource estimates must be prorated by cadence.');
 assert.match(script,/plannerKeys=resourceKeys\.filter\(k=>k!==\'clanWealth\'\)/,'Clan Wealth must remain outside the first planner version.');
-assert.match(html,/accept="\.norms,application\/json"/,'Clan profiles must support portable .norms files.');
+assert.match(html,/accept="\.clan,\.norms,application\/json"/,'Clan profiles must import .clan and legacy .norms files.');
 assert.doesNotMatch(html,/id="clanContributors"/,'The planner must use one clan member count.');
 assert.match(html,/>Clan Members<input id="clanRecipients"/,'The shared participant count must be labeled Clan Members.');
 assert.match(html,/id="epicVisibilityOptions"/,'Clan leaders must be able to show or hide individual Epic events.');

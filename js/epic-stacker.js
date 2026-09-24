@@ -861,7 +861,6 @@ function hydrateAccount(raw){
   return account;
 }
 function publishImportedOptimizerPlans(imported){
-  if(!imported.clanProfileId)return;
   const battle=state.modes.battle,previousMode=activeMode;
   const previous={category:battle.activeBattleCategory,encounterId:battle.activeEncounterId,type:battle.activeBattleType,method:battle.activeBattleMethod};
   try{
@@ -895,10 +894,10 @@ function hasSavedOptimizerCacheForEncounter(account,encounterId,workspace){
 }
 function backfillSavedOptimizerPlans(){
   const account=currentAccount();
-  if(!account?.clanProfileId)return;
+  if(!account)return;
   let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Clan Overview plans.',error);}
   const missing=Object.entries(account.battle?.workspaces||{}).some(([id,workspace])=>{
-    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.plansByMethod?.optimize;
+    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.optimize?.costModel;
   });
   if(missing)publishImportedOptimizerPlans(account);
 }
@@ -913,7 +912,7 @@ function renderClanProfileLink(){
   const profile=profiles.find(item=>item.id===linkedId);
   members.readOnly=!!profile;
   if(profile){members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));status.textContent=`Linked to ${profile.name}. Clan size and Epic norms come from Clan Overview; calculator overrides stay local.`;}
-  else status.textContent=linkedId?'Linked clan profile is unavailable here. Import its .norms file or choose another profile.':'Optional. Link a Clan Overview profile to use its requirements.';
+  else status.textContent=linkedId?'Linked clan profile is unavailable here. Import its .clan file (or older .norms file) or choose another profile.':'Optional. Link a Clan Overview profile to use its requirements.';
 }
 function refreshWorkspaceSelectors(){
   if(!els.accountSelect)return;
@@ -1306,7 +1305,7 @@ function clearPrediction(){
   if(activeMode==='battle'&&currentEncounter()?.builtIn&&state.modes.battle.activeBattleCategory==='epic'){
     try{
       const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY),encounter=stored?.accounts?.[state.activeAccountId]?.encounters?.[currentEncounter().id];
-      if(encounter?.plansByMethod){delete encounter.plansByMethod[state.modes.battle.activeBattleMethod];writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
+      if(encounter){delete encounter.plansByMethod?.[state.modes.battle.activeBattleMethod];delete encounter.methods?.[state.modes.battle.activeBattleMethod]?.costModel;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
     }catch(error){console.warn('Could not clear a stale encounter plan.',error);}
   }
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
@@ -1344,6 +1343,8 @@ function saveEncounterPlanSnapshot(settings,outcomes){
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
     const method=state.modes.battle.activeBattleMethod;
     result.plan={method,profileId:settings.source==='clan'?settings.profileId||'':'',profileName:settings.source==='clan'?linkedClanProfile(localStorage,settings.profileId)?.name||'':'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    result.methods=result.methods||{};result.methods[method]=result.methods[method]||{};
+    if(encounterPlanContext)result.methods[method].costModel={build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows};
     result.plansByMethod=result.plansByMethod||{};result.plansByMethod[method]=result.plan;
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
@@ -1369,7 +1370,7 @@ function loadEncounterNormSettings(){
   let saved=null;
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
   const portable=currentBattleWorkspace()?.inputs||{};
-  if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':'manual',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
+  if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':portable.encounterNormSource==='manual'?'manual':'default',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'clan',profileId:currentAccount()?.clanProfileId||saved.profileId||''}:{norm:1,unit:'B',source:'default'};
   const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
