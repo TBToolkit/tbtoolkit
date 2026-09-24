@@ -247,7 +247,8 @@ assert.match(source,/Gold and Potion rewards are combined 1:1 as revival currenc
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Enter a clan norm to include resource rewards and net change/,'Calculator-only players must be told how to enable net outcomes.');
 assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
-assert.match(source,/result\.plan=\{profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
+assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
+assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
 assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));

@@ -103,12 +103,11 @@ assert.match(script,/candidates\.sort\(\(a,b\)=>positive\(b\.estimatedEpicPoints
 assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimize'\?'Optimize':'Custom'\}`/,'Imported calculator efficiencies must identify their method.');
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
-assert.match(script,/function calculatorEncounterPlans\(profileId\)[\s\S]*encounter\.plan\?\.profileId===profileId/,'Calculator strategy plans must only appear in their linked clan profile.');
-assert.match(html,/Epic encounter planning status[\s\S]*id="epicPlanSummaryRows"/,'The dashboard must provide a concise cross-encounter planning status table.');
-assert.match(html,/Event<\/th><th>Norm<\/th><th>Attacks<\/th><th>Selected strategy<\/th><th>Status/,'The planning status table must expose only the cross-event decision fields.');
-assert.doesNotMatch(html,/Gold net<\/th>|Silver net<\/th>|Dragon Coins net<\/th>/,'Resource economics must remain in the Battle Calculator.');
-assert.match(script,/function renderEpicPlanSummary\(activities\)/,'The Epic planning summary must be rendered from current activities and linked calculator plans.');
-assert.match(script,/ready\?'Ready':'Needs calculator plan'/,'Incomplete encounters must be clearly identified in the planning summary.');
-assert.match(script,/renderResourceVisuals\(activities,selected,totals\);renderEpicPlanSummary\(activities\)/,'Gross resource visuals and planning status must update together.');
+assert.match(script,/linkedPlayerAccounts\(calculatorAccounts\(\),activeProfileId\)/,'Net resources must use only accounts linked to the active clan profile.');
+assert.match(html,/Net Resources per Player[\s\S]*id="netPlayerAccount"[\s\S]*id="netResourceRows"/,'The dashboard must provide linked-player net resources and per-encounter method choices.');
+assert.match(html,/Revival net<\/th><th>Silver net<\/th><th>Dragon Coins net/,'The net table must cover revival currency, Silver, and Dragon Coins.');
+assert.match(script,/function renderNetResources\(activities,period,recipients\)/,'Net resources must use current clan activities and recipients.');
+assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId\)/,'Stale calculator plans must not be counted.');
+assert.match(script,/renderResourceVisuals\(activities,selected,totals\);renderNetResources\(activities,period,recipients\)/,'Gross and net visuals must update together.');
 
 console.log('Clan norm planner regression checks passed.');

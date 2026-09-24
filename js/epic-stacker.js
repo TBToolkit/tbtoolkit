@@ -1260,6 +1260,12 @@ function updateOptimizerProgress(progress={}){
   }
 }
 function clearPrediction(){
+  if(activeMode==='battle'&&currentEncounter()?.builtIn&&state.modes.battle.activeBattleCategory==='epic'){
+    try{
+      const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY),encounter=stored?.accounts?.[state.activeAccountId]?.encounters?.[currentEncounter().id];
+      if(encounter?.plansByMethod){delete encounter.plansByMethod[state.modes.battle.activeBattleMethod];writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
+    }catch(error){console.warn('Could not clear a stale encounter plan.',error);}
+  }
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   encounterPlanContext=null;
   if(els.encounterPlanEntry)els.encounterPlanEntry.hidden=true;
@@ -1278,7 +1284,7 @@ function saveEncounterResultSnapshot({encounter,method,estimatedPoints,fullGold,
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{};
     stored.schemaVersion=1;stored.activeAccountId=state.activeAccountId;stored.accounts=stored.accounts||{};
     const account=stored.accounts[state.activeAccountId]||{name:currentAccount()?.name||'Player',encounters:{}};
-    account.name=currentAccount()?.name||account.name;account.encounters=account.encounters||{};
+    account.name=currentAccount()?.name||account.name;account.clanProfileId=currentAccount()?.clanProfileId||'';account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};
     result.name=encounter.name;result.methods=result.methods||{};
     result.methods[method]={estimatedEpicPoints:estimatedPoints,fullGoldRevival:fullGold,expectedLifetimeDamage:eld,pointsPerFullGoldRevival:ratio,savedAt:Date.now()};
@@ -1291,9 +1297,11 @@ function saveEncounterPlanSnapshot(settings,outcomes){
   try{
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{},accountId=state.activeAccountId,encounter=currentEncounter();
     stored.schemaVersion=1;stored.activeAccountId=accountId;stored.accounts=stored.accounts||{};
-    const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.encounters=account.encounters||{};
+    const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.name=currentAccount()?.name||account.name;account.clanProfileId=currentAccount()?.clanProfileId||'';account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
-    result.plan={profileId:settings.source==='clan'?settings.profileId||'':'',profileName:settings.source==='clan'?linkedClanProfile(localStorage,settings.profileId)?.name||'':'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    const method=state.modes.battle.activeBattleMethod;
+    result.plan={method,profileId:settings.source==='clan'?settings.profileId||'':'',profileName:settings.source==='clan'?linkedClanProfile(localStorage,settings.profileId)?.name||'':'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    result.plansByMethod=result.plansByMethod||{};result.plansByMethod[method]=result.plan;
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
 }
@@ -3094,6 +3102,10 @@ function recalculate(){
 function resetCalculator(){
   if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator':'Custom Stacker'} inputs and selections on this device?`))return;
   if(activeMode==='battle'){
+    try{
+      const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY),encounters=stored?.accounts?.[state.activeAccountId]?.encounters;
+      if(encounters?.[state.modes.battle.activeEncounterId]){delete encounters[state.modes.battle.activeEncounterId];writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
+    }catch(error){console.warn('Could not clear reset encounter results.',error);}
     clearSavedOptimizerResult();
     const type=state.modes.battle.activeBattleType||'epic_standard';
     state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type);
