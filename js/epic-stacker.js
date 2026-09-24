@@ -12,7 +12,6 @@ import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,t
 import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
-import {createOptimizerSearchJourney,recordOptimizerSearchJourney} from './optimizer-search-journey.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
 
@@ -28,7 +27,6 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
-let optimizerSearchJourney=createOptimizerSearchJourney(),optimizerSearchJourneyLastDraw=0;
 let epicChestRewards=new Map();
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
@@ -1154,42 +1152,14 @@ function setOptimizeButtonState(){
   else if(epicResultCurrent)els.optimizeHelp.textContent='Change any input or selection, then re-optimize when ready.';
   else els.optimizeHelp.textContent='Ready. Click Optimize Army to calculate the best quantities.';
 }
-function renderOptimizerSearchJourney(){
-  const svg=els.optimizerSearchJourneyChart;
-  if(!svg||els.optimizerSearchJourneyPanel?.hidden)return;
-  const width=Math.max(300,Math.round(svg.clientWidth||580)),height=170,left=66,right=13,top=14,bottom=35;
-  const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
-  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.replaceChildren();
-  const points=optimizerSearchJourney.points;
-  if(!points.length){const empty=make('text',{x:width/2,y:height/2,'text-anchor':'middle',fill:'#8fa0ae','font-size':12});empty.textContent='Evaluating starting armies…';svg.append(empty);return;}
-  const xMax=Math.max(1,points.at(-1).evaluations),values=points.flatMap(point=>[point.eld,point.best]);
-  const rawMin=Math.min(...values),rawMax=Math.max(...values),span=Math.max(rawMax-rawMin,rawMax*.02,1),yMin=Math.max(0,rawMin-span*.12),yMax=rawMax+span*.12;
-  const plotRight=width-right,plotBottom=height-bottom,x=value=>left+Math.min(1,value/xMax)*(plotRight-left),y=value=>top+(yMax-value)/(yMax-yMin)*(plotBottom-top);
-  for(const value of [yMax,(yMin+yMax)/2,yMin]){
-    const yy=y(value);svg.append(make('line',{x1:left,y1:yy,x2:plotRight,y2:yy,stroke:'#294050','stroke-width':1}));
-    const label=make('text',{x:left-7,y:yy+4,'text-anchor':'end',fill:'#9fb0bc','font-size':11});label.textContent=formatDamage(value);svg.append(label);
-  }
-  svg.append(make('line',{x1:left,y1:plotBottom,x2:plotRight,y2:plotBottom,stroke:'#435969','stroke-width':1}));
-  for(const [value,anchor] of [[0,'start'],[xMax,'end']]){const tick=make('text',{x:x(value),y:plotBottom+15,'text-anchor':anchor,fill:'#9fb0bc','font-size':11});tick.textContent=formatInteger(value);svg.append(tick);}
-  const axis=make('text',{x:(left+plotRight)/2,y:height-3,'text-anchor':'middle',fill:'#aab8c2','font-size':11});axis.textContent='Candidates evaluated';svg.append(axis);
-  let path=`M ${x(points[0].evaluations)} ${y(points[0].best)}`;
-  for(let index=1;index<points.length;index++)path+=` L ${x(points[index].evaluations)} ${y(points[index-1].best)} L ${x(points[index].evaluations)} ${y(points[index].best)}`;
-  svg.append(make('path',{d:path,fill:'none',stroke:'#f0ae30','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'}));
-  const stride=Math.max(1,Math.ceil(points.length/90));
-  points.forEach((point,index)=>{if(index%stride&&index!==points.length-1)return;svg.append(make('circle',{cx:x(point.evaluations),cy:y(point.eld),r:2.5,fill:'#64a5ff',opacity:.7}));});
-  const last=points.at(-1);svg.append(make('circle',{cx:x(last.evaluations),cy:y(last.best),r:4,fill:'#f0ae30'}));
-}
 function openOptimizerModal(){
   optimizerBestEldSoFar=0;
-  optimizerSearchJourney=createOptimizerSearchJourney();optimizerSearchJourneyLastDraw=0;
   renderOptimizerHealthLadder([]);
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
   if(!els.optimizerModal)return;
-  if(els.optimizerSearchJourneyPanel)els.optimizerSearchJourneyPanel.hidden=!isBattleOptimizeMode();
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
-  renderOptimizerSearchJourney();
   updateOptimizerProgress({phase:'loading',progressPct:0,evaluations:0});
 }
 function chartStyle(){return state.preferences.chartStyle==='separated'?'separated':'combined';}
@@ -1273,10 +1243,6 @@ function updateOptimizerProgress(progress={}){
     if(currentEld>previousBest&&Array.isArray(progress.healthLadder))renderOptimizerHealthLadder(progress.healthLadder);
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=formatDamage(currentEld);
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=formatDamage(optimizerBestEldSoFar);
-  }
-  if(isBattleOptimizeMode()&&recordOptimizerSearchJourney(optimizerSearchJourney,progress)){
-    const now=performance.now();
-    if(now-optimizerSearchJourneyLastDraw>=250||progress.progressPct===100){renderOptimizerSearchJourney();optimizerSearchJourneyLastDraw=now;}
   }
 }
 function clearPrediction(){
@@ -3554,7 +3520,7 @@ document.addEventListener('visibilitychange',()=>{
 
 async function init(){
   cacheElements();
-  for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy','optimizerSearchJourneyPanel','optimizerSearchJourneyChart'])els[id]=document.getElementById(id);
+  for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
   loadSavedState();
   if(activeMode==='battle')ensureBattleWorkspace();
