@@ -140,18 +140,19 @@ function collectEpicPlans(activities,recipients){
     const plan=linked?planForMethod(bridge,netPlayerAccountId,activity.name,method):null,matches=planMatchesRequirement(plan,activity.norm,recipients,activeProfileId),ready=matches&&!!plan?.outcomes?.[plan.selectedStrategy]?.complete;
     if(ready)plans.set(activity.name,plan);
     status.textContent=!netPlayerAccountId?'Choose player':!linked?'Link account':!plan?'Run calculator':!matches?'Norm or clan size changed':!ready?'Incomplete costs':'Ready';
+    if(ready){const strategy=document.createElement('small');strategy.textContent=({'full':'Full Gold revival','mercenary-monster':'Gold revive Mercenaries + Monsters','mercenary-only':'Gold revive Mercenaries only'})[plan.selectedStrategy]||plan.selectedStrategy;status.append(strategy);}
     status.className=`epic-plan-status ${ready?'is-ready':'needs-plan'}`;
   });
   return{plans,linked,account};
 }
 function renderNetResources(activities,period,selected,{plans,linked,account}){
-  const epics=activities.filter(activity=>activity.category==='Epic monsters'),result=linked?netResourcesForPeriod(activities,plans,period):{complete:false};
+  const netActivities=activities.filter(activity=>activity.category!=='Tinman'),epics=netActivities.filter(activity=>activity.category==='Epic monsters'),result=linked?netResourcesForPeriod(netActivities,plans,period):{complete:false};
   const resourceKeys=selected.reduce((keys,key)=>{const normalized=key==='gold'||key==='potion'?'revival':key;if(!keys.includes(normalized))keys.push(normalized);return keys;},[]);
-  const colorMap=permanentActivityColors(),signed=value=>`${value>=0?'+':'−'}${formatCompact(Math.abs(value))}`;
+  const signed=value=>`${value>=0?'+':'−'}${formatCompact(Math.abs(value))}`;
   const gross=(activity,key)=>activity.prorated*(key==='revival'?positive(activity.reward?.gold)+positive(activity.reward?.potion):positive(activity.reward?.[key]));
   const cost=(activity,key)=>{if(activity.category!=='Epic monsters'||!['revival','silver','dragonCoins'].includes(key))return 0;const plan=plans.get(activity.name),outcome=plan?.outcomes?.[plan.selectedStrategy];if(!outcome?.complete)return null;return positive(outcome[key==='revival'?'gold':key]?.spent)*period/activity.cadence;};
   const rows=resourceKeys.map(key=>{
-    const values=activities.map(activity=>{const received=gross(activity,key),spent=cost(activity,key);return{activity,received,spent,net:spent===null?null:received-spent};});
+    const values=netActivities.map(activity=>{const received=gross(activity,key),spent=cost(activity,key);return{activity,received,spent,net:spent===null?null:received-spent};});
     const modeled=!['revival','silver','dragonCoins'].includes(key)||!epics.length||linked&&values.every(value=>value.net!==null),total=modeled?values.reduce((sum,value)=>sum+value.net,0):null;
     return{key,label:key==='revival'?'Gold + Potion':labels[key],values,total};
   });
@@ -159,7 +160,7 @@ function renderNetResources(activities,period,selected,{plans,linked,account}){
   $('netResourceMetrics').innerHTML=rows.map(row=>`<article><small>${esc(row.label)}</small><strong class="${row.total===null?'pending':row.total>=0?'net-positive':'net-negative'}">${row.total===null?'—':signed(row.total)}</strong></article>`).join('');
   $('netResourceCharts').innerHTML=rows.map(row=>{
     const max=Math.max(1,...row.values.map(value=>Math.abs(value.net??0)));
-    return `<article class="resource-contribution-card"><header><h4>${esc(row.label)}</h4><strong class="${row.total===null?'pending':row.total>=0?'net-positive':'net-negative'}">${row.total===null?'—':signed(row.total)}</strong></header><div class="resource-contribution-bars">${row.values.map(({activity,net})=>{const width=net===null?0:Math.abs(net)/max*50,left=net!==null&&net<0?50-width:50;return `<div class="resource-contribution-row"><span title="${esc(activity.name)}">${esc(activityLabel(activity.name))}</span><div class="net-bar-track"><i class="${net!==null&&net<0?'is-negative':''}" style="left:${left}%;width:${width}%;--activity-color:${colorMap.get(activity.name)||'#70d995'}"></i></div><strong class="${net===null?'pending':net>=0?'net-positive':'net-negative'}">${net===null?'—':signed(net)}</strong></div>`;}).join('')}</div></article>`;
+    return `<article class="resource-contribution-card"><header><h4>${esc(row.label)}</h4><strong class="${row.total===null?'pending':row.total>=0?'net-positive':'net-negative'}">${row.total===null?'—':signed(row.total)}</strong></header><div class="resource-contribution-bars">${row.values.map(({activity,net})=>{const width=net===null?0:Math.abs(net)/max*50,left=net!==null&&net<0?50-width:50;return `<div class="resource-contribution-row"><span title="${esc(activity.name)}">${esc(activityLabel(activity.name))}</span><div class="net-bar-track"><i class="${net!==null&&net<0?'is-negative':''}" style="left:${left}%;width:${width}%"></i></div><strong class="${net===null?'pending':net>=0?'net-positive':'net-negative'}">${net===null?'—':signed(net)}</strong></div>`;}).join('')}</div></article>`;
   }).join('');
   $('netResourceRows').innerHTML=rows.flatMap(row=>row.values.map(({activity,received,spent,net})=>`<tr><td>${esc(activity.name)}</td><td>${esc(row.label)}</td><td>${formatCompact(received)}</td><td>${spent===null?'—':formatCompact(spent)}</td><td class="${net===null?'':net>=0?'net-positive':'net-negative'}">${net===null?'—':signed(net)}</td><td>${net===null?'Needs Epic plan':'Ready'}</td></tr>`)).join('')||'<tr><td colspan="6">Select resources in Plan Setup to see net details.</td></tr>';
 }
