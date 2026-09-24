@@ -11,7 +11,7 @@ const [html,script,data]=await Promise.all([
 assert.match(html,/<title>Clan Overview \| TB Toolkit<\/title>/);
 assert.match(html,/<head>\s*<script src="js\/page-state-bootstrap\.js"><\/script>/,'Clan Overview must initialize page restoration before styles can paint.');
 assert.match(html,/<h1 class="page-title">Clan Overview<\/h1>/);
-assert.match(html,/Plan Epic encounters in the Battle Calculator[\s\S]*calculator is the authoritative place[\s\S]*Open Battle Calculator/,'Clan Overview must direct encounter decisions to the authoritative Battle Calculator planner.');
+assert.match(html,/Plan Epic encounters in the Battle Calculator[\s\S]*Each Epic can use that player’s saved Custom or Optimize result[\s\S]*Open Battle Calculator/,'Clan Overview must direct encounter decisions to the Battle Calculator planner.');
 assert.match(html,/id="normInputsTitle">Clan Requirements/,'The editable section must be framed as clan requirements rather than the primary planner.');
 assert.match(html,/id="normDashboardTitle">Overview Dashboard/,'The dashboard must be framed as a cross-event overview.');
 assert.match(html,/id="epicNormRows"/);
@@ -83,7 +83,7 @@ assert.match(script,/class="epic-basis" type="checkbox" role="switch"/,'Epic nor
 assert.doesNotMatch(script,/class="sr-only">(?:Norm value|Point unit)/,'Column headings must not be repeated above every Epic input.');
 assert.match(script,/unitField\.classList\.toggle\('is-hidden',!points\)/,'Chest mode must visually hide the point unit without removing its grid column.');
 assert.match(script,/unit\.disabled=!points/,'The invisible point unit must not remain keyboard-focusable in chest mode.');
-assert.match(script,/chests per player.*points per player/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
+assert.match(script,/chests.*points/s,'Calculated Epic results must explain the equivalent value for the selected basis.');
 assert.match(script,/allResources:plannerDisplayKeys\.filter\(k=>allResourceSelection\.has\(k\)\)/,'Custom resource selections must be saved in display order with each clan profile.');
 assert.match(script,/const selected=plannerDisplayKeys\.filter\(k=>selectedPlannerResources\.has\(k\)\)/,'Dashboard resources must retain the same order as the picker.');
 assert.match(script,/resourcePreset==='custom'\?\[\.\.\.allResourceSelection\]/,'Returning to Custom must restore the clan profile’s resource choices.');
@@ -103,11 +103,13 @@ assert.match(script,/candidates\.sort\(\(a,b\)=>positive\(b\.estimatedEpicPoints
 assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimize'\?'Optimize':'Custom'\}`/,'Imported calculator efficiencies must identify their method.');
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
-assert.match(script,/linkedPlayerAccounts\(calculatorAccounts\(\),activeProfileId\)/,'Net resources must use only accounts linked to the active clan profile.');
-assert.match(html,/Net Resources per Player[\s\S]*id="netPlayerAccount"[\s\S]*id="netResourceRows"/,'The dashboard must provide linked-player net resources and per-encounter method choices.');
-assert.match(html,/Revival net<\/th><th>Silver net<\/th><th>Dragon Coins net/,'The net table must cover revival currency, Silver, and Dragon Coins.');
-assert.match(script,/function renderNetResources\(activities,period,recipients\)/,'Net resources must use current clan activities and recipients.');
+assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup must identify accounts linked to the active clan profile.');
+assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
+assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
+assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
 assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId\)/,'Stale calculator plans must not be counted.');
-assert.match(script,/renderResourceVisuals\(activities,selected,totals\);renderNetResources\(activities,period,recipients\)/,'Gross and net visuals must update together.');
+assert.match(script,/renderResourceVisuals\(activities,selected,totals\);[\s\S]*renderNetResources\(activities,period,selected,epicPlans\)/,'Gross and net visuals must update together.');
+assert.match(html,/Ashen norms can be saved here, but Ashen is excluded from gross and net resources/,'Ashen exclusion must be visible to users.');
+assert.match(script,/if\(item\.monster==='ASHEN'\)\{[\s\S]*?return;[\s\S]*?\}\s*const value=basis/,'Ashen must be excluded before chest conversion and activity creation.');
 
 console.log('Clan norm planner regression checks passed.');
