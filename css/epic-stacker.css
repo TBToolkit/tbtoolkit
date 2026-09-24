@@ -1297,6 +1297,14 @@ body.optimizer-modal-open{overflow:hidden}
 .optimizer-eld-compact span{display:block;color:#8fa1b1;font-size:.54rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
 .optimizer-eld-compact strong{display:flex;align-items:baseline;justify-content:flex-end;gap:4px;margin-top:2px;color:#f2f5f7;font-size:.8rem}
 .optimizer-eld-compact b{font:inherit}.optimizer-eld-compact i{color:#6f8493;font-style:normal}
+.optimizer-search-journey{width:calc(100% + 56px);margin:8px 0 8px -56px;padding:9px 10px 7px;border:1px solid #31485a;border-radius:9px;background:#091721}
+.optimizer-search-journey[hidden]{display:none!important}
+.optimizer-search-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px;margin-bottom:3px}
+.optimizer-search-heading strong{color:#dce6ec;font-size:.7rem;text-transform:uppercase;letter-spacing:.025em}
+.optimizer-search-heading span{display:flex;align-items:center;gap:5px;color:#aab8c2;font-size:.58rem}
+.optimizer-search-heading i{display:inline-block;margin-left:5px}.optimizer-search-heading i.candidate{width:7px;height:7px;border-radius:50%;background:#64a5ff}.optimizer-search-heading i.best{width:13px;height:2px;background:#f0ae30}
+#optimizerSearchJourneyChart{display:block;width:100%;height:170px}
+.optimizer-search-journey>small{display:block;color:#8fa0ae;font-size:.58rem;text-align:right}
 .optimizer-health-ladder{width:calc(100% + 56px);margin:8px 0 8px -56px;padding:9px 10px 7px;border:1px solid #31485a;border-radius:9px;background:#091721}
 .optimizer-health-ladder-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
 .optimizer-health-ladder-heading strong{color:#dce6ec;font-size:.7rem;text-transform:uppercase;letter-spacing:.025em}
@@ -1323,6 +1331,8 @@ body.optimizer-modal-open{overflow:hidden}
   .optimizer-cancel{width:100%;min-height:44px;margin-left:0}
   .optimizer-health-ladder-heading{gap:6px}
   .optimizer-health-ladder{width:100%;margin-left:0}
+  .optimizer-search-journey{width:100%;margin-left:0}
+  #optimizerSearchJourneyChart{height:155px}
   #optimizerHealthLadder{height:245px}
 }
 @media(max-width:520px){
