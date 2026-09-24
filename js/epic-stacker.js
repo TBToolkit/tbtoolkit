@@ -732,6 +732,7 @@ function confirmPendingBiffImport(){
       try{writeSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${imported.id}.${encounterId}`,cache);}
       catch(error){console.warn(`Could not persist imported optimized result for ${encounterId}; it remains available for this session.`,error);}
     }
+    publishImportedOptimizerPlans(imported);
     pendingBiffImport=null;els.biffImportDialog.close();els.biffFileInput.value='';
     loadSavedOptimizerResult();refreshActiveMode();
   }catch(error){
@@ -858,6 +859,48 @@ function hydrateAccount(raw){
   account.battle.workspaces={};
   for(const [id,workspace] of Object.entries(source.workspaces||{}))account.battle.workspaces[id]=makeBattleWorkspace(workspace?.inputs?.battleType,workspace);
   return account;
+}
+function publishImportedOptimizerPlans(imported){
+  if(!imported.clanProfileId)return;
+  const battle=state.modes.battle,previousMode=activeMode;
+  const previous={category:battle.activeBattleCategory,encounterId:battle.activeEncounterId,type:battle.activeBattleType,method:battle.activeBattleMethod};
+  try{
+    activeMode='battle';battle.activeBattleCategory='epic';battle.activeBattleMethod='optimize';
+    for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
+      try{
+        if(!hasSavedOptimizerCacheForEncounter(imported,encounterId,workspace))continue;
+        battle.activeEncounterId=encounterId;
+        const encounter=currentEncounter();
+        if(!encounter?.builtIn||!EPIC_NORM_POINTS_PER_CHEST[String(encounter.name||'').toUpperCase()])continue;
+        battle.activeBattleType=currentEngineBattleType();
+        ensureBattleWorkspace();
+        applyStateToInputs();syncDerivedEpicBonuses();
+        loadSavedOptimizerResult();
+        if(!lastOptimizedEpicPayload||lastOptimizedEpicSignature!==currentEpicEffectiveSignature())continue;
+        renderPrediction(liveStandardMercenaryOptimizerPayload(lastOptimizedEpicPayload));
+      }catch(error){console.warn(`Could not prepare the imported ${encounterId} plan.`,error);}
+    }
+  }catch(error){console.warn('Could not prepare all imported Epic plans for Clan Overview.',error);}
+  finally{
+    battle.activeBattleCategory=previous.category;battle.activeEncounterId=previous.encounterId;
+    battle.activeBattleType=previous.type;battle.activeBattleMethod=previous.method;activeMode=previousMode;
+    loadSavedOptimizerResult();
+  }
+}
+function hasSavedOptimizerCacheForEncounter(account,encounterId,workspace){
+  const valid=peer=>peer?.methods?.optimize?.resultCache?.build===OPTIMIZER_CACHE_BUILD&&!!peer.methods.optimize.resultCache.payload?.result&&!!peer.methods.optimize.resultCache.signature;
+  if(valid(workspace))return true;
+  const group=epicArmyGroup(encounterId);
+  return !!group&&!!workspace?.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId)&&Object.entries(account.battle.workspaces).some(([id,peer])=>id!==encounterId&&epicArmyGroup(id)===group&&peer.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(id)&&valid(peer));
+}
+function backfillSavedOptimizerPlans(){
+  const account=currentAccount();
+  if(!account?.clanProfileId)return;
+  let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Clan Overview plans.',error);}
+  const missing=Object.entries(account.battle?.workspaces||{}).some(([id,workspace])=>{
+    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.plansByMethod?.optimize;
+  });
+  if(missing)publishImportedOptimizerPlans(account);
 }
 function renderClanProfileLink(){
   const select=document.getElementById('clanProfileSelect'),status=document.getElementById('clanProfileStatus'),members=document.getElementById('encounterPlanMembers');
@@ -3607,6 +3650,7 @@ async function init(){
   appInitialized=true;
   showValidation([]);
 
+  backfillSavedOptimizerPlans();
   initializeActiveCalculatorAfterData();
 
   // Re-evaluate the primary action after all units/selections have rendered.

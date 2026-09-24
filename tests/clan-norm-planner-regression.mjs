@@ -111,5 +111,9 @@ assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,acti
 assert.match(script,/renderResourceVisuals\(activities,selected,totals\);[\s\S]*renderNetResources\(activities,period,selected,epicPlans\)/,'Gross and net visuals must update together.');
 assert.match(html,/Ashen norms can be saved here, but Ashen is excluded from gross and net resources/,'Ashen exclusion must be visible to users.');
 assert.match(script,/if\(item\.monster==='ASHEN'\)\{[\s\S]*?return;[\s\S]*?\}\s*const value=basis/,'Ashen must be excluded before chest conversion and activity creation.');
+const chartCss=await readFile(new URL('css/chests.css',root),'utf8');
+assert.match(chartCss,/\.norm-epic-header,\.epic-norm-row\{grid-template-columns:185px 105px 65px 138px 112px/,'Epic norm, unit, and basis controls must sit directly beside the Event column.');
+assert.match(chartCss,/\.norm-epic-header>span,\.epic-norm-row>:not\(\.epic-event\)\{justify-self:center;text-align:center\}/,'Epic table headings and non-Event cells must be centered.');
+assert.match(chartCss,/\.epic-norm-row \.epic-event\{justify-self:stretch;text-align:left\}/,'Epic event rows must remain left aligned.');
 
 console.log('Clan norm planner regression checks passed.');
