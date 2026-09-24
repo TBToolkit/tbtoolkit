@@ -11,12 +11,27 @@ export function planForMethod(bridge,accountId,encounterName,method){
   return plan?.method===method?plan:null;
 }
 
-export function planMatchesRequirement(plan,requirement,clanMembers,profileId){
-  if(!plan||plan.profileId!==profileId||!requirement||Number(plan.clanMembers)!==Number(clanMembers))return false;
+export function planMatchesRequirement(plan,requirement,clanMembers,profileId,{acceptUnlinkedPlan=false}={}){
+  if(!plan||(plan.profileId!==profileId&&!(acceptUnlinkedPlan&&!plan.profileId))||!requirement||Number(plan.clanMembers)!==Number(clanMembers))return false;
   const basis=plan.basis==='chests'?'chests':'points';
   const points=basis==='chests'?Number(plan.norm)*requirement.pointsPerChest:Number(plan.norm)*(multipliers[plan.unit]||0);
   const expected=requirement.basis==='chests'?Number(requirement.value)*requirement.pointsPerChest:Number(requirement.value)*(multipliers[requirement.unit]||0);
-  return Number.isFinite(points)&&Number.isFinite(expected)&&points>0&&Math.abs(points-expected)<=Math.max(1,expected*1e-8);
+  if(!Number.isFinite(points)||!Number.isFinite(expected)||points<=0||expected<=0)return false;
+  if(Math.abs(points-expected)<=Math.max(1,expected*1e-8))return true;
+  if(basis===requirement.basis||!(requirement.pointsPerChest>0))return false;
+  const plannedChests=basis==='chests'?Math.floor(Number(plan.norm)):Math.floor(points/requirement.pointsPerChest);
+  const requiredChests=requirement.basis==='chests'?Math.floor(Number(requirement.value)):Math.floor(expected/requirement.pointsPerChest);
+  return plannedChests>0&&plannedChests===requiredChests;
+}
+
+export function convertEpicNormBasis({value,unit='B',basis='points',pointsPerChest},targetBasis){
+  const amount=Number(value),chestPoints=Number(pointsPerChest);
+  if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(chestPoints)||chestPoints<=0)return{value:0,unit,basis:targetBasis};
+  if(basis===targetBasis)return{value:amount,unit,basis};
+  if(targetBasis==='chests')return{value:Math.floor(amount*(multipliers[unit]||0)/chestPoints),unit,basis:'chests'};
+  const points=amount*chestPoints;
+  const nextUnit=points>=1e9?'B':points>=1e6?'M':'K';
+  return{value:Number((points/multipliers[nextUnit]).toPrecision(12)),unit:nextUnit,basis:'points'};
 }
 
 export function netResourcesForPeriod(activities,selectedPlans,periodDays){

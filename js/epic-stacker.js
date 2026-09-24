@@ -1371,7 +1371,7 @@ function loadEncounterNormSettings(){
   const portable=currentBattleWorkspace()?.inputs||{};
   if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':'manual',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
-  const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'manual',profileId:''}:{norm:1,unit:'B',source:'default'};
+  const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'clan',profileId:currentAccount()?.clanProfileId||saved.profileId||''}:{norm:1,unit:'B',source:'default'};
   const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
   if(els.encounterNormField)els.encounterNormField.hidden=!supported;
   if(!supported)return {saved,clanNorm,selected};

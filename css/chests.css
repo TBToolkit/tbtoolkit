@@ -408,11 +408,11 @@
 .epic-visibility-heading>strong{color:#aebac4;font-size:.66rem;text-transform:uppercase;white-space:nowrap}
 .epic-visibility-actions{display:flex;gap:6px;flex:0 0 auto}
 .epic-visibility>#epicVisibilityOptions{display:flex;flex-wrap:wrap;gap:5px;width:100%;min-width:0}
-.norm-epic-header,.epic-norm-row{grid-template-columns:185px 105px 65px 205px 135px minmax(220px,1fr);gap:7px}
+.norm-epic-header,.epic-norm-row{grid-template-columns:185px 120px 65px 205px 135px minmax(220px,1fr);gap:7px}
 .norm-epic-header>span,.epic-norm-row>:not(.epic-event){justify-self:center;text-align:center}
 .norm-epic-header>span:first-child{text-align:center}
 .epic-norm-row .epic-event{justify-self:stretch;text-align:left}
-.epic-value-field{justify-self:center}
+.epic-value-field{justify-self:center;width:112px}.epic-value-field input{width:112px}
 .epic-basis-field{display:flex!important;align-items:center;justify-self:stretch!important;min-width:0;gap:6px!important}.epic-basis-field .epic-result{margin-left:auto;color:#e1b956;font-size:.66rem;font-weight:800;text-align:right;white-space:nowrap}
 .epic-basis-field .epic-result strong{font-size:.7rem}
 .epic-method-field{width:125px;min-width:0}.epic-method-field select{width:100%;min-width:0;font-size:.73rem}

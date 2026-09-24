@@ -107,12 +107,14 @@ assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup 
 assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
 assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
 assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
-assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId\)/,'Stale calculator plans must not be counted.');
+assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId,\{acceptUnlinkedPlan:linked\}\)/,'Only the linked player’s matching calculator plans may be counted.');
+assert.match(script,/switchEpicNormBasis\(event\.target\);calculatePlanner\(\)/,'Switching points and chests must convert the norm before recalculation.');
+assert.match(script,/basisPoints:?[,}]/,'The original point norm must survive a temporary switch to whole chests.');
 assert.match(script,/renderResourceVisuals\(activities,selected,totals\);[\s\S]*renderNetResources\(activities,period,selected,epicPlans\)/,'Gross and net visuals must update together.');
 assert.match(html,/Ashen norms can be saved here, but Ashen is excluded from gross and net resources/,'Ashen exclusion must be visible to users.');
 assert.match(script,/if\(item\.monster==='ASHEN'\)\{[\s\S]*?return;[\s\S]*?\}\s*const value=basis/,'Ashen must be excluded before chest conversion and activity creation.');
 const chartCss=await readFile(new URL('css/chests.css',root),'utf8');
-assert.match(chartCss,/\.norm-epic-header,\.epic-norm-row\{grid-template-columns:185px 105px 65px 205px 135px/,'Epic norm, unit, and basis controls must sit directly beside the Event column.');
+assert.match(chartCss,/\.norm-epic-header,\.epic-norm-row\{grid-template-columns:185px 120px 65px 205px 135px/,'Epic norm, unit, and basis controls must sit directly beside the Event column.');
 assert.match(chartCss,/\.norm-epic-header>span,\.epic-norm-row>:not\(\.epic-event\)\{justify-self:center;text-align:center\}/,'Epic table headings and non-Event cells must be centered.');
 assert.match(chartCss,/\.epic-norm-row \.epic-event\{justify-self:stretch;text-align:left\}/,'Epic event rows must remain left aligned.');
 assert.match(html,/Basis · equivalent<\/span><span>Calculation method<\/span><span>Plan status/,'The calculation method heading must be clear.');

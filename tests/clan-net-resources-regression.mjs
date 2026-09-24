@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {linkedPlayerAccounts,planForMethod,planMatchesRequirement,netResourcesForPeriod} from '../js/clan-net-resources.mjs';
+import {linkedPlayerAccounts,planForMethod,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod} from '../js/clan-net-resources.mjs';
 
 const profileId='norm-clan';
 const accounts=linkedPlayerAccounts({accounts:{one:{id:'one',name:'Biff',clanProfileId:profileId},two:{id:'two',name:'Other',clanProfileId:'elsewhere'}}},profileId);
@@ -15,6 +15,17 @@ assert.equal(planMatchesRequirement(optimize,requirement,100,profileId),true);
 assert.equal(planMatchesRequirement(optimize,{...requirement,value:600},100,profileId),false);
 assert.equal(planMatchesRequirement(optimize,requirement,99,profileId),false);
 assert.equal(planMatchesRequirement({...optimize,profileId:''},requirement,100,profileId),false);
+assert.equal(planMatchesRequirement({...optimize,profileId:''},requirement,100,profileId,{acceptUnlinkedPlan:true}),true,'A matching local plan may be used after the player is explicitly linked to the clan.');
+assert.equal(planMatchesRequirement({...optimize,profileId:'another-clan'},requirement,100,profileId,{acceptUnlinkedPlan:true}),false,'A plan linked to another clan must not be reused.');
+const arachneChestPoints=300e6/35,arachneNorm={value:2.5,unit:'B',basis:'points',pointsPerChest:arachneChestPoints};
+const chests=convertEpicNormBasis(arachneNorm,'chests');
+assert.equal(chests.value,291,'Switching to chests must convert the point norm, not relabel its number.');
+assert.equal(chests.basis,'chests');
+const arachnePlan={...optimize,norm:2.5,unit:'B',basis:'points'};
+assert.equal(planMatchesRequirement(arachnePlan,{...chests,pointsPerChest:arachneChestPoints},100,profileId),true,'A basis switch with the same whole-chest payout must keep the saved plan ready.');
+assert.equal(planMatchesRequirement(arachnePlan,{...chests,value:292,pointsPerChest:arachneChestPoints},100,profileId),false,'Editing the chest norm must still invalidate an unmatched plan.');
+const pointsAgain=convertEpicNormBasis({...chests,pointsPerChest:arachneChestPoints},'points');
+assert.equal(planMatchesRequirement(arachnePlan,{...pointsAgain,pointsPerChest:arachneChestPoints},100,profileId),false,'Changing the actual point target remains distinct from merely changing its display basis.');
 const activities=[
   {name:'Doomsday',category:'Epic monsters',cadence:6,prorated:10,reward:{gold:10,potion:5,silver:8,dragonCoins:4}},
   {name:'Tinman',category:'Tinman',cadence:6,prorated:2,reward:{gold:20,potion:0,silver:10,dragonCoins:0}}
