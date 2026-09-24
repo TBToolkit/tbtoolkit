@@ -11,6 +11,7 @@ import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
+import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
 
@@ -815,8 +816,10 @@ function loadSavedOptimizerResult(){
       try{available.push(readSavedJson(localStorage,activeMode==='battle'?optimizerResultStorageKeyFor(candidate.id):optimizerResultStorageKey()));}
       catch(error){console.warn(`Could not read persisted optimizer result for ${candidate.id}.`,error);}
       for(const cache of available){
-        if(cache?.build!==OPTIMIZER_CACHE_BUILD||!cache.payload||!cache.signature||shared&&cache.signature!==signature)continue;
-        if(!saved||Number(cache.savedAt)>Number(saved.savedAt))saved=cache;
+        if(cache?.build!==OPTIMIZER_CACHE_BUILD||!cache.payload||!cache.signature)continue;
+        const normalizedSignature=normalizeEpicOptimizerSignature(cache.signature);
+        if(shared&&normalizedSignature!==signature)continue;
+        if(!saved||Number(cache.savedAt)>Number(saved.savedAt))saved={...cache,signature:normalizedSignature};
       }
     }
     if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
@@ -958,6 +961,9 @@ function fixedStandardMercenaryQuantitiesForOptimizer(){
   if(!selected.length)return {};
 
   const inputs=baseEngineInputs();
+  // Custom's fixed-separation choice must not change the optimizer's fixed
+  // mercenary army or invalidate a saved optimized result.
+  inputs.minimumSeparation=true;
   // resolveAutoFills() has already established the authoritative fill used by
   // the current workspace. Preserve a manual fill exactly; Max Fill uses the
   // safe Standard fill found for the mercenary category.
@@ -1100,7 +1106,6 @@ function currentEpicEffectiveSignature(){
     authorityFill:includeMercs?parseNumber(i.authorityFill):null,
     dominanceFill:parseNumber(i.dominanceFill),
     includeMercenariesInOptimization:includeMercs,
-    rankSeparation:parseNumber(i.rankSeparation),
     arachne:activeMode!=='custom'&&!!i.arachne,
     enemySquadTypes:i.enemySquadTypes,
     monsterHealth:parseNumber(i.monsterHealth),
