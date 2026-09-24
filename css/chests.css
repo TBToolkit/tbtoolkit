@@ -311,6 +311,10 @@
 .epic-visibility button:hover,.chest-norm-toolbar button:hover,.remove-chest-norm:hover{border-color:var(--orange);color:#fff}
 .chest-norm-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 2px}
 .chest-norm-toolbar p{margin:0;color:#8999a7;font-size:.7rem}
+.chest-norm-row label,.chest-custom-duration{display:grid;gap:6px;color:#bdc8d2;font-size:.72rem;font-weight:850;text-transform:uppercase;letter-spacing:.035em}
+.chest-custom-duration{max-width:300px;margin:0 2px 12px}
+.chest-custom-duration[hidden]{display:none}
+.chest-norm-row select{font-weight:850}
 .chest-norm-row{display:grid;grid-template-columns:minmax(230px,1.4fr) minmax(150px,.8fr) minmax(130px,.7fr) auto;gap:9px;align-items:end;padding:10px 2px;border-top:1px solid rgba(255,255,255,.06)}
 .remove-chest-norm{height:44px;color:#d8a1a1}
 .norm-results-table{width:max-content;min-width:100%}

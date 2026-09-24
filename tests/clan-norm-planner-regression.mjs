@@ -33,6 +33,12 @@ assert.doesNotMatch(html,/id="clanContributors"/,'The planner must use one clan 
 assert.match(html,/>Clan Members<input id="clanRecipients"/,'The shared participant count must be labeled Clan Members.');
 assert.match(html,/id="epicVisibilityOptions"/,'Clan leaders must be able to show or hide individual Epic events.');
 assert.match(html,/id="addChestNorm"/,'Clan leaders must be able to add multiple Crypt and Citadel requirements.');
+assert.match(html,/id="chestCustomDurationField" hidden>Custom norm duration for all chests \(days\)<input id="chestCustomDurationDays"/,'Custom Crypt and Citadel duration must have one shared input.');
+assert.match(script,/value="custom"[^>]*>Custom · all chests<\/option>/,'Every chest duration dropdown must offer the shared Custom choice.');
+assert.match(script,/if\(event\.target\.value==='custom'\|\|previouslyShared\)selects\.forEach/,'Choosing Custom must switch all chest rows together.');
+assert.match(script,/some\(select=>select\.value==='custom'\)\?'custom':String\(saved\.cadence\?\?6\)/,'Chests added while Custom is active must inherit the shared duration.');
+assert.match(script,/selectedCadence==='custom'\?Math\.max\(1,whole\(\$\('chestCustomDurationDays'\)/,'Custom duration must drive resource prorating for all selected chests.');
+assert.match(script,/customChestNormDays:\$\('chestCustomDurationDays'\)\.value/,'Custom duration must persist with the clan profile.');
 assert.match(html,/id="normBreakdownHead"/,'The breakdown must support dynamic resource columns.');
 assert.match(script,/multipliers=\{B:1e9,M:1e6,K:1e3\}/,'Point norms must support B, M, and K units.');
 assert.match(script,/Math\.min\(250,start\+i\)/,'Tinman sequences must advance by level and cap at 250.');
@@ -49,6 +55,8 @@ assert.match(script,/saved\.resourcePreset==='all'\?'custom'/,'Old All presets m
 assert.match(script,/same\(legacyGrowthKeys\)\?growthKeys/,'Old Growth selections must expand to the new Developing preset.');
 assert.match(script,/plannerDisplayKeys\.filter\(k=>shown\.has\(k\)\)/,'Every preset must use the same canonical resource order.');
 assert.match(await readFile(new URL('css/chests.css',root),'utf8'),/\.norm-resource-options\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'Resource tiles must retain a fixed desktop width across presets.');
+assert.match(await readFile(new URL('css/chests.css',root),'utf8'),/\.chest-norm-row label,\.chest-custom-duration\{[^}]*font-weight:850[^}]*\}/,'Chest dropdown labels must use the same typography as Tinman.');
+assert.match(await readFile(new URL('css/chests.css',root),'utf8'),/\.chest-norm-row select\{font-weight:850\}/,'Chest dropdown selections must use the same font weight as Tinman.');
 assert.match(script,/amount\/totals\[k\]\*100/,'Dashboard activity cells must calculate their share of each resource total.');
 assert.match(html,/<details class="norm-activity" open><summary><span>Tinman \/ Ancients/,'Tinman controls must be expanded by default.');
 assert.match(script,/defaultHiddenEpics=new Set\(\['ASHEN','CHIMERA'\]\)/,'Ashen and Chimera must be hidden in a new plan by default.');
