@@ -232,10 +232,10 @@ assert.match(source,/selectBattleMethod\(button\.dataset\.resultsMethod,true\)/,
 assert.match(source,/ENCOUNTER_RESULT_STORE_KEY='tbtoolkit\.epicEncounterResults\.v1'/,'Epic calculator results must be available to the Clan Norm planner.');
 assert.match(source,/saveEncounterResultSnapshot\(\{encounter,method:state\.modes\.battle\.activeBattleMethod/,'Rendered built-in Epic results must be saved with their calculation method.');
 assert.match(html,/<span hidden id="encounterPlanSource"><\/span>/,'Encounter Strategy must retain a hidden compatibility hook without displaying profile helper text.');
-assert.match(source,/CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1'/,'Encounter planning must read the active Clan Norm profile without requiring one.');
-assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*stored\.activeProfileId[\s\S]*epic\.basis==='chests'/,'The active profile bridge must support both point and chest-based Epic norms.');
-assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the active clan profile.');
-assert.match(source,/dataset\.source='manual'[\s\S]*encounterNormSource\)els\.encounterNormSource\.textContent=''/,'Editing a linked encounter norm must turn it into a persistent manual override without adding helper copy.');
+assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*linkedClanProfile\(localStorage,currentAccount\(\)\?\.clanProfileId\)/,'Encounter planning must use only the account-linked clan profile.');
+assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the linked clan profile.');
+assert.match(source,/dataset\.source='manual'[\s\S]*renderEncounterNormSource\(activeClanEncounterNorm/,'Editing a linked encounter norm must turn it into a persistent manual override.');
+assert.match(source,/function saveCurrentNormToClan\(\)[\s\S]*saveClanEncounterNorm/,'Saving a local norm to the linked clan must be explicit.');
 assert.match(source,/portable\.clanMembers=settings\.clanMembers[\s\S]*portable\.encounterPlanStrategy=settings\.strategy/,'Encounter planning inputs must persist inside the portable account workspace.');
 assert.match(html,/Gold \+ Potion outcome[\s\S]*Silver outcome[\s\S]*Dragon Coins outcome/,'The strategy matrix must compare net resource outcomes.');
 assert.match(source,/function loadEpicChestRewards\(\)[\s\S]*chest-data\.json[\s\S]*record\.type==='EPIC'/,'Encounter plans must load the shared Epic chest reward averages.');
@@ -247,7 +247,7 @@ assert.match(source,/Gold and Potion rewards are combined 1:1 as revival currenc
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Enter a clan norm to include resource rewards and net change/,'Calculator-only players must be told how to enable net outcomes.');
 assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
-assert.match(source,/result\.plan=\{profileId:encounterPlanContext\?\.clanProfile\?\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Shared encounter plans must retain standalone calculator inputs and optional profile metadata.');
+assert.match(source,/result\.plan=\{profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
 assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));

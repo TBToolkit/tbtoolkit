@@ -3,12 +3,12 @@ import {readFile} from 'node:fs/promises';
 import {serializeAccountToBiff,parseBiff,materializeImportedAccount,BIFF_FORMAT,BIFF_SCHEMA_VERSION} from '../js/biff-format.mjs';
 
 const account={
-  id:'main',name:'Main Account',templeLevel:45,
+  id:'main',name:'Main Account',templeLevel:45,clanProfileId:'norm-linked',
   customEncounters:{raid:{id:'raid',name:'Raid',battleType:'epic',builtIn:false,enemyFormation:{FLYING:1,MOUNTED:1,MELEE:1,RANGED:1},arachneBonus:false}},
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterNormSource:'clan',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -23,6 +23,8 @@ const text=serializeAccountToBiff(account,{appBuild:'test',exportedAt:'2026-09-0
 const raw=JSON.parse(text);
 assert.equal(raw.format,BIFF_FORMAT);assert.equal(raw.schemaVersion,BIFF_SCHEMA_VERSION);
 assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
+assert.equal(raw.account.clanProfileId,'norm-linked');
+assert.equal(raw.account.workspaces[0].inputs.encounterNormSource,'clan');
 assert.equal(raw.account.workspaces[0].inputs.shareEpicArmy,true);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
@@ -42,6 +44,8 @@ const imported=materializeImportedAccount(parsed,{
   existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],armyIds:['known'],optimizerCacheBuild:'optimizer-current'
 });
 assert.equal(imported.account.id,'main-2');
+assert.equal(imported.account.clanProfileId,'norm-linked');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.encounterNormSource,'clan');
 assert.equal(imported.account.battle.activeEncounterId,'raid-2');
 assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);

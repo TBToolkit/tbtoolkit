@@ -19,7 +19,7 @@ const INPUT_KEYS=new Set([
   'autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses',
   'useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','arachne',
   'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes',
-  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterPlanStrategy','shareEpicArmy'
+  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','shareEpicArmy'
 ]);
 
 function fail(message){throw new Error(message);}
@@ -63,7 +63,7 @@ function cleanInputs(value){
     if(!INPUT_KEYS.has(key))continue;
     if(key==='enemySquadTypes')output[key]=cleanStringArray(raw).filter(type=>['FLYING','MOUNTED','MELEE','RANGED'].includes(type)).slice(0,8);
     else if(['autoLeadership','autoAuthority','autoDominance','autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses','useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','arachne','minimumSeparation','shareEpicArmy'].includes(key))output[key]=!!raw;
-    else if(['battleType','battleMethod','enemyUnitId','encounterNormUnit','encounterNormBasis','encounterPlanStrategy'].includes(key))output[key]=String(raw??'');
+    else if(['battleType','battleMethod','enemyUnitId','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy'].includes(key))output[key]=String(raw??'');
     else if(typeof raw==='string'||typeof raw==='number')output[key]=raw;
   }
   return output;
@@ -129,6 +129,7 @@ function canonicalAccount(raw){
     id:cleanId(raw?.id,'Account ID'),
     name:cleanText(raw?.name,'Account name',{maximum:60}),
     templeLevel:Math.max(1,Math.min(45,Math.floor(Number(raw?.templeLevel)||45))),
+    clanProfileId:String(raw?.clanProfileId||'').slice(0,100),
     activeBattleCategory:BATTLE_CATEGORIES.has(battle.activeBattleCategory)?battle.activeBattleCategory:'epic',
     activeBattleMethod:BATTLE_METHODS.has(battle.activeBattleMethod)?battle.activeBattleMethod:'basic',
     activeEncounterByType:{
@@ -239,7 +240,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   }
   for(const encounterId of Object.keys(workspaces))if(!available.has(encounterId))warnings.push(`Saved workspace “${encounterId}” was retained but its encounter is unavailable in this version.`);
   return{
-    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,customEncounters,battle:{
+    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:source.clanProfileId,customEncounters,battle:{
       activeBattleCategory:source.activeBattleCategory,
       activeBattleMethod:source.activeBattleMethod,
       activeEncounterByType,
