@@ -611,11 +611,12 @@ function loadSavedState(){
   }
   ensureBattleWorkspace();
 }
+function persistState(){
+  if(activeMode==='battle')propagateSharedEpicArmy();
+  writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+}
 function saveState(){
-  try{
-    if(activeMode==='battle')propagateSharedEpicArmy();
-    writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
-  }catch(error){
+  try{persistState();}catch(error){
     // Persistence must never interrupt a selection or calculation-method UI
     // transition. Optimizer results are stored under their own bounded key.
     console.warn('Could not save calculator state.',error);
@@ -725,7 +726,7 @@ function confirmPendingBiffImport(){
   try{
     const candidate={...state.accounts,[imported.id]:imported};
     validateAccountCollection(candidate,imported.id);
-    state.accounts=candidate;activateAccount(imported.id);saveState();
+    state.accounts=candidate;activateAccount(imported.id);persistState();
     for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
       const cache=workspace.methods?.optimize?.resultCache;
       if(!cache||cache.build!==OPTIMIZER_CACHE_BUILD)continue;

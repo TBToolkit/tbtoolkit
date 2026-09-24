@@ -223,8 +223,10 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
       for(const category of CATEGORIES)for(const [level,manual] of ownEntries(value?.[category]))output[category][level]=!!manual;
       return output;
     };
+    const inputs={...workspace.inputs};
+    if(inputs.encounterNormSource==='clan')inputs.encounterNormSource='default';
     workspaces[encounterId]={
-      inputs:{...workspace.inputs,encounterNormSource:workspace.inputs.encounterNormSource==='clan'?'default':workspace.inputs.encounterNormSource},selectedIds,
+      inputs,selectedIds,
       methods:{basic:{},custom:{orders:cleanCategoryOrder(custom.orders),unitOrders:cleanNested(custom.unitOrders),unitOrderManual:cleanManual(custom.unitOrderManual),squadOrder:cleanCategoryOrder(custom.squadOrder)},optimize:{resultCache:resultCache?.build===optimizerCacheBuild?resultCache:null}}
     };
   }

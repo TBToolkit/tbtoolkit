@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {serializeAccountToBiff,parseBiff,materializeImportedAccount,BIFF_FORMAT,BIFF_SCHEMA_VERSION} from '../js/biff-format.mjs';
+import {persistentAccountSnapshot,validateAccountState} from '../js/browser-storage.mjs';
 
 const account={
   id:'main',name:'Main Account',templeLevel:45,clanProfileId:'norm-linked',
@@ -52,6 +53,10 @@ const legacyLinked=structuredClone(raw);legacyLinked.account.clanProfileId='norm
 const legacyImported=materializeImportedAccount(parseBiff(JSON.stringify(legacyLinked)));
 assert.equal(legacyImported.account.clanProfileId,'','Older .stacks files must wait for an explicit local player/clan link.');
 assert.equal(legacyImported.account.battle.workspaces.raid.inputs.encounterNormSource,'default');
+const withoutNormSource=structuredClone(raw);delete withoutNormSource.account.workspaces[0].inputs.encounterNormSource;
+const importedWithoutNormSource=materializeImportedAccount(parseBiff(JSON.stringify(withoutNormSource)));
+assert.equal(Object.hasOwn(importedWithoutNormSource.account.battle.workspaces.raid.inputs,'encounterNormSource'),false,'Missing optional norm settings must stay absent, not become undefined.');
+validateAccountState({schemaVersion:20,activeAccountId:importedWithoutNormSource.account.id,accounts:persistentAccountSnapshot({[importedWithoutNormSource.account.id]:importedWithoutNormSource.account})});
 assert.equal(imported.account.battle.activeEncounterId,'raid-2');
 assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);
