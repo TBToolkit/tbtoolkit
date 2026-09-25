@@ -1,4 +1,4 @@
-import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from './clan-net-resources.mjs';
+import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from './clan-net-resources.mjs';
 import {serializeClanProfile,parseClanProfile} from './clan-profile-file.mjs';
 import {REVIVAL_STRATEGIES,saveRevivalStrategy} from './clan-strategy-sync.mjs';
 import {OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
@@ -159,12 +159,13 @@ function collectEpicPlans(activities,recipients){
     const activity=activities.find(item=>item.category==='Epic monsters'&&item.name===row.dataset.monster),select=row.querySelector('.epic-plan-method'),status=row.querySelector('.epic-plan-status');
     if(row.dataset.monster==='ASHEN'){status.textContent=positive(row.querySelector('.epic-value').value)?'Ashen not modeled':'Not included';status.className='epic-plan-status';return;}
     if(!activity){status.textContent='Not included';status.className='epic-plan-status';return;}
-    const matchingPlan=method=>planFromSavedCosts(bridge,netPlayerAccountId,activity,method,recipients,activeProfileId)||planForMethod(bridge,netPlayerAccountId,activity.name,method);
+    const workspaceId=`epic-${row.dataset.monster.toLowerCase().replace(/\s+/g,'-')}`,workspace=account?.battle?.workspaces?.[workspaceId];
+    const matchingPlan=method=>planFromSavedCosts(bridge,netPlayerAccountId,activity,method,recipients,activeProfileId,{selectedStrategy:workspace?.inputs?.encounterPlanStrategy});
     const valid=method=>{const plan=matchingPlan(method);return linked&&planMatchesRequirement(plan,activity.norm,recipients,activeProfileId,{acceptUnlinkedPlan:true})&&plan?.outcomes?.[plan.selectedStrategy]?.complete;};
     const chosen=netMethodByEpic[activity.name],method=chosen==='custom'||chosen==='optimize'?chosen:valid('optimize')?'optimize':valid('custom')?'custom':'optimize';
     select.value=method;
     const plan=linked?matchingPlan(method):null,matches=planMatchesRequirement(plan,activity.norm,recipients,activeProfileId,{acceptUnlinkedPlan:linked}),ready=matches&&!!plan?.outcomes?.[plan.selectedStrategy]?.complete;
-    const selected=row.dataset.monster,workspaceId=`epic-${selected.toLowerCase().replace(/\s+/g,'-')}`,workspace=account?.battle?.workspaces?.[workspaceId],hasSelectedUnits=['troop','monster','mercenary'].some(category=>workspace?.selectedIds?.[category]?.length);
+    const hasSelectedUnits=['troop','monster','mercenary'].some(category=>workspace?.selectedIds?.[category]?.length);
     const costModel=bridge.accounts?.[account?.id]?.encounters?.[workspaceId]?.methods?.[method]?.costModel;
     const needsRefresh=costModel?.build!==OPTIMIZER_CACHE_BUILD;
     const refreshing=needsRefresh&&linked&&hasSelectedUnits&&(pendingPlanRefresh===account.id||refreshSavedBattlePlans(account.id));
@@ -175,7 +176,8 @@ function collectEpicPlans(activities,recipients){
   });
   const tinmanActivities=activities.filter(activity=>activity.category==='Tinman');
   const norm=positive($('tinmanNorm').value),normUnit=$('tinmanNormUnit').value,bonus=Math.min(100,positive($('tinmanBonus').value)),method=$('tinmanPlanMethod').value;
-  const tinmanPlan=linked&&tinmanActivities.length&&norm>0?tinmanPlanFromSavedCosts(bridge,netPlayerAccountId,{normValue:norm,normUnit,bonus,method}):null;
+  const tinmanStrategy=account?.battle?.workspaces?.['epic-tinman']?.inputs?.encounterPlanStrategy;
+  const tinmanPlan=linked&&tinmanActivities.length&&norm>0?tinmanPlanFromSavedCosts(bridge,netPlayerAccountId,{normValue:norm,normUnit,bonus,method,selectedStrategy:tinmanStrategy}):null;
   if(tinmanPlan?.outcomes?.[tinmanPlan.selectedStrategy]?.complete)plans.set('Tinman',tinmanPlan);
   $('tinmanRevivalStrategy').disabled=!tinmanPlan?.outcomes?.[tinmanPlan.selectedStrategy]?.complete;
   $('tinmanRevivalStrategy').value=tinmanPlan?.selectedStrategy||'full';

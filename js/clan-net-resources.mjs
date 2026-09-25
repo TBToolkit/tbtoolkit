@@ -8,15 +8,7 @@ export function linkedPlayerAccounts(savedState,profileId){
   return Object.values(savedState?.accounts||{}).filter(account=>account?.clanProfileId===profileId).map(account=>({id:account.id,name:account.name||'Player'}));
 }
 
-export function planForMethod(bridge,accountId,encounterName,method){
-  const account=bridge?.accounts?.[accountId];
-  const encounter=Object.values(account?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()===String(encounterName||'').toUpperCase());
-  if(encounter?.methods?.[method]?.costModel?.build&&encounter.methods[method].costModel.build!==OPTIMIZER_CACHE_BUILD)return null;
-  const plan=encounter?.plansByMethod?.[method];
-  return plan?.method===method?plan:null;
-}
-
-export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,profileId){
+export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,profileId,{selectedStrategy}={}){
   const encounter=Object.values(bridge?.accounts?.[accountId]?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()===String(activity?.name||'').toUpperCase());
   const model=encounter?.methods?.[method]?.costModel,requirement=activity?.norm,reward=activity?.reward;
   if(!model||model.build!==OPTIMIZER_CACHE_BUILD||!(Number(model.pointsPerAttack)>0)||!Array.isArray(model.rebuildRows)||!requirement||!reward||!(Number(requirement.pointsPerChest)>0))return null;
@@ -29,21 +21,21 @@ export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,
     const revival=received.gold+received.potion;
     return[strategy,{hits:costs.hits,gold:{spent:costs.totalGold,received:revival,goldReceived:received.gold,potionReceived:received.potion,net:revival-costs.totalGold},silver:{spent:costs.totalSilver,received:received.silver,net:received.silver-costs.totalSilver},dragonCoins:{spent:costs.totalDragonCoins,received:received.dragonCoins,net:received.dragonCoins-costs.totalDragonCoins},complete:costs.rebuildCostsComplete}];
   }));
-  const saved=encounter.plansByMethod?.[method],selectedStrategy=Object.hasOwn(outcomes,saved?.selectedStrategy)?saved.selectedStrategy:'full';
-  return{method,profileId,norm:Number(requirement.value),unit:requirement.unit,basis:requirement.basis,clanMembers:members,selectedStrategy,outcomes,savedAt:encounter.methods[method].savedAt||saved?.savedAt||0};
+  const saved=encounter.plansByMethod?.[method],strategy=Object.hasOwn(outcomes,selectedStrategy)?selectedStrategy:Object.hasOwn(outcomes,saved?.selectedStrategy)?saved.selectedStrategy:'full';
+  return{method,profileId,norm:Number(requirement.value),unit:requirement.unit,basis:requirement.basis,clanMembers:members,selectedStrategy:strategy,outcomes,savedAt:encounter.methods[method].savedAt||saved?.savedAt||0};
 }
 
-export function tinmanPlanFromSavedCosts(bridge,accountId,{normValue,normUnit='B',normBillions,bonus,method}={}){
+export function tinmanPlanFromSavedCosts(bridge,accountId,{normValue,normUnit='B',normBillions,bonus,method,selectedStrategy}={}){
   const encounter=Object.values(bridge?.accounts?.[accountId]?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()==='TINMAN');
   const result=encounter?.methods?.[method],model=result?.costModel;
   const norm=normValue===undefined?Number(normBillions)*1e9:Number(normValue)*(multipliers[normUnit]||0),pointsPerAttack=estimatedEpicPoints('Tinman',result?.expectedLifetimeDamage,{tinmanBonus:bonus});
   if(!model||model.build!==OPTIMIZER_CACHE_BUILD||!(norm>0)||!(pointsPerAttack>0)||!Array.isArray(model.rebuildRows))return null;
-  const saved=encounter.plansByMethod?.[method],selectedStrategy=Object.hasOwn(ENCOUNTER_PLAN_STRATEGIES,saved?.selectedStrategy)?saved.selectedStrategy:'full';
+  const saved=encounter.plansByMethod?.[method],strategy=Object.hasOwn(ENCOUNTER_PLAN_STRATEGIES,selectedStrategy)?selectedStrategy:Object.hasOwn(ENCOUNTER_PLAN_STRATEGIES,saved?.selectedStrategy)?saved.selectedStrategy:'full';
   const outcomes=Object.fromEntries(Object.keys(ENCOUNTER_PLAN_STRATEGIES).map(strategy=>{
     const costs=calculateEncounterPlan({normPoints:norm,pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
     return[strategy,{hits:costs.hits,gold:{spent:costs.totalGold},silver:{spent:costs.totalSilver},dragonCoins:{spent:costs.totalDragonCoins},complete:costs.rebuildCostsComplete}];
   }));
-  return{method,selectedStrategy,outcomes,pointsPerAttack};
+  return{method,selectedStrategy:strategy,outcomes,pointsPerAttack};
 }
 
 export function planMatchesRequirement(plan,requirement,clanMembers,profileId,{acceptUnlinkedPlan=false}={}){

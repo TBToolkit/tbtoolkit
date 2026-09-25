@@ -257,9 +257,10 @@ assert.match(source,/renderOutcome\(row\.querySelector\('\[data-cost="gold"\]'\)
 assert.match(source,/Gold and Potion rewards are combined 1:1 as revival currency/,'The plan must explain the combined revival-currency result.');
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Enter a clan norm to include resource rewards and net change/,'Calculator-only players must be told how to enable net outcomes.');
-assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
-assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
-assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
+assert.match(source,/function saveEncounterCostModel\(\)/,'The calculator must share its reusable battle cost model with Clan Overview.');
+assert.doesNotMatch(source,/result\.plan=\{method,/,'Derived clan outcomes must not be stored as a second source of truth.');
+assert.doesNotMatch(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize cost models must not duplicate derived plans.');
+assert.match(source,/saveEncounterCostModel\(\)/,'Every encounter-plan recalculation must refresh its reusable cost model.');
 assert.match(source,/saved\?\.source==='clan'\?\{\.\.\.saved,source:'clan',profileId:currentAccount\(\)\?\.clanProfileId/,'An imported player must retain the clan norm source even before the clan profile is imported.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\)/,'Import must prepare Clan Overview plans without opening each encounter.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\);\s*backfillSavedCustomPlans\(\)/,'Import must also prepare deterministic Custom plans without opening each encounter.');
@@ -270,7 +271,7 @@ assert.doesNotMatch(source,/function publishImportedOptimizerPlans\(imported\)\{
 assert.match(source,/result\.methods\[method\]\.costModel=\{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:/,'Saved battle costs must be reusable when a clan is linked later.');
 assert.match(source,/lastOptimizedEpicSignature!==currentEpicEffectiveSignature\(\)\)continue/,'Imported plans must only be published when the saved optimizer inputs still match.');
 assert.match(source,/hasSavedOptimizerCacheForEncounter\(imported,encounterId,workspace\)/,'Shared Epic encounters must be prepared from eligible peer optimizer caches.');
-assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
+assert.match(source,/saveEncounterCostModel\(\);\s*try\{writeSavedJson/,'Every encounter-plan recalculation must save the cost model and portable strategy.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 

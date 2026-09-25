@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
+import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
 import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
 import {saveRevivalStrategy} from '../js/clan-strategy-sync.mjs';
 
@@ -8,15 +8,12 @@ const accounts=linkedPlayerAccounts({accounts:{one:{id:'one',name:'Biff',clanPro
 assert.deepEqual(accounts,[{id:'one',name:'Biff'}]);
 const optimize={method:'optimize',profileId,norm:500,unit:'M',basis:'points',clanMembers:100,selectedStrategy:'full',outcomes:{full:{complete:true,gold:{spent:40,net:60},silver:{spent:20,net:30},dragonCoins:{spent:10,net:10}}}};
 const custom={...optimize,method:'custom',outcomes:{full:{complete:true,gold:{spent:50,net:50},silver:{spent:25,net:25},dragonCoins:{spent:15,net:5}}}};
-const bridge={accounts:{one:{encounters:{doom:{name:'Doomsday',plansByMethod:{custom,optimize}}}}}};
-assert.equal(planForMethod(bridge,'one','DOOMSDAY','optimize'),optimize);
-assert.equal(planForMethod(bridge,'one','Doomsday','custom'),custom);
-assert.equal(planForMethod(bridge,'two','Doomsday','custom'),null);
 const requirement={basis:'points',value:500,unit:'M',pointsPerChest:50e6/7};
 const importedBridge={accounts:{one:{encounters:{doom:{name:'Doomsday',methods:{optimize:{costModel:{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:100e6,goldByCategory:{troop:2,monster:3,mercenary:0},rebuildRows:[{category:'troop',quantity:10,revivableQuantity:9,silverEach:2,dragonCoinsEach:1}]}}},plansByMethod:{optimize:{selectedStrategy:'mercenary-monster'}}}}}}};
 const savedCostsActivity={name:'Doomsday',norm:requirement,reward:{gold:10,potion:5,silver:8,dragonCoins:4}};
 const linkedPlan=planFromSavedCosts(importedBridge,'one',savedCostsActivity,'optimize',100,profileId);
 assert.equal(linkedPlan.selectedStrategy,'mercenary-monster');
+assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'optimize',100,profileId,{selectedStrategy:'mercenary-only'}).selectedStrategy,'mercenary-only','The player account strategy must override a stale saved plan copy.');
 assert.equal(linkedPlan.outcomes['mercenary-monster'].hits,5);
 assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.spent,15);
 assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.received,105000);
@@ -27,11 +24,12 @@ const tinmanBridge={accounts:{one:{encounters:{tinman:{name:'Tinman',methods:{op
 const tinman=tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:100,method:'optimize'});
 assert.equal(tinman.pointsPerAttack,2e6,'Tinman bonus must multiply earned points, not chest count.');
 assert.equal(tinman.outcomes.full.hits,1100,'The point norm covers the full Tinman event.');
+assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:100,method:'optimize',selectedStrategy:'mercenary-only'}).selectedStrategy,'mercenary-only','Tinman must use the player account strategy rather than a saved plan copy.');
 assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normValue:2200,normUnit:'M',bonus:100,method:'optimize'}).outcomes.full.hits,1100,'Changing the Tinman norm unit must preserve its point target.');
 assert.equal(tinman.outcomes.full.gold.spent,4400);
 assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:0,method:'optimize'}).outcomes.full.hits,2200,'Changing the clan bonus must reprice a saved army without reoptimization.');
 assert.equal(planFromSavedCosts({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{...importedBridge.accounts.one.encounters.doom.methods.optimize.costModel,build:'older-build'}}}}}}}},'one',savedCostsActivity,'optimize',100,profileId),null,'Stale optimizer cost models must not be reused after the build changes.');
-assert.equal(planForMethod({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{build:'older-build'}}},plansByMethod:{optimize}}}}}},'one','Doomsday','optimize'),null,'A stale cost model must not fall back to an old saved plan.');
+assert.equal(planFromSavedCosts({accounts:{one:{encounters:{doom:{name:'Doomsday',plansByMethod:{optimize}}}}}},'one',savedCostsActivity,'optimize',100,profileId),null,'A saved plan snapshot alone must not make Clan Overview ready.');
 assert.equal(planMatchesRequirement(optimize,requirement,100,profileId),true);
 assert.equal(planMatchesRequirement(optimize,{...requirement,value:600},100,profileId),false);
 assert.equal(planMatchesRequirement(optimize,requirement,99,profileId),false);
@@ -62,16 +60,17 @@ const month=netResourcesForPeriod([{...activities[0],cadence:24,prorated:2.5}],n
 assert.equal(month.spent.revival,10,'A 24-day Epic contributes one quarter of its battle cost to a six-day period.');
 assert.equal(month.received.revival,37.5);
 const values=new Map([
-  ['tbtoolkit.epicEncounterResults.v1',JSON.stringify({accounts:{one:{encounters:{doom:{name:'Doomsday',plan:{selectedStrategy:'full'},plansByMethod:{optimize:{selectedStrategy:'full'},custom:{selectedStrategy:'full'}}}}}}})],
-  ['tbtoolkit.stackingCalculator',JSON.stringify({accounts:{one:{battle:{workspaces:{doom:{inputs:{encounterPlanStrategy:'full'}}}}}}})],
-  ['tbtoolkit.encounterPlan.v1.one.doom',JSON.stringify({strategy:'full',norm:500})]
+  ['tbtoolkit.epicEncounterResults.v1',JSON.stringify({accounts:{one:{encounters:{'epic-doomsday':{name:'Doomsday',plan:{selectedStrategy:'full'},plansByMethod:{optimize:{selectedStrategy:'full'},custom:{selectedStrategy:'full'}}}}}}})],
+  ['tbtoolkit.stackingCalculator',JSON.stringify({accounts:{one:{battle:{workspaces:{'epic-doomsday':{inputs:{encounterPlanStrategy:'full'}}}}}}})],
+  ['tbtoolkit.encounterPlan.v1.one.epic-doomsday',JSON.stringify({strategy:'full',norm:500})]
 ]);
-const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
+const writes=[];
+const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>{writes.push(key);values.set(key,value);}};
 assert.equal(saveRevivalStrategy(storage,'one','Doomsday','mercenary-only'),true);
-assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters.doom.plansByMethod.optimize.selectedStrategy,'mercenary-only');
-assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters.doom.plansByMethod.custom.selectedStrategy,'mercenary-only');
-assert.equal(JSON.parse(values.get('tbtoolkit.stackingCalculator')).accounts.one.battle.workspaces.doom.inputs.encounterPlanStrategy,'mercenary-only');
-assert.deepEqual(JSON.parse(values.get('tbtoolkit.encounterPlan.v1.one.doom')),{strategy:'mercenary-only',norm:500});
+assert.deepEqual(writes,['tbtoolkit.stackingCalculator'],'Revival strategy must have one canonical write.');
+assert.equal(JSON.parse(values.get('tbtoolkit.stackingCalculator')).accounts.one.battle.workspaces['epic-doomsday'].inputs.encounterPlanStrategy,'mercenary-only');
+assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters['epic-doomsday'].plansByMethod.optimize.selectedStrategy,'full','A strategy change must not require updating the derived-plan cache.');
+assert.deepEqual(JSON.parse(values.get('tbtoolkit.encounterPlan.v1.one.epic-doomsday')),{strategy:'full',norm:500},'The player account is the sole strategy source.');
 assert.equal(saveRevivalStrategy(storage,'one','Doomsday','invalid'),false);
 assert.equal(saveRevivalStrategy(storage,'one','Missing','full'),false);
 console.log(JSON.stringify({ok:true,methods:2}));

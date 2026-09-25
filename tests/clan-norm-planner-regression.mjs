@@ -36,6 +36,8 @@ assert.match(html,/accept="\.clan,\.norms,application\/json"/,'Clan profiles mus
 assert.match(html,/id="tinmanRevivalStrategy"/,'Tinman must offer the same revival choices in Clan Overview.');
 assert.match(script,/className='epic-revival-strategy'/,'Ready Epic plans must offer revival choices in Plan Status.');
 assert.match(script,/saveRevivalStrategy\(localStorage,netPlayerAccountId,encounter,strategy\)/,'Clan Overview revival choices must sync with the Battle Calculator.');
+assert.match(script,/selectedStrategy:workspace\?\.inputs\?\.encounterPlanStrategy/,'Clan Overview must use the player account as the revival-strategy source.');
+assert.doesNotMatch(script,/planForMethod\(/,'Old saved plan outcomes must not make an encounter appear ready.');
 assert.match(script,/\.epic-plan-method,\.epic-revival-strategy,#tinmanRevivalStrategy'\)\)return/,'Changing a revival selector must not redraw it before its change event saves.');
 const netRenderer=script.slice(script.indexOf('function renderNetResources('),script.indexOf('function calculatePlanner('));
 assert.match(netRenderer,/Object\.fromEntries\(resourceKeys\.map\(/,'Tinman reward aggregation must use the full resource key list.');
