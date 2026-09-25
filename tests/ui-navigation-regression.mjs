@@ -58,7 +58,7 @@ for(const key of ['bonusDD','bonusST','bonusHealth','bonusStrength']){
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
 assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
 assert.equal((html.match(/data-guide-panel=/g)||[]).length,9,'The mechanics guide must contain all nine reference sections');
-assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Battle results from[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
+assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Player Account[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
@@ -164,7 +164,10 @@ assert.match(css,/grid-template-columns:480px 360px minmax\(430px,1fr\)/,'Deskto
 assert.match(css,/#battleBetaPanel\{display:grid!important;grid-template-rows:auto minmax\(0,1fr\);align-self:stretch;align-content:stretch;row-gap:16px!important\}/,'Player and Battle cards must remain separated while Battle aligns with the adjacent card bottoms without overflowing the layout row.');
 assert.match(css,/battle-norm-input\{grid-template-columns:minmax\(0,84px\) 62px 88px/,'The norm value, K/M/B selector, and Points/Chests switch must each reserve readable width.');
 assert.match(css,/battle-norm-basis \.epic-basis-switch input:checked\+i[\s\S]*background:#9b6e18[\s\S]*translateX\(16px\)/,'The calculator basis switch must reproduce the Clan Overview gold track and sliding knob.');
-assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
+assert.match(html,/<div><span>Full Revival Cost<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete revival cost.');
+for(const [strategy,label] of [['full','Revive All'],['mercenary-monster','Revive Mercs + Monsters'],['mercenary-only','Revive Mercs Only']]){
+  assert.match(html,new RegExp(`<tr data-strategy="${strategy}">[\\s\\S]*?<span>${label.replace('+','\\+')}<\\/span>`),`Battle Calculator must show ${label} for ${strategy}.`);
+}
 assert.match(html,/<div class="output-visual-column">[\s\S]*<section class="topdown-panel encounter-plan-standalone battle-sequenced-section" id="encounterPlanEntry" hidden>[\s\S]*<h2>Encounter Strategy<\/h2>[\s\S]*<section class="topdown-panel layer-chart-panel/,'Encounter Strategy must be a numbered, always-expanded section immediately above Visual.');
 assert.match(html,/<header>[\s\S]*id="encounterPlanTitle"[\s\S]*class="encounter-plan-attacks"[\s\S]*id="encounterPlanHits"/,'Estimated attacks must align with the encounter title in the plan header.');
 assert.doesNotMatch(html,/Encounter plan · first draft|id="toggleEncounterPlan"|id="closeEncounterPlan"/,'Encounter Strategy must not retain draft, close, or collapse controls.');

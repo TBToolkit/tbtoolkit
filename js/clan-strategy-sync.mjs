@@ -1,9 +1,9 @@
 import {stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
 
 export const REVIVAL_STRATEGIES=Object.freeze({
-  full:'Full Gold revival',
-  'mercenary-monster':'Gold revive Mercenaries + Monsters',
-  'mercenary-only':'Gold revive Mercenaries only'
+  full:'Revive All',
+  'mercenary-monster':'Revive Mercs + Monsters',
+  'mercenary-only':'Revive Mercs Only'
 });
 
 const calculatorKey='tbtoolkit.stackingCalculator';

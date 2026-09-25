@@ -285,7 +285,7 @@
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
 <div><span>Estimated Epic Points</span><strong id="estimatedEpicPoints">—</strong></div>
-<div><span>Full Gold Revival</span><strong id="rawGoldRevival">—</strong></div>
+<div><span>Full Revival Cost</span><strong id="rawGoldRevival">—</strong></div>
 <div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
 </div>
 <strong id="epicPointsPerFullGold" hidden>—</strong>
@@ -343,9 +343,9 @@
 <table class="encounter-plan-table">
 <thead><tr><th>Revival strategy</th><th>Gold + Potion outcome</th><th>Silver outcome</th><th>Dragon Coins outcome</th></tr></thead>
 <tbody id="encounterPlanStrategies">
-<tr data-strategy="full"><td><label><input type="radio" name="encounterPlanStrategy" value="full"><span>Full Gold revival</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
-<tr data-strategy="mercenary-monster"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-monster"><span>Gold revive Mercenaries + Monsters</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
-<tr data-strategy="mercenary-only"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-only"><span>Gold revive Mercenaries only</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+<tr data-strategy="full"><td><label><input type="radio" name="encounterPlanStrategy" value="full"><span>Revive All</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+<tr data-strategy="mercenary-monster"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-monster"><span>Revive Mercs + Monsters</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
+<tr data-strategy="mercenary-only"><td><label><input type="radio" name="encounterPlanStrategy" value="mercenary-only"><span>Revive Mercs Only</span></label></td><td data-cost="gold">—</td><td data-cost="silver">—</td><td data-cost="dragon">—</td></tr>
 </tbody>
 </table>
 </div>
@@ -458,7 +458,7 @@
 <p>Epic encounters with the same captain or hero setup can share an army. Choose <strong>Use shared army</strong> to copy the group's army limits, unit bonuses, selected units, and Custom order. Later changes to a shared army update the other linked encounters. Choose <strong>Edit independently</strong> when one encounter needs its own setup.</p>
 <p>The groups are 1 Captain (Tinman, Hellforge, Doomsday, Fenrir, Jormungandr, Chimera), 1 Hero (Basilisk, Armageddon), 1 Hero + 3 Captains (Ashen, Shadow City), and 3 Captains (Arachne, Arcanomancer, Briareus). Arachne can share army settings with its group, but needs its own optimization because it fights eight enemy squads instead of four.</p>
 <div class="battle-guide-callout"><strong>Clan norms stay encounter-specific</strong><p>Sharing an army does not overwrite an encounter's clan norm or revival strategy. Reuse an optimized result only when its saved inputs and optimizer version still match.</p></div>
-<p>To link a player and clan, open <strong>Clan Overview → Plan Setup</strong>, choose a clan profile and a player under <strong>Battle results from</strong>, then select <strong>Link to this clan</strong>. The Battle Calculator then uses that clan's member count and Epic norms. Clan Overview can use the player's saved Optimize or deterministic Custom plans to compare net resources and change revival strategies without reopening each encounter.</p>
+<p>To link a player and clan, open <strong>Clan Overview → Plan Setup</strong>, choose a clan profile and a <strong>Player Account</strong>, then select <strong>Link to this clan</strong>. The Battle Calculator then uses that clan's member count and Epic norms. Clan Overview can use the player's saved Optimize or deterministic Custom plans to compare net resources and change revival strategies without reopening each encounter.</p>
 <p>Player <code>.player</code> and clan <code>.clan</code> files import separately; after importing both, link the player to the clan in Plan Setup. Older <code>.stacks</code> and <code>.biff</code> player files and <code>.norms</code> clan files can still be imported.</p>
 </div>
 </details>

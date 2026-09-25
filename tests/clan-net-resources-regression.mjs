@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
 import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
-import {saveRevivalStrategy} from '../js/clan-strategy-sync.mjs';
+import {REVIVAL_STRATEGIES,saveRevivalStrategy} from '../js/clan-strategy-sync.mjs';
+
+assert.deepEqual(REVIVAL_STRATEGIES,{full:'Revive All','mercenary-monster':'Revive Mercs + Monsters','mercenary-only':'Revive Mercs Only'});
 
 const profileId='norm-clan';
 const accounts=linkedPlayerAccounts({accounts:{one:{id:'one',name:'Biff',clanProfileId:profileId},two:{id:'two',name:'Other',clanProfileId:'elsewhere'}}},profileId);
