@@ -33,6 +33,10 @@ assert.match(script,/Math\.floor\(value\/item\.pointsPerChest\)/,'Point norms mu
 assert.match(script,/actual\*period\/item\.cadenceDays/,'Epic resource estimates must be prorated by cadence.');
 assert.match(script,/plannerKeys=resourceKeys\.filter\(k=>k!==\'clanWealth\'\)/,'Clan Wealth must remain outside the first planner version.');
 assert.match(html,/accept="\.clan,\.norms,application\/json"/,'Clan profiles must import .clan and legacy .norms files.');
+const netRenderer=script.slice(script.indexOf('function renderNetResources('),script.indexOf('function calculatePlanner('));
+assert.match(netRenderer,/Object\.fromEntries\(resourceKeys\.map\(/,'Tinman reward aggregation must use the full resource key list.');
+assert.doesNotMatch(netRenderer,/\b(?:const|let) resourceKeys\b/,'A local resourceKeys declaration would shadow the full list and crash clan imports before saving.');
+assert.match(script,/profiles\.push\(profile\);activeProfileId=profile\.id;saveProfiles\(\);openProfile\(profile\.id\)/,'Import must persist the new active clan before rendering charts.');
 assert.doesNotMatch(html,/id="clanContributors"/,'The planner must use one clan member count.');
 assert.match(html,/>Clan Members<input id="clanRecipients"/,'The shared participant count must be labeled Clan Members.');
 assert.match(html,/id="epicVisibilityOptions"/,'Clan leaders must be able to show or hide individual Epic events.');
