@@ -185,11 +185,11 @@ function collectEpicPlans(activities,recipients){
   $('tinmanPlanStatus').textContent=!tinmanActivities.length?'No Tinman summons selected.':!norm?'Enter a player points norm.':!account?'Choose a player account.':!linked?'Link the player account to this clan.':!tinmanPlan?'Run the Tinman calculator for this method.':!tinmanPlan.outcomes[tinmanPlan.selectedStrategy].complete?'Tinman rebuild costs are incomplete.':`Ready · ${tinmanPlan.outcomes[tinmanPlan.selectedStrategy].hits.toLocaleString('en-US')} estimated attacks`;
   return{plans,linked,account};
 }
-function renderNetResources(activities,period,selected,{plans,linked,account}){
+function renderNetResources(activities,period,{plans,linked,account}){
   const tinmanActivities=activities.filter(activity=>activity.category==='Tinman');
   const tinman=tinmanActivities.length?{name:'Tinman',category:'Tinman',cadence:6,prorated:1,reward:Object.fromEntries(resourceKeys.map(key=>[key,tinmanActivities.reduce((sum,activity)=>sum+activity.prorated*positive(activity.reward?.[key]),0)]))}:null;
   const netActivities=[...activities.filter(activity=>activity.category!=='Tinman'),...(tinman?[tinman]:[])],epics=netActivities.filter(activity=>activity.category==='Epic monsters'),result=linked?netResourcesForPeriod(netActivities,plans,period):{complete:false};
-  const netKeys=selected.reduce((keys,key)=>{const normalized=key==='gold'||key==='potion'?'revival':key;if(!keys.includes(normalized))keys.push(normalized);return keys;},[]);
+  const netKeys=['revival','silver','dragonCoins'];
   const signed=value=>`${value>=0?'+':'−'}${formatCompact(Math.abs(value))}`;
   const gross=(activity,key)=>activity.prorated*(key==='revival'?positive(activity.reward?.gold)+positive(activity.reward?.potion):positive(activity.reward?.[key]));
   const cost=(activity,key)=>{if(!['Epic monsters','Tinman'].includes(activity.category)||!['revival','silver','dragonCoins'].includes(key))return 0;const plan=plans.get(activity.name),outcome=plan?.outcomes?.[plan.selectedStrategy];if(!outcome?.complete)return null;return positive(outcome[key==='revival'?'gold':key]?.spent)*period/(activity.category==='Tinman'?6:activity.cadence);};
@@ -227,7 +227,7 @@ function calculatePlanner(){
   const selected=plannerDisplayKeys.filter(k=>selectedPlannerResources.has(k)),totals=Object.fromEntries(selected.map(k=>[k,activities.reduce((sum,a)=>sum+a.prorated*positive(a.reward?.[k]),0)]));
   renderResourceVisuals(activities,selected,totals);
   const epicPlans=collectEpicPlans(activities,recipients);
-  renderNetResources(activities,period,selected,epicPlans);
+  renderNetResources(activities,period,epicPlans);
   $('normBreakdownHead').innerHTML=`<tr><th>Event or activity</th>${selected.map(k=>`<th>${esc(labels[k])}<small>amount · share</small></th>`).join('')}</tr>`;
   $('normBreakdownRows').innerHTML=activities.length?activities.map(a=>`<tr><td><strong>${esc(a.name)}</strong><small>${esc(a.equivalent)}</small></td>${selected.map(k=>{const amount=a.prorated*positive(a.reward?.[k]),pct=totals[k]?amount/totals[k]*100:0;return `<td class="resource-contribution"><strong>${amount?formatCompact(amount):'—'}</strong><small>${amount?`${pct.toFixed(1)}%`:'0%'}</small></td>`;}).join('')}</tr>`).join('')+`<tr class="norm-total-row"><td>Total per member</td>${selected.map(k=>`<td>${formatCompact(totals[k])}<small>100%</small></td>`).join('')}</tr>`:`<tr><td colspan="${1+selected.length}" class="norm-empty-row">Enter a norm above to include it in the plan.</td></tr>`;
   savePlanner();

@@ -125,11 +125,14 @@ assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resou
 assert.match(html,/Net resources per player[\s\S]*Gross resources per player[\s\S]*Net resource data[\s\S]*Gross resource data/,'The overview must show net resources and data before gross resources and data.');
 assert.match(script,/Chests per member<input class="chest-norm-count"/,'Crypt and Citadel requirements must label the count as chests per member.');
 assert.match(script,/row\.dataset\.monster==='ASHEN'[\s\S]*?\.epic-event small'\)\.textContent=[^;]*Random/,'Ashen must display Random rather than a 24-day cadence.');
-assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
+assert.match(script,/function renderNetResources\(activities,period,\{plans,linked,account\}\)/,'Net resources must use saved battle plans independently of the gross resource picker.');
+assert.match(netRenderer,/const netKeys=\['revival','silver','dragonCoins'\]/,'Net summary tiles, charts, and data rows must only show the three modeled resource groups.');
+assert.doesNotMatch(netRenderer,/const netKeys=selected/,'Selecting extra gross resources must not add unmodeled net resources.');
+assert.match(html,/Net estimates currently cover Gold \+ Potion, Silver, and Dragon Coins only; other selected resources appear in Gross resources/,'The net dashboard must explain its limited scope.');
 assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId,\{acceptUnlinkedPlan:linked\}\)/,'Only the linked player’s matching calculator plans may be counted.');
 assert.match(script,/switchEpicNormBasis\(event\.target\);calculatePlanner\(\)/,'Switching points and chests must convert the norm before recalculation.');
 assert.match(script,/basisPoints:?[,}]/,'The original point norm must survive a temporary switch to whole chests.');
-assert.match(script,/renderResourceVisuals\(activities,selected,totals\);[\s\S]*renderNetResources\(activities,period,selected,epicPlans\)/,'Gross and net visuals must update together.');
+assert.match(script,/renderResourceVisuals\(activities,selected,totals\);[\s\S]*renderNetResources\(activities,period,epicPlans\)/,'Gross visuals must honor the picker while net visuals use only modeled resources.');
 assert.match(html,/Ashen norms can be saved here, but Ashen is excluded from gross and net resources/,'Ashen exclusion must be visible to users.');
 assert.match(script,/if\(item\.monster==='ASHEN'\)\{[\s\S]*?return;[\s\S]*?\}\s*const value=basis/,'Ashen must be excluded before chest conversion and activity creation.');
 const chartCss=await readFile(new URL('css/chests.css',root),'utf8');
