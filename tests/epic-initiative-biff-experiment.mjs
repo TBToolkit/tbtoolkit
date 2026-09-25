@@ -3,9 +3,9 @@ import {Worker} from 'node:worker_threads';
 import {performance} from 'node:perf_hooks';
 
 const biffPath=process.argv[2];
-if(!biffPath)throw new Error('Pass the .stacks or legacy .biff file path as the first argument.');
+if(!biffPath)throw new Error('Pass the .player, legacy .stacks, or .biff file path as the first argument.');
 const payload=JSON.parse(fs.readFileSync(biffPath,'utf8'));
-if(payload.format!=='tbtoolkit-biff'||payload.kind!=='account')throw new Error('Expected a TB Toolkit .stacks or legacy .biff account file.');
+if(payload.format!=='tbtoolkit-biff'||payload.kind!=='account')throw new Error('Expected a TB Toolkit .player, legacy .stacks, or .biff account file.');
 const requestedIds=new Set(process.argv.slice(3));
 const workspaces=payload.account.workspaces.filter(workspace=>workspace.encounterId.startsWith('epic-')&&Object.values(workspace.selectedIds||{}).some(ids=>ids.length)&&(!requestedIds.size||requestedIds.has(workspace.encounterId)));
 const parse=value=>{const n=Number(String(value??'').replaceAll(',',''));return Number.isFinite(n)?n:0;};

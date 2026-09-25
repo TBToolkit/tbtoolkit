@@ -39,7 +39,7 @@
 <div class="battle-calculator-note-content">
 <p><strong>Account level:</strong> The Battle Calculator uses a fully researched Tier 9 account as its standard. You can also use it for a developing account.</p>
 <p><strong>Research and talents:</strong> The calculator assumes that the relevant Health and Strength talent points are complete or spread evenly. It also assumes that Army Modernization and Monster Boost research are complete.</p>
-<p><strong>Saved on this device:</strong> Your Player Accounts, encounters, selections, and calculator inputs are saved in this browser. Export a .stacks file to make a backup or move an account to another device. Legacy .biff files can still be imported.</p>
+<p><strong>Saved on this device:</strong> Your Player Accounts, encounters, selections, and calculator inputs are saved in this browser. Export a .player file to make a backup or move an account to another device. Legacy .stacks and .biff files can still be imported.</p>
 </div>
 </details>
 </div>
@@ -63,7 +63,7 @@
 <div class="temple-bonus-copy"><span>Revival cost divisor</span><strong id="templeMultiplier">1.00×</strong></div>
 </div>
 </div>
-<span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span>
+<span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".player,.stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span>
 <div class="player-clan-link-row"><div class="battle-select-field clan-link-summary"><span>Clan Profile</span><div class="clan-link-summary-line"><strong id="clanProfileStatus">No clan linked</strong><a href="chests.html#planSetup" id="manageClanLink">Manage link</a></div></div><label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label></div>
 </div>
 </section>
@@ -459,7 +459,7 @@
 <p>The groups are 1 Captain (Tinman, Hellforge, Doomsday, Fenrir, Jormungandr, Chimera), 1 Hero (Basilisk, Armageddon), 1 Hero + 3 Captains (Ashen, Shadow City), and 3 Captains (Arachne, Arcanomancer, Briareus). Arachne can share army settings with its group, but needs its own optimization because it fights eight enemy squads instead of four.</p>
 <div class="battle-guide-callout"><strong>Clan norms stay encounter-specific</strong><p>Sharing an army does not overwrite an encounter's clan norm or revival strategy. Reuse an optimized result only when its saved inputs and optimizer version still match.</p></div>
 <p>To link a player and clan, open <strong>Clan Overview → Plan Setup</strong>, choose a clan profile and a player under <strong>Battle results from</strong>, then select <strong>Link to this clan</strong>. The Battle Calculator then uses that clan's member count and Epic norms. Clan Overview can use the player's saved Optimize or deterministic Custom plans to compare net resources and change revival strategies without reopening each encounter.</p>
-<p>Player <code>.stacks</code> and clan <code>.clan</code> files import separately; after importing both, link the player to the clan in Plan Setup. Older <code>.norms</code> clan files can still be imported.</p>
+<p>Player <code>.player</code> and clan <code>.clan</code> files import separately; after importing both, link the player to the clan in Plan Setup. Older <code>.stacks</code> and <code>.biff</code> player files and <code>.norms</code> clan files can still be imported.</p>
 </div>
 </details>
 
