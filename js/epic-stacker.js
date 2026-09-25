@@ -903,17 +903,17 @@ function backfillSavedOptimizerPlans(){
   if(missing)publishImportedOptimizerPlans(account);
 }
 function renderClanProfileLink(){
-  const select=document.getElementById('clanProfileSelect'),status=document.getElementById('clanProfileStatus'),members=document.getElementById('encounterPlanMembers');
-  if(!select||!status||!members)return;
+  const status=document.getElementById('clanProfileStatus'),members=document.getElementById('encounterPlanMembers');
+  if(!status||!members)return;
   const linkedId=currentAccount()?.clanProfileId||'',profiles=readClanProfiles(localStorage).profiles;
-  select.innerHTML='<option value="">None · independent planning</option>';
-  for(const profile of profiles){const option=document.createElement('option');option.value=profile.id;option.textContent=profile.name||'Unnamed clan';select.append(option);}
-  if(linkedId&&!profiles.some(profile=>profile.id===linkedId)){const option=document.createElement('option');option.value=linkedId;option.textContent='Linked profile unavailable · choose another';select.append(option);}
-  select.value=linkedId;
+  const manage=document.getElementById('manageClanLink'),query=new URLSearchParams({player:currentAccount()?.id||''});
+  if(linkedId)query.set('clan',linkedId);
+  if(manage)manage.href=`chests.html?${query}#planSetup`;
   const profile=profiles.find(item=>item.id===linkedId);
   members.readOnly=!!profile;
-  if(profile){members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));status.textContent=`Linked to ${profile.name}. Clan size and Epic norms come from Clan Overview; calculator overrides stay local.`;}
-  else status.textContent=linkedId?'Linked clan profile is unavailable here. Import its .clan file (or older .norms file) or choose another profile.':'Optional. Link a Clan Overview profile to use its requirements.';
+  if(profile)members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));
+  status.textContent=profile?.name|| (linkedId?'Linked clan unavailable':'No clan linked');
+  status.title=profile?`Using ${profile.name} clan norms and member count.`:linkedId?'Import the linked clan profile or choose another in Clan Overview.':'Link a player account to a clan in Clan Overview.';
 }
 function refreshWorkspaceSelectors(){
   if(!els.accountSelect)return;
@@ -3346,13 +3346,6 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
-  document.getElementById('clanProfileSelect')?.addEventListener('change',event=>{
-    currentAccount().clanProfileId=event.target.value;
-    renderClanProfileLink();
-    loadEncounterNormSettings();
-    if(encounterPlanContext)updateEncounterPlan();
-    saveState();
-  });
   document.getElementById('useClanNorm')?.addEventListener('click',useLinkedClanNorm);
   document.getElementById('saveNormToClan')?.addEventListener('click',saveCurrentNormToClan);
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}

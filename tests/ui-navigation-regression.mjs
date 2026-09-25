@@ -123,6 +123,11 @@ assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show es
 assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no clan profile required/,'Clan-profile helper labels must not clutter Battle or Encounter Strategy.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
+assert.doesNotMatch(html,/id="clanProfileSelect"/,'Clan links must be managed in Clan Overview, not duplicated as a calculator dropdown.');
+assert.match(html,/id="clanProfileStatus"[\s\S]*href="chests\.html#planSetup" id="manageClanLink">Manage link/,'The calculator must show a read-only clan status with a direct management shortcut.');
+assert.match(source,/manage\.href=`chests\.html\?\$\{query\}#planSetup`/,'The shortcut must carry the selected player and clan to Plan Setup.');
+assert.doesNotMatch(source,/getElementById\('clanProfileSelect'\)/,'The calculator must not silently retain a second link editor.');
+assert.match(siteScript,/if \(!hashTarget && Number\.isFinite\(savedPageView\?\.scrollY\)\)/,'A management deep link must take precedence over an older saved scroll position.');
 assert.match(html,/player-clan-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');
 assert.match(html,/class="player-clan-primary">[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"[\s\S]*<\/div>\s*<span class="workspace-actions account-actions">/,'Account, temple level, and divisor must share a row with account actions underneath.');
 assert.match(css,/\.player-clan-primary\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 76px 112px/,'The account selector must shrink to make room for the compact temple selector and divisor.');

@@ -2,7 +2,7 @@
 try {
   const key = `tbtoolkit.page-view.v1:${location.pathname}`;
   const state = JSON.parse(sessionStorage.getItem(key) || 'null');
-  if (Number.isFinite(state?.scrollY)) {
+  if (!location.hash && Number.isFinite(state?.scrollY)) {
     const root = document.documentElement;
     const release = () => {
       root.classList.remove('is-restoring-page');

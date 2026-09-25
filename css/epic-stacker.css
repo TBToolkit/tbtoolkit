@@ -4088,8 +4088,10 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 .player-clan-panel .account-actions{margin-top:0}
 .player-clan-link-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:12px;align-items:start;min-width:0}
 .player-clan-link-row>.battle-select-field{min-width:0}
-.player-clan-link-row select{box-sizing:border-box;width:100%;min-width:0}
-.player-clan-link-row small{display:block;margin-top:4px;color:#9db0bf;font-size:.65rem;line-height:1.35}
+.clan-link-summary-line{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 10px;border:1px solid #40576a;border-radius:7px;background:#06121c}
+.clan-link-summary-line strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem}
+.clan-link-summary-line a{flex:none;color:#b5d8f0;font-size:.7rem;font-weight:800;text-decoration:underline;text-underline-offset:2px}
+.clan-link-summary-line a:hover,.clan-link-summary-line a:focus-visible{color:#ffd276}
 .clan-members-field input[readonly]{color:#d6e2e7;background:#172a35}
 .battle-norm-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .battle-norm-actions[hidden],.battle-norm-actions [hidden]{display:none!important}

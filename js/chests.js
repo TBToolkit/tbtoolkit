@@ -214,7 +214,16 @@ function switchEpicNormBasis(toggle){
   if(targetBasis==='chests'){row.dataset.basisPointsValue=previousValue;row.dataset.basisPointsUnit=previousUnit;row.dataset.basisPointsChests=value.value;}else clearBasisPoints(row);
 }
 function initPlanner(){
-  loadProfiles();renderReferences();openProfile(activeProfileId);
+  loadProfiles();renderReferences();
+  const linkQuery=new URLSearchParams(location.search),requestedClan=linkQuery.get('clan'),requestedPlayer=linkQuery.get('player');
+  if(requestedClan&&profiles.some(profile=>profile.id===requestedClan))activeProfileId=requestedClan;
+  openProfile(activeProfileId);
+  if(requestedPlayer&&calculatorAccounts().accounts?.[requestedPlayer]){netPlayerAccountId=requestedPlayer;calculatePlanner();}
+  if(requestedClan||requestedPlayer){
+    linkQuery.delete('clan');linkQuery.delete('player');
+    const remaining=linkQuery.toString();
+    history.replaceState(history.state,'',`${location.pathname}${remaining?`?${remaining}`:''}${location.hash}`);
+  }
   $('netPlayerAccount').addEventListener('change',event=>{netPlayerAccountId=event.target.value;calculatePlanner();});
   $('linkPlayerAccount').addEventListener('click',updatePlayerClanLink);
   $('epicNormRows').addEventListener('change',event=>{if(!event.target.matches('.epic-plan-method'))return;netMethodByEpic[event.target.closest('.epic-norm-row').dataset.monster]=event.target.value;calculatePlanner();});

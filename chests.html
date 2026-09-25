@@ -45,7 +45,7 @@
 <section class="section chest-section">
 <div class="container">
 <div class="norm-layout">
-<details class="card norm-panel norm-setup" open>
+<details class="card norm-panel norm-setup" id="planSetup" open>
 <summary class="norm-section-heading"><div><span>1</span><div><h2 id="normSetupTitle">Plan Setup</h2><p>Manage a clan profile, planning period, and resource priorities.</p></div></div></summary>
 <div class="norm-panel-body">
 <div class="norm-profile-row"><label>Clan profile<select id="normProfileSelect"></select></label><div class="norm-profile-actions"><button id="newNormProfile" type="button">New</button><button id="duplicateNormProfile" type="button">Duplicate</button><button id="renameNormProfile" type="button">Rename</button><button id="removeNormProfile" type="button">Remove</button><button id="exportNormProfile" type="button" title="Export a .clan file">Export</button><button id="importNormProfile" type="button" title="Import a .clan or older .norms file">Import</button><input accept=".clan,.norms,application/json" hidden id="normsFileInput" type="file"/></div></div>
@@ -54,7 +54,7 @@
 <label id="customPeriodField" hidden>Custom days<input id="customPeriodDays" min="1" step="1" type="number" value="12"/></label>
 <label>Clan Members<input id="clanRecipients" min="1" max="100" step="1" type="number" value="100"/></label>
 </div>
-<div class="plan-player-row"><label>Player Account<select id="netPlayerAccount"><option value="">No player selected</option></select></label><button id="linkPlayerAccount" type="button" hidden>Link to this clan</button><small id="planPlayerAccountStatus">Select a player account to compare saved battle plans.</small></div>
+<div class="plan-player-row"><label>Battle results from<select id="netPlayerAccount"><option value="">No player selected</option></select></label><button id="linkPlayerAccount" type="button" hidden>Link to this clan</button><small id="planPlayerAccountStatus">Choose a player account to link to this clan and use its saved battle plans.</small></div>
 <div class="norm-resource-picker">
 <div class="norm-resource-head"><div><strong>Resources to display</strong><small>The selection changes the dashboard only—not the norm calculations.</small></div><div class="norm-resource-presets"><button data-resource-preset="core" type="button">Fully Developed</button><button data-resource-preset="growth" type="button">Developing</button><button data-resource-preset="custom" type="button">Custom</button></div></div>
 <div class="norm-resource-options" id="normResourceOptions"></div>
