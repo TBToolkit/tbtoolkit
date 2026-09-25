@@ -1,6 +1,7 @@
 import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from './clan-net-resources.mjs';
 import {serializeClanProfile,parseClanProfile} from './clan-profile-file.mjs';
 import {REVIVAL_STRATEGIES,saveRevivalStrategy} from './clan-strategy-sync.mjs';
+import {OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 (() => {
 const $=id=>document.getElementById(id);
 let records=[],filtered=[],normData={epicMonsters:[],tinman:[]},columnSort={key:null,direction:null};
@@ -19,6 +20,8 @@ const activeProfileSessionKey='tbtoolkit-clan-active-profile-v1';
 const encounterResultStoreKey='tbtoolkit.epicEncounterResults.v1';
 let profiles=[],activeProfileId='';
 let netPlayerAccountId='',netMethodByEpic={};
+const attemptedPlanRefreshes=new Set();
+let pendingPlanRefresh=null;
 let resourcePreset='core';
 let allResourceSelection=new Set(plannerKeys);
 const isDayKey=k=>k==='speedupDays'||k==='clanSpeedupDays';
@@ -65,6 +68,20 @@ function sortedEpics(){return [...normData.epicMonsters].sort((a,b)=>a.monster.l
 function calculatorEfficiencies(){const empty={accountName:'',values:new Map()};try{const stored=JSON.parse(localStorage.getItem(encounterResultStoreKey)||'null'),account=stored?.accounts?.[stored.activeAccountId];if(!account)return empty;const values=new Map();Object.values(account.encounters||{}).forEach(encounter=>{const candidates=Object.entries(encounter.methods||{}).map(([method,result])=>({method,...result})).filter(result=>positive(result.pointsPerFullGoldRevival)>0);candidates.sort((a,b)=>positive(b.estimatedEpicPoints)-positive(a.estimatedEpicPoints));if(candidates[0])values.set(String(encounter.name||'').toUpperCase(),candidates[0]);});return {accountName:account.name||'',values};}catch{return empty;}}
 function calculatorBridge(){try{return JSON.parse(localStorage.getItem(encounterResultStoreKey)||'null')||{};}catch{return{};}}
 function calculatorAccounts(){try{return JSON.parse(localStorage.getItem('tbtoolkit.stackingCalculator')||'null')||{};}catch{return{};}}
+function refreshSavedBattlePlans(accountId){
+  if(!accountId||attemptedPlanRefreshes.has(accountId)||pendingPlanRefresh)return false;
+  attemptedPlanRefreshes.add(accountId);
+  const frame=document.createElement('iframe');
+  frame.title='Refresh saved battle plans';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');
+  frame.style.cssText='position:absolute;width:0;height:0;border:0;opacity:0;pointer-events:none';
+  const finish=()=>{window.removeEventListener('message',onMessage);clearTimeout(timer);frame.remove();pendingPlanRefresh=null;calculatePlanner();};
+  const onMessage=event=>{if(event.origin!==location.origin||event.source!==frame.contentWindow||event.data?.type!=='tbtoolkit:clan-plan-backfill'||event.data.accountId!==accountId)return;finish();};
+  const timer=setTimeout(finish,30000);
+  pendingPlanRefresh=accountId;window.addEventListener('message',onMessage);
+  const url=new URL('stacking.html',location.href);url.searchParams.set('planBackfill',accountId);frame.src=url.href;
+  document.body.append(frame);
+  return true;
+}
 function renderPlanPlayerAccount(){
   const saved=calculatorAccounts(),accounts=Object.values(saved.accounts||{}),linked=linkedPlayerAccounts(saved,activeProfileId),select=$('netPlayerAccount');
   if(!accounts.some(account=>account.id===netPlayerAccountId))netPlayerAccountId=linked.length===1?linked[0].id:'';
@@ -147,10 +164,14 @@ function collectEpicPlans(activities,recipients){
     const chosen=netMethodByEpic[activity.name],method=chosen==='custom'||chosen==='optimize'?chosen:valid('optimize')?'optimize':valid('custom')?'custom':'optimize';
     select.value=method;
     const plan=linked?matchingPlan(method):null,matches=planMatchesRequirement(plan,activity.norm,recipients,activeProfileId,{acceptUnlinkedPlan:linked}),ready=matches&&!!plan?.outcomes?.[plan.selectedStrategy]?.complete;
-    if(ready)plans.set(activity.name,plan);
-    status.textContent=!netPlayerAccountId?'Choose player':!linked?'Link account':!plan?'Run calculator':!matches?'Norm or clan size changed':!ready?'Incomplete costs':'Ready';
-    if(ready){const strategy=document.createElement('select');strategy.className='epic-revival-strategy';strategy.setAttribute('aria-label',`${activity.name} revival strategy`);strategy.innerHTML=Object.entries(REVIVAL_STRATEGIES).map(([value,label])=>`<option value="${value}">${label}</option>`).join('');strategy.value=plan.selectedStrategy;status.append(strategy);}
-    status.className=`epic-plan-status ${ready?'is-ready':'needs-plan'}`;
+    const selected=row.dataset.monster,workspaceId=`epic-${selected.toLowerCase().replace(/\s+/g,'-')}`,workspace=account?.battle?.workspaces?.[workspaceId],hasSelectedUnits=['troop','monster','mercenary'].some(category=>workspace?.selectedIds?.[category]?.length);
+    const costModel=bridge.accounts?.[account?.id]?.encounters?.[workspaceId]?.methods?.[method]?.costModel;
+    const needsRefresh=costModel?.build!==OPTIMIZER_CACHE_BUILD;
+    const refreshing=needsRefresh&&linked&&hasSelectedUnits&&(pendingPlanRefresh===account.id||refreshSavedBattlePlans(account.id));
+    if(ready&&!refreshing)plans.set(activity.name,plan);
+    status.textContent=!netPlayerAccountId?'Choose player':!linked?'Link account':refreshing?'Checking saved plans…':!plan?'Run calculator':!matches?'Norm or clan size changed':!ready?'Incomplete costs':'Ready';
+    if(ready&&!refreshing){const strategy=document.createElement('select');strategy.className='epic-revival-strategy';strategy.setAttribute('aria-label',`${activity.name} revival strategy`);strategy.innerHTML=Object.entries(REVIVAL_STRATEGIES).map(([value,label])=>`<option value="${value}">${label}</option>`).join('');strategy.value=plan.selectedStrategy;status.append(strategy);}
+    status.className=`epic-plan-status ${ready&&!refreshing?'is-ready':'needs-plan'}`;
   });
   const tinmanActivities=activities.filter(activity=>activity.category==='Tinman');
   const norm=positive($('tinmanNorm').value),normUnit=$('tinmanNormUnit').value,bonus=Math.min(100,positive($('tinmanBonus').value)),method=$('tinmanPlanMethod').value;

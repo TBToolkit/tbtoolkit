@@ -4,6 +4,14 @@ import vm from 'node:vm';
 import {normalizeEpicOptimizerSignature} from '../js/epic-optimizer-signature.mjs';
 
 const source=readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
+const cacheHelper=source.match(/function hasSavedOptimizerCacheForEncounter\(account,encounterId,workspace\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(cacheHelper,'Clan Overview must be able to find saved Optimize results after calculator reloads.');
+const diskCache=new Map([['tbtoolkit.battleCalculator.optimizerResult.v4.player.epic-basilisk',{build:'optimizer:test-build',signature:'saved-inputs',payload:{result:{eld:123}}}]]);
+const cacheContext=vm.createContext({OPTIMIZER_CACHE_BUILD:'optimizer:test-build',localStorage:{},readSavedJson:(_storage,key)=>diskCache.get(key),epicArmyGroup:()=>null,canReuseEpicOptimizerResult:()=>false});
+vm.runInContext(cacheHelper,cacheContext);
+assert.equal(vm.runInContext('hasSavedOptimizerCacheForEncounter({id:"player",battle:{workspaces:{}}},"epic-basilisk",{methods:{optimize:{resultCache:null}}})',cacheContext),true,'An Optimize result stored outside the compact account snapshot must be available for plan repair.');
+diskCache.get('tbtoolkit.battleCalculator.optimizerResult.v4.player.epic-basilisk').build='old-build';
+assert.equal(vm.runInContext('hasSavedOptimizerCacheForEncounter({id:"player",battle:{workspaces:{}}},"epic-basilisk",{methods:{optimize:{resultCache:null}}})',cacheContext),false,'A stale Optimize result must not be reused.');
 const functionSource=name=>{
   const match=source.match(new RegExp(`function ${name}\\(\\)\\{[\\s\\S]*?\\n\\}`));
   assert.ok(match,`${name} must remain available for encounter result restoration`);

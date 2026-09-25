@@ -26,6 +26,7 @@ const STORAGE_KEY=SAVED_STATE_KEY;
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
 const ENCOUNTER_RESULT_STORE_KEY='tbtoolkit.epicEncounterResults.v1';
+const planBackfillAccountId=window.parent!==window?new URLSearchParams(location.search).get('planBackfill'):null;
 const EPIC_NORM_POINTS_PER_CHEST={ARACHNE:300e6/35,ARCANOMANCER:800e6/52,ARMAGEDDON:750e6/35,BASILISK:750e6/35,BRIAREUS:800e6/52,CHIMERA:2e6,DOOMSDAY:50e6/7,FENRIR:2e6,HELLFORGE:150e6/7,JORMUNGANDR:2e6,'SHADOW CITY':14e9/75};
 const REVIEW_SELECTION_UI_ENABLED=false;
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
@@ -901,16 +902,17 @@ function publishImportedOptimizerPlans(imported){
 }
 function hasSavedOptimizerCacheForEncounter(account,encounterId,workspace){
   const valid=peer=>peer?.methods?.optimize?.resultCache?.build===OPTIMIZER_CACHE_BUILD&&!!peer.methods.optimize.resultCache.payload?.result&&!!peer.methods.optimize.resultCache.signature;
-  if(valid(workspace))return true;
+  const stored=id=>{try{const cache=readSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${id}`);return cache?.build===OPTIMIZER_CACHE_BUILD&&!!cache.payload?.result&&!!cache.signature;}catch{return false;}};
+  if(valid(workspace)||stored(encounterId))return true;
   const group=epicArmyGroup(encounterId);
-  return !!group&&!!workspace?.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId)&&Object.entries(account.battle.workspaces).some(([id,peer])=>id!==encounterId&&epicArmyGroup(id)===group&&peer.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(id)&&valid(peer));
+  return !!group&&!!workspace?.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId)&&Object.entries(account.battle.workspaces).some(([id,peer])=>id!==encounterId&&epicArmyGroup(id)===group&&peer.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(id)&&(valid(peer)||stored(id)));
 }
 function backfillSavedOptimizerPlans(){
   const account=currentAccount();
   if(!account)return;
   let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Clan Overview plans.',error);}
   const missing=Object.entries(account.battle?.workspaces||{}).some(([id,workspace])=>{
-    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.optimize?.costModel;
+    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.optimize?.costModel?.build!==OPTIMIZER_CACHE_BUILD;
   });
   if(missing)publishImportedOptimizerPlans(account);
 }
@@ -3667,6 +3669,7 @@ function initializeActiveCalculatorAfterData(){
 }
 
 function persistCurrentWorkspace(){
+  if(planBackfillAccountId)return;
   try{
     if(!appInitialized)return;
     readInputs();
@@ -3708,6 +3711,25 @@ async function init(){
   // saved-result restore problem must not disable optimization.
   appInitialized=true;
   showValidation([]);
+
+  if(planBackfillAccountId){
+    const previousAccountId=state.activeAccountId;
+    let success=false;
+    try{
+      if(state.accounts[planBackfillAccountId]){
+        activateAccount(planBackfillAccountId);
+        backfillSavedOptimizerPlans();
+        backfillSavedCustomPlans();
+        success=true;
+      }
+    }catch(error){console.warn('Could not refresh saved clan battle plans.',error);}
+    finally{
+      activateAccount(previousAccountId);
+      try{persistState();}catch(error){console.warn('Could not restore the selected player after plan refresh.',error);}
+      window.parent.postMessage({type:'tbtoolkit:clan-plan-backfill',accountId:planBackfillAccountId,success},location.origin);
+    }
+    return;
+  }
 
   backfillSavedOptimizerPlans();
   backfillSavedCustomPlans();
