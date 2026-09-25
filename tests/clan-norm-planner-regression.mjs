@@ -108,6 +108,7 @@ assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimiz
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
 assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup must identify accounts linked to the active clan profile.');
+assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,\.epic-plan-method'\)\)return;/,'Selecting a player or method must not recalculate and replace the dropdown before its change event is handled.');
 assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
 assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
 assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
