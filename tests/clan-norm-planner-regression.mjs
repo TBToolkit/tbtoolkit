@@ -118,7 +118,9 @@ assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Ef
 assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup must identify accounts linked to the active clan profile.');
 assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,#normProfileSelect,\.epic-plan-method,\.epic-revival-strategy,#tinmanRevivalStrategy'\)\)return;/,'Selecting a player, clan, method, or revival strategy must not replace the dropdown before its change event is handled.');
 assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
-assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
+assert.match(html,/Net resources per player[\s\S]*Gross resources per player[\s\S]*Net resource data[\s\S]*Gross resource data/,'The overview must show net resources and data before gross resources and data.');
+assert.match(script,/Chests per member<input class="chest-norm-count"/,'Crypt and Citadel requirements must label the count as chests per member.');
+assert.match(script,/row\.dataset\.monster==='ASHEN'[\s\S]*?\.epic-event small'\)\.textContent=[^;]*Random/,'Ashen must display Random rather than a 24-day cadence.');
 assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
 assert.match(script,/planMatchesRequirement\(plan,activity\.norm,recipients,activeProfileId,\{acceptUnlinkedPlan:linked\}\)/,'Only the linked player’s matching calculator plans may be counted.');
 assert.match(script,/switchEpicNormBasis\(event\.target\);calculatePlanner\(\)/,'Switching points and chests must convert the norm before recalculation.');

@@ -57,7 +57,8 @@ for(const key of ['bonusDD','bonusST','bonusHealth','bonusStrength']){
 }
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
 assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
-assert.equal((html.match(/data-guide-panel=/g)||[]).length,8,'The mechanics guide must contain all eight reference sections');
+assert.equal((html.match(/data-guide-panel=/g)||[]).length,9,'The mechanics guide must contain all nine reference sections');
+assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Battle results from[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');

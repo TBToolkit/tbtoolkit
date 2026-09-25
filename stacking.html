@@ -390,6 +390,7 @@
 <button data-battle-guide-section="chance" type="button">Double Damage &amp; Strike Twice</button>
 <button data-battle-guide-section="health" type="button">Health &amp; death order</button>
 <button data-battle-guide-section="methods" type="button">Calculation methods</button>
+<button data-battle-guide-section="sharing" type="button">Shared armies &amp; clans</button>
 <button data-battle-guide-section="optimizer" type="button">Optimizer workflow</button>
 <button data-battle-guide-section="results" type="button">Reading results</button>
 </nav>
@@ -451,8 +452,19 @@
 </div>
 </details>
 
+<details data-guide-panel="sharing" id="guide-sharing" name="battle-guide-section">
+<summary><span>7</span>Shared armies and clan plans</summary>
+<div class="battle-guide-section-copy">
+<p>Epic encounters with the same captain or hero setup can share an army. Choose <strong>Use shared army</strong> to copy the group's army limits, unit bonuses, selected units, and Custom order. Later changes to a shared army update the other linked encounters. Choose <strong>Edit independently</strong> when one encounter needs its own setup.</p>
+<p>The groups are 1 Captain (Tinman, Hellforge, Doomsday, Fenrir, Jormungandr, Chimera), 1 Hero (Basilisk, Armageddon), 1 Hero + 3 Captains (Ashen, Shadow City), and 3 Captains (Arachne, Arcanomancer, Briareus). Arachne can share army settings with its group, but needs its own optimization because it fights eight enemy squads instead of four.</p>
+<div class="battle-guide-callout"><strong>Clan norms stay encounter-specific</strong><p>Sharing an army does not overwrite an encounter's clan norm or revival strategy. Reuse an optimized result only when its saved inputs and optimizer version still match.</p></div>
+<p>To link a player and clan, open <strong>Clan Overview → Plan Setup</strong>, choose a clan profile and a player under <strong>Battle results from</strong>, then select <strong>Link to this clan</strong>. The Battle Calculator then uses that clan's member count and Epic norms. Clan Overview can use the player's saved Optimize or deterministic Custom plans to compare net resources and change revival strategies without reopening each encounter.</p>
+<p>Player <code>.stacks</code> and clan <code>.clan</code> files import separately; after importing both, link the player to the clan in Plan Setup. Older <code>.norms</code> clan files can still be imported.</p>
+</div>
+</details>
+
 <details data-guide-panel="optimizer" id="guide-optimizer" name="battle-guide-section">
-<summary><span>7</span>Optimizer workflow</summary>
+<summary><span>8</span>Optimizer workflow</summary>
 <div class="battle-guide-section-copy">
 <p>The optimizer searches only the units selected by the player. When mercenaries are excluded, their quantities remain fixed and their damage is included in the final score.</p>
 <ol class="battle-guide-flow">
@@ -470,7 +482,7 @@
 </details>
 
 <details data-guide-panel="results" id="guide-results" name="battle-guide-section">
-<summary><span>8</span>Reading the results</summary>
+<summary><span>9</span>Reading the results</summary>
 <div class="battle-guide-section-copy battle-guide-results-grid">
 <div><strong>Expected Lifetime Damage (ELD)</strong><p>The average total damage the army is expected to cause across its predicted attack opportunities. It is a comparison metric, not a guarantee for one battle.</p></div>
 <div><strong>Gold Revival</strong><p>The Temple-adjusted Gold cost for 90% revivable attacking losses. Whole-unit rounding is applied.</p></div>
