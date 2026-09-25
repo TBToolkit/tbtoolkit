@@ -111,7 +111,9 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
-assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"[\s\S]*id="epicPointsPerFullGold"/,'Result tiles must show Epic points, Gold revival, ELD, then points per full Gold revival.');
+assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"/,'Result tiles must show Epic points, Gold revival, and ELD.');
+assert.doesNotMatch(html,/<span>Epic Points \/ Full Gold Revival<\/span>/,'The unused Epic points per revival tile must not be shown.');
+assert.match(html,/id="encounterPlanNormReminder"/,'Encounter strategy must show the current event norm.');
 const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details encounter-plan-details"/)?.[1]||'';
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');

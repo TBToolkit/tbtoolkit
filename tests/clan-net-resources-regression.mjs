@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
 import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
+import {saveRevivalStrategy} from '../js/clan-strategy-sync.mjs';
 
 const profileId='norm-clan';
 const accounts=linkedPlayerAccounts({accounts:{one:{id:'one',name:'Biff',clanProfileId:profileId},two:{id:'two',name:'Other',clanProfileId:'elsewhere'}}},profileId);
@@ -60,4 +61,17 @@ assert.deepEqual(netResourcesForPeriod(activities,new Map(),6),{complete:false,m
 const month=netResourcesForPeriod([{...activities[0],cadence:24,prorated:2.5}],new Map([['Doomsday',optimize]]),6);
 assert.equal(month.spent.revival,10,'A 24-day Epic contributes one quarter of its battle cost to a six-day period.');
 assert.equal(month.received.revival,37.5);
+const values=new Map([
+  ['tbtoolkit.epicEncounterResults.v1',JSON.stringify({accounts:{one:{encounters:{doom:{name:'Doomsday',plan:{selectedStrategy:'full'},plansByMethod:{optimize:{selectedStrategy:'full'},custom:{selectedStrategy:'full'}}}}}}})],
+  ['tbtoolkit.stackingCalculator',JSON.stringify({accounts:{one:{battle:{workspaces:{doom:{inputs:{encounterPlanStrategy:'full'}}}}}}})],
+  ['tbtoolkit.encounterPlan.v1.one.doom',JSON.stringify({strategy:'full',norm:500})]
+]);
+const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
+assert.equal(saveRevivalStrategy(storage,'one','Doomsday','mercenary-only'),true);
+assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters.doom.plansByMethod.optimize.selectedStrategy,'mercenary-only');
+assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters.doom.plansByMethod.custom.selectedStrategy,'mercenary-only');
+assert.equal(JSON.parse(values.get('tbtoolkit.stackingCalculator')).accounts.one.battle.workspaces.doom.inputs.encounterPlanStrategy,'mercenary-only');
+assert.deepEqual(JSON.parse(values.get('tbtoolkit.encounterPlan.v1.one.doom')),{strategy:'mercenary-only',norm:500});
+assert.equal(saveRevivalStrategy(storage,'one','Doomsday','invalid'),false);
+assert.equal(saveRevivalStrategy(storage,'one','Missing','full'),false);
 console.log(JSON.stringify({ok:true,methods:2}));

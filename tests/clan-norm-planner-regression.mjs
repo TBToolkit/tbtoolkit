@@ -33,6 +33,10 @@ assert.match(script,/Math\.floor\(value\/item\.pointsPerChest\)/,'Point norms mu
 assert.match(script,/actual\*period\/item\.cadenceDays/,'Epic resource estimates must be prorated by cadence.');
 assert.match(script,/plannerKeys=resourceKeys\.filter\(k=>k!==\'clanWealth\'\)/,'Clan Wealth must remain outside the first planner version.');
 assert.match(html,/accept="\.clan,\.norms,application\/json"/,'Clan profiles must import .clan and legacy .norms files.');
+assert.match(html,/id="tinmanRevivalStrategy"/,'Tinman must offer the same revival choices in Clan Overview.');
+assert.match(script,/className='epic-revival-strategy'/,'Ready Epic plans must offer revival choices in Plan Status.');
+assert.match(script,/saveRevivalStrategy\(localStorage,netPlayerAccountId,encounter,strategy\)/,'Clan Overview revival choices must sync with the Battle Calculator.');
+assert.match(script,/\.epic-plan-method,\.epic-revival-strategy,#tinmanRevivalStrategy'\)\)return/,'Changing a revival selector must not redraw it before its change event saves.');
 const netRenderer=script.slice(script.indexOf('function renderNetResources('),script.indexOf('function calculatePlanner('));
 assert.match(netRenderer,/Object\.fromEntries\(resourceKeys\.map\(/,'Tinman reward aggregation must use the full resource key list.');
 assert.doesNotMatch(netRenderer,/\b(?:const|let) resourceKeys\b/,'A local resourceKeys declaration would shadow the full list and crash clan imports before saving.');
@@ -112,7 +116,7 @@ assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimiz
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
 assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup must identify accounts linked to the active clan profile.');
-assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,#normProfileSelect,\.epic-plan-method'\)\)return;/,'Selecting a player, clan, or method must not recalculate and replace the dropdown before its change event is handled.');
+assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,#normProfileSelect,\.epic-plan-method,\.epic-revival-strategy,#tinmanRevivalStrategy'\)\)return;/,'Selecting a player, clan, method, or revival strategy must not replace the dropdown before its change event is handled.');
 assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
 assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
 assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
@@ -128,7 +132,7 @@ assert.match(chartCss,/\.norm-epic-header>span,\.epic-norm-row>:not\(\.epic-even
 assert.match(chartCss,/\.epic-norm-row \.epic-event\{justify-self:stretch;text-align:left\}/,'Epic event rows must remain left aligned.');
 assert.match(html,/Basis · equivalent<\/span><span>Calculation method<\/span><span>Plan status/,'The calculation method heading must be clear.');
 assert.match(html,/class="epic-visibility-heading"[\s\S]*id="showAllEpics"[\s\S]*id="hideAllEpics"[\s\S]*id="epicVisibilityOptions"/,'Event visibility actions must sit apart from the event choices.');
-assert.match(script,/strategy\.textContent=\(\{'full':'Full Gold revival'/,'A ready Epic plan must show its revival strategy.');
+assert.match(script,/strategy\.innerHTML=Object\.entries\(REVIVAL_STRATEGIES\)/,'A ready Epic plan must offer all revival strategies.');
 assert.match(html,/id="tinmanBonus"[\s\S]*id="tinmanNorm"[\s\S]*id="tinmanPlanMethod"/,'Tinman needs a bonus, a player point norm, and a method choice.');
 assert.match(html,/id="tinmanBonusSuffix">%[\s\S]*id="tinmanNormSuffix">B[\s\S]*id="tinmanNormUnit"/,'Tinman bonus and norm inputs need visible suffixes and a unit selector.');
 assert.match(script,/sessionStorage\.setItem\(activeProfileSessionKey,activeProfileId\)/,'The selected clan profile must survive page navigation.');
