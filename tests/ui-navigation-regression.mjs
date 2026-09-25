@@ -57,7 +57,8 @@ for(const key of ['bonusDD','bonusST','bonusHealth','bonusStrength']){
 }
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
 assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
-assert.equal((html.match(/data-guide-panel=/g)||[]).length,8,'The mechanics guide must contain all eight reference sections');
+assert.equal((html.match(/data-guide-panel=/g)||[]).length,9,'The mechanics guide must contain all nine reference sections');
+assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Battle results from[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
@@ -111,7 +112,9 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
-assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"[\s\S]*id="epicPointsPerFullGold"/,'Result tiles must show Epic points, Gold revival, ELD, then points per full Gold revival.');
+assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"/,'Result tiles must show Epic points, Gold revival, and ELD.');
+assert.doesNotMatch(html,/<span>Epic Points \/ Full Gold Revival<\/span>/,'The unused Epic points per revival tile must not be shown.');
+assert.match(html,/id="encounterPlanNormReminder"/,'Encounter strategy must show the current event norm.');
 const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details encounter-plan-details"/)?.[1]||'';
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
@@ -119,10 +122,18 @@ assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points mus
 assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
-assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
+assert.equal(estimatedEpicPoints('Tinman',51016),1,'Tinman uses the inferred base ELD per point.');
+assert.equal(estimatedEpicPoints('Tinman',51016,{tinmanBonus:100}),2,'A 100% Tinman bonus doubles awarded points.');
+assert.match(source,/tinmanChestRewards=new Map\(/,'Tinman encounter strategy must load Event chest rewards.');
+assert.match(source,/received=monster==='TINMAN'\?tinmanEncounterRewards\(linkedClanProfile\(localStorage,currentAccount\(\)\?\.clanProfileId\)\)/,'Tinman strategy must use the linked clan summons for per-member income.');
 assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no clan profile required/,'Clan-profile helper labels must not clutter Battle or Encounter Strategy.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
+assert.doesNotMatch(html,/id="clanProfileSelect"/,'Clan links must be managed in Clan Overview, not duplicated as a calculator dropdown.');
+assert.match(html,/id="clanProfileStatus"[\s\S]*href="chests\.html#planSetup" id="manageClanLink">Manage link/,'The calculator must show a read-only clan status with a direct management shortcut.');
+assert.match(source,/manage\.href=`chests\.html\?\$\{query\}#planSetup`/,'The shortcut must carry the selected player and clan to Plan Setup.');
+assert.doesNotMatch(source,/getElementById\('clanProfileSelect'\)/,'The calculator must not silently retain a second link editor.');
+assert.match(siteScript,/if \(!hashTarget && Number\.isFinite\(savedPageView\?\.scrollY\)\)/,'A management deep link must take precedence over an older saved scroll position.');
 assert.match(html,/player-clan-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');
 assert.match(html,/class="player-clan-primary">[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"[\s\S]*<\/div>\s*<span class="workspace-actions account-actions">/,'Account, temple level, and divisor must share a row with account actions underneath.');
 assert.match(css,/\.player-clan-primary\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 76px 112px/,'The account selector must shrink to make room for the compact temple selector and divisor.');
@@ -168,7 +179,7 @@ assert.doesNotMatch(html,/value="none">No Gold revival/,'Every offered plan stra
 assert.match(html,/<table class="encounter-plan-table">[\s\S]*data-strategy="full"[\s\S]*data-strategy="mercenary-monster"[\s\S]*data-strategy="mercenary-only"/,'Revival strategies must be directly comparable in a matrix.');
 assert.doesNotMatch(html,/<select id="encounterPlanStrategy">/,'Revival strategies must not be hidden in a dropdown.');
 assert.match(source,/for\(const row of els\.encounterPlanStrategies\?\.querySelectorAll\('tr\[data-strategy\]'\)/,'Every strategy row must be recalculated from the same norm and army.');
-assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Tinman and unsupported encounters must not expose an unusable encounter plan.');
+assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Encounters without a point estimate must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
 assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics\}/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
 assert.match(source,/function writeOptimizerResultWithQuotaRecovery\(key,saved\)[\s\S]*optimizerResultCacheKeys\(\)[\s\S]*localStorage\.removeItem\(candidate\.key\)[\s\S]*writeSavedJson\(localStorage,key,saved\)/,'A newly completed optimization must replace the oldest optimizer cache if browser storage is full.');
@@ -232,10 +243,10 @@ assert.match(source,/selectBattleMethod\(button\.dataset\.resultsMethod,true\)/,
 assert.match(source,/ENCOUNTER_RESULT_STORE_KEY='tbtoolkit\.epicEncounterResults\.v1'/,'Epic calculator results must be available to the Clan Norm planner.');
 assert.match(source,/saveEncounterResultSnapshot\(\{encounter,method:state\.modes\.battle\.activeBattleMethod/,'Rendered built-in Epic results must be saved with their calculation method.');
 assert.match(html,/<span hidden id="encounterPlanSource"><\/span>/,'Encounter Strategy must retain a hidden compatibility hook without displaying profile helper text.');
-assert.match(source,/CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1'/,'Encounter planning must read the active Clan Norm profile without requiring one.');
-assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*stored\.activeProfileId[\s\S]*epic\.basis==='chests'/,'The active profile bridge must support both point and chest-based Epic norms.');
-assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the active clan profile.');
-assert.match(source,/dataset\.source='manual'[\s\S]*encounterNormSource\)els\.encounterNormSource\.textContent=''/,'Editing a linked encounter norm must turn it into a persistent manual override without adding helper copy.');
+assert.match(source,/function activeClanEncounterNorm\(encounterName\)[\s\S]*linkedClanProfile\(localStorage,currentAccount\(\)\?\.clanProfileId\)/,'Encounter planning must use only the account-linked clan profile.');
+assert.match(source,/manual=saved\?\.source==='manual'\|\|legacyManual/,'A saved manual encounter norm must take precedence over the linked clan profile.');
+assert.match(source,/dataset\.source='manual'[\s\S]*renderEncounterNormSource\(activeClanEncounterNorm/,'Editing a linked encounter norm must turn it into a persistent manual override.');
+assert.match(source,/function saveCurrentNormToClan\(\)[\s\S]*saveClanEncounterNorm/,'Saving a local norm to the linked clan must be explicit.');
 assert.match(source,/portable\.clanMembers=settings\.clanMembers[\s\S]*portable\.encounterPlanStrategy=settings\.strategy/,'Encounter planning inputs must persist inside the portable account workspace.');
 assert.match(html,/Gold \+ Potion outcome[\s\S]*Silver outcome[\s\S]*Dragon Coins outcome/,'The strategy matrix must compare net resource outcomes.');
 assert.match(source,/function loadEpicChestRewards\(\)[\s\S]*chest-data\.json[\s\S]*record\.type==='EPIC'/,'Encounter plans must load the shared Epic chest reward averages.');
@@ -247,7 +258,18 @@ assert.match(source,/Gold and Potion rewards are combined 1:1 as revival currenc
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Enter a clan norm to include resource rewards and net change/,'Calculator-only players must be told how to enable net outcomes.');
 assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
-assert.match(source,/result\.plan=\{profileId:encounterPlanContext\?\.clanProfile\?\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Shared encounter plans must retain standalone calculator inputs and optional profile metadata.');
+assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
+assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
+assert.match(source,/saved\?\.source==='clan'\?\{\.\.\.saved,source:'clan',profileId:currentAccount\(\)\?\.clanProfileId/,'An imported player must retain the clan norm source even before the clan profile is imported.');
+assert.match(source,/publishImportedOptimizerPlans\(imported\)/,'Import must prepare Clan Overview plans without opening each encounter.');
+assert.match(source,/publishImportedOptimizerPlans\(imported\);\s*backfillSavedCustomPlans\(\)/,'Import must also prepare deterministic Custom plans without opening each encounter.');
+assert.match(source,/backfillSavedOptimizerPlans\(\);\s*backfillSavedCustomPlans\(\)/,'Existing accounts must receive missing Custom plans when the calculator starts.');
+assert.match(source,/function backfillSavedCustomPlans\(\)[\s\S]*calculateCustomStack\([\s\S]*renderPrediction\(scored\)/,'Backfilled Custom plans must use the calculator’s deterministic army scoring and cost snapshot.');
+assert.match(source,/state\.accounts=candidate;activateAccount\(imported\.id\);persistState\(\)/,'Import must fail visibly if the player account cannot be saved before navigation.');
+assert.doesNotMatch(source,/function publishImportedOptimizerPlans\(imported\)\{\s*if\(!imported\.clanProfileId\)return/,'Import must prepare saved optimizer costs before any clan is linked.');
+assert.match(source,/result\.methods\[method\]\.costModel=\{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:/,'Saved battle costs must be reusable when a clan is linked later.');
+assert.match(source,/lastOptimizedEpicSignature!==currentEpicEffectiveSignature\(\)\)continue/,'Imported plans must only be published when the saved optimizer inputs still match.');
+assert.match(source,/hasSavedOptimizerCacheForEncounter\(imported,encounterId,workspace\)/,'Shared Epic encounters must be prepared from eligible peer optimizer caches.');
 assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));

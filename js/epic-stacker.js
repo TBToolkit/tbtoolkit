@@ -9,17 +9,23 @@ import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountSt
 import {readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
-import {estimatedEpicPoints} from './epic-points-estimates.mjs';
+import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
+import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
+
+function estimatedEpicPoints(encounterName,eld){
+  const bonus=String(encounterName||'').toUpperCase()==='TINMAN'
+    ?linkedClanProfile(localStorage,currentAccount()?.clanProfileId)?.plan?.tinman?.bonus||0:0;
+  return estimateBaseEpicPoints(encounterName,eld,{tinmanBonus:bonus});
+}
 
 const STORAGE_KEY=SAVED_STATE_KEY;
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
 const ENCOUNTER_RESULT_STORE_KEY='tbtoolkit.epicEncounterResults.v1';
-const CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1';
 const EPIC_NORM_POINTS_PER_CHEST={ARACHNE:300e6/35,ARCANOMANCER:800e6/52,ARMAGEDDON:750e6/35,BASILISK:750e6/35,BRIAREUS:800e6/52,CHIMERA:2e6,DOOMSDAY:50e6/7,FENRIR:2e6,HELLFORGE:150e6/7,JORMUNGANDR:2e6,'SHADOW CITY':14e9/75};
 const REVIEW_SELECTION_UI_ENABLED=false;
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
@@ -28,6 +34,7 @@ let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOpti
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
 let epicChestRewards=new Map();
+let tinmanChestRewards=new Map(),tinmanLevelData=[];
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 let encounterPlanContext=null;
@@ -478,8 +485,12 @@ async function loadData(){
   throw lastError||new Error('Could not load canonical army database');
 }
 async function loadEpicChestRewards(){
-  for(const source of ['/data/chest-data.json','data/chest-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;const data=await response.json();epicChestRewards=new Map((data.records||[]).filter(record=>record.type==='EPIC').map(record=>[String(record.chest).toUpperCase(),record]));return;}catch{}
+  for(const source of ['/data/chest-data.json','data/chest-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;const data=await response.json();epicChestRewards=new Map((data.records||[]).filter(record=>record.type==='EPIC').map(record=>[String(record.chest).toUpperCase(),record]));tinmanChestRewards=new Map((data.records||[]).filter(record=>record.type==='EVENT'&&String(record.chest).toUpperCase().includes('TINMAN')).map(record=>[String(record.chest).toUpperCase(),record]));return;}catch{}
   console.warn('Epic chest rewards could not be loaded; encounter plans will show spending only.');
+}
+async function loadTinmanLevelData(){
+  for(const source of ['/data/norm-planner-data.json','data/norm-planner-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;tinmanLevelData=(await response.json()).tinman||[];return;}catch{}
+  console.warn('Tinman level rewards could not be loaded; encounter plans will show spending only.');
 }
 function loadSavedState(){
   try{
@@ -611,11 +622,12 @@ function loadSavedState(){
   }
   ensureBattleWorkspace();
 }
+function persistState(){
+  if(activeMode==='battle')propagateSharedEpicArmy();
+  writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+}
 function saveState(){
-  try{
-    if(activeMode==='battle')propagateSharedEpicArmy();
-    writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
-  }catch(error){
+  try{persistState();}catch(error){
     // Persistence must never interrupt a selection or calculation-method UI
     // transition. Optimizer results are stored under their own bounded key.
     console.warn('Could not save calculator state.',error);
@@ -725,13 +737,15 @@ function confirmPendingBiffImport(){
   try{
     const candidate={...state.accounts,[imported.id]:imported};
     validateAccountCollection(candidate,imported.id);
-    state.accounts=candidate;activateAccount(imported.id);saveState();
+    state.accounts=candidate;activateAccount(imported.id);persistState();
     for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
       const cache=workspace.methods?.optimize?.resultCache;
       if(!cache||cache.build!==OPTIMIZER_CACHE_BUILD)continue;
       try{writeSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${imported.id}.${encounterId}`,cache);}
       catch(error){console.warn(`Could not persist imported optimized result for ${encounterId}; it remains available for this session.`,error);}
     }
+    publishImportedOptimizerPlans(imported);
+    backfillSavedCustomPlans();
     pendingBiffImport=null;els.biffImportDialog.close();els.biffFileInput.value='';
     loadSavedOptimizerResult();refreshActiveMode();
   }catch(error){
@@ -848,7 +862,7 @@ function clearSavedOptimizerResult(){
 function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
 function hydrateAccount(raw){
-  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel});
+  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel,clanProfileId:raw?.clanProfileId});
   account.customEncounters={...(raw?.customEncounters||{})};
   const source=raw?.battle||{};
   account.battle.activeBattleCategory=source.activeBattleCategory||'epic';
@@ -859,6 +873,93 @@ function hydrateAccount(raw){
   for(const [id,workspace] of Object.entries(source.workspaces||{}))account.battle.workspaces[id]=makeBattleWorkspace(workspace?.inputs?.battleType,workspace);
   return account;
 }
+function publishImportedOptimizerPlans(imported){
+  const battle=state.modes.battle,previousMode=activeMode;
+  const previous={category:battle.activeBattleCategory,encounterId:battle.activeEncounterId,type:battle.activeBattleType,method:battle.activeBattleMethod};
+  try{
+    activeMode='battle';battle.activeBattleCategory='epic';battle.activeBattleMethod='optimize';
+    for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
+      try{
+        if(!hasSavedOptimizerCacheForEncounter(imported,encounterId,workspace))continue;
+        battle.activeEncounterId=encounterId;
+        const encounter=currentEncounter();
+        if(!encounter?.builtIn||!(String(encounter.name||'').toUpperCase()==='TINMAN'||EPIC_NORM_POINTS_PER_CHEST[String(encounter.name||'').toUpperCase()]))continue;
+        battle.activeBattleType=currentEngineBattleType();
+        ensureBattleWorkspace();
+        applyStateToInputs();syncDerivedEpicBonuses();
+        loadSavedOptimizerResult();
+        if(!lastOptimizedEpicPayload||lastOptimizedEpicSignature!==currentEpicEffectiveSignature())continue;
+        renderPrediction(liveStandardMercenaryOptimizerPayload(lastOptimizedEpicPayload));
+      }catch(error){console.warn(`Could not prepare the imported ${encounterId} plan.`,error);}
+    }
+  }catch(error){console.warn('Could not prepare all imported Epic plans for Clan Overview.',error);}
+  finally{
+    battle.activeBattleCategory=previous.category;battle.activeEncounterId=previous.encounterId;
+    battle.activeBattleType=previous.type;battle.activeBattleMethod=previous.method;activeMode=previousMode;
+    loadSavedOptimizerResult();
+  }
+}
+function hasSavedOptimizerCacheForEncounter(account,encounterId,workspace){
+  const valid=peer=>peer?.methods?.optimize?.resultCache?.build===OPTIMIZER_CACHE_BUILD&&!!peer.methods.optimize.resultCache.payload?.result&&!!peer.methods.optimize.resultCache.signature;
+  if(valid(workspace))return true;
+  const group=epicArmyGroup(encounterId);
+  return !!group&&!!workspace?.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId)&&Object.entries(account.battle.workspaces).some(([id,peer])=>id!==encounterId&&epicArmyGroup(id)===group&&peer.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(id)&&valid(peer));
+}
+function backfillSavedOptimizerPlans(){
+  const account=currentAccount();
+  if(!account)return;
+  let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Clan Overview plans.',error);}
+  const missing=Object.entries(account.battle?.workspaces||{}).some(([id,workspace])=>{
+    return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.optimize?.costModel;
+  });
+  if(missing)publishImportedOptimizerPlans(account);
+}
+function backfillSavedCustomPlans(){
+  const account=currentAccount();
+  if(!account||!armyV2.length)return;
+  let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Custom encounter plans.',error);}
+  const missing=Object.entries(account.battle?.workspaces||{}).filter(([id,workspace])=>{
+    const encounter=resolveEncounter(account,id),selected=workspace?.selectedIds;
+    const model=bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.custom?.costModel;
+    return encounter?.builtIn&&encounter.battleType==='epic'&&['troop','monster','mercenary'].some(category=>selected?.[category]?.length)&&model?.build!==OPTIMIZER_CACHE_BUILD;
+  });
+  if(!missing.length)return;
+  const battle=state.modes.battle,previousMode=activeMode;
+  const previous={category:battle.activeBattleCategory,encounterId:battle.activeEncounterId,type:battle.activeBattleType,method:battle.activeBattleMethod};
+  try{
+    activeMode='battle';battle.activeBattleCategory='epic';battle.activeBattleMethod='custom';
+    for(const [encounterId] of missing){
+      try{
+        battle.activeEncounterId=encounterId;battle.activeBattleType=currentEngineBattleType();
+        ensureBattleWorkspace();applyStateToInputs();syncDerivedEpicBonuses();syncCustomOrders();
+        const inputs=resolveAutoFills(baseEngineInputs()),workspace=currentBattleWorkspace();
+        const selectedIds=workspace.selectedIds;
+        const result=untouchedEpicCustomOrderMatchesStandard()
+          ?calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,inputs})
+          :calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,orders:workspace.orders,unitOrders:workspace.methods.custom.unitOrders,squadOrders:workspace.methods.custom.squadOrder,inputs});
+        const scored=scoreClassicResult(result);
+        if(scored?.result?.expectedTotalLifetimeDamage>0)renderPrediction(scored);
+      }catch(error){console.warn(`Could not prepare the saved ${encounterId} Custom plan.`,error);}
+    }
+  }finally{
+    battle.activeBattleCategory=previous.category;battle.activeEncounterId=previous.encounterId;
+    battle.activeBattleType=previous.type;battle.activeBattleMethod=previous.method;activeMode=previousMode;
+    loadSavedOptimizerResult();saveState();
+  }
+}
+function renderClanProfileLink(){
+  const status=document.getElementById('clanProfileStatus'),members=document.getElementById('encounterPlanMembers');
+  if(!status||!members)return;
+  const linkedId=currentAccount()?.clanProfileId||'',profiles=readClanProfiles(localStorage).profiles;
+  const manage=document.getElementById('manageClanLink'),query=new URLSearchParams({player:currentAccount()?.id||''});
+  if(linkedId)query.set('clan',linkedId);
+  if(manage)manage.href=`chests.html?${query}#planSetup`;
+  const profile=profiles.find(item=>item.id===linkedId);
+  members.readOnly=!!profile;
+  if(profile)members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));
+  status.textContent=profile?.name|| (linkedId?'Linked clan unavailable':'No clan linked');
+  status.title=profile?`Using ${profile.name} clan norms and member count.`:linkedId?'Import the linked clan profile or choose another in Clan Overview.':'Link a player account to a clan in Clan Overview.';
+}
 function refreshWorkspaceSelectors(){
   if(!els.accountSelect)return;
   els.accountSelect.innerHTML='';
@@ -866,6 +967,7 @@ function refreshWorkspaceSelectors(){
     const option=document.createElement('option');option.value=account.id;option.textContent=account.name;els.accountSelect.append(option);
   }
   els.accountSelect.value=state.activeAccountId;
+  renderClanProfileLink();
   const account=currentAccount(),battle=state.modes.battle,category=battle.activeBattleCategory||'epic';
   els.battleTypeSelect.value=category;
   const choices=encountersForAccount(account,category);
@@ -1246,6 +1348,12 @@ function updateOptimizerProgress(progress={}){
   }
 }
 function clearPrediction(){
+  if(activeMode==='battle'&&currentEncounter()?.builtIn&&state.modes.battle.activeBattleCategory==='epic'){
+    try{
+      const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY),encounter=stored?.accounts?.[state.activeAccountId]?.encounters?.[currentEncounter().id];
+      if(encounter){delete encounter.plansByMethod?.[state.modes.battle.activeBattleMethod];delete encounter.methods?.[state.modes.battle.activeBattleMethod]?.costModel;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
+    }catch(error){console.warn('Could not clear a stale encounter plan.',error);}
+  }
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   encounterPlanContext=null;
   if(els.encounterPlanEntry)els.encounterPlanEntry.hidden=true;
@@ -1264,7 +1372,7 @@ function saveEncounterResultSnapshot({encounter,method,estimatedPoints,fullGold,
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{};
     stored.schemaVersion=1;stored.activeAccountId=state.activeAccountId;stored.accounts=stored.accounts||{};
     const account=stored.accounts[state.activeAccountId]||{name:currentAccount()?.name||'Player',encounters:{}};
-    account.name=currentAccount()?.name||account.name;account.encounters=account.encounters||{};
+    account.name=currentAccount()?.name||account.name;account.clanProfileId=currentAccount()?.clanProfileId||'';account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};
     result.name=encounter.name;result.methods=result.methods||{};
     result.methods[method]={estimatedEpicPoints:estimatedPoints,fullGoldRevival:fullGold,expectedLifetimeDamage:eld,pointsPerFullGoldRevival:ratio,savedAt:Date.now()};
@@ -1277,9 +1385,13 @@ function saveEncounterPlanSnapshot(settings,outcomes){
   try{
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{},accountId=state.activeAccountId,encounter=currentEncounter();
     stored.schemaVersion=1;stored.activeAccountId=accountId;stored.accounts=stored.accounts||{};
-    const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.encounters=account.encounters||{};
+    const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.name=currentAccount()?.name||account.name;account.clanProfileId=currentAccount()?.clanProfileId||'';account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
-    result.plan={profileId:encounterPlanContext?.clanProfile?.profileId||'',profileName:encounterPlanContext?.clanProfile?.profileName||'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    const method=state.modes.battle.activeBattleMethod;
+    result.plan={method,profileId:settings.source==='clan'?settings.profileId||'':'',profileName:settings.source==='clan'?linkedClanProfile(localStorage,settings.profileId)?.name||'':'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
+    result.methods=result.methods||{};result.methods[method]=result.methods[method]||{};
+    if(encounterPlanContext)result.methods[method].costModel={build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows};
+    result.plansByMethod=result.plansByMethod||{};result.plansByMethod[method]=result.plan;
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
 }
@@ -1290,35 +1402,37 @@ function compactNormPoints(points){
   return {norm:Number((points/1e3).toFixed(3)),unit:'K'};
 }
 function activeClanEncounterNorm(encounterName){
-  try{
-    const stored=readSavedJson(localStorage,CLAN_PROFILE_STORE_KEY),profile=stored?.profiles?.find(item=>item.id===stored.activeProfileId);
-    const epic=profile?.plan?.epics?.find(item=>String(item.monster).toUpperCase()===String(encounterName).toUpperCase());
-    if(!epic||!(Number(epic.value)>0))return null;
-    const points=epic.basis==='chests'?Number(epic.value)*(EPIC_NORM_POINTS_PER_CHEST[String(encounterName).toUpperCase()]||0):Number(epic.value)*({B:1e9,M:1e6,K:1e3}[epic.unit]||1);
-    if(!(points>0))return null;
-    const displayed=epic.basis==='chests'?{norm:Number(epic.value),unit:'B',basis:'chests'}:{...compactNormPoints(points),basis:'points'};
-    return {profileId:profile.id,profileName:profile.name||'Active clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),...displayed};
-  }catch{return null;}
+  return clanEncounterNorm(linkedClanProfile(localStorage,currentAccount()?.clanProfileId),encounterName);
+}
+function renderEncounterNormSource(clanNorm){
+  const profile=linkedClanProfile(localStorage,currentAccount()?.clanProfileId),source=els.encounterPlanNorm?.dataset.source;
+  const actions=document.getElementById('encounterNormActions'),use=document.getElementById('useClanNorm'),save=document.getElementById('saveNormToClan');
+  if(els.encounterNormSource)els.encounterNormSource.textContent=profile
+    ?source==='clan'&&clanNorm?`From ${profile.name} · edit clan requirements in Clan Overview.`:clanNorm?`Manual override · ${profile.name} is unchanged.`:`Manual norm · no norm for this encounter in ${profile.name}.`
+    :currentAccount()?.clanProfileId?'Linked clan profile unavailable · this norm is local.':'Manual norm · no clan profile linked.';
+  if(els.encounterNormSource&&String(currentEncounter()?.name||'').toUpperCase()==='TINMAN')els.encounterNormSource.textContent+=` Tinman points bonus: ${Math.min(100,Math.max(0,Number(profile?.plan?.tinman?.bonus)||0))}%.`;
+  if(actions){actions.hidden=!profile;use.hidden=!clanNorm||source==='clan';save.hidden=!profile||source==='clan';}
 }
 function loadEncounterNormSettings(){
   let saved=null;
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
   const portable=currentBattleWorkspace()?.inputs||{};
-  if(Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:'manual',profileId:''};
+  if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':portable.encounterNormSource==='manual'?'manual':'default',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
-  const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:{norm:1,unit:'B',source:'default'};
-  const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
+  const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'clan',profileId:currentAccount()?.clanProfileId||saved.profileId||''}:{norm:1,unit:'B',source:'default'};
+  const isTinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
+  const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&(isTinman||!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()]);
   if(els.encounterNormField)els.encounterNormField.hidden=!supported;
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
-  document.getElementById('encounterPlanMembers').value=String(Math.min(100,Math.max(1,Math.floor(Number(selected.clanMembers??clanNorm?.clanMembers??saved?.clanMembers??100)||100))));
-  const basis=document.getElementById('encounterPlanBasis');basis.checked=selected.basis!=='chests';
+  const linked=linkedClanProfile(localStorage,currentAccount()?.clanProfileId),memberCount=linked?.plan?.recipients??selected.clanMembers??saved?.clanMembers??100;
+  document.getElementById('encounterPlanMembers').value=String(Math.min(100,Math.max(1,Math.floor(Number(memberCount)||100))));
+  const basis=document.getElementById('encounterPlanBasis');basis.checked=isTinman||selected.basis!=='chests';basis.disabled=isTinman;
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
-  if(els.encounterNormSource)els.encounterNormSource.textContent='';
-  if(els.encounterPlanSource)els.encounterPlanSource.textContent='';
+  renderEncounterNormSource(clanNorm);
   return {saved,clanNorm,selected};
 }
 function loadEncounterPlanSettings(){
@@ -1343,25 +1457,66 @@ function saveManualEncounterNorm(){
   const settings={...saved,norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),source:'manual',profileId:''};
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source='manual';els.encounterPlanNorm.dataset.profileId='';
-  const inputs=currentBattleWorkspace().inputs;inputs.clanMembers=settings.clanMembers;inputs.encounterNorm=settings.norm;inputs.encounterNormUnit=settings.unit;inputs.encounterNormBasis=settings.basis;inputs.encounterPlanStrategy=settings.strategy||inputs.encounterPlanStrategy||'full';
-  if(els.encounterNormSource)els.encounterNormSource.textContent='';if(els.encounterPlanSource)els.encounterPlanSource.textContent='';
+  const inputs=currentBattleWorkspace().inputs;inputs.clanMembers=settings.clanMembers;inputs.encounterNorm=settings.norm;inputs.encounterNormUnit=settings.unit;inputs.encounterNormBasis=settings.basis;inputs.encounterNormSource='manual';inputs.encounterPlanStrategy=settings.strategy||inputs.encounterPlanStrategy||'full';
+  renderEncounterNormSource(activeClanEncounterNorm(currentEncounter()?.name));
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();
+}
+function useLinkedClanNorm(){
+  const norm=activeClanEncounterNorm(currentEncounter()?.name);
+  if(!norm)return;
+  const inputs=currentBattleWorkspace().inputs;
+  inputs.encounterNormSource='clan';
+  let saved={};try{saved=readSavedJson(localStorage,encounterPlanStorageKey())||{};}catch{}
+  try{writeSavedJson(localStorage,encounterPlanStorageKey(),{...saved,source:'clan',profileId:norm.profileId});}catch{}
+  loadEncounterNormSettings();
+  if(encounterPlanContext)updateEncounterPlan();
+  saveState();
+}
+function saveCurrentNormToClan(){
+  const profileId=currentAccount()?.clanProfileId,encounter=currentEncounter();
+  if(!profileId||!encounter?.builtIn)return;
+  try{
+    saveClanEncounterNorm(localStorage,profileId,encounter.name,{
+      norm:Number(els.encounterPlanNorm.value),
+      unit:els.encounterPlanUnit.value,
+      basis:document.getElementById('encounterPlanBasis').checked?'points':'chests'
+    });
+    useLinkedClanNorm();
+  }catch(error){alert(error.message||'The clan norm could not be saved.');}
+}
+function tinmanEncounterRewards(profile){
+  const plan=profile?.plan?.tinman,start=Math.min(250,Math.max(1,Math.floor(Number(plan?.startLevel)||1))),summons=Math.min(8,Math.max(0,Math.floor(Number(plan?.summons)||0)));
+  if(!plan||!summons||!tinmanLevelData.length)return null;
+  const received={gold:0,potion:0,silver:0,dragon:0};
+  for(let i=0;i<summons;i++){
+    const level=tinmanLevelData.find(row=>row.level===Math.min(250,start+i));
+    const chest=level&&tinmanChestRewards.get(`${level.chestType} TINMAN`.toUpperCase());
+    if(!chest)return null;
+    const count=Number(level.killChestQuantity)||0;
+    received.gold+=count*(Number(chest.gold)||0);
+    received.potion+=count*(Number(chest.potion)||0);
+    received.silver+=count*(Number(chest.silver)||0);
+    received.dragon+=count*(Number(chest.dragonCoins)||0);
+  }
+  return received;
 }
 function updateEncounterPlan(){
   if(!encounterPlanContext)return;
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
   const selected=els.encounterPlanStrategies?.querySelector('input:checked')?.value||'full';
   const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
-  const portable=currentBattleWorkspace().inputs;portable.clanMembers=settings.clanMembers;portable.encounterNorm=settings.norm;portable.encounterNormUnit=settings.unit;portable.encounterNormBasis=settings.basis;portable.encounterPlanStrategy=settings.strategy;
-  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  document.getElementById('encounterPlanNormReminder').textContent=settings.norm?`${settings.norm.toLocaleString('en-US',{maximumFractionDigits:6})} ${settings.basis==='chests'?'chests':settings.unit+' points'}`:'Not set';
+  const portable=currentBattleWorkspace().inputs;portable.clanMembers=settings.clanMembers;portable.encounterNorm=settings.norm;portable.encounterNormUnit=settings.unit;portable.encounterNormBasis=settings.basis;portable.encounterNormSource=settings.source;portable.encounterPlanStrategy=settings.strategy;
+  renderEncounterNormSource(activeClanEncounterNorm(currentEncounter()?.name));
+  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=monster==='TINMAN'?tinmanEncounterRewards(linkedClanProfile(localStorage,currentAccount()?.clanProfileId)):reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   if(received)received.revival=received.gold+received.potion;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
   let sharedHits=0;const outcomes={};
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
     const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
-    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
+    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:(!!received||monster==='TINMAN')&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
@@ -1370,7 +1525,7 @@ function updateEncounterPlan(){
     renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
-  els.encounterPlanNote.textContent=received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  els.encounterPlanNote.textContent=monster==='TINMAN'?received?`Rewards are the chests every member receives from this clan's selected Tinman summons; battle costs cover this player's point norm. Gold and Potion combine 1:1 as revival currency. Point estimates use an inferred 51,016 base ELD/point, calibrated from 25,508 ELD/point at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:`Link a clan and select Tinman summons in Clan Overview to include rewards and net change. Battle costs cover this player's point norm. Point estimates use an inferred 51,016 base ELD/point. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();
@@ -2446,6 +2601,7 @@ function refreshAfterBrowserRestore(){
     return;
   }
 
+  renderClanProfileLink();
   reconcileSelectionsFromRenderedUI();
   recalculate();
   setOptimizeButtonState();
@@ -3055,6 +3211,10 @@ function recalculate(){
 function resetCalculator(){
   if(!confirm(`Reset all ${activeMode==='epic'?'Epic Stacker':activeMode==='optimizer'?'Epic Optimizer':activeMode==='battle'?'Battle Calculator':'Custom Stacker'} inputs and selections on this device?`))return;
   if(activeMode==='battle'){
+    try{
+      const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY),encounters=stored?.accounts?.[state.activeAccountId]?.encounters;
+      if(encounters?.[state.modes.battle.activeEncounterId]){delete encounters[state.modes.battle.activeEncounterId];writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);}
+    }catch(error){console.warn('Could not clear reset encounter results.',error);}
     clearSavedOptimizerResult();
     const type=state.modes.battle.activeBattleType||'epic_standard';
     state.modes.battle.workspaces[battleWorkspaceKey(type)]=makeBattleWorkspace(type);
@@ -3250,12 +3410,14 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
+  document.getElementById('useClanNorm')?.addEventListener('click',useLinkedClanNorm);
+  document.getElementById('saveNormToClan')?.addEventListener('click',saveCurrentNormToClan);
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}
   els.encounterPlanNorm?.addEventListener('focus',()=>selectWholeFieldOnFocus(els.encounterPlanNorm));
   els.encounterPlanNorm?.addEventListener('click',()=>els.encounterPlanNorm.select());
   document.getElementById('encounterPlanBasis')?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
-  document.getElementById('encounterPlanMembers')?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});
-  document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
+  document.getElementById('encounterPlanMembers')?.addEventListener('input',event=>{if(event.target.readOnly)return;saveManualEncounterNorm();updateEncounterPlan();});
+  document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{if(event.target.readOnly)return;event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanNorm?.addEventListener('blur',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('change',event=>{if(event.target.matches('input[name="encounterPlanStrategy"]'))updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('click',event=>{if(event.target.closest('label'))return;const row=event.target.closest('tr[data-strategy]');if(!row)return;row.querySelector('input').checked=true;updateEncounterPlan();});
@@ -3533,7 +3695,7 @@ async function init(){
   // Only an actual database request/parse failure should produce the
   // "unit database could not be loaded" message.
   try{
-    await Promise.all([loadData(),loadEpicChestRewards()]);
+    await Promise.all([loadData(),loadEpicChestRewards(),loadTinmanLevelData()]);
   }catch(error){
     console.error('Army database load failed.',error);
     appInitialized=false;
@@ -3547,6 +3709,8 @@ async function init(){
   appInitialized=true;
   showValidation([]);
 
+  backfillSavedOptimizerPlans();
+  backfillSavedCustomPlans();
   initializeActiveCalculatorAfterData();
 
   // Re-evaluate the primary action after all units/selections have rendered.

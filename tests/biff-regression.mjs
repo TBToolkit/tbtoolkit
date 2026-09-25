@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {serializeAccountToBiff,parseBiff,materializeImportedAccount,BIFF_FORMAT,BIFF_SCHEMA_VERSION} from '../js/biff-format.mjs';
+import {persistentAccountSnapshot,validateAccountState} from '../js/browser-storage.mjs';
 
 const account={
-  id:'main',name:'Main Account',templeLevel:45,
+  id:'main',name:'Main Account',templeLevel:45,clanProfileId:'norm-linked',
   customEncounters:{raid:{id:'raid',name:'Raid',battleType:'epic',builtIn:false,enemyFormation:{FLYING:1,MOUNTED:1,MELEE:1,RANGED:1},arachneBonus:false}},
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterNormSource:'clan',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -23,6 +24,10 @@ const text=serializeAccountToBiff(account,{appBuild:'test',exportedAt:'2026-09-0
 const raw=JSON.parse(text);
 assert.equal(raw.format,BIFF_FORMAT);assert.equal(raw.schemaVersion,BIFF_SCHEMA_VERSION);
 assert.equal(raw.account.workspaces[0].inputs.ignoredInput,undefined);
+assert.equal(raw.account.clanProfileId,undefined,'A portable player account must not point to a browser-local clan profile.');
+assert.equal(raw.account.workspaces[0].inputs.encounterNormSource,'default','A linked norm becomes a default that can adopt the clan chosen after import.');
+const manualAccount=structuredClone(account);manualAccount.battle.workspaces.raid.inputs.encounterNormSource='manual';
+assert.equal(JSON.parse(serializeAccountToBiff(manualAccount)).account.workspaces[0].inputs.encounterNormSource,'manual','An explicit per-encounter manual override must remain portable.');
 assert.equal(raw.account.workspaces[0].inputs.shareEpicArmy,true);
 assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
@@ -42,6 +47,16 @@ const imported=materializeImportedAccount(parsed,{
   existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],armyIds:['known'],optimizerCacheBuild:'optimizer-current'
 });
 assert.equal(imported.account.id,'main-2');
+assert.equal(imported.account.clanProfileId,'');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.encounterNormSource,'default');
+const legacyLinked=structuredClone(raw);legacyLinked.account.clanProfileId='norm-old-browser';legacyLinked.account.workspaces[0].inputs.encounterNormSource='clan';
+const legacyImported=materializeImportedAccount(parseBiff(JSON.stringify(legacyLinked)));
+assert.equal(legacyImported.account.clanProfileId,'','Older .stacks files must wait for an explicit local player/clan link.');
+assert.equal(legacyImported.account.battle.workspaces.raid.inputs.encounterNormSource,'default');
+const withoutNormSource=structuredClone(raw);delete withoutNormSource.account.workspaces[0].inputs.encounterNormSource;
+const importedWithoutNormSource=materializeImportedAccount(parseBiff(JSON.stringify(withoutNormSource)));
+assert.equal(Object.hasOwn(importedWithoutNormSource.account.battle.workspaces.raid.inputs,'encounterNormSource'),false,'Missing optional norm settings must stay absent, not become undefined.');
+validateAccountState({schemaVersion:20,activeAccountId:importedWithoutNormSource.account.id,accounts:persistentAccountSnapshot({[importedWithoutNormSource.account.id]:importedWithoutNormSource.account})});
 assert.equal(imported.account.battle.activeEncounterId,'raid-2');
 assert.ok(imported.account.customEncounters['raid-2']);
 assert.ok(imported.account.battle.workspaces['raid-2']);

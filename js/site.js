@@ -51,6 +51,9 @@ statefulDetails.forEach((detail, index) => {
   const open = savedPageView?.details?.[detailKey(detail, index)];
   if (typeof open === 'boolean') detail.open = open;
 });
+let hashTarget = null;
+try { hashTarget = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null; } catch {}
+if (hashTarget?.tagName === 'DETAILS') hashTarget.open = true;
 
 const savePageView = () => {
   const details = {};
@@ -73,7 +76,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') savePageView();
 });
 
-if (Number.isFinite(savedPageView?.scrollY)) {
+if (!hashTarget && Number.isFinite(savedPageView?.scrollY)) {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   const restorePageScroll = () => window.scrollTo({top: savedPageView.scrollY, behavior: 'auto'});
   const revealRestoredPage = () => {

@@ -63,11 +63,12 @@ export function createCustomEncounter({id,name,battleType,enemyFormation,arachne
   return{id,name:cleanName,battleType:'pvp',builtIn:false,pvpModel};
 }
 
-export function makeAccount({id='main',name='Main',templeLevel=45}={}){
+export function makeAccount({id='main',name='Main',templeLevel=45,clanProfileId=''}={}){
   return{
     id,
     name:String(name||'Main').trim()||'Main',
     templeLevel:Math.max(1,Math.min(45,Math.floor(Number(templeLevel)||45))),
+    clanProfileId:String(clanProfileId||''),
     customEncounters:{},
     battle:{
       activeBattleCategory:'epic',

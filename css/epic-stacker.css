@@ -1003,7 +1003,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 }
 .prediction-summary{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
 }
 .prediction-summary>div{
@@ -1244,7 +1244,7 @@ details.advanced{margin-top:8px;padding-top:7px}
 
 .result-panel>.epic-prediction-panel{margin:10px 12px 4px}
 .result-panel>.epic-prediction-panel .prediction-summary{
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
 }
 
 body.optimizer-modal-open{overflow:hidden}
@@ -4043,9 +4043,12 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   body.battle-mode-active #battleBetaPanel{display:grid!important;grid-template-rows:auto minmax(0,1fr);align-self:stretch;align-content:stretch;row-gap:16px!important}
   body.battle-mode-active #battleBetaPanel .battle-settings-panel{height:auto;min-height:0}
 }
-.encounter-plan-preview header{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px);align-items:center;gap:12px}
+.encounter-plan-preview header{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px) minmax(130px,180px);align-items:center;gap:12px}
+.encounter-plan-norm{min-width:0;padding:7px 12px;border:1px solid rgba(255,255,255,.07);border-radius:7px;background:#0b1c29;display:flex;flex-direction:column;justify-content:center}
+.encounter-plan-norm span{color:#9eabb7;font-size:.6rem;font-weight:850;text-transform:uppercase}
+.encounter-plan-norm strong{margin-top:3px;color:#f0aa28;font-size:1.05rem;white-space:nowrap}
 .encounter-plan-preview header .encounter-plan-attacks{min-width:0;padding:7px 12px}
-@media(max-width:620px){.encounter-plan-preview header{grid-template-columns:minmax(0,1fr) auto}.encounter-plan-preview header .encounter-plan-attacks{grid-column:1/-1;grid-row:2}}
+@media(max-width:620px){.encounter-plan-preview header{grid-template-columns:repeat(2,minmax(0,1fr))}.encounter-plan-preview header>div:first-child{grid-column:1/-1}.encounter-plan-preview header .encounter-plan-attacks{grid-column:auto;grid-row:auto}}
 .output-visual-column{display:grid;min-width:0;gap:18px;align-content:start}.output-visual-column>.topdown-panel{min-width:0;margin-bottom:0}.encounter-plan-standalone{margin-top:0}.encounter-plan-standalone[hidden]{display:none!important}.encounter-plan-heading>div{display:flex;align-items:center;gap:10px}.encounter-plan-heading h2{margin:0}.encounter-plan-source{color:#8fa2b2;font-size:.62rem}.encounter-plan-standalone>.encounter-plan-preview{padding:12px;background:#07131e}
 
 /* Give four-digit norms, their suffix, and the unit selector distinct space. */
@@ -4086,6 +4089,18 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   padding-bottom:7px;
 }
 .player-clan-panel .account-actions{margin-top:0}
+.player-clan-link-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:12px;align-items:start;min-width:0}
+.player-clan-link-row>.battle-select-field{min-width:0}
+.clan-link-summary-line{box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 10px;border:1px solid #40576a;border-radius:7px;background:#06121c}
+.clan-link-summary-line strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem}
+.clan-link-summary-line a{flex:none;color:#b5d8f0;font-size:.7rem;font-weight:800;text-decoration:underline;text-underline-offset:2px}
+.clan-link-summary-line a:hover,.clan-link-summary-line a:focus-visible{color:#ffd276}
+.clan-members-field input[readonly]{color:#d6e2e7;background:#172a35}
+.battle-norm-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.battle-norm-actions[hidden],.battle-norm-actions [hidden]{display:none!important}
+.battle-norm-actions button,.battle-norm-actions a{display:inline-flex;align-items:center;min-height:26px;border:1px solid #526b7f;border-radius:5px;padding:3px 7px;background:#172d3b;color:#e2eef4;font-size:.61rem;font-weight:800;text-decoration:none;cursor:pointer}
+.battle-norm-actions button:hover,.battle-norm-actions a:hover{border-color:#edac32;color:#ffd276}
+@media(max-width:430px){.player-clan-link-row{grid-template-columns:minmax(0,1fr)}.clan-members-field{max-width:130px}}
 @media(max-width:430px){
   .player-clan-primary{grid-template-columns:76px minmax(0,1fr)}
   .player-clan-primary>.battle-select-field{grid-column:1/-1}
