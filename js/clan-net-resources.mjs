@@ -1,5 +1,6 @@
 import {calculateEncounterPlan,ENCOUNTER_PLAN_STRATEGIES} from './encounter-plan.mjs';
 import {OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
+import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 
 const multipliers={B:1e9,M:1e6,K:1e3};
 
@@ -32,6 +33,19 @@ export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,
   return{method,profileId,norm:Number(requirement.value),unit:requirement.unit,basis:requirement.basis,clanMembers:members,selectedStrategy,outcomes,savedAt:encounter.methods[method].savedAt||saved?.savedAt||0};
 }
 
+export function tinmanPlanFromSavedCosts(bridge,accountId,{normBillions,bonus,method}={}){
+  const encounter=Object.values(bridge?.accounts?.[accountId]?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()==='TINMAN');
+  const result=encounter?.methods?.[method],model=result?.costModel;
+  const norm=Number(normBillions)*1e9,pointsPerAttack=estimatedEpicPoints('Tinman',result?.expectedLifetimeDamage,{tinmanBonus:bonus});
+  if(!model||model.build!==OPTIMIZER_CACHE_BUILD||!(norm>0)||!(pointsPerAttack>0)||!Array.isArray(model.rebuildRows))return null;
+  const saved=encounter.plansByMethod?.[method],selectedStrategy=Object.hasOwn(ENCOUNTER_PLAN_STRATEGIES,saved?.selectedStrategy)?saved.selectedStrategy:'full';
+  const outcomes=Object.fromEntries(Object.keys(ENCOUNTER_PLAN_STRATEGIES).map(strategy=>{
+    const costs=calculateEncounterPlan({normPoints:norm,pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
+    return[strategy,{hits:costs.hits,gold:{spent:costs.totalGold},silver:{spent:costs.totalSilver},dragonCoins:{spent:costs.totalDragonCoins},complete:costs.rebuildCostsComplete}];
+  }));
+  return{method,selectedStrategy,outcomes,pointsPerAttack};
+}
+
 export function planMatchesRequirement(plan,requirement,clanMembers,profileId,{acceptUnlinkedPlan=false}={}){
   if(!plan||(plan.profileId!==profileId&&!(acceptUnlinkedPlan&&!plan.profileId))||!requirement||Number(plan.clanMembers)!==Number(clanMembers))return false;
   const basis=plan.basis==='chests'?'chests':'points';
@@ -56,7 +70,7 @@ export function convertEpicNormBasis({value,unit='B',basis='points',pointsPerChe
 }
 
 export function netResourcesForPeriod(activities,selectedPlans,periodDays){
-  const epics=activities.filter(activity=>activity.category==='Epic monsters');
+  const epics=activities.filter(activity=>activity.category==='Epic monsters'||activity.category==='Tinman');
   const missing=epics.filter(activity=>!selectedPlans.get(activity.name)?.outcomes?.[selectedPlans.get(activity.name)?.selectedStrategy]?.complete);
   if(missing.length)return{complete:false,missing:missing.map(activity=>activity.name)};
   const gross=key=>activities.reduce((sum,activity)=>sum+(Number(activity.prorated)||0)*(Number(activity.reward?.[key])||0),0);

@@ -125,8 +125,8 @@ assert.match(chartCss,/\.epic-norm-row \.epic-event\{justify-self:stretch;text-a
 assert.match(html,/Basis · equivalent<\/span><span>Calculation method<\/span><span>Plan status/,'The calculation method heading must be clear.');
 assert.match(html,/class="epic-visibility-heading"[\s\S]*id="showAllEpics"[\s\S]*id="hideAllEpics"[\s\S]*id="epicVisibilityOptions"/,'Event visibility actions must sit apart from the event choices.');
 assert.match(script,/strategy\.textContent=\(\{'full':'Full Gold revival'/,'A ready Epic plan must show its revival strategy.');
-assert.match(html,/Tinman is excluded from net resources for now; it remains in gross resources/,'The net dashboard must explain Tinman exclusion.');
-assert.match(script,/netActivities=activities\.filter\(activity=>activity\.category!=='Tinman'\)/,'Tinman must not enter net totals, charts, or detail rows.');
+assert.match(html,/id="tinmanBonus"[\s\S]*id="tinmanNorm"[\s\S]*id="tinmanPlanMethod"/,'Tinman needs a bonus, a player point norm, and a method choice.');
+assert.match(script,/tinmanPlanFromSavedCosts\(bridge,netPlayerAccountId/,'Tinman net costs must use the linked calculator result.');
 assert.match(chartCss,/\.net-bar-track i\{[^}]*background:#80df9d\}\s*\.net-bar-track i\.is-negative\{background:#e97f7f\}/,'Net profits must be green and deficits red.');
 
 console.log('Clan norm planner regression checks passed.');

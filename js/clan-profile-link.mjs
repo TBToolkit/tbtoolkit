@@ -13,6 +13,11 @@ export function linkedClanProfile(storage,profileId){
 }
 
 export function clanEncounterNorm(profile,encounterName){
+  if(String(encounterName||'').toUpperCase()==='TINMAN'){
+    const value=Number(profile?.plan?.tinman?.norm);
+    if(!Number.isFinite(value)||value<=0)return null;
+    return{profileId:profile.id,profileName:profile.name||'Linked clan',clanMembers:Math.max(1,Math.floor(Number(profile.plan?.recipients)||1)),norm:value,unit:'B',basis:'points',source:'clan'};
+  }
   const epic=profile?.plan?.epics?.find(row=>String(row.monster||'').toUpperCase()===String(encounterName||'').toUpperCase());
   if(!epic||!(Number(epic.value)>0))return null;
   const basis=epic.basis==='chests'?'chests':'points';
@@ -37,6 +42,13 @@ export function saveClanEncounterNorm(storage,profileId,encounterName,{norm,unit
   profile.plan.epics=Array.isArray(profile.plan.epics)?profile.plan.epics:[];
   const key=String(encounterName||'').trim().toUpperCase();
   if(!key)throw new Error('Choose an Epic encounter.');
+  if(key==='TINMAN'){
+    if(basis!=='points')throw new Error('Tinman norms use points, not chests.');
+    profile.plan.tinman=profile.plan.tinman||{};
+    profile.plan.tinman.norm=value*({B:1,M:1e-3,K:1e-6}[unit]||0);
+    storage.setItem(CLAN_PROFILE_STORE_KEY,JSON.stringify(saved));
+    return profile;
+  }
   const existing=profile.plan.epics.find(row=>String(row.monster||'').toUpperCase()===key);
   if(existing)Object.assign(existing,{value,unit,basis});
   else profile.plan.epics.push({monster:key,value,unit,basis});

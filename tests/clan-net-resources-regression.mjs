@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod} from '../js/clan-net-resources.mjs';
+import {linkedPlayerAccounts,planForMethod,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
 import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
 
 const profileId='norm-clan';
@@ -22,6 +22,12 @@ assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.received,105000);
 assert.equal(planMatchesRequirement(linkedPlan,requirement,100,profileId),true);
 assert.equal(planFromSavedCosts(importedBridge,'one',{...savedCostsActivity,norm:{...requirement,value:600}},'optimize',100,profileId).outcomes['mercenary-monster'].hits,6,'A new clan norm must reprice saved battle costs without another optimization.');
 assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'custom',100,profileId),null);
+const tinmanBridge={accounts:{one:{encounters:{tinman:{name:'Tinman',methods:{optimize:{expectedLifetimeDamage:51016e6,costModel:{build:OPTIMIZER_CACHE_BUILD,goldByCategory:{troop:4,monster:0,mercenary:0},rebuildRows:[{category:'troop',quantity:10,revivableQuantity:9,silverEach:2,dragonCoinsEach:1}]}}},plansByMethod:{optimize:{selectedStrategy:'full'}}}}}}};
+const tinman=tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:100,method:'optimize'});
+assert.equal(tinman.pointsPerAttack,2e6,'Tinman bonus must multiply earned points, not chest count.');
+assert.equal(tinman.outcomes.full.hits,1100,'The point norm covers the full Tinman event.');
+assert.equal(tinman.outcomes.full.gold.spent,4400);
+assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:0,method:'optimize'}).outcomes.full.hits,2200,'Changing the clan bonus must reprice a saved army without reoptimization.');
 assert.equal(planFromSavedCosts({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{...importedBridge.accounts.one.encounters.doom.methods.optimize.costModel,build:'older-build'}}}}}}}},'one',savedCostsActivity,'optimize',100,profileId),null,'Stale optimizer cost models must not be reused after the build changes.');
 assert.equal(planForMethod({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{build:'older-build'}}},plansByMethod:{optimize}}}}}},'one','Doomsday','optimize'),null,'A stale cost model must not fall back to an old saved plan.');
 assert.equal(planMatchesRequirement(optimize,requirement,100,profileId),true);
@@ -43,12 +49,13 @@ const activities=[
   {name:'Doomsday',category:'Epic monsters',cadence:6,prorated:10,reward:{gold:10,potion:5,silver:8,dragonCoins:4}},
   {name:'Tinman',category:'Tinman',cadence:6,prorated:2,reward:{gold:20,potion:0,silver:10,dragonCoins:0}}
 ];
-const result=netResourcesForPeriod(activities,new Map([['Doomsday',optimize]]),6);
+const tinmanPlan={selectedStrategy:'full',outcomes:{full:{complete:true,gold:{spent:5},silver:{spent:3},dragonCoins:{spent:1}}}};
+const result=netResourcesForPeriod(activities,new Map([['Doomsday',optimize],['Tinman',tinmanPlan]]),6);
 assert.equal(result.complete,true);
 assert.deepEqual(result.received,{revival:190,silver:100,dragonCoins:40});
-assert.deepEqual(result.spent,{revival:40,silver:20,dragonCoins:10});
-assert.deepEqual(result.net,{revival:150,silver:80,dragonCoins:30});
-assert.deepEqual(netResourcesForPeriod(activities,new Map(),6),{complete:false,missing:['Doomsday']});
+assert.deepEqual(result.spent,{revival:45,silver:23,dragonCoins:11});
+assert.deepEqual(result.net,{revival:145,silver:77,dragonCoins:29});
+assert.deepEqual(netResourcesForPeriod(activities,new Map(),6),{complete:false,missing:['Doomsday','Tinman']});
 const month=netResourcesForPeriod([{...activities[0],cadence:24,prorated:2.5}],new Map([['Doomsday',optimize]]),6);
 assert.equal(month.spent.revival,10,'A 24-day Epic contributes one quarter of its battle cost to a six-day period.');
 assert.equal(month.received.revival,37.5);

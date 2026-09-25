@@ -9,12 +9,18 @@ import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountSt
 import {readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
-import {estimatedEpicPoints} from './epic-points-estimates.mjs';
+import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
+
+function estimatedEpicPoints(encounterName,eld){
+  const bonus=String(encounterName||'').toUpperCase()==='TINMAN'
+    ?linkedClanProfile(localStorage,currentAccount()?.clanProfileId)?.plan?.tinman?.bonus||0:0;
+  return estimateBaseEpicPoints(encounterName,eld,{tinmanBonus:bonus});
+}
 
 const STORAGE_KEY=SAVED_STATE_KEY;
 const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
@@ -871,7 +877,7 @@ function publishImportedOptimizerPlans(imported){
         if(!hasSavedOptimizerCacheForEncounter(imported,encounterId,workspace))continue;
         battle.activeEncounterId=encounterId;
         const encounter=currentEncounter();
-        if(!encounter?.builtIn||!EPIC_NORM_POINTS_PER_CHEST[String(encounter.name||'').toUpperCase()])continue;
+        if(!encounter?.builtIn||!(String(encounter.name||'').toUpperCase()==='TINMAN'||EPIC_NORM_POINTS_PER_CHEST[String(encounter.name||'').toUpperCase()]))continue;
         battle.activeBattleType=currentEngineBattleType();
         ensureBattleWorkspace();
         applyStateToInputs();syncDerivedEpicBonuses();
@@ -1365,6 +1371,7 @@ function renderEncounterNormSource(clanNorm){
   if(els.encounterNormSource)els.encounterNormSource.textContent=profile
     ?source==='clan'&&clanNorm?`From ${profile.name} · edit clan requirements in Clan Overview.`:clanNorm?`Manual override · ${profile.name} is unchanged.`:`Manual norm · no norm for this encounter in ${profile.name}.`
     :currentAccount()?.clanProfileId?'Linked clan profile unavailable · this norm is local.':'Manual norm · no clan profile linked.';
+  if(els.encounterNormSource&&String(currentEncounter()?.name||'').toUpperCase()==='TINMAN')els.encounterNormSource.textContent+=` Tinman points bonus: ${Math.min(100,Math.max(0,Number(profile?.plan?.tinman?.bonus)||0))}%.`;
   if(actions){actions.hidden=!profile;use.hidden=!clanNorm||source==='clan';save.hidden=!profile||source==='clan';}
 }
 function loadEncounterNormSettings(){
@@ -1374,14 +1381,15 @@ function loadEncounterNormSettings(){
   if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':portable.encounterNormSource==='manual'?'manual':'default',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'clan',profileId:currentAccount()?.clanProfileId||saved.profileId||''}:{norm:1,unit:'B',source:'default'};
-  const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&String(currentEncounter()?.name||'').toUpperCase()!=='TINMAN'&&!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()];
+  const isTinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
+  const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&(isTinman||!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()]);
   if(els.encounterNormField)els.encounterNormField.hidden=!supported;
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
   const linked=linkedClanProfile(localStorage,currentAccount()?.clanProfileId),memberCount=linked?.plan?.recipients??selected.clanMembers??saved?.clanMembers??100;
   document.getElementById('encounterPlanMembers').value=String(Math.min(100,Math.max(1,Math.floor(Number(memberCount)||100))));
-  const basis=document.getElementById('encounterPlanBasis');basis.checked=selected.basis!=='chests';
+  const basis=document.getElementById('encounterPlanBasis');basis.checked=isTinman||selected.basis!=='chests';basis.disabled=isTinman;
   syncEncounterNormSuffix();
   els.encounterPlanNorm.dataset.source=selected.source||'manual';
   els.encounterPlanNorm.dataset.profileId=selected.profileId||'';
@@ -1452,7 +1460,7 @@ function updateEncounterPlan(){
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
     const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
-    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:!!received&&plan.rebuildCostsComplete};
+    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:(!!received||monster==='TINMAN')&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
@@ -1461,7 +1469,7 @@ function updateEncounterPlan(){
     renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
-  els.encounterPlanNote.textContent=received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  els.encounterPlanNote.textContent=monster==='TINMAN'?`Tinman rewards depend on the clan's selected summons, not the player's points. See Clan Overview for rewards and net resources. Costs here cover the player's point norm. Point estimates use an inferred 51,016 base ELD/point, calibrated from a 25,508 ELD/point observation at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();

@@ -119,7 +119,8 @@ assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points mus
 assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:53039,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
-assert.equal(estimatedEpicPoints('Tinman',1000000),null,'Tinman must not show estimated Epic points.');
+assert.equal(estimatedEpicPoints('Tinman',51016),1,'Tinman uses the inferred base ELD per point.');
+assert.equal(estimatedEpicPoints('Tinman',51016,{tinmanBonus:100}),2,'A 100% Tinman bonus doubles awarded points.');
 assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no clan profile required/,'Clan-profile helper labels must not clutter Battle or Encounter Strategy.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
@@ -173,7 +174,7 @@ assert.doesNotMatch(html,/value="none">No Gold revival/,'Every offered plan stra
 assert.match(html,/<table class="encounter-plan-table">[\s\S]*data-strategy="full"[\s\S]*data-strategy="mercenary-monster"[\s\S]*data-strategy="mercenary-only"/,'Revival strategies must be directly comparable in a matrix.');
 assert.doesNotMatch(html,/<select id="encounterPlanStrategy">/,'Revival strategies must not be hidden in a dropdown.');
 assert.match(source,/for\(const row of els\.encounterPlanStrategies\?\.querySelectorAll\('tr\[data-strategy\]'\)/,'Every strategy row must be recalculated from the same norm and army.');
-assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Tinman and unsupported encounters must not expose an unusable encounter plan.');
+assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Encounters without a point estimate must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
 assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics\}/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
 assert.match(source,/function writeOptimizerResultWithQuotaRecovery\(key,saved\)[\s\S]*optimizerResultCacheKeys\(\)[\s\S]*localStorage\.removeItem\(candidate\.key\)[\s\S]*writeSavedJson\(localStorage,key,saved\)/,'A newly completed optimization must replace the oldest optimizer cache if browser storage is full.');
