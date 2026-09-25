@@ -1,3 +1,5 @@
+import {stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
+
 export const REVIVAL_STRATEGIES=Object.freeze({
   full:'Full Gold revival',
   'mercenary-monster':'Gold revive Mercenaries + Monsters',
@@ -15,6 +17,8 @@ export function saveRevivalStrategy(storage,accountId,encounterName,strategy){
   const inputs=calculator?.accounts?.[accountId]?.battle?.workspaces?.[encounterId]?.inputs;
   if(!inputs)return false;
   inputs.encounterPlanStrategy=strategy;
-  storage.setItem(calculatorKey,JSON.stringify(calculator));
+  const snapshot=stampCanonicalSnapshot(calculator);
+  storage.setItem(calculatorKey,JSON.stringify(snapshot));
+  mirrorCanonicalSnapshot(calculatorKey,snapshot);
   return true;
 }

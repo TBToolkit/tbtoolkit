@@ -1,4 +1,5 @@
-export const CLAN_PROFILE_STORE_KEY='tbtoolkit-clan-norm-profiles-v1';
+import {CLAN_PROFILE_STORE_KEY,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
+export {CLAN_PROFILE_STORE_KEY};
 
 export function readClanProfiles(storage){
   try{
@@ -47,12 +48,16 @@ export function saveClanEncounterNorm(storage,profileId,encounterName,{norm,unit
     profile.plan.tinman=profile.plan.tinman||{};
     profile.plan.tinman.norm=value;
     profile.plan.tinman.normUnit=unit;
-    storage.setItem(CLAN_PROFILE_STORE_KEY,JSON.stringify(saved));
+    const snapshot=stampCanonicalSnapshot(saved);
+    storage.setItem(CLAN_PROFILE_STORE_KEY,JSON.stringify(snapshot));
+    mirrorCanonicalSnapshot(CLAN_PROFILE_STORE_KEY,snapshot);
     return profile;
   }
   const existing=profile.plan.epics.find(row=>String(row.monster||'').toUpperCase()===key);
   if(existing)Object.assign(existing,{value,unit,basis});
   else profile.plan.epics.push({monster:key,value,unit,basis});
-  storage.setItem(CLAN_PROFILE_STORE_KEY,JSON.stringify(saved));
+  const snapshot=stampCanonicalSnapshot(saved);
+  storage.setItem(CLAN_PROFILE_STORE_KEY,JSON.stringify(snapshot));
+  mirrorCanonicalSnapshot(CLAN_PROFILE_STORE_KEY,snapshot);
   return profile;
 }

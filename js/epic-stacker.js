@@ -12,6 +12,7 @@ import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,t
 import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
+import {hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
@@ -625,7 +626,9 @@ function loadSavedState(){
 }
 function persistState(){
   if(activeMode==='battle')propagateSharedEpicArmy();
-  writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+  const snapshot=stampCanonicalSnapshot({schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}});
+  writeSavedJson(localStorage,STORAGE_KEY,snapshot,{validate:validateAccountState});
+  mirrorCanonicalSnapshot(STORAGE_KEY,snapshot);
 }
 function saveState(){
   try{persistState();}catch(error){
@@ -3685,6 +3688,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 async function init(){
+  await hydrateCanonicalStorage(localStorage);
   cacheElements();
   for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
