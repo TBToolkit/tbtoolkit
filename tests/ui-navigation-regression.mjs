@@ -39,10 +39,10 @@ assert.match(source,/pvpEnemyUnitField\.hidden=type!==['"]pvp_single_cp['"]/, 'E
 assert.match(css,/#pvpEnemyUnitField\[hidden\][\s\S]*?display:none!important/, 'Hidden Enemy Unit selector must override grid display');
 assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidden PvP encounter model must override dialog label display');
 assert.match(source,/battleType===['"]epic['"]&&untouchedEpicCustomOrderMatchesStandard\(\)/, 'Untouched Epic Custom Order must reuse Standard');
-assert.match(html,/id="exportAccount"/, 'Player Account must expose .stacks export');
-assert.match(html,/id="importAccount"/, 'Player Account must expose .stacks import');
-assert.match(html,/accept="\.stacks,\.biff,application\/json"/, 'Account import must accept .stacks and legacy .biff files');
-assert.match(source,/return `\$\{stem\}\.stacks`/, 'New account exports must use the .stacks extension');
+assert.match(html,/id="exportAccount"/, 'Player Account must expose .player export');
+assert.match(html,/id="importAccount"/, 'Player Account must expose .player import');
+assert.match(html,/accept="\.player,\.stacks,\.biff,application\/json"/, 'Account import must accept .player and legacy .stacks and .biff files');
+assert.match(source,/return `\$\{stem\}\.player`/, 'New account exports must use the .player extension');
 assert.match(html,/id="optimizerHealthLadder"/, 'Optimizer modal must expose the live best-army health ladder');
 assert.equal((html.match(/data-bonus-profile=/g)||[]).length,10,'Unit bonuses must include shared Monster and Human rows plus their expandable profiles');
 assert.match(html,/data-bonus-profile="monster"[\s\S]*?hidden id="monsterBonusDetails"[\s\S]*?data-bonus-profile="beast"[\s\S]*?data-bonus-profile="dragon"[\s\S]*?data-bonus-profile="elemental"[\s\S]*?data-bonus-profile="giant"[\s\S]*?data-bonus-profile="human"[\s\S]*?hidden id="humanBonusDetails"[\s\S]*?data-bonus-profile="guardsman"[\s\S]*?data-bonus-profile="specialist"[\s\S]*?data-bonus-profile="engineer"[\s\S]*?data-bonus-profile="epicHunter"/,'The default matrix must show Monsters, Humans, and Epic Hunters with species and classes nested under their shared rows');
@@ -58,7 +58,7 @@ for(const key of ['bonusDD','bonusST','bonusHealth','bonusStrength']){
 assert.match(source,/bonusUnit:[\s\S]*?monster-click\.webp/,'Unit help must use the Monster selection screenshot example');
 assert.match(html,/data-battle-guide="overview"[^>]*>How Epic battles are calculated/,'The calculator header must expose the optional Epic mechanics guide');
 assert.equal((html.match(/data-guide-panel=/g)||[]).length,9,'The mechanics guide must contain all nine reference sections');
-assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Battle results from[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
+assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Player Account[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
@@ -164,7 +164,10 @@ assert.match(css,/grid-template-columns:480px 360px minmax\(430px,1fr\)/,'Deskto
 assert.match(css,/#battleBetaPanel\{display:grid!important;grid-template-rows:auto minmax\(0,1fr\);align-self:stretch;align-content:stretch;row-gap:16px!important\}/,'Player and Battle cards must remain separated while Battle aligns with the adjacent card bottoms without overflowing the layout row.');
 assert.match(css,/battle-norm-input\{grid-template-columns:minmax\(0,84px\) 62px 88px/,'The norm value, K/M/B selector, and Points/Chests switch must each reserve readable width.');
 assert.match(css,/battle-norm-basis \.epic-basis-switch input:checked\+i[\s\S]*background:#9b6e18[\s\S]*translateX\(16px\)/,'The calculator basis switch must reproduce the Clan Overview gold track and sliding knob.');
-assert.match(html,/<div><span>Full Gold Revival<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete Gold revival cost.');
+assert.match(html,/<div><span>Full Revival Cost<\/span><strong id="rawGoldRevival">/,'The results summary must identify the complete revival cost.');
+for(const [strategy,label] of [['full','Revive All'],['mercenary-monster','Revive Mercs + Monsters'],['mercenary-only','Revive Mercs Only']]){
+  assert.match(html,new RegExp(`<tr data-strategy="${strategy}">[\\s\\S]*?<span>${label.replace('+','\\+')}<\\/span>`),`Battle Calculator must show ${label} for ${strategy}.`);
+}
 assert.match(html,/<div class="output-visual-column">[\s\S]*<section class="topdown-panel encounter-plan-standalone battle-sequenced-section" id="encounterPlanEntry" hidden>[\s\S]*<h2>Encounter Strategy<\/h2>[\s\S]*<section class="topdown-panel layer-chart-panel/,'Encounter Strategy must be a numbered, always-expanded section immediately above Visual.');
 assert.match(html,/<header>[\s\S]*id="encounterPlanTitle"[\s\S]*class="encounter-plan-attacks"[\s\S]*id="encounterPlanHits"/,'Estimated attacks must align with the encounter title in the plan header.');
 assert.doesNotMatch(html,/Encounter plan · first draft|id="toggleEncounterPlan"|id="closeEncounterPlan"/,'Encounter Strategy must not retain draft, close, or collapse controls.');
@@ -257,9 +260,10 @@ assert.match(source,/renderOutcome\(row\.querySelector\('\[data-cost="gold"\]'\)
 assert.match(source,/Gold and Potion rewards are combined 1:1 as revival currency/,'The plan must explain the combined revival-currency result.');
 assert.match(source,/className=net>=0\?'net-positive':'net-negative'/,'Strategy outcomes must visibly distinguish profits from deficits.');
 assert.match(source,/Enter a clan norm to include resource rewards and net change/,'Calculator-only players must be told how to enable net outcomes.');
-assert.match(source,/function saveEncounterPlanSnapshot\(settings,outcomes\)/,'The selected encounter strategy and outcomes must be shared with Clan Norms.');
-assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?settings\.profileId\|\|''[\s\S]*clanMembers:settings\.clanMembers[\s\S]*selectedStrategy:settings\.strategy,outcomes/,'Only linked-norm plans may carry clan-profile metadata.');
-assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
+assert.match(source,/function saveEncounterCostModel\(\)/,'The calculator must share its reusable battle cost model with Clan Overview.');
+assert.doesNotMatch(source,/result\.plan=\{method,/,'Derived clan outcomes must not be stored as a second source of truth.');
+assert.doesNotMatch(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize cost models must not duplicate derived plans.');
+assert.match(source,/saveEncounterCostModel\(\)/,'Every encounter-plan recalculation must refresh its reusable cost model.');
 assert.match(source,/saved\?\.source==='clan'\?\{\.\.\.saved,source:'clan',profileId:currentAccount\(\)\?\.clanProfileId/,'An imported player must retain the clan norm source even before the clan profile is imported.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\)/,'Import must prepare Clan Overview plans without opening each encounter.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\);\s*backfillSavedCustomPlans\(\)/,'Import must also prepare deterministic Custom plans without opening each encounter.');
@@ -270,7 +274,7 @@ assert.doesNotMatch(source,/function publishImportedOptimizerPlans\(imported\)\{
 assert.match(source,/result\.methods\[method\]\.costModel=\{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:/,'Saved battle costs must be reusable when a clan is linked later.');
 assert.match(source,/lastOptimizedEpicSignature!==currentEpicEffectiveSignature\(\)\)continue/,'Imported plans must only be published when the saved optimizer inputs still match.');
 assert.match(source,/hasSavedOptimizerCacheForEncounter\(imported,encounterId,workspace\)/,'Shared Epic encounters must be prepared from eligible peer optimizer caches.');
-assert.match(source,/saveEncounterPlanSnapshot\(settings,outcomes\)/,'Every encounter-plan recalculation must refresh the shared strategy result.');
+assert.match(source,/saveEncounterCostModel\(\);\s*try\{writeSavedJson/,'Every encounter-plan recalculation must save the cost model and portable strategy.');
 
 console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
 

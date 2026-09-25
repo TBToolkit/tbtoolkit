@@ -153,7 +153,7 @@ export function parseBiff(text,{maxBytes=BIFF_MAX_BYTES}={}){
   const source=String(text??'');
   if(new TextEncoder().encode(source).length>maxBytes)fail('This account file is larger than 5 MB.');
   let raw;try{raw=JSON.parse(source);}catch{fail('This file is not valid TB Toolkit account JSON.');}
-  if(raw?.format!==BIFF_FORMAT)fail('This is not a TB Toolkit .stacks or legacy .biff file.');
+  if(raw?.format!==BIFF_FORMAT)fail('This is not a TB Toolkit .player, legacy .stacks, or .biff file.');
   if(!Number.isInteger(raw?.schemaVersion)||raw.schemaVersion<1)fail('This account file has an invalid schema version.');
   if(raw.schemaVersion>BIFF_SCHEMA_VERSION)fail(`This account file uses newer schema version ${raw.schemaVersion}.`);
   if(raw?.kind!=='account')fail('This file does not contain a supported account export.');

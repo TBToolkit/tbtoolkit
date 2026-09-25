@@ -1,10 +1,10 @@
 {
   "name": "tbtoolkit",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "private": true,
   "scripts": {
     "build": "node scripts/build-site.mjs",
-    "test": "node tests/bonus-profile-routing-regression.mjs && node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/browser-storage-regression.mjs && node tests/optimizer-encounter-persistence-regression.mjs && node tests/shared-epic-armies-regression.mjs && node tests/saved-state-schema-regression.mjs && node tests/composition-search-regression.mjs && node tests/review-candidate-canonicalization-regression.mjs && node tests/optimizer-abort-regression.mjs && node tests/optimizer-build-handshake-regression.mjs && node tests/epic-opening-initiative-regression.mjs && node tests/epic-scoring-context-regression.mjs && node tests/capacity-top-up-regression.mjs && node tests/clan-norm-planner-regression.mjs && node tests/clan-profile-link-regression.mjs && node tests/clan-net-resources-regression.mjs",
+    "test": "node tests/bonus-profile-routing-regression.mjs && node tests/pvp-regression.mjs && node tests/ui-navigation-regression.mjs && node tests/workspace-model-regression.mjs && node tests/biff-regression.mjs && node tests/browser-storage-regression.mjs && node tests/durable-user-data-regression.mjs && node tests/optimizer-encounter-persistence-regression.mjs && node tests/shared-epic-armies-regression.mjs && node tests/saved-state-schema-regression.mjs && node tests/composition-search-regression.mjs && node tests/review-candidate-canonicalization-regression.mjs && node tests/optimizer-abort-regression.mjs && node tests/optimizer-build-handshake-regression.mjs && node tests/epic-opening-initiative-regression.mjs && node tests/epic-scoring-context-regression.mjs && node tests/capacity-top-up-regression.mjs && node tests/clan-norm-planner-regression.mjs && node tests/clan-profile-link-regression.mjs && node tests/clan-net-resources-regression.mjs",
     "test:release": "node tests/release-pipeline-regression.mjs",
     "test:composition-deep": "node tests/composition-search-deep-finalists.mjs",
     "test:composition-arachne": "node tests/composition-search-arachne-finalists.mjs",

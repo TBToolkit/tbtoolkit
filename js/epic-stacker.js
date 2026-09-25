@@ -12,6 +12,7 @@ import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,t
 import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
+import {hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
@@ -625,7 +626,9 @@ function loadSavedState(){
 }
 function persistState(){
   if(activeMode==='battle')propagateSharedEpicArmy();
-  writeSavedJson(localStorage,STORAGE_KEY,{schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}},{validate:validateAccountState});
+  const snapshot=stampCanonicalSnapshot({schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}});
+  writeSavedJson(localStorage,STORAGE_KEY,snapshot,{validate:validateAccountState});
+  mirrorCanonicalSnapshot(STORAGE_KEY,snapshot);
 }
 function saveState(){
   try{persistState();}catch(error){
@@ -636,7 +639,7 @@ function saveState(){
 }
 function safeBiffFileName(name){
   const stem=String(name||'tbtoolkit-account').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'tbtoolkit-account';
-  return `${stem}.stacks`;
+  return `${stem}.player`;
 }
 function downloadActiveAccountBiff(){
   readInputs();saveState();
@@ -710,7 +713,7 @@ function showBiffImportError(error){
   els.biffImportAccountName.textContent='Could not read file';
   els.biffImportEncounterCount.textContent='—';els.biffImportWorkspaceCount.textContent='—';
   els.biffImportWarnings.hidden=true;els.biffImportWarningList.innerHTML='';
-  els.biffImportError.textContent=error?.message||'The selected .stacks or legacy .biff file could not be imported.';
+  els.biffImportError.textContent=error?.message||'The selected .player, legacy .stacks, or .biff file could not be imported.';
   els.biffImportError.classList.add('show');
   els.confirmBiffImport.disabled=true;
   if(!els.biffImportDialog.open)els.biffImportDialog.showModal();
@@ -1382,7 +1385,8 @@ function saveEncounterResultSnapshot({encounter,method,estimatedPoints,fullGold,
     writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
   }catch(error){console.warn('Could not save the encounter result bridge.',error);}
 }
-function saveEncounterPlanSnapshot(settings,outcomes){
+// Share only rebuildable battle costs; clan norms and strategy are read live.
+function saveEncounterCostModel(){
   if(!currentEncounter()?.builtIn)return;
   try{
     const stored=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY)||{},accountId=state.activeAccountId,encounter=currentEncounter();
@@ -1390,12 +1394,12 @@ function saveEncounterPlanSnapshot(settings,outcomes){
     const account=stored.accounts[accountId]||{name:currentAccount()?.name||'Player',encounters:{}};account.name=currentAccount()?.name||account.name;account.clanProfileId=currentAccount()?.clanProfileId||'';account.encounters=account.encounters||{};
     const result=account.encounters[encounter.id]||{name:encounter.name,methods:{}};result.name=encounter.name;
     const method=state.modes.battle.activeBattleMethod;
-    result.plan={method,profileId:settings.source==='clan'?settings.profileId||'':'',profileName:settings.source==='clan'?linkedClanProfile(localStorage,settings.profileId)?.name||'':'',norm:settings.norm,unit:settings.unit,basis:settings.basis,clanMembers:settings.clanMembers,selectedStrategy:settings.strategy,outcomes,savedAt:Date.now()};
     result.methods=result.methods||{};result.methods[method]=result.methods[method]||{};
     if(encounterPlanContext)result.methods[method].costModel={build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows};
-    result.plansByMethod=result.plansByMethod||{};result.plansByMethod[method]=result.plan;
+    delete result.plan;
+    delete result.plansByMethod;
     account.encounters[encounter.id]=result;stored.accounts[accountId]=account;writeSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY,stored);
-  }catch(error){console.warn('Could not save the encounter plan bridge.',error);}
+  }catch(error){console.warn('Could not save the encounter cost model.',error);}
 }
 function compactNormPoints(points){
   for(const [unit,multiplier] of [['B',1e9],['M',1e6],['K',1e3]])if(points>=multiplier&&Math.abs(points/multiplier-Math.round(points/multiplier))<1e-6)return {norm:points/multiplier,unit};
@@ -1420,6 +1424,7 @@ function loadEncounterNormSettings(){
   try{saved=readSavedJson(localStorage,encounterPlanStorageKey());}catch{}
   const portable=currentBattleWorkspace()?.inputs||{};
   if(portable.encounterNorm!==undefined&&Number.isFinite(Number(portable.encounterNorm)))saved={...(saved||{}),norm:Number(portable.encounterNorm),unit:['B','M','K'].includes(portable.encounterNormUnit)?portable.encounterNormUnit:'B',basis:portable.encounterNormBasis==='chests'?'chests':'points',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(portable.clanMembers)||100))),strategy:portable.encounterPlanStrategy,source:portable.encounterNormSource==='clan'?'clan':portable.encounterNormSource==='manual'?'manual':'default',profileId:portable.encounterNormSource==='clan'?currentAccount()?.clanProfileId||'':''};
+  if(['full','mercenary-monster','mercenary-only'].includes(portable.encounterPlanStrategy))saved={...(saved||{}),strategy:portable.encounterPlanStrategy};
   const clanNorm=activeClanEncounterNorm(currentEncounter()?.name),legacyManual=!!saved&&!saved.source&&(Number(saved.norm)!==1||saved.unit!=='B'),manual=saved?.source==='manual'||legacyManual;
   const selected=manual?saved:clanNorm?{...saved,...clanNorm,source:'clan'}:saved?.source==='clan'?{...saved,source:'clan',profileId:currentAccount()?.clanProfileId||saved.profileId||''}:{norm:1,unit:'B',source:'default'};
   const isTinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
@@ -1514,11 +1519,10 @@ function updateEncounterPlan(){
   const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=monster==='TINMAN'?tinmanEncounterRewards(linkedClanProfile(localStorage,currentAccount()?.clanProfileId)):reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   if(received)received.revival=received.gold+received.potion;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
-  let sharedHits=0;const outcomes={};
+  let sharedHits=0;
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
     const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
-    outcomes[strategy]={hits:plan.hits,gold:{spent:plan.totalGold,received:received?.revival||0,goldReceived:received?.gold||0,potionReceived:received?.potion||0,net:(received?.revival||0)-plan.totalGold},silver:{spent:plan.totalSilver,received:received?.silver||0,net:(received?.silver||0)-plan.totalSilver},dragonCoins:{spent:plan.totalDragonCoins,received:received?.dragon||0,net:(received?.dragon||0)-plan.totalDragonCoins},complete:(!!received||monster==='TINMAN')&&plan.rebuildCostsComplete};
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
@@ -1528,7 +1532,7 @@ function updateEncounterPlan(){
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
   els.encounterPlanNote.textContent=monster==='TINMAN'?received?`Rewards are the chests every member receives from this clan's selected Tinman summons; battle costs cover this player's point norm. Gold and Potion combine 1:1 as revival currency. Point estimates use an inferred 51,016 base ELD/point, calibrated from 25,508 ELD/point at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:`Link a clan and select Tinman summons in Clan Overview to include rewards and net change. Battle costs cover this player's point norm. Point estimates use an inferred 51,016 base ELD/point. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
-  saveEncounterPlanSnapshot(settings,outcomes);
+  saveEncounterCostModel();
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();
 }
@@ -3684,6 +3688,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 async function init(){
+  await hydrateCanonicalStorage(localStorage);
   cacheElements();
   for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
