@@ -108,7 +108,7 @@ assert.match(script,/source==='calculator'\?`Calculator · \$\{method==='optimiz
 assert.match(script,/classList\.contains\('epic-points-revive'\)\)setEfficiencySource\(event\.target,'manual'\)/,'Editing a calculated efficiency must preserve it as a manual override.');
 assert.match(script,/efficiencySource:efficiency\.dataset\.efficiencySource/,'Efficiency provenance must persist with each clan profile.');
 assert.match(script,/linkedPlayerAccounts\(saved,activeProfileId\)/,'Plan Setup must identify accounts linked to the active clan profile.');
-assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,\.epic-plan-method'\)\)return;/,'Selecting a player or method must not recalculate and replace the dropdown before its change event is handled.');
+assert.match(script,/addEventListener\('input',event=>\{if\(event\.target\.matches\('\.epic-basis,#netPlayerAccount,#normProfileSelect,\.epic-plan-method'\)\)return;/,'Selecting a player, clan, or method must not recalculate and replace the dropdown before its change event is handled.');
 assert.match(html,/id="netPlayerAccount"[\s\S]*id="epicNormRows"[\s\S]*Net resources per player[\s\S]*id="netResourceRows"/,'Plan Setup must own the linked player, and the dashboard must offer net resources.');
 assert.match(html,/Gross resource data[\s\S]*Net resource data[\s\S]*<th>Battle cost<\/th><th>Net<\/th>/,'Gross and net data tables must be available below the charts.');
 assert.match(script,/function renderNetResources\(activities,period,selected,\{plans,linked,account\}\)/,'Net resources must use selected resources and saved battle plans.');
@@ -126,6 +126,8 @@ assert.match(html,/Basis · equivalent<\/span><span>Calculation method<\/span><s
 assert.match(html,/class="epic-visibility-heading"[\s\S]*id="showAllEpics"[\s\S]*id="hideAllEpics"[\s\S]*id="epicVisibilityOptions"/,'Event visibility actions must sit apart from the event choices.');
 assert.match(script,/strategy\.textContent=\(\{'full':'Full Gold revival'/,'A ready Epic plan must show its revival strategy.');
 assert.match(html,/id="tinmanBonus"[\s\S]*id="tinmanNorm"[\s\S]*id="tinmanPlanMethod"/,'Tinman needs a bonus, a player point norm, and a method choice.');
+assert.match(html,/id="tinmanBonusSuffix">%[\s\S]*id="tinmanNormSuffix">B[\s\S]*id="tinmanNormUnit"/,'Tinman bonus and norm inputs need visible suffixes and a unit selector.');
+assert.match(script,/sessionStorage\.setItem\(activeProfileSessionKey,activeProfileId\)/,'The selected clan profile must survive page navigation.');
 assert.match(script,/tinmanPlanFromSavedCosts\(bridge,netPlayerAccountId/,'Tinman net costs must use the linked calculator result.');
 assert.match(chartCss,/\.net-bar-track i\{[^}]*background:#80df9d\}\s*\.net-bar-track i\.is-negative\{background:#e97f7f\}/,'Net profits must be green and deficits red.');
 

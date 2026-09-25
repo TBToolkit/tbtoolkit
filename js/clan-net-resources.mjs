@@ -33,10 +33,10 @@ export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,
   return{method,profileId,norm:Number(requirement.value),unit:requirement.unit,basis:requirement.basis,clanMembers:members,selectedStrategy,outcomes,savedAt:encounter.methods[method].savedAt||saved?.savedAt||0};
 }
 
-export function tinmanPlanFromSavedCosts(bridge,accountId,{normBillions,bonus,method}={}){
+export function tinmanPlanFromSavedCosts(bridge,accountId,{normValue,normUnit='B',normBillions,bonus,method}={}){
   const encounter=Object.values(bridge?.accounts?.[accountId]?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()==='TINMAN');
   const result=encounter?.methods?.[method],model=result?.costModel;
-  const norm=Number(normBillions)*1e9,pointsPerAttack=estimatedEpicPoints('Tinman',result?.expectedLifetimeDamage,{tinmanBonus:bonus});
+  const norm=normValue===undefined?Number(normBillions)*1e9:Number(normValue)*(multipliers[normUnit]||0),pointsPerAttack=estimatedEpicPoints('Tinman',result?.expectedLifetimeDamage,{tinmanBonus:bonus});
   if(!model||model.build!==OPTIMIZER_CACHE_BUILD||!(norm>0)||!(pointsPerAttack>0)||!Array.isArray(model.rebuildRows))return null;
   const saved=encounter.plansByMethod?.[method],selectedStrategy=Object.hasOwn(ENCOUNTER_PLAN_STRATEGIES,saved?.selectedStrategy)?saved.selectedStrategy:'full';
   const outcomes=Object.fromEntries(Object.keys(ENCOUNTER_PLAN_STRATEGIES).map(strategy=>{

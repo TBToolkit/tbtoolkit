@@ -121,6 +121,8 @@ assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to e
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',51016),1,'Tinman uses the inferred base ELD per point.');
 assert.equal(estimatedEpicPoints('Tinman',51016,{tinmanBonus:100}),2,'A 100% Tinman bonus doubles awarded points.');
+assert.match(source,/tinmanChestRewards=new Map\(/,'Tinman encounter strategy must load Event chest rewards.');
+assert.match(source,/received=monster==='TINMAN'\?tinmanEncounterRewards\(linkedClanProfile\(localStorage,currentAccount\(\)\?\.clanProfileId\)\)/,'Tinman strategy must use the linked clan summons for per-member income.');
 assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no clan profile required/,'Clan-profile helper labels must not clutter Battle or Encounter Strategy.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');

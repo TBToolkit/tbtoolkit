@@ -24,7 +24,8 @@ assert.equal(clanEncounterNorm(linkedClanProfile(storage,'other'),'Doomsday').no
 saveClanEncounterNorm(storage,'linked','Fenrir',{norm:375,unit:'B',basis:'chests'});
 assert.equal(clanEncounterNorm(linkedClanProfile(storage,'linked'),'Fenrir').basis,'chests');
 saveClanEncounterNorm(storage,'linked','Tinman',{norm:2200,unit:'M',basis:'points'});
-assert.equal(clanEncounterNorm(linkedClanProfile(storage,'linked'),'Tinman').norm,2.2,'Tinman point norms are stored in billions independently of Epic chest norms.');
+assert.equal(clanEncounterNorm(linkedClanProfile(storage,'linked'),'Tinman').norm,2200,'Tinman point norms retain their entered magnitude.');
+assert.equal(clanEncounterNorm(linkedClanProfile(storage,'linked'),'Tinman').unit,'M','Tinman point norms retain their selected unit.');
 assert.throws(()=>saveClanEncounterNorm(storage,'linked','Tinman',{norm:10,unit:'B',basis:'chests'}),/points, not chests/);
 assert.throws(()=>saveClanEncounterNorm(storage,'missing','Fenrir',{norm:1,unit:'B',basis:'points'}),/unavailable/);
 assert.throws(()=>saveClanEncounterNorm(storage,'linked','Fenrir',{norm:-1,unit:'B',basis:'points'}),/valid clan norm/);
@@ -35,7 +36,7 @@ assert.equal(portable.format,CLAN_FILE_FORMAT);
 assert.equal(portable.kind,'clan-profile');
 assert.equal(portable.profile.plan.netPlayerAccountId,undefined,'Portable clan files must not name a local player account.');
 assert.equal(parseClanProfile(JSON.stringify(portable)).plan.epics[0].monster,'DOOMSDAY');
-assert.equal(parseClanProfile(JSON.stringify(portable)).plan.tinman.norm,2.2,'Tinman norms must travel with the .clan file.');
+assert.equal(parseClanProfile(JSON.stringify(portable)).plan.tinman.norm,2200,'Tinman norms must travel with the .clan file.');
 assert.equal(parseClanProfile(JSON.stringify(portable)).plan.tinman.bonus,100,'Tinman point bonuses must travel with the .clan file.');
 const legacy={format:'tbtoolkit-norms',kind:'clan-norm-profile',profile:{...linked,plan:{...linked.plan,netPlayerAccountId:'old-player'}}};
 assert.equal(parseClanProfile(JSON.stringify(legacy)).plan.netPlayerAccountId,undefined,'Legacy .norms files remain importable without restoring a stale player link.');

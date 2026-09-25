@@ -26,6 +26,7 @@ const tinmanBridge={accounts:{one:{encounters:{tinman:{name:'Tinman',methods:{op
 const tinman=tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:100,method:'optimize'});
 assert.equal(tinman.pointsPerAttack,2e6,'Tinman bonus must multiply earned points, not chest count.');
 assert.equal(tinman.outcomes.full.hits,1100,'The point norm covers the full Tinman event.');
+assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normValue:2200,normUnit:'M',bonus:100,method:'optimize'}).outcomes.full.hits,1100,'Changing the Tinman norm unit must preserve its point target.');
 assert.equal(tinman.outcomes.full.gold.spent,4400);
 assert.equal(tinmanPlanFromSavedCosts(tinmanBridge,'one',{normBillions:2.2,bonus:0,method:'optimize'}).outcomes.full.hits,2200,'Changing the clan bonus must reprice a saved army without reoptimization.');
 assert.equal(planFromSavedCosts({accounts:{one:{encounters:{doom:{...importedBridge.accounts.one.encounters.doom,methods:{optimize:{costModel:{...importedBridge.accounts.one.encounters.doom.methods.optimize.costModel,build:'older-build'}}}}}}}},'one',savedCostsActivity,'optimize',100,profileId),null,'Stale optimizer cost models must not be reused after the build changes.');

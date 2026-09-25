@@ -34,6 +34,7 @@ let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOpti
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
 let epicChestRewards=new Map();
+let tinmanChestRewards=new Map(),tinmanLevelData=[];
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 let encounterPlanContext=null;
@@ -484,8 +485,12 @@ async function loadData(){
   throw lastError||new Error('Could not load canonical army database');
 }
 async function loadEpicChestRewards(){
-  for(const source of ['/data/chest-data.json','data/chest-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;const data=await response.json();epicChestRewards=new Map((data.records||[]).filter(record=>record.type==='EPIC').map(record=>[String(record.chest).toUpperCase(),record]));return;}catch{}
+  for(const source of ['/data/chest-data.json','data/chest-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;const data=await response.json();epicChestRewards=new Map((data.records||[]).filter(record=>record.type==='EPIC').map(record=>[String(record.chest).toUpperCase(),record]));tinmanChestRewards=new Map((data.records||[]).filter(record=>record.type==='EVENT'&&String(record.chest).toUpperCase().includes('TINMAN')).map(record=>[String(record.chest).toUpperCase(),record]));return;}catch{}
   console.warn('Epic chest rewards could not be loaded; encounter plans will show spending only.');
+}
+async function loadTinmanLevelData(){
+  for(const source of ['/data/norm-planner-data.json','data/norm-planner-data.json'])try{const response=await fetch(source,{cache:'no-store'});if(!response.ok)continue;tinmanLevelData=(await response.json()).tinman||[];return;}catch{}
+  console.warn('Tinman level rewards could not be loaded; encounter plans will show spending only.');
 }
 function loadSavedState(){
   try{
@@ -1446,6 +1451,22 @@ function saveCurrentNormToClan(){
     useLinkedClanNorm();
   }catch(error){alert(error.message||'The clan norm could not be saved.');}
 }
+function tinmanEncounterRewards(profile){
+  const plan=profile?.plan?.tinman,start=Math.min(250,Math.max(1,Math.floor(Number(plan?.startLevel)||1))),summons=Math.min(8,Math.max(0,Math.floor(Number(plan?.summons)||0)));
+  if(!plan||!summons||!tinmanLevelData.length)return null;
+  const received={gold:0,potion:0,silver:0,dragon:0};
+  for(let i=0;i<summons;i++){
+    const level=tinmanLevelData.find(row=>row.level===Math.min(250,start+i));
+    const chest=level&&tinmanChestRewards.get(`${level.chestType} TINMAN`.toUpperCase());
+    if(!chest)return null;
+    const count=Number(level.killChestQuantity)||0;
+    received.gold+=count*(Number(chest.gold)||0);
+    received.potion+=count*(Number(chest.potion)||0);
+    received.silver+=count*(Number(chest.silver)||0);
+    received.dragon+=count*(Number(chest.dragonCoins)||0);
+  }
+  return received;
+}
 function updateEncounterPlan(){
   if(!encounterPlanContext)return;
   const multiplier={B:1e9,M:1e6,K:1e3}[els.encounterPlanUnit.value]||1;
@@ -1453,7 +1474,7 @@ function updateEncounterPlan(){
   const settings={norm:Math.max(0,Number(els.encounterPlanNorm.value)||0),unit:els.encounterPlanUnit.value,basis:document.getElementById('encounterPlanBasis').checked?'points':'chests',clanMembers:Math.min(100,Math.max(1,Math.floor(Number(document.getElementById('encounterPlanMembers').value)||100))),strategy:selected,source:els.encounterPlanNorm.dataset.source||'manual',profileId:els.encounterPlanNorm.dataset.profileId||''};
   const portable=currentBattleWorkspace().inputs;portable.clanMembers=settings.clanMembers;portable.encounterNorm=settings.norm;portable.encounterNormUnit=settings.unit;portable.encounterNormBasis=settings.basis;portable.encounterNormSource=settings.source;portable.encounterPlanStrategy=settings.strategy;
   renderEncounterNormSource(activeClanEncounterNorm(currentEncounter()?.name));
-  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
+  const monster=String(currentEncounter()?.name||'').toUpperCase(),pointsPerChest=EPIC_NORM_POINTS_PER_CHEST[monster]||0,normPoints=settings.basis==='chests'?settings.norm*pointsPerChest:settings.norm*multiplier,reward=epicChestRewards.get(monster),members=settings.clanMembers,chestsPerMember=pointsPerChest?Math.floor(normPoints/pointsPerChest):0,received=monster==='TINMAN'?tinmanEncounterRewards(linkedClanProfile(localStorage,currentAccount()?.clanProfileId)):reward&&members&&chestsPerMember?{gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragon:chestsPerMember*members*(Number(reward.dragonCoins)||0)}:null;
   if(received)received.revival=received.gold+received.potion;
   const renderOutcome=(cell,spent,income)=>{if(!received){cell.className='spend-only';cell.textContent=spent?`${formatDamage(spent)} spent`:'—';return;}const net=income-spent;cell.className=net>=0?'net-positive':'net-negative';cell.innerHTML=`<strong>${net>=0?'+':'−'}${formatDamage(Math.abs(net))}</strong><small>${formatDamage(spent)} spent · ${formatDamage(income)} received</small>`;};
   let sharedHits=0;const outcomes={};
@@ -1469,7 +1490,7 @@ function updateEncounterPlan(){
     renderOutcome(row.querySelector('[data-cost="dragon"]'),plan.hits&&plan.rebuildCostsComplete?plan.totalDragonCoins:0,received?.dragon||0);
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
-  els.encounterPlanNote.textContent=monster==='TINMAN'?`Tinman rewards depend on the clan's selected summons, not the player's points. See Clan Overview for rewards and net resources. Costs here cover the player's point norm. Point estimates use an inferred 51,016 base ELD/point, calibrated from a 25,508 ELD/point observation at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  els.encounterPlanNote.textContent=monster==='TINMAN'?received?`Rewards are the chests every member receives from this clan's selected Tinman summons; battle costs cover this player's point norm. Gold and Potion combine 1:1 as revival currency. Point estimates use an inferred 51,016 base ELD/point, calibrated from 25,508 ELD/point at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:`Link a clan and select Tinman summons in Clan Overview to include rewards and net change. Battle costs cover this player's point norm. Point estimates use an inferred 51,016 base ELD/point. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
   saveEncounterPlanSnapshot(settings,outcomes);
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();
@@ -3639,7 +3660,7 @@ async function init(){
   // Only an actual database request/parse failure should produce the
   // "unit database could not be loaded" message.
   try{
-    await Promise.all([loadData(),loadEpicChestRewards()]);
+    await Promise.all([loadData(),loadEpicChestRewards(),loadTinmanLevelData()]);
   }catch(error){
     console.error('Army database load failed.',error);
     appInitialized=false;
