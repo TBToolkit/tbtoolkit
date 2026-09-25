@@ -745,6 +745,7 @@ function confirmPendingBiffImport(){
       catch(error){console.warn(`Could not persist imported optimized result for ${encounterId}; it remains available for this session.`,error);}
     }
     publishImportedOptimizerPlans(imported);
+    backfillSavedCustomPlans();
     pendingBiffImport=null;els.biffImportDialog.close();els.biffFileInput.value='';
     loadSavedOptimizerResult();refreshActiveMode();
   }catch(error){
@@ -912,6 +913,39 @@ function backfillSavedOptimizerPlans(){
     return hasSavedOptimizerCacheForEncounter(account,id,workspace)&&!bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.optimize?.costModel;
   });
   if(missing)publishImportedOptimizerPlans(account);
+}
+function backfillSavedCustomPlans(){
+  const account=currentAccount();
+  if(!account||!armyV2.length)return;
+  let bridge=null;try{bridge=readSavedJson(localStorage,ENCOUNTER_RESULT_STORE_KEY);}catch(error){console.warn('Could not check saved Custom encounter plans.',error);}
+  const missing=Object.entries(account.battle?.workspaces||{}).filter(([id,workspace])=>{
+    const encounter=resolveEncounter(account,id),selected=workspace?.selectedIds;
+    const model=bridge?.accounts?.[account.id]?.encounters?.[id]?.methods?.custom?.costModel;
+    return encounter?.builtIn&&encounter.battleType==='epic'&&['troop','monster','mercenary'].some(category=>selected?.[category]?.length)&&model?.build!==OPTIMIZER_CACHE_BUILD;
+  });
+  if(!missing.length)return;
+  const battle=state.modes.battle,previousMode=activeMode;
+  const previous={category:battle.activeBattleCategory,encounterId:battle.activeEncounterId,type:battle.activeBattleType,method:battle.activeBattleMethod};
+  try{
+    activeMode='battle';battle.activeBattleCategory='epic';battle.activeBattleMethod='custom';
+    for(const [encounterId] of missing){
+      try{
+        battle.activeEncounterId=encounterId;battle.activeBattleType=currentEngineBattleType();
+        ensureBattleWorkspace();applyStateToInputs();syncDerivedEpicBonuses();syncCustomOrders();
+        const inputs=resolveAutoFills(baseEngineInputs()),workspace=currentBattleWorkspace();
+        const selectedIds=workspace.selectedIds;
+        const result=untouchedEpicCustomOrderMatchesStandard()
+          ?calculateEpicStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,inputs})
+          :calculateCustomStack({troops:units.troop,monsters:units.monster,mercenaries:units.mercenary,selectedIds,orders:workspace.orders,unitOrders:workspace.methods.custom.unitOrders,squadOrders:workspace.methods.custom.squadOrder,inputs});
+        const scored=scoreClassicResult(result);
+        if(scored?.result?.expectedTotalLifetimeDamage>0)renderPrediction(scored);
+      }catch(error){console.warn(`Could not prepare the saved ${encounterId} Custom plan.`,error);}
+    }
+  }finally{
+    battle.activeBattleCategory=previous.category;battle.activeEncounterId=previous.encounterId;
+    battle.activeBattleType=previous.type;battle.activeBattleMethod=previous.method;activeMode=previousMode;
+    loadSavedOptimizerResult();saveState();
+  }
 }
 function renderClanProfileLink(){
   const status=document.getElementById('clanProfileStatus'),members=document.getElementById('encounterPlanMembers');
@@ -3676,6 +3710,7 @@ async function init(){
   showValidation([]);
 
   backfillSavedOptimizerPlans();
+  backfillSavedCustomPlans();
   initializeActiveCalculatorAfterData();
 
   // Re-evaluate the primary action after all units/selections have rendered.

@@ -261,6 +261,9 @@ assert.match(source,/result\.plan=\{method,profileId:settings\.source==='clan'\?
 assert.match(source,/result\.plansByMethod\[method\]=result\.plan/,'Custom and Optimize plans must be saved independently.');
 assert.match(source,/saved\?\.source==='clan'\?\{\.\.\.saved,source:'clan',profileId:currentAccount\(\)\?\.clanProfileId/,'An imported player must retain the clan norm source even before the clan profile is imported.');
 assert.match(source,/publishImportedOptimizerPlans\(imported\)/,'Import must prepare Clan Overview plans without opening each encounter.');
+assert.match(source,/publishImportedOptimizerPlans\(imported\);\s*backfillSavedCustomPlans\(\)/,'Import must also prepare deterministic Custom plans without opening each encounter.');
+assert.match(source,/backfillSavedOptimizerPlans\(\);\s*backfillSavedCustomPlans\(\)/,'Existing accounts must receive missing Custom plans when the calculator starts.');
+assert.match(source,/function backfillSavedCustomPlans\(\)[\s\S]*calculateCustomStack\([\s\S]*renderPrediction\(scored\)/,'Backfilled Custom plans must use the calculator’s deterministic army scoring and cost snapshot.');
 assert.match(source,/state\.accounts=candidate;activateAccount\(imported\.id\);persistState\(\)/,'Import must fail visibly if the player account cannot be saved before navigation.');
 assert.doesNotMatch(source,/function publishImportedOptimizerPlans\(imported\)\{\s*if\(!imported\.clanProfileId\)return/,'Import must prepare saved optimizer costs before any clan is linked.');
 assert.match(source,/result\.methods\[method\]\.costModel=\{build:OPTIMIZER_CACHE_BUILD,pointsPerAttack:/,'Saved battle costs must be reusable when a clan is linked later.');
