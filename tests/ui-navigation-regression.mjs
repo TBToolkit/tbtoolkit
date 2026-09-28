@@ -114,7 +114,8 @@ assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill mus
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
 assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="expectedLifetimeDamage"[\s\S]*id="rawGoldRevival"[\s\S]*id="damagePerThousandGold"/,'Result tiles must show Epic points, ELD, revival cost, then damage per 1K Gold.');
-assert.match(css,/\.result-panel>\.epic-prediction-panel \.prediction-summary\{\s*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'The result summary must fit four tiles in one desktop row.');
+assert.match(css,/\.result-panel>\.epic-prediction-panel \.prediction-summary\{\s*grid-template-columns:minmax\(max-content,1fr\) minmax\(max-content,1\.4fr\) minmax\(max-content,1fr\) minmax\(max-content,1fr\)/,'The four desktop result tiles must reserve extra width for the ELD title.');
+assert.match(css,/\.result-panel>\.epic-prediction-panel \.prediction-summary span\{white-space:nowrap\}/,'Result titles must stay on one line so their values align.');
 assert.match(source,/const damagePerThousandGold=actualGold>0\?Number\(r\.expectedTotalLifetimeDamage\)\/actualGold\*1000:null;els\.damagePerThousandGold\.textContent=damagePerThousandGold===null\?'—':formatDamage\(damagePerThousandGold\)/,'Damage per 1K Gold must use ELD and the displayed temple-adjusted full revival cost, and avoid dividing by zero.');
 assert.doesNotMatch(html,/<span>Epic Points \/ Full Gold Revival<\/span>/,'The unused Epic points per revival tile must not be shown.');
 assert.match(html,/id="encounterPlanNormReminder"/,'Encounter strategy must show the current event norm.');
