@@ -113,13 +113,15 @@ assert.match(css,/\.compact-limit-list \.limit-fill \.percent-field,[\s\S]*?widt
 assert.match(css,/\.auto-fill-toggle input:checked\+span::before/, 'Max Fill must render as an explicit on/off switch');
 assert.match(html,/css\/epic-stacker\.css(?:\?v=\d+(?:\.\d+)?)?/, 'Battle Calculator must load its dedicated stylesheet in source mode');
 assert.match(html,/id="estimatedEpicPoints"/,'Epic results must show estimated Epic points.');
-assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="rawGoldRevival"[\s\S]*id="expectedLifetimeDamage"/,'Result tiles must show Epic points, Gold revival, and ELD.');
+assert.match(html,/id="estimatedEpicPoints"[\s\S]*id="expectedLifetimeDamage"[\s\S]*id="rawGoldRevival"[\s\S]*id="damagePerThousandGold"/,'Result tiles must show Epic points, ELD, revival cost, then damage per 1K Gold.');
+assert.match(css,/\.result-panel>\.epic-prediction-panel \.prediction-summary\{\s*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,'The result summary must fit four tiles in one desktop row.');
+assert.match(source,/const damagePerThousandGold=actualGold>0\?Number\(r\.expectedTotalLifetimeDamage\)\/actualGold\*1000:null;els\.damagePerThousandGold\.textContent=damagePerThousandGold===null\?'—':formatDamage\(damagePerThousandGold\)/,'Damage per 1K Gold must use ELD and the displayed temple-adjusted full revival cost, and avoid dividing by zero.');
 assert.doesNotMatch(html,/<span>Epic Points \/ Full Gold Revival<\/span>/,'The unused Epic points per revival tile must not be shown.');
 assert.match(html,/id="encounterPlanNormReminder"/,'Encounter strategy must show the current event norm.');
 const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*?)<\/div>\s*<details class="battle-details encounter-plan-details"/)?.[1]||'';
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
-assert.doesNotMatch(html,/id="damagePerThousandGold"/,'Estimated Epic points must replace the Damage per 1,000 Gold tile.');
+assert.match(html,/<span>Damage per 1K Gold<\/span><strong id="damagePerThousandGold">/,'Damage efficiency must be shown as a result summary tile.');
 assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:56829,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
