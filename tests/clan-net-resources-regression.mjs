@@ -2,6 +2,12 @@ import assert from 'node:assert/strict';
 import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts} from '../js/clan-net-resources.mjs';
 import {OPTIMIZER_CACHE_BUILD} from '../js/build-info.mjs';
 import {REVIVAL_STRATEGIES,saveRevivalStrategy} from '../js/clan-strategy-sync.mjs';
+import {calculateEncounterPlan} from '../js/encounter-plan.mjs';
+import {estimatedEpicPoints} from '../js/epic-points-estimates.mjs';
+
+assert.equal(estimatedEpicPoints('Jormungandr',48862e8),100e6,'Jormungandr earned Epic points must remain unchanged.');
+assert.equal(calculateEncounterPlan({encounterName:'Jormungandr',normPoints:1e9,pointsPerAttack:100e6}).hits,4,'Each earned Jormungandr Epic point counts as 2.5 norm points.');
+assert.equal(calculateEncounterPlan({encounterName:'Jormungandr',normPoints:1.01e9,pointsPerAttack:100e6}).hits,5,'Converted Jormungandr attacks must still round up.');
 
 assert.deepEqual(REVIVAL_STRATEGIES,{full:'Revive All','mercenary-monster':'Revive Mercs + Monsters','mercenary-only':'Revive Mercs Only'});
 
@@ -19,6 +25,17 @@ assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'optimiz
 assert.equal(linkedPlan.outcomes['mercenary-monster'].hits,5);
 assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.spent,15);
 assert.equal(linkedPlan.outcomes['mercenary-monster'].gold.received,105000);
+const jormBridge={accounts:{one:{encounters:{jorm:{...importedBridge.accounts.one.encounters.doom,name:'Jormungandr',methods:{...importedBridge.accounts.one.encounters.doom.methods}}}}}};
+for(const method of ['optimize','custom']){
+  jormBridge.accounts.one.encounters.jorm.methods[method]=importedBridge.accounts.one.encounters.doom.methods.optimize;
+  for(const basis of ['points','chests']){
+    const norm={basis,value:basis==='points'?1:500,unit:'B',pointsPerChest:2e6};
+    const plan=planFromSavedCosts(jormBridge,'one',{name:'Jormungandr',norm,reward:savedCostsActivity.reward},method,100,profileId);
+    assert.equal(plan.outcomes.full.hits,4,'Both methods and norm bases must apply the Jormungandr conversion to saved battle costs.');
+    assert.equal(plan.outcomes.full.gold.spent,20);
+    assert.equal(plan.outcomes.full.gold.received,750000,'Norm chest rewards must not be reduced by the attack conversion.');
+  }
+}
 assert.equal(planMatchesRequirement(linkedPlan,requirement,100,profileId),true);
 assert.equal(planFromSavedCosts(importedBridge,'one',{...savedCostsActivity,norm:{...requirement,value:600}},'optimize',100,profileId).outcomes['mercenary-monster'].hits,6,'A new clan norm must reprice saved battle costs without another optimization.');
 assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'custom',100,profileId),null);

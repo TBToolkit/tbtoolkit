@@ -4,12 +4,15 @@ export const ENCOUNTER_PLAN_STRATEGIES=Object.freeze({
   'mercenary-only':Object.freeze({mercenary:1,monster:0,troop:0}),
 });
 
-export function calculateEncounterPlan({normPoints,pointsPerAttack,goldByCategory={},rebuildRows=[],strategy='full'}={}){
+export function calculateEncounterPlan({encounterName='',normPoints,pointsPerAttack,goldByCategory={},rebuildRows=[],strategy='full'}={}){
   const norm=Math.max(0,Number(normPoints)||0);
   const points=Math.max(0,Number(pointsPerAttack)||0);
   const fractions=ENCOUNTER_PLAN_STRATEGIES[strategy]||ENCOUNTER_PLAN_STRATEGIES.full;
   const goldPerHit=['mercenary','monster','troop'].reduce((sum,category)=>sum+Math.max(0,Number(goldByCategory[category])||0)*fractions[category],0);
-  const hits=norm>0&&points>0?Math.ceil(norm/points):0;
+  // Jormungandr awards 2.5 clan norm points for each earned Epic point.
+  // Keep battle score and reward/chest targets in their original units.
+  const normPointsPerEpicPoint=String(encounterName).trim().toUpperCase()==='JORMUNGANDR'?2.5:1;
+  const hits=norm>0&&points>0?Math.ceil(norm/(points*normPointsPerEpicPoint)):0;
   let silverPerHit=0,dragonCoinsPerHit=0,rebuildCostsComplete=true;
   for(const row of rebuildRows){
     const category=String(row?.category||'');

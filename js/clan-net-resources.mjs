@@ -17,7 +17,7 @@ export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,
   if(!Number.isFinite(normPoints)||normPoints<=0||!Number.isInteger(members)||members<=0||chestsPerMember<=0)return null;
   const received={gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragonCoins:chestsPerMember*members*(Number(reward.dragonCoins)||0)};
   const outcomes=Object.fromEntries(Object.keys(ENCOUNTER_PLAN_STRATEGIES).map(strategy=>{
-    const costs=calculateEncounterPlan({normPoints,pointsPerAttack:model.pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
+    const costs=calculateEncounterPlan({encounterName:activity.name,normPoints,pointsPerAttack:model.pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
     const revival=received.gold+received.potion;
     return[strategy,{hits:costs.hits,gold:{spent:costs.totalGold,received:revival,goldReceived:received.gold,potionReceived:received.potion,net:revival-costs.totalGold},silver:{spent:costs.totalSilver,received:received.silver,net:received.silver-costs.totalSilver},dragonCoins:{spent:costs.totalDragonCoins,received:received.dragonCoins,net:received.dragonCoins-costs.totalDragonCoins},complete:costs.rebuildCostsComplete}];
   }));

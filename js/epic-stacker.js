@@ -1522,7 +1522,7 @@ function updateEncounterPlan(){
   let sharedHits=0;
   for(const row of els.encounterPlanStrategies?.querySelectorAll('tr[data-strategy]')??[]){
     const strategy=row.dataset.strategy;
-    const plan=calculateEncounterPlan({normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
+    const plan=calculateEncounterPlan({encounterName:monster,normPoints,pointsPerAttack:encounterPlanContext.pointsPerAttack,goldByCategory:encounterPlanContext.goldByCategory,rebuildRows:encounterPlanContext.rebuildRows,strategy});
     sharedHits=plan.hits;
     row.classList.toggle('is-selected',strategy===selected);
     row.querySelector('input').checked=strategy===selected;
