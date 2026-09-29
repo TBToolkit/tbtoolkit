@@ -1246,7 +1246,9 @@ details.advanced{margin-top:8px;padding-top:7px}
 .result-panel>.epic-prediction-panel .prediction-summary{
   grid-template-columns:minmax(max-content,1fr) minmax(max-content,1.4fr) minmax(max-content,1fr) minmax(max-content,1fr);
 }
-.result-panel>.epic-prediction-panel .prediction-summary span{white-space:nowrap}
+.result-panel>.epic-prediction-panel .prediction-summary span{white-space:nowrap;line-height:15px;min-height:15px}
+.prediction-summary #raidPointsHelp{width:15px;height:15px;margin-left:3px;font-size:.58rem;vertical-align:middle}
+.prediction-summary #raidPointsHelp[hidden]{display:none}
 
 body.optimizer-modal-open{overflow:hidden}
 .optimizer-modal{

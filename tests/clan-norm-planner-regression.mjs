@@ -148,4 +148,8 @@ assert.match(script,/sessionStorage\.setItem\(activeProfileSessionKey,activeProf
 assert.match(script,/tinmanPlanFromSavedCosts\(bridge,netPlayerAccountId/,'Tinman net costs must use the linked calculator result.');
 assert.match(chartCss,/\.net-bar-track i\{[^}]*background:#80df9d\}\s*\.net-bar-track i\.is-negative\{background:#e97f7f\}/,'Net profits must be green and deficits red.');
 
+assert.match(script,/row\.dataset\.monster==='JORMUNGANDR'/,'Jormungandr must have its own norm help icon.');
+assert.match(script,/popovertarget="jormungandrNormHelp"/,'Norm help must open on click or keyboard activation.');
+assert.match(script,/enter your clan norm in Ragnarok medal points, not Jormungandr scale points/,'Norm help must distinguish medal and scale points.');
+assert.match(script,/1 scale point = 2\.5 Ragnarok medal points/,'Norm help must state the scoring conversion.');
 console.log('Clan norm planner regression checks passed.');
