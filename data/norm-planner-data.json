@@ -109,8 +109,9 @@
       "chestName": "Jormungandr's Chest",
       "cadenceDays": 24,
       "totalChests": 375,
-      "totalPoints": 750000000,
-      "pointsPerChest": 2000000
+      "totalScalePoints": 750000000,
+      "totalPoints": 1875000000,
+      "pointsPerChest": 5000000
     },
     {
       "tier": 1,

@@ -230,7 +230,7 @@
 
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Selecting a level selects every unit underneath it. Expand a level to fine-tune individual units.</p></div>
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Selecting all available units can cause optimization to time out. Select a level to include all its units, or expand it to choose individual units.</p></div>
 <div class="selection-heading-actions"><button class="toolbar-button review-selection-button" hidden id="reviewSelection" type="button">Review Selection</button><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
 
@@ -284,9 +284,10 @@
 </div>
 <section class="epic-prediction-panel" id="epicPredictionPanel" hidden>
 <div class="prediction-summary">
-<div><span>Estimated Epic Points</span><strong id="estimatedEpicPoints">—</strong></div>
+<div><span>Estimated Epic Points <button id="raidPointsHelp" class="stat-help-button" data-stat-help="raidPoints" type="button" aria-label="About raid point estimates" hidden>?</button></span><strong id="estimatedEpicPoints">—</strong></div>
+<div><span>Expected Lifetime Damage (ELD)</span><strong id="expectedLifetimeDamage">—</strong></div>
 <div><span>Full Revival Cost</span><strong id="rawGoldRevival">—</strong></div>
-<div><span>Expected Lifetime Damage</span><strong id="expectedLifetimeDamage">—</strong></div>
+<div title="Expected lifetime damage divided by the full revival cost, multiplied by 1,000. Gold and Potion can both pay revival costs."><span>Damage per 1K Gold</span><strong id="damagePerThousandGold">—</strong></div>
 </div>
 <strong id="epicPointsPerFullGold" hidden>—</strong>
 <details class="battle-details">

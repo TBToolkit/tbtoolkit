@@ -2,7 +2,7 @@
 // averages convert the calculator's ELD into an estimated field-result score.
 export const EPIC_ELD_PER_POINT=Object.freeze({
   ARACHNE:63450,
-  ARCANOMANCER:53039,
+  ARCANOMANCER:56829,
   ARMAGEDDON:19359,
   ASHEN:62186,
   BASILISK:19243,

@@ -25,6 +25,12 @@ assert.match(html,/id="normResourceOptions"/);
 assert.match(html,/data-resource-preset="core"[^>]*>Fully Developed<\/button>.*data-resource-preset="growth"[^>]*>Developing<\/button>.*data-resource-preset="custom"[^>]*>Custom<\/button>/,'Resource preset labels must reflect the player’s development stage.');
 assert.match(html,/Chest Reward Averages/);
 assert.equal(data.epicMonsters.length,12);
+const jormData=data.epicMonsters.find(x=>x.monster==='JORMUNGANDR');
+assert.equal(jormData.totalScalePoints,750e6);
+assert.equal(jormData.totalPoints,1875e6,'Jormungandr reference totals must use medal norm points.');
+assert.equal(jormData.pointsPerChest,5e6,'Jormungandr gross and net rewards must use medal norm points per chest.');
+assert.equal(jormData.totalPoints/jormData.pointsPerChest,375);
+assert.equal(data.epicMonsters.find(x=>x.monster==='CHIMERA').pointsPerChest,2e6);
 assert.equal(data.tinman.length,250);
 assert.equal(data.epicMonsters.find(x=>x.monster==='ARACHNE').cadenceDays,6);
 assert.equal(data.epicMonsters.find(x=>x.monster==='DOOMSDAY').cadenceDays,6);
@@ -148,4 +154,8 @@ assert.match(script,/sessionStorage\.setItem\(activeProfileSessionKey,activeProf
 assert.match(script,/tinmanPlanFromSavedCosts\(bridge,netPlayerAccountId/,'Tinman net costs must use the linked calculator result.');
 assert.match(chartCss,/\.net-bar-track i\{[^}]*background:#80df9d\}\s*\.net-bar-track i\.is-negative\{background:#e97f7f\}/,'Net profits must be green and deficits red.');
 
+assert.match(script,/row\.dataset\.monster==='JORMUNGANDR'/,'Jormungandr must have its own norm help icon.');
+assert.match(script,/popovertarget="jormungandrNormHelp"/,'Norm help must open on click or keyboard activation.');
+assert.match(script,/enter your clan norm in Ragnarok medal points, not Jormungandr scale points/,'Norm help must distinguish medal and scale points.');
+assert.match(script,/1 scale point = 2\.5 Ragnarok medal points/,'Norm help must state the scoring conversion.');
 console.log('Clan norm planner regression checks passed.');

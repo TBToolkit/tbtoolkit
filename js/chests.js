@@ -108,6 +108,11 @@ function renderEpicRows(saved=[]){const map=new Map(saved.map(x=>[x.monster,x]))
 function addEpicPlanningControls(saved=[]){
   const savedByMonster=new Map(saved.map(epic=>[epic.monster,epic]));
   document.querySelectorAll('.epic-norm-row').forEach(row=>{
+    if(row.dataset.monster==='JORMUNGANDR'){
+      const heading=row.querySelector('.epic-event strong');
+      heading.insertAdjacentHTML('beforeend',' <button class="norm-info-button" type="button" popovertarget="jormungandrNormHelp" aria-label="About Jormungandr norm points">?</button>');
+      heading.insertAdjacentHTML('afterend','<div id="jormungandrNormHelp" class="norm-info-popover" popover><button class="norm-info-close" type="button" popovertarget="jormungandrNormHelp" popovertargetaction="hide" aria-label="Close Jormungandr norm help">×</button><h3>Jormungandr norm points</h3><p>When Points is selected, enter your clan norm in Ragnarok medal points, not Jormungandr scale points. Scale points are the Epic points shown in the Battle Calculator.</p><p>1 scale point = 2.5 Ragnarok medal points. For example, 100M scale points = 250M medal points. The calculator applies this conversion automatically when estimating attacks and costs.</p></div>');
+    }
     const original=savedByMonster.get(row.dataset.monster)?.basisPoints;
     if(original&&row.querySelector('.epic-basis').checked===false){row.dataset.basisPointsValue=String(original.value);row.dataset.basisPointsUnit=String(original.unit);row.dataset.basisPointsChests=String(original.chests);}
     const basis=row.querySelector('.epic-basis-field'),equivalent=row.querySelector('.epic-result');basis.append(equivalent);
