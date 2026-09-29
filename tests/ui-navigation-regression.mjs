@@ -119,6 +119,7 @@ assert.match(css,/\.result-panel>\.epic-prediction-panel \.prediction-summary sp
 assert.match(html,/id="raidPointsHelp"[^>]*data-stat-help="raidPoints"[^>]*aria-label="About raid point estimates"[^>]*hidden/,'The raid estimate help must be accessible and hidden until a raid is selected.');
 assert.match(source,/\['JORMUNGANDR','CHIMERA'\]\.includes/,'Raid estimate help must be limited to Jormungandr and Chimera.');
 assert.match(source,/Combined raid damage determines the total chest payout/,'Raid help must explain combined damage and health-based rewards.');
+assert.match(source,/JORMUNGANDR:5e6/,'Battle strategy must use 5M Ragnarok medal norm points per Jormungandr chest.');
 assert.match(source,/const damagePerThousandGold=actualGold>0\?Number\(r\.expectedTotalLifetimeDamage\)\/actualGold\*1000:null;els\.damagePerThousandGold\.textContent=damagePerThousandGold===null\?'—':formatDamage\(damagePerThousandGold\)/,'Damage per 1K Gold must use ELD and the displayed temple-adjusted full revival cost, and avoid dividing by zero.');
 assert.doesNotMatch(html,/<span>Epic Points \/ Full Gold Revival<\/span>/,'The unused Epic points per revival tile must not be shown.');
 assert.match(html,/id="encounterPlanNormReminder"/,'Encounter strategy must show the current event norm.');

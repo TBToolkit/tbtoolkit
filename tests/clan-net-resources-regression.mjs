@@ -29,13 +29,23 @@ const jormBridge={accounts:{one:{encounters:{jorm:{...importedBridge.accounts.on
 for(const method of ['optimize','custom']){
   jormBridge.accounts.one.encounters.jorm.methods[method]=importedBridge.accounts.one.encounters.doom.methods.optimize;
   for(const basis of ['points','chests']){
-    const norm={basis,value:basis==='points'?1:500,unit:'B',pointsPerChest:2e6};
+    const norm={basis,value:basis==='points'?1:200,unit:'B',pointsPerChest:5e6};
     const plan=planFromSavedCosts(jormBridge,'one',{name:'Jormungandr',norm,reward:savedCostsActivity.reward},method,100,profileId);
     assert.equal(plan.outcomes.full.hits,4,'Both methods and norm bases must apply the Jormungandr conversion to saved battle costs.');
     assert.equal(plan.outcomes.full.gold.spent,20);
-    assert.equal(plan.outcomes.full.gold.received,750000,'Norm chest rewards must not be reduced by the attack conversion.');
+    assert.equal(plan.outcomes.full.gold.received,300000,'Jormungandr rewards must use 5M medal norm points per chest.');
   }
 }
+const jormChestPoints=5e6;
+const raidBridge=structuredClone(jormBridge);
+raidBridge.accounts.one.encounters.jorm.methods.optimize.costModel.pointsPerAttack=19.5e6;
+const raidPlan=planFromSavedCosts(raidBridge,'one',{name:'Jormungandr',norm:{basis:'points',value:48.75,unit:'M',pointsPerChest:jormChestPoints},reward:savedCostsActivity.reward},'optimize',100,profileId);
+assert.equal(raidPlan.outcomes.full.hits,1,'19.5M scale points must cover a 48.75M medal norm in one attack.');
+assert.equal(raidPlan.outcomes.full.gold.received,9*100*15,'The norm reward estimate must floor 9.75 to nine whole chests.');
+assert.equal(19.5e6*2.5/jormChestPoints,9.75,'19.5M scale points must estimate 9.75 personal chests for similar raid armies.');
+assert.equal(19.5e6/2e6,9.75,'Chimera uses 2M earned Epic points per personal chest.');
+assert.equal(convertEpicNormBasis({value:750,unit:'M',basis:'points',pointsPerChest:jormChestPoints},'chests').value,150,'A 750M medal norm must correspond to 150 chests, not 375.');
+assert.deepEqual(convertEpicNormBasis({value:375,unit:'M',basis:'chests',pointsPerChest:jormChestPoints},'points'),{value:1.875,unit:'B',basis:'points'},'375 Jormungandr chests must correspond to 1.875B medal norm points.');
 assert.equal(planMatchesRequirement(linkedPlan,requirement,100,profileId),true);
 assert.equal(planFromSavedCosts(importedBridge,'one',{...savedCostsActivity,norm:{...requirement,value:600}},'optimize',100,profileId).outcomes['mercenary-monster'].hits,6,'A new clan norm must reprice saved battle costs without another optimization.');
 assert.equal(planFromSavedCosts(importedBridge,'one',savedCostsActivity,'custom',100,profileId),null);
