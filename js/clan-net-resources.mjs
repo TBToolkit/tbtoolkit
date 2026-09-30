@@ -4,6 +4,9 @@ import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 
 const multipliers={B:1e9,M:1e6,K:1e3};
 
+// Reference data uses Epic points; Ragnarok clan norms use medal points.
+export function normPointsPerChest(item){return Number(item?.pointsPerChest)*Number(item?.normPointMultiplier||1);}
+
 export function linkedPlayerAccounts(savedState,profileId){
   return Object.values(savedState?.accounts||{}).filter(account=>account?.clanProfileId===profileId).map(account=>({id:account.id,name:account.name||'Player'}));
 }
