@@ -109,9 +109,9 @@
       "chestName": "Jormungandr's Chest",
       "cadenceDays": 24,
       "totalChests": 375,
-      "totalScalePoints": 750000000,
-      "totalPoints": 1875000000,
-      "pointsPerChest": 5000000
+      "totalPoints": 750000000,
+      "pointsPerChest": 2000000,
+      "normPointMultiplier": 2.5
     },
     {
       "tier": 1,
@@ -120,9 +120,9 @@
       "source": "Shadow City",
       "chestName": "Shadow Chest",
       "cadenceDays": 24,
-      "totalChests": 75,
-      "totalPoints": 14000000000,
-      "pointsPerChest": 186666666.66666666
+      "totalChests": 70,
+      "totalPoints": 13500000000,
+      "pointsPerChest": 192857142.85714287
     },
     {
       "tier": 1,

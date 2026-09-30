@@ -12,7 +12,7 @@ export const EPIC_ELD_PER_POINT=Object.freeze({
   FENRIR:53953,
   HELLFORGE:18618,
   JORMUNGANDR:48862,
-  'SHADOW CITY':10559,
+  'SHADOW CITY':11105,
 });
 
 // 25,508 ELD/point was observed with a 100% Tinman point bonus.

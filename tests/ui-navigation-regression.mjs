@@ -127,7 +127,9 @@ const epicPredictionSummary=html.match(/<div class="prediction-summary">([\s\S]*
 assert.doesNotMatch(epicPredictionSummary,/<small>/,'Epic result tiles must not include descriptive text.');
 assert.match(html,/Current ELD \/ Best ELD/,'Optimizer progress must label both current and best values as ELD.');
 assert.match(html,/<span>Damage per 1K Gold<\/span><strong id="damagePerThousandGold">/,'Damage efficiency must be shown as a result summary tile.');
-assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:56829,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':10559});
+assert.deepEqual(EPIC_ELD_PER_POINT,{ARACHNE:63450,ARCANOMANCER:56829,ARMAGEDDON:19359,ASHEN:62186,BASILISK:19243,BRIAREUS:55771,CHIMERA:46696,DOOMSDAY:55450,FENRIR:53953,HELLFORGE:18618,JORMUNGANDR:48862,'SHADOW CITY':11105});
+assert.equal(estimatedEpicPoints('Shadow City',11105e6),1e6,'Shadow City must use the updated ELD per point without changing other encounters.');
+assert.match(source,/'SHADOW CITY':13\.5e9\/70/,'Battle planning must use the fresh Shadow City point and chest totals.');
 assert.equal(estimatedEpicPoints('Arachne',63450000),1000,'ELD must convert to estimated Epic points using the encounter ratio.');
 assert.match(source,/encounter\?\.builtIn\?estimatedEpicPoints\(encounter\.name,r\.expectedTotalLifetimeDamage\):null/,'Point estimates must be limited to recorded built-in encounters.');
 assert.equal(estimatedEpicPoints('Tinman',51016),1,'Tinman uses the inferred base ELD per point.');

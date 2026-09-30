@@ -4,6 +4,9 @@ import {estimatedEpicPoints} from './epic-points-estimates.mjs';
 
 const multipliers={B:1e9,M:1e6,K:1e3};
 
+// Reference data uses Epic points; Ragnarok clan norms use medal points.
+export function normPointsPerChest(item){return Number(item?.pointsPerChest)*Number(item?.normPointMultiplier||1);}
+
 export function linkedPlayerAccounts(savedState,profileId){
   return Object.values(savedState?.accounts||{}).filter(account=>account?.clanProfileId===profileId).map(account=>({id:account.id,name:account.name||'Player'}));
 }
@@ -12,12 +15,15 @@ export function planFromSavedCosts(bridge,accountId,activity,method,clanMembers,
   const encounter=Object.values(bridge?.accounts?.[accountId]?.encounters||{}).find(item=>String(item?.name||'').toUpperCase()===String(activity?.name||'').toUpperCase());
   const model=encounter?.methods?.[method]?.costModel,requirement=activity?.norm,reward=activity?.reward;
   if(!model||model.build!==OPTIMIZER_CACHE_BUILD||!(Number(model.pointsPerAttack)>0)||!Array.isArray(model.rebuildRows)||!requirement||!reward||!(Number(requirement.pointsPerChest)>0))return null;
+  const pointsPerAttack=String(activity.name||'').toUpperCase()==='SHADOW CITY'
+    ?estimatedEpicPoints(activity.name,encounter.methods[method].expectedLifetimeDamage)||model.pointsPerAttack
+    :model.pointsPerAttack;
   const normPoints=requirement.basis==='chests'?Number(requirement.value)*requirement.pointsPerChest:Number(requirement.value)*(multipliers[requirement.unit]||0);
   const members=Number(clanMembers),chestsPerMember=Math.floor(normPoints/requirement.pointsPerChest);
   if(!Number.isFinite(normPoints)||normPoints<=0||!Number.isInteger(members)||members<=0||chestsPerMember<=0)return null;
   const received={gold:chestsPerMember*members*(Number(reward.gold)||0),potion:chestsPerMember*members*(Number(reward.potion)||0),silver:chestsPerMember*members*(Number(reward.silver)||0),dragonCoins:chestsPerMember*members*(Number(reward.dragonCoins)||0)};
   const outcomes=Object.fromEntries(Object.keys(ENCOUNTER_PLAN_STRATEGIES).map(strategy=>{
-    const costs=calculateEncounterPlan({encounterName:activity.name,normPoints,pointsPerAttack:model.pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
+    const costs=calculateEncounterPlan({encounterName:activity.name,normPoints,pointsPerAttack,goldByCategory:model.goldByCategory,rebuildRows:model.rebuildRows,strategy});
     const revival=received.gold+received.potion;
     return[strategy,{hits:costs.hits,gold:{spent:costs.totalGold,received:revival,goldReceived:received.gold,potionReceived:received.potion,net:revival-costs.totalGold},silver:{spent:costs.totalSilver,received:received.silver,net:received.silver-costs.totalSilver},dragonCoins:{spent:costs.totalDragonCoins,received:received.dragonCoins,net:received.dragonCoins-costs.totalDragonCoins},complete:costs.rebuildCostsComplete}];
   }));
