@@ -28,7 +28,7 @@ const LEGACY_EPIC_KEY='tbtoolkit.epicStacker.v2';
 const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
 const ENCOUNTER_RESULT_STORE_KEY='tbtoolkit.epicEncounterResults.v1';
 const planBackfillAccountId=window.parent!==window?new URLSearchParams(location.search).get('planBackfill'):null;
-const EPIC_NORM_POINTS_PER_CHEST={ARACHNE:300e6/35,ARCANOMANCER:800e6/52,ARMAGEDDON:750e6/35,BASILISK:750e6/35,BRIAREUS:800e6/52,CHIMERA:2e6,DOOMSDAY:50e6/7,FENRIR:2e6,HELLFORGE:150e6/7,JORMUNGANDR:5e6,'SHADOW CITY':14e9/75};
+const EPIC_NORM_POINTS_PER_CHEST={ARACHNE:300e6/35,ARCANOMANCER:800e6/52,ARMAGEDDON:750e6/35,BASILISK:750e6/35,BRIAREUS:800e6/52,CHIMERA:2e6,DOOMSDAY:50e6/7,FENRIR:2e6,HELLFORGE:150e6/7,JORMUNGANDR:5e6,'SHADOW CITY':13.5e9/70};
 const REVIEW_SELECTION_UI_ENABLED=false;
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
