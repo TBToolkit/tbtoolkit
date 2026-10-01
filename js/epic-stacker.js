@@ -2237,6 +2237,30 @@ function commitSquadOrderFromDom(category,target){
  activeOrderState().squadOrder[category]=[...target.querySelectorAll(':scope > .squad-order-item')].map(x=>x.dataset.unitId);
  saveState();recalculate();
 }
+const dragCycleBoundarySlots=new WeakMap();
+function positionDragCycleBoundaries(target){
+  target.querySelectorAll(':scope > .cycle-drag-boundary').forEach(line=>line.remove());
+  const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+  for(const slot of dragCycleBoundarySlots.get(target)||[]){
+    if(!rows[slot.index])continue;
+    const line=document.createElement('div');
+    line.className='cycle-drag-boundary';
+    line.textContent=`${slot.label} begins`;
+    line.setAttribute('aria-hidden','true');
+    target.insertBefore(line,rows[slot.index]);
+  }
+}
+function beginDragCycleBoundaries(target){
+  const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+  dragCycleBoundarySlots.set(target,rows.flatMap((row,index)=>row.classList.contains('has-cycle-break')?[{index,label:row.dataset.cycleBreak}]:[]));
+  target.classList.add('drag-active');
+  positionDragCycleBoundaries(target);
+}
+function endDragCycleBoundaries(target){
+  target.querySelectorAll(':scope > .cycle-drag-boundary').forEach(line=>line.remove());
+  dragCycleBoundarySlots.delete(target);
+  target.classList.remove('drag-active');
+}
 function resetCustomOrderToDefault(){
  if(!isCustomOrderMode())return;const s=activeOrderState();
  s.orders={troop:[],monster:[],mercenary:[]};s.unitOrders={troop:{},monster:{},mercenary:{}};s.unitOrderManual={troop:{},monster:{},mercenary:{}};s.squadOrder={troop:[],monster:[],mercenary:[]};
@@ -2384,12 +2408,12 @@ function renderOrderView(){
    buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
    row.ondragstart=ev=>{
      if(ev.target?.closest?.('.squad-order-move')){ev.preventDefault();return;}
-     row.classList.add('dragging');target.classList.add('drag-active');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
+     row.classList.add('dragging');beginDragCycleBoundaries(target);ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
    };
-   row.ondragend=()=>{row.classList.remove('dragging');try{commitSquadOrderFromDom(category,target)}finally{target.classList.remove('drag-active')}};
+   row.ondragend=()=>{row.classList.remove('dragging');try{commitSquadOrderFromDom(category,target)}finally{endDragCycleBoundaries(target)}};
    target.append(row);
   });
-  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
+  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging);positionDragCycleBoundaries(target)};
  }
 }
 

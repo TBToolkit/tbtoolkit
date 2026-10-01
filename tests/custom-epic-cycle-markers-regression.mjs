@@ -19,7 +19,10 @@ assert.deepEqual(cycleMarkersForOrder(['first','missing','third'],friendly,epic)
 assert.equal(cycleMarkersForOrder(['third','first'],friendly,epic)[1].startsCycle,true);
 const stacker=readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const styles=readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
-assert.match(stacker,/row\.classList\.add\('dragging'\);target\.classList\.add\('drag-active'\)/);
+assert.match(stacker,/row\.classList\.add\('dragging'\);beginDragCycleBoundaries\(target\)/);
+assert.match(stacker,/target\.insertBefore\(line,rows\[slot\.index\]\)/);
+assert.match(stacker,/positionDragCycleBoundaries\(target\)\};/);
 assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.has-cycle-break::before\{display:none\}/);
-assert.match(styles,/\.order-list\.drag-active \.squad-order-cycle\{visibility:hidden\}/);
+assert.match(styles,/\.cycle-drag-boundary\{/);
+assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.dragging \.squad-order-cycle\{visibility:hidden\}/);
 console.log('Custom Epic cycle markers regression checks passed.');

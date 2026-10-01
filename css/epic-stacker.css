@@ -4196,5 +4196,18 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
 .squad-order-copy .squad-order-cycle:focus-visible{outline:2px solid #ffd27d;outline-offset:2px}
 .order-list.drag-active .squad-order-item.has-cycle-break{margin-top:0}
 .order-list.drag-active .squad-order-item.has-cycle-break::before{display:none}
-.order-list.drag-active .squad-order-cycle{visibility:hidden}
+.cycle-drag-boundary{
+  box-sizing:border-box;
+  width:100%;
+  height:17px;
+  border-top:1px solid #c99636;
+  color:#e8bb65;
+  font-size:.56rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-align:center;
+  line-height:16px;
+  pointer-events:none;
+}
+.order-list.drag-active .squad-order-item.dragging .squad-order-cycle{visibility:hidden}
 
