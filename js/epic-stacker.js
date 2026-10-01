@@ -2384,9 +2384,9 @@ function renderOrderView(){
    buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
    row.ondragstart=ev=>{
      if(ev.target?.closest?.('.squad-order-move')){ev.preventDefault();return;}
-     row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
+     row.classList.add('dragging');target.classList.add('drag-active');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
    };
-   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');commitSquadOrderFromDom(category,target)};
+   row.ondragend=()=>{row.classList.remove('dragging');try{commitSquadOrderFromDom(category,target)}finally{target.classList.remove('drag-active')}};
    target.append(row);
   });
   target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
