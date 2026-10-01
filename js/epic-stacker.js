@@ -16,6 +16,7 @@ import {hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} 
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
+import {cycleMarkersForOrder} from './custom-epic-cycle-markers.mjs';
 
 function estimatedEpicPoints(encounterName,eld){
   const bonus=String(encounterName||'').toUpperCase()==='TINMAN'
@@ -2392,6 +2393,49 @@ function renderOrderView(){
  }
 }
 
+function updateCustomCycleMarkers(scored){
+  const note=document.getElementById('customCycleNote');
+  for(const row of document.querySelectorAll('#orderView .squad-order-item')){
+    row.classList.remove('has-cycle-break');
+    row.removeAttribute('data-cycle-break');
+    row.querySelector('.squad-order-cycle')?.remove();
+  }
+  const encounter=currentEncounter();
+  const eligible=isCustomOrderMode()&&activeMode==='battle'
+    &&state.modes.battle.activeBattleType==='epic'
+    &&encounter?.builtIn
+    &&!['CHIMERA','JORMUNGANDR'].includes(String(encounter.name||'').toUpperCase())
+    &&!!scored?.result?.cases;
+  if(note)note.hidden=!eligible;
+  if(!eligible)return;
+  const cases=scored.result.cases;
+  for(const [category,targetId] of Object.entries({troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'})){
+    const target=els[targetId];
+    if(!target)continue;
+    const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+    const markers=cycleMarkersForOrder(rows.map(row=>row.dataset.unitId),cases.friendlyFirst?.death,cases.epicFirst?.death);
+    for(let index=0;index<rows.length;index++){
+      const row=rows[index],marker=markers[index];
+      if(marker.cycle===null)continue;
+      const badge=document.createElement('span');
+      badge.className='squad-order-cycle';
+      badge.textContent=marker.alternateCycle!==null&&marker.alternateCycle!==marker.cycle
+        ?`Cycle ${marker.cycle} / ${marker.alternateCycle}`
+        :`Cycle ${marker.cycle}`;
+      badge.title=marker.alternateCycle===null
+        ?`Your army attacks first: dies in cycle ${marker.cycle}`
+        :`Your army attacks first: cycle ${marker.cycle}; Epic attacks first: cycle ${marker.alternateCycle}`;
+      badge.tabIndex=0;
+      badge.setAttribute('aria-label',badge.title);
+      row.querySelector('.squad-order-copy')?.append(badge);
+      if(marker.startsCycle){
+        row.classList.add('has-cycle-break');
+        row.dataset.cycleBreak=`Cycle ${marker.cycle}`;
+      }
+    }
+  }
+}
+
 const expandedSelectionSections=new Set();
 const MERC_LEVEL_LABEL={2:'II',7:'VII',6:'VI',5:'V'};
 const MERC_GROUP_ORDER=['COMMON','MONSTER','SPECIALIST','GUARDSMAN','EPIC - HUNTER','EPIC - EVENT','ARACHNE','ENGINEER'];
@@ -2742,7 +2786,7 @@ function validate(){
   return errors;
 }
 function showValidation(errors){if(!errors.length){els.validationBox.classList.remove('show');els.validationBox.innerHTML='';return;}els.validationBox.innerHTML=`<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;els.validationBox.classList.add('show');}
-function clearResults(message='Enter your values and select units.'){clearClassicBattleDetails();els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.classList.remove('optimizing-status');els.resultStatus.textContent=message;clearPrediction();for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
+function clearResults(message='Enter your values and select units.'){clearClassicBattleDetails();els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.classList.remove('optimizing-status');els.resultStatus.textContent=message;clearPrediction();updateCustomCycleMarkers(null);for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
 
 function clearClassicBattleDetails(){
   if(els.classicBattleDetails)els.classicBattleDetails.hidden=true;
@@ -3196,6 +3240,7 @@ function recalculate(){
     const bt=activeMode==='battle'?state.modes.battle.activeBattleType:null;
     const canEpicScore=activeMode!=='battle'||bt==='epic';
     const scored=canEpicScore?scoreClassicResult(result):null;
+    updateCustomCycleMarkers(scored);
     if(scored){
       renderLayerHealthChart(convertEpicV2Result(scored));
       renderPrediction(scored);
