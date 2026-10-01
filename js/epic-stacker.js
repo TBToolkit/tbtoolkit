@@ -16,6 +16,7 @@ import {hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} 
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
+import {cycleMarkersForOrder} from './custom-epic-cycle-markers.mjs';
 
 function estimatedEpicPoints(encounterName,eld){
   const bonus=String(encounterName||'').toUpperCase()==='TINMAN'
@@ -2236,6 +2237,30 @@ function commitSquadOrderFromDom(category,target){
  activeOrderState().squadOrder[category]=[...target.querySelectorAll(':scope > .squad-order-item')].map(x=>x.dataset.unitId);
  saveState();recalculate();
 }
+const dragCycleBoundarySlots=new WeakMap();
+function positionDragCycleBoundaries(target){
+  target.querySelectorAll(':scope > .cycle-drag-boundary').forEach(line=>line.remove());
+  const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+  for(const slot of dragCycleBoundarySlots.get(target)||[]){
+    if(!rows[slot.index])continue;
+    const line=document.createElement('div');
+    line.className='cycle-drag-boundary';
+    line.textContent=`${slot.label} begins`;
+    line.setAttribute('aria-hidden','true');
+    target.insertBefore(line,rows[slot.index]);
+  }
+}
+function beginDragCycleBoundaries(target){
+  const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+  dragCycleBoundarySlots.set(target,rows.flatMap((row,index)=>row.classList.contains('has-cycle-break')?[{index,label:row.dataset.cycleBreak}]:[]));
+  target.classList.add('drag-active');
+  positionDragCycleBoundaries(target);
+}
+function endDragCycleBoundaries(target){
+  target.querySelectorAll(':scope > .cycle-drag-boundary').forEach(line=>line.remove());
+  dragCycleBoundarySlots.delete(target);
+  target.classList.remove('drag-active');
+}
 function resetCustomOrderToDefault(){
  if(!isCustomOrderMode())return;const s=activeOrderState();
  s.orders={troop:[],monster:[],mercenary:[]};s.unitOrders={troop:{},monster:{},mercenary:{}};s.unitOrderManual={troop:{},monster:{},mercenary:{}};s.squadOrder={troop:[],monster:[],mercenary:[]};
@@ -2383,13 +2408,56 @@ function renderOrderView(){
    buttons[0].onclick=()=>moveSquadOrderItem(category,index,-1);buttons[1].onclick=()=>moveSquadOrderItem(category,index,1);
    row.ondragstart=ev=>{
      if(ev.target?.closest?.('.squad-order-move')){ev.preventDefault();return;}
-     row.classList.add('dragging');ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
+     row.classList.add('dragging');beginDragCycleBoundaries(target);ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/plain',id);
    };
-   row.ondragend=()=>{row.classList.remove('dragging');target.classList.remove('drag-active');commitSquadOrderFromDom(category,target)};
+   row.ondragend=()=>{row.classList.remove('dragging');try{commitSquadOrderFromDom(category,target)}finally{endDragCycleBoundaries(target)}};
    target.append(row);
   });
-  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();target.classList.add('drag-active');let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging)};
+  target.ondragover=ev=>{const dragging=target.querySelector('.squad-order-item.dragging');if(!dragging)return;ev.preventDefault();let before=null;for(const x of target.querySelectorAll(':scope > .squad-order-item:not(.dragging)')){const r=x.getBoundingClientRect();if(ev.clientY<r.top+r.height/2){before=x;break}}before?target.insertBefore(dragging,before):target.append(dragging);positionDragCycleBoundaries(target)};
  }
+}
+
+function updateCustomCycleMarkers(scored){
+  const note=document.getElementById('customCycleNote');
+  for(const row of document.querySelectorAll('#orderView .squad-order-item')){
+    row.classList.remove('has-cycle-break');
+    row.removeAttribute('data-cycle-break');
+    row.querySelector('.squad-order-cycle')?.remove();
+  }
+  const encounter=currentEncounter();
+  const eligible=isCustomOrderMode()&&activeMode==='battle'
+    &&state.modes.battle.activeBattleType==='epic'
+    &&encounter?.builtIn
+    &&!['CHIMERA','JORMUNGANDR'].includes(String(encounter.name||'').toUpperCase())
+    &&!!scored?.result?.cases;
+  if(note)note.hidden=!eligible;
+  if(!eligible)return;
+  const cases=scored.result.cases;
+  for(const [category,targetId] of Object.entries({troop:'troopOrderList',monster:'monsterOrderList',mercenary:'mercenaryOrderList'})){
+    const target=els[targetId];
+    if(!target)continue;
+    const rows=[...target.querySelectorAll(':scope > .squad-order-item')];
+    const markers=cycleMarkersForOrder(rows.map(row=>row.dataset.unitId),cases.friendlyFirst?.death,cases.epicFirst?.death);
+    for(let index=0;index<rows.length;index++){
+      const row=rows[index],marker=markers[index];
+      if(marker.cycle===null)continue;
+      const badge=document.createElement('span');
+      badge.className='squad-order-cycle';
+      badge.textContent=marker.alternateCycle!==null&&marker.alternateCycle!==marker.cycle
+        ?`Cycle ${marker.cycle} / ${marker.alternateCycle}`
+        :`Cycle ${marker.cycle}`;
+      badge.title=marker.alternateCycle===null
+        ?`Your army attacks first: dies in cycle ${marker.cycle}`
+        :`Your army attacks first: cycle ${marker.cycle}; Epic attacks first: cycle ${marker.alternateCycle}`;
+      badge.tabIndex=0;
+      badge.setAttribute('aria-label',badge.title);
+      row.querySelector('.squad-order-copy')?.append(badge);
+      if(marker.startsCycle){
+        row.classList.add('has-cycle-break');
+        row.dataset.cycleBreak=`Cycle ${marker.cycle}`;
+      }
+    }
+  }
 }
 
 const expandedSelectionSections=new Set();
@@ -2742,7 +2810,7 @@ function validate(){
   return errors;
 }
 function showValidation(errors){if(!errors.length){els.validationBox.classList.remove('show');els.validationBox.innerHTML='';return;}els.validationBox.innerHTML=`<strong>Check these inputs:</strong><br>${errors.map(escapeHtml).join('<br>')}`;els.validationBox.classList.add('show');}
-function clearResults(message='Enter your values and select units.'){clearClassicBattleDetails();els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.classList.remove('optimizing-status');els.resultStatus.textContent=message;clearPrediction();for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
+function clearResults(message='Enter your values and select units.'){clearClassicBattleDetails();els.resultEmpty.hidden=false;els.resultGroups.hidden=true;els.resultStatus.classList.remove('optimizing-status');els.resultStatus.textContent=message;clearPrediction();updateCustomCycleMarkers(null);for(const id of ['troopResults','monsterResults','mercenaryResults'])els[id].innerHTML='';updateCapacity(null);clearLayerChart();}
 
 function clearClassicBattleDetails(){
   if(els.classicBattleDetails)els.classicBattleDetails.hidden=true;
@@ -3196,6 +3264,7 @@ function recalculate(){
     const bt=activeMode==='battle'?state.modes.battle.activeBattleType:null;
     const canEpicScore=activeMode!=='battle'||bt==='epic';
     const scored=canEpicScore?scoreClassicResult(result):null;
+    updateCustomCycleMarkers(scored);
     if(scored){
       renderLayerHealthChart(convertEpicV2Result(scored));
       renderPrediction(scored);
