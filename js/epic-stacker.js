@@ -6,13 +6,13 @@ import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounte
 import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
 import {APP_BUILD,OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
-import {readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
+import {preferNewerSavedState,readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
-import {hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
+import {hydrateCanonicalStorage,hydrateOptimizerResultBackups,mirrorOptimizerResult,removeOptimizerResultBackup,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
 import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
@@ -36,6 +36,11 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;let optimizerExploreActive=false;
+let optimizerResultBackups=new Map();
+let canonicalAccountBackup=null;
+let optimizerPersistenceWarningShown=false;
+let accountPersistenceWarningShown=false;
+let pendingAccountBackup=Promise.resolve(false);
 let exploreUnitStructures=false;let exploreTierDepth=2;
 let epicChestRewards=new Map();
 let tinmanChestRewards=new Map(),tinmanLevelData=[];
@@ -498,8 +503,10 @@ async function loadTinmanLevelData(){
 }
 function loadSavedState(){
   try{
-    const loaded=readLatestSavedState(localStorage,readSavedJson,{validate:validateAccountState});
-    const currentSaved=loaded?.state;
+    let loaded=null;
+    try{loaded=readLatestSavedState(localStorage,readSavedJson,{validate:validateAccountState});}
+    catch(error){console.warn('Could not read the local calculator snapshot; checking its browser backup.',error);}
+    const currentSaved=preferNewerSavedState(loaded?.state,canonicalAccountBackup);
     if(currentSaved?.preferences){
       if(Number.isFinite(Number(currentSaved.preferences.templeLevel)))state.preferences.templeLevel=Math.max(1,Math.min(45,Number(currentSaved.preferences.templeLevel)||45));
       state.preferences.chartStyle=currentSaved.preferences.chartStyle==='combined'?'combined':'separated';
@@ -627,16 +634,24 @@ function loadSavedState(){
   ensureBattleWorkspace();
 }
 function persistState(){
+  pendingAccountBackup=Promise.resolve(false);
   if(activeMode==='battle')propagateSharedEpicArmy();
   const snapshot=stampCanonicalSnapshot({schemaVersion:SAVED_STATE_SCHEMA_VERSION,activeMode,activeAccountId:state.activeAccountId,accounts:persistentAccountSnapshot(state.accounts),preferences:state.preferences,modes:{epic:state.modes.epic,optimizer:state.modes.optimizer,custom:state.modes.custom}});
+  validateAccountState(snapshot);
+  canonicalAccountBackup=snapshot;
+  pendingAccountBackup=mirrorCanonicalSnapshot(STORAGE_KEY,snapshot);
   writeSavedJson(localStorage,STORAGE_KEY,snapshot,{validate:validateAccountState});
-  mirrorCanonicalSnapshot(STORAGE_KEY,snapshot);
 }
 function saveState(){
   try{persistState();}catch(error){
     // Persistence must never interrupt a selection or calculation-method UI
     // transition. Optimizer results are stored under their own bounded key.
     console.warn('Could not save calculator state.',error);
+    pendingAccountBackup.then(ok=>{
+      if(ok||accountPersistenceWarningShown)return;
+      accountPersistenceWarningShown=true;
+      showValidation(['Browser storage is full or unavailable. Your latest inputs may be lost when you close the page. Export your Player Account to keep a copy.']);
+    });
   }
 }
 function safeBiffFileName(name){
@@ -649,7 +664,7 @@ function downloadActiveAccountBiff(){
   const workspaces=Object.fromEntries(Object.entries(account.battle.workspaces).map(([encounterId,workspace])=>{
     let cached=workspace.resultCache;
     if(!cached){
-      try{cached=readSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${encounterId}`);}
+      try{cached=optimizerResultBackups.get(`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${encounterId}`)||readSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${encounterId}`);}
       catch(error){console.warn(`Could not read optimized result for ${encounterId}.`,error);}
     }
     return[encounterId,{...workspace,methods:{...workspace.methods,optimize:{...workspace.methods?.optimize,resultCache:cached?.build===OPTIMIZER_CACHE_BUILD?cached:null}}}];
@@ -747,7 +762,7 @@ function confirmPendingBiffImport(){
     for(const [encounterId,workspace] of Object.entries(imported.battle.workspaces)){
       const cache=workspace.methods?.optimize?.resultCache;
       if(!cache||cache.build!==OPTIMIZER_CACHE_BUILD)continue;
-      try{writeSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${imported.id}.${encounterId}`,cache);}
+      try{persistOptimizerResult(`tbtoolkit.battleCalculator.optimizerResult.v4.${imported.id}.${encounterId}`,cache);}
       catch(error){console.warn(`Could not persist imported optimized result for ${encounterId}; it remains available for this session.`,error);}
     }
     publishImportedOptimizerPlans(imported);
@@ -756,6 +771,7 @@ function confirmPendingBiffImport(){
     loadSavedOptimizerResult();refreshActiveMode();
   }catch(error){
     state.accounts=previousAccounts;state.activeAccountId=previousAccountId;state.modes.battle=previousBattle;
+    saveState();
     els.biffImportError.textContent=`Nothing was imported. ${error?.message||'Browser storage could not be updated.'}`;
     els.biffImportError.classList.add('show');
   }
@@ -792,36 +808,22 @@ function compactOptimizerPayloadForStorage(payload){
   ])if(diagnostics[key]!==undefined)persistedDiagnostics[key]=diagnostics[key];
   return{quantities:{...(payload.quantities||{})},result,diagnostics:persistedDiagnostics};
 }
-function optimizerResultCacheKeys(){
-  const prefix='tbtoolkit.battleCalculator.optimizerResult.v4.';
-  const keys=[];
-  for(let index=0;index<localStorage.length;index++){
-    const key=localStorage.key(index);
-    if(key?.startsWith(prefix))keys.push(key);
-  }
-  return keys;
-}
-function writeOptimizerResultWithQuotaRecovery(key,saved){
+function persistOptimizerResult(key,saved){
+  optimizerResultBackups.set(key,saved);
+  const backup=mirrorOptimizerResult(key,saved);
   try{
     writeSavedJson(localStorage,key,saved);
-    return;
-  }catch(firstError){
-    // Optimizer results are reproducible caches. If accumulated caches fill
-    // browser storage, discard the oldest other encounter cache and retry so
-    // the result the player just waited for is the one that survives.
-    const candidates=optimizerResultCacheKeys().filter(candidate=>candidate!==key).map(candidate=>{
-      let savedAt=0;
-      try{savedAt=Number(readSavedJson(localStorage,candidate)?.savedAt)||0;}catch{}
-      return{key:candidate,savedAt};
-    }).sort((a,b)=>a.savedAt-b.savedAt);
-    for(const candidate of candidates){
-      localStorage.removeItem(candidate.key);
-      try{
-        writeSavedJson(localStorage,key,saved);
-        return;
-      }catch{}
-    }
-    throw firstError;
+  }catch(error){
+    // IndexedDB is the durable copy. Never delete other encounters to make
+    // space for this one; that made previously saved results disappear.
+    backup.then(ok=>{
+      if(ok)return;
+      console.warn('This optimizer result could not be saved outside this browser session.',error);
+      if(!optimizerPersistenceWarningShown){
+        optimizerPersistenceWarningShown=true;
+        showValidation(['Browser storage is full or unavailable. This result is available now but may be lost when you close the page. Export your Player Account to keep a copy.']);
+      }
+    });
   }
 }
 function loadSavedOptimizerResult(){
@@ -832,8 +834,9 @@ function loadSavedOptimizerResult(){
     const signature=shared?currentEpicEffectiveSignature():null;
     let saved=null;
     for(const candidate of candidates){
-      const available=[candidate.workspace?.resultCache];
-      try{available.push(readSavedJson(localStorage,activeMode==='battle'?optimizerResultStorageKeyFor(candidate.id):optimizerResultStorageKey()));}
+      const key=activeMode==='battle'?optimizerResultStorageKeyFor(candidate.id):optimizerResultStorageKey();
+      const available=[candidate.workspace?.resultCache,optimizerResultBackups.get(key)];
+      try{available.push(readSavedJson(localStorage,key));}
       catch(error){console.warn(`Could not read persisted optimizer result for ${candidate.id}.`,error);}
       for(const cache of available){
         if(cache?.build!==OPTIMIZER_CACHE_BUILD||!cache.payload||!cache.signature)continue;
@@ -856,13 +859,16 @@ function saveOptimizerResult(){
   // quota-limited local-storage copy, so encounter switching remains safe.
   if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
   try{
-    writeOptimizerResultWithQuotaRecovery(optimizerResultStorageKey(),saved);
+    persistOptimizerResult(optimizerResultStorageKey(),saved);
   }catch(error){console.warn('Could not persist optimizer result outside this browser session.',error);}
   saveState();
 }
 function clearSavedOptimizerResult(){
   lastOptimizedEpicPayload=null;lastOptimizedEpicSignature='';lastEpicRunDiagnostics=null;
-  localStorage.removeItem(optimizerResultStorageKey());
+  const key=optimizerResultStorageKey();
+  optimizerResultBackups.delete(key);
+  removeOptimizerResultBackup(key);
+  localStorage.removeItem(key);
   if(activeMode==='battle')currentBattleWorkspace().resultCache=null;
 }
 function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
@@ -907,7 +913,7 @@ function publishImportedOptimizerPlans(imported){
 }
 function hasSavedOptimizerCacheForEncounter(account,encounterId,workspace){
   const valid=peer=>peer?.methods?.optimize?.resultCache?.build===OPTIMIZER_CACHE_BUILD&&!!peer.methods.optimize.resultCache.payload?.result&&!!peer.methods.optimize.resultCache.signature;
-  const stored=id=>{try{const cache=readSavedJson(localStorage,`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${id}`);return cache?.build===OPTIMIZER_CACHE_BUILD&&!!cache.payload?.result&&!!cache.signature;}catch{return false;}};
+  const stored=id=>{try{const key=`tbtoolkit.battleCalculator.optimizerResult.v4.${account.id}.${id}`,cache=optimizerResultBackups.get(key)||readSavedJson(localStorage,key);return cache?.build===OPTIMIZER_CACHE_BUILD&&!!cache.payload?.result&&!!cache.signature;}catch{return false;}};
   if(valid(workspace)||stored(encounterId))return true;
   const group=epicArmyGroup(encounterId);
   return !!group&&!!workspace?.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId)&&Object.entries(account.battle.workspaces).some(([id,peer])=>id!==encounterId&&epicArmyGroup(id)===group&&peer.inputs?.shareEpicArmy&&canReuseEpicOptimizerResult(id)&&(valid(peer)||stored(id)));
@@ -3629,7 +3635,7 @@ function wireEvents(){
       if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature===currentEpicEffectiveSignature()){
         const cache={build:OPTIMIZER_CACHE_BUILD,payload:compactOptimizerPayloadForStorage(lastOptimizedEpicPayload),signature:lastOptimizedEpicSignature,runDiagnostics:lastEpicRunDiagnostics,savedAt:Date.now()};
         workspace.resultCache=cache;
-        try{writeOptimizerResultWithQuotaRecovery(optimizerResultStorageKey(),cache);}catch(error){console.warn('Could not keep an independent copy of the shared optimizer result.',error);}
+        try{persistOptimizerResult(optimizerResultStorageKey(),cache);}catch(error){console.warn('Could not keep an independent copy of the shared optimizer result.',error);}
       }
       workspace.inputs.shareEpicArmy=false;
     }else{
@@ -3818,7 +3824,8 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 async function init(){
-  await hydrateCanonicalStorage(localStorage);
+  canonicalAccountBackup=(await hydrateCanonicalStorage(localStorage)).get(STORAGE_KEY)??null;
+  optimizerResultBackups=await hydrateOptimizerResultBackups(localStorage);
   cacheElements();
   for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
