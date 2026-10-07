@@ -233,7 +233,7 @@
 <div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
 <div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
-<div class="explore-controls" id="exploreControls" hidden><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
+<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
 
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
@@ -371,7 +371,7 @@
 <div class="stat-help-modal" hidden id="statHelpModal">
 <div class="stat-help-backdrop" data-stat-help-close></div>
 <div aria-describedby="statHelpText" aria-labelledby="statHelpTitle" aria-modal="true" class="stat-help-dialog" role="dialog">
-<div class="stat-help-header"><div><span class="stat-help-eyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
+<div class="stat-help-header"><div><span class="stat-help-eyebrow" id="statHelpEyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
 <p class="stat-help-text" id="statHelpText"></p>
 <div class="stat-help-gallery" id="statHelpGallery"></div>
 <button class="stat-help-guide-link" data-battle-guide="" hidden id="statHelpGuideLink" type="button">Learn how this affects calculations</button>
