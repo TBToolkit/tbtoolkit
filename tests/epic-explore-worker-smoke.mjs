@@ -13,6 +13,8 @@ const failure=messages.find(message=>message.type==='error');
 assert.equal(failure,undefined,failure?.message);
 const output=messages.find(message=>message.type==='result')?.payload;
 assert.ok(output,'Explore worker must return a result');
+const cachedBaselineProgress=messages.find(message=>message.requestId===1&&message.type==='progress'&&message.payload?.exploreStage==='baseline-ready')?.payload;
+assert.equal(cachedBaselineProgress?.verifiedBestEld,1e99,'A reused baseline must be sent to the popup before screening.');
 assert.ok(output.exploration.fullyOptimizedCandidates>0,'Explore worker must fully optimize at least one alternate composition');
 assert.equal(output.exploration.changedSelection,false,'A candidate with lower full-optimizer ELD must not replace the baseline');
 assert.equal(output.exploredSelectedIds,undefined,'A reused baseline must not carry forward stale selection-change metadata');
@@ -22,5 +24,8 @@ const freshFailure=messages.find(message=>message.requestId===2&&message.type===
 assert.equal(freshFailure,undefined,freshFailure?.message);
 const fresh=messages.find(message=>message.requestId===2&&message.type==='result')?.payload;
 assert.ok(fresh?.exploration.fullyOptimizedCandidates>0,'Explore must run full optimization even without a cached baseline');
+const freshBaselineProgress=messages.find(message=>message.requestId===2&&message.type==='progress'&&message.payload?.exploreStage==='baseline-ready')?.payload;
+assert.ok(freshBaselineProgress?.healthLadder?.length>0,'A fresh baseline must send its optimized health ladder before screening.');
+assert.ok(messages.some(message=>message.requestId===2&&message.type==='progress'&&message.payload?.exploreStage==='finalist-complete'),'Each fully optimized finalist must announce its confirmed result.');
 assert.ok(fresh.exploration.finalEld>=fresh.exploration.baselineEld,'The integrated result must never be worse than its fully optimized baseline');
 console.log(JSON.stringify({ok:true,fullyOptimizedCandidates:output.exploration.fullyOptimizedCandidates,screenedCandidates:output.exploration.screenedCandidates,freshBaseline:Math.round(fresh.exploration.baselineEld),freshFinal:Math.round(fresh.exploration.finalEld)}));

@@ -83,6 +83,7 @@ assert.doesNotMatch(html,/id="reviewSelection"/,'The separate preliminary-recomm
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection must expose the integrated Explore mode toggle.');
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"[\s\S]*?<\/label><button[^>]*data-stat-help="exploreUnitStructures"/,'Explore help must be a separate button that does not toggle the checkbox.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*can take up to six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
+assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations',eyebrow:'Unit selection guide'[^\n]*highest unlocked tier[^\n]*will not search that group[^\n]*winning army[^\n]*until you change them or run Explore again/,'Explore help must explain group selection, tier limits, and how the chosen units persist.');
 assert.match(html,/id="exploreTierDepth"[\s\S]*?<option value="2" selected>/,'Explore mode must default to a two-tier range.');
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');
 assert.match(source,/saveOptimizerResult\(\);\s*\/\/ Explore is a one-time search\.[\s\S]*?if\(exploring\)exploreUnitStructures=false;/,'Successful Explore runs must return to selected-units-only optimization.');
