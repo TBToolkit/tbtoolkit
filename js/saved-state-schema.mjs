@@ -32,3 +32,12 @@ export function readLatestSavedState(storage,readJson,options){
   }
   return null;
 }
+
+export function preferNewerSavedState(local,backup){
+  if(!backup)return local;
+  const backupRevision=Number(backup.storageRevision)||0;
+  const localRevision=Number(local?.storageRevision)||0;
+  return !local||backupRevision>localRevision
+    ?migrateSavedState(backup,backup.schemaVersion??SAVED_STATE_SCHEMA_VERSION)
+    :local;
+}

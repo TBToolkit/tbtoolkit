@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {CLAN_PROFILE_STORE_KEY,reconcileCanonicalRecord,stampCanonicalSnapshot} from '../js/durable-user-data.mjs';
+import {CLAN_PROFILE_STORE_KEY,hydrateOptimizerResultBackups,mirrorOptimizerResult,reconcileCanonicalRecord,stampCanonicalSnapshot} from '../js/durable-user-data.mjs';
 import {SAVED_STATE_KEY} from '../js/saved-state-schema.mjs';
 
 const player=revision=>({schemaVersion:20,storageRevision:revision,activeAccountId:'one',accounts:{one:{name:'Biff'}}});
@@ -34,4 +34,11 @@ assert.equal(await reconcileCanonicalRecord(memory([]),SAVED_STATE_KEY,null),'mi
 const stamped=stampCanonicalSnapshot(player(10));
 assert.ok(stamped.storageRevision>10);
 assert.equal(stamped.accounts.one.name,'Biff');
+const resultKey='tbtoolkit.battleCalculator.optimizerResult.v4.one.epic-arachne';
+const savedResult={savedAt:123,payload:{result:{expectedTotalLifetimeDamage:456}}};
+const oldLocal=memory([[resultKey,JSON.stringify(savedResult)]]);
+oldLocal.length=1;oldLocal.key=index=>index===0?resultKey:null;
+const restoredResults=await hydrateOptimizerResultBackups(oldLocal);
+assert.equal(restoredResults.get(resultKey).payload.result.expectedTotalLifetimeDamage,456,'Existing local results must remain readable during backup migration.');
+assert.equal(await mirrorOptimizerResult(resultKey,savedResult),false,'An unavailable browser database must not be reported as a successful backup.');
 console.log(JSON.stringify({ok:true,restored:2,seeded:1}));

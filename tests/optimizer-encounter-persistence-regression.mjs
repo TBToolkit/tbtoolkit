@@ -7,7 +7,7 @@ const source=readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8
 const cacheHelper=source.match(/function hasSavedOptimizerCacheForEncounter\(account,encounterId,workspace\)\{[\s\S]*?\n\}/)?.[0];
 assert.ok(cacheHelper,'Clan Overview must be able to find saved Optimize results after calculator reloads.');
 const diskCache=new Map([['tbtoolkit.battleCalculator.optimizerResult.v4.player.epic-basilisk',{build:'optimizer:test-build',signature:'saved-inputs',payload:{result:{eld:123}}}]]);
-const cacheContext=vm.createContext({OPTIMIZER_CACHE_BUILD:'optimizer:test-build',localStorage:{},readSavedJson:(_storage,key)=>diskCache.get(key),epicArmyGroup:()=>null,canReuseEpicOptimizerResult:()=>false});
+const cacheContext=vm.createContext({OPTIMIZER_CACHE_BUILD:'optimizer:test-build',optimizerResultBackups:new Map(),localStorage:{},readSavedJson:(_storage,key)=>diskCache.get(key),epicArmyGroup:()=>null,canReuseEpicOptimizerResult:()=>false});
 vm.runInContext(cacheHelper,cacheContext);
 assert.equal(vm.runInContext('hasSavedOptimizerCacheForEncounter({id:"player",battle:{workspaces:{}}},"epic-basilisk",{methods:{optimize:{resultCache:null}}})',cacheContext),true,'An Optimize result stored outside the compact account snapshot must be available for plan repair.');
 diskCache.get('tbtoolkit.battleCalculator.optimizerResult.v4.player.epic-basilisk').build='old-build';
@@ -35,7 +35,8 @@ const context=vm.createContext({
   optimizerResultStorageKeyFor:id=>`optimizer.${id}`,
   optimizerResultStorageKey:()=>`optimizer.${encounterId}`,
   compactOptimizerPayloadForStorage:payload=>payload,
-  writeOptimizerResultWithQuotaRecovery:(key,value)=>{
+  optimizerResultBackups:new Map(),
+  persistOptimizerResult:(key,value)=>{
     if(failStorage)throw new Error('Quota exceeded');
     storage.set(key,structuredClone(value));
   },
@@ -135,5 +136,21 @@ const fixedMercenaryContext=vm.createContext({
 vm.runInContext(functionSource('fixedStandardMercenaryQuantitiesForOptimizer'),fixedMercenaryContext);
 vm.runInContext('fixedStandardMercenaryQuantitiesForOptimizer()',fixedMercenaryContext);
 assert.equal(fixedMercenaryInputs.minimumSeparation,true,'Fixed mercenary quantities in Optimize must ignore the Custom separation setting.');
+
+const quotaHelper=source.match(/function persistOptimizerResult\(key,saved\)\{[\s\S]*?\n\}/)?.[0];
+assert.ok(quotaHelper);
+const preserved=new Map([['optimizer.old',{payload:{result:{eld:11}}}]]),backedUp=[];
+const quotaContext=vm.createContext({
+  optimizerResultBackups:preserved,
+  mirrorOptimizerResult:(key,value)=>{backedUp.push(key);return Promise.resolve(true);},
+  writeSavedJson:()=>{throw new Error('Quota exceeded');},
+  localStorage:{removeItem:()=>assert.fail('An older result must not be deleted')},
+  console:{warn:()=>{}},optimizerPersistenceWarningShown:false,showValidation:()=>{}
+});
+vm.runInContext(quotaHelper,quotaContext);
+vm.runInContext('persistOptimizerResult("optimizer.new",{payload:{result:{eld:22}}})',quotaContext);
+assert.ok(preserved.has('optimizer.old'),'A full origin must not evict an older optimized encounter.');
+assert.equal(preserved.get('optimizer.new').payload.result.eld,22);
+assert.deepEqual(backedUp,['optimizer.new']);
 
 console.log(JSON.stringify({ok:true,encounters:['arachne','doomsday'],quotaFallback:true}));
