@@ -83,6 +83,7 @@ assert.doesNotMatch(html,/id="reviewSelection"/,'The separate preliminary-recomm
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection must expose the integrated Explore mode toggle.');
 assert.match(html,/id="exploreTierDepth"[\s\S]*?<option value="2" selected>/,'Explore mode must default to a two-tier range.');
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');
+assert.match(source,/saveOptimizerResult\(\);\s*\/\/ Explore is a one-time search\.[\s\S]*?if\(exploring\)exploreUnitStructures=false;/,'Successful Explore runs must return to selected-units-only optimization.');
 assert.match(optimizerEntry,/runOptimizeReviewSelection[\s\S]*?optimizeOne\(selectedIds,'finalist'/,'Finalists must pass through the full optimizer before comparison.');
 assert.match(optimizerEntry,/preferHigherEldResult\(result,trial\)===trial/,'A finalist may replace the baseline only with higher fully optimized ELD.');
 for(const id of ['guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster'])assert.doesNotMatch(html,new RegExp(`id="${id}"`),`Remove the bulk-select control ${id}.`);

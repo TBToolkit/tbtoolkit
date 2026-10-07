@@ -1925,6 +1925,9 @@ function startEpicOptimization(){
         epicResultCurrent=true;
         lastOptimizedEpicSignature=currentEpicEffectiveSignature();
         saveOptimizerResult();
+        // Explore is a one-time search. Subsequent input changes should use
+        // the chosen unit types unless the player explicitly opts in again.
+        if(exploring)exploreUnitStructures=false;
       }catch(error){
         console.error(error);
         showValidation([error.message||'The Epic optimizer result could not be rendered.']);
@@ -2202,7 +2205,7 @@ function updateExploreControls(){
   depthLabel.hidden=!exploreUnitStructures;depth.value=String(exploreTierDepth);depth.disabled=!!epicWorker;
   const summary=document.getElementById('explorePoolSummary');
   if(summary)summary.textContent=exploreUnitStructures
-    ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher.`
+    ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
 }
 
