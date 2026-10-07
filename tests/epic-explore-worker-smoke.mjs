@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {APP_BUILD} from '../js/build-info.mjs';
+
+const army=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
+const selectedIds=[army.find(unit=>unit.tier==='G9'&&unit.combatType==='MELEE'),army.find(unit=>unit.tier==='M9'&&unit.combatType==='MELEE')].map(unit=>unit.id);
+const messages=[];
+globalThis.self={postMessage:message=>messages.push(message)};
+globalThis.fetch=async()=>({ok:true,json:async()=>army});
+await import('../js/epic-optimizer-worker.mjs');
+await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,exploreMode:true,exploreTierDepth:0,timeBudgetMs:120_000,baselineResult:{result:{expectedTotalLifetimeDamage:1e99},exploredSelectedIds:['stale'],exploration:{changedSelection:true}},bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:2000,monsterDDPct:10,monsterSTPct:10,arachne:false,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false},capacityLimits:{LEADERSHIP:10000,DOMINANCE:10000,AUTHORITY:0}}});
+const failure=messages.find(message=>message.type==='error');
+assert.equal(failure,undefined,failure?.message);
+const output=messages.find(message=>message.type==='result')?.payload;
+assert.ok(output,'Explore worker must return a result');
+assert.ok(output.exploration.fullyOptimizedCandidates>0,'Explore worker must fully optimize at least one alternate composition');
+assert.equal(output.exploration.changedSelection,false,'A candidate with lower full-optimizer ELD must not replace the baseline');
+assert.equal(output.exploredSelectedIds,undefined,'A reused baseline must not carry forward stale selection-change metadata');
+assert.equal(output.result.expectedTotalLifetimeDamage,1e99,'The baseline result must be returned unchanged when all finalists lose');
+await self.onmessage({data:{type:'optimize',requestId:2,appBuild:APP_BUILD,selectedIds,exploreMode:true,exploreTierDepth:0,timeBudgetMs:120_000,bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:2000,monsterDDPct:10,monsterSTPct:10,arachne:false,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false},capacityLimits:{LEADERSHIP:10000,DOMINANCE:10000,AUTHORITY:0}}});
+const freshFailure=messages.find(message=>message.requestId===2&&message.type==='error');
+assert.equal(freshFailure,undefined,freshFailure?.message);
+const fresh=messages.find(message=>message.requestId===2&&message.type==='result')?.payload;
+assert.ok(fresh?.exploration.fullyOptimizedCandidates>0,'Explore must run full optimization even without a cached baseline');
+assert.ok(fresh.exploration.finalEld>=fresh.exploration.baselineEld,'The integrated result must never be worse than its fully optimized baseline');
+console.log(JSON.stringify({ok:true,fullyOptimizedCandidates:output.exploration.fullyOptimizedCandidates,screenedCandidates:output.exploration.screenedCandidates,freshBaseline:Math.round(fresh.exploration.baselineEld),freshFinal:Math.round(fresh.exploration.finalEld)}));

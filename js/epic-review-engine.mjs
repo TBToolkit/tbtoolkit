@@ -31,10 +31,10 @@ export function canonicalizeReviewCandidates(currentIds,rows){
   return{current,candidates:[...bySignature.values()]};
 }
 
-export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,fixedQuantities={},timeBudgetMs=120_000,onProgress=()=>{}}){
+export async function runOptimizeReviewSelection({units,currentIds,bonuses,capacityLimits,fixedQuantities={},timeBudgetMs=120_000,maxTierDepth=Infinity,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+Math.max(1_000,Number(timeBudgetMs)||120_000);
   const shouldAbort=()=>performance.now()>deadline;
-  const availability=inferReviewAvailability({units,selectedIds:currentIds});
+  const availability=inferReviewAvailability({units,selectedIds:currentIds,maxTierDepth});
   const structures=createReviewTierStructures({units,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds});
   const fixedNames=new Set(Object.keys(fixedQuantities||{}));
   const fixedIds=new Set(units.filter(unit=>fixedNames.has(unit.name)||fixedNames.has(unit.id)).map(unit=>unit.id));
@@ -91,5 +91,6 @@ export async function runOptimizeReviewSelection({units,currentIds,bonuses,capac
   const selectedMercenaries=new Set(availability.mandatoryIds);
   if(changes.added.some(id=>units.find(unit=>unit.id===id)?.category==='mercenary')||changes.removed.some(id=>selectedMercenaries.has(id)))throw new Error('Review Selection attempted to change selected mercenary types.');
   onProgress({phase:'complete',progressPct:100,evaluations});
-  return{build:EPIC_REVIEW_BUILD,initiativeModel:current.result.initiativeModel,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,fixedMercenaries:fixedIds.size,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},mandatoryMercenaryIds:availability.mandatoryIds};
+  const finalists=[...canonical.candidates].filter(row=>compositionSignature(row.selectedIds)!==currentSignature).sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage).slice(0,3).map(row=>({selectedIds:row.selectedIds,screenedEld:row.result.expectedTotalLifetimeDamage}));
+  return{build:EPIC_REVIEW_BUILD,initiativeModel:current.result.initiativeModel,elapsedMs:performance.now()-started,evaluations,tierEvaluations:tierSearch.evaluations,tierRounds:tierSearch.rounds,fixedMercenaries:fixedIds.size,current:{selectedIds:current.selectedIds,eld:current.result.expectedTotalLifetimeDamage},proposal:{selectedIds:decision.chosen.selectedIds,eld:decision.chosen.eld,improvementPct:(decision.chosen.eld/current.result.expectedTotalLifetimeDamage-1)*100,added:changes.added,removed:changes.removed,partialTierGroups:decision.chosen.partialTierGroups},finalists,mandatoryMercenaryIds:availability.mandatoryIds};
 }

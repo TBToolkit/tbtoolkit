@@ -18,10 +18,11 @@ function reviewGroupKey(unit){
   return null;
 }
 
-export function inferReviewAvailability({units,selectedIds}){
+export function inferReviewAvailability({units,selectedIds,maxTierDepth=Infinity}){
   const rows=units??[],byId=new Map(rows.map(unit=>[unit.id,unit]));
   const selected=sortedUnique(selectedIds).filter(id=>byId.has(id));
   const available=new Set(selected);
+  const depth=Math.max(0,Math.floor(finite(maxTierDepth,Infinity)));
   const unlockFamilies=['GUARDSMAN','SPECIALIST','ENGINEER'];
   for(const unitClass of unlockFamilies){
     const selectedFamily=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='troop'&&String(unit.unitClass).toUpperCase()===unitClass);
@@ -30,13 +31,13 @@ export function inferReviewAvailability({units,selectedIds}){
     for(const unit of rows){
       if(unit.category!=='troop'||String(unit.unitClass).toUpperCase()!==unitClass)continue;
       const tier=finite(unit.tierNumber);
-      if(tier<=highestTier)available.add(unit.id);
+      if(tier<=highestTier&&tier>=highestTier-depth)available.add(unit.id);
     }
   }
   const selectedMonsters=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='monster');
   if(selectedMonsters.length){
     const highestTier=Math.max(...selectedMonsters.map(unit=>finite(unit.tierNumber)));
-    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier)available.add(unit.id);
+    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier&&finite(unit.tierNumber)>=highestTier-depth)available.add(unit.id);
   }
   // Mercenary ownership cannot be inferred. Explicitly selected mercenaries are
   // mandatory army members during Review Selection; optimization may adjust their

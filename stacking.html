@@ -230,9 +230,10 @@
 
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units. For Epic battles, Find Better Units can explore other troops and monsters at or below your highest selected tier in each family; selected mercenaries stay unchanged.</p></div>
-<div class="selection-heading-actions"><button class="toolbar-button review-selection-button" hidden id="reviewSelection" type="button" title="Optional deeper search; may take up to two minutes. Your selection changes only if you accept the recommendation.">Find Better Units</button><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
+<div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
+<div class="explore-controls" id="exploreControls" hidden><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
 
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
@@ -468,7 +469,7 @@
 <details data-guide-panel="optimizer" id="guide-optimizer" name="battle-guide-section">
 <summary><span>8</span>Optimizer workflow</summary>
 <div class="battle-guide-section-copy">
-<p>Optimize Army searches only the units you select. The optional Find Better Units action compares other troop and monster combinations at or below the highest tier you selected in each family; it never adds or removes mercenary types. Review and accept a recommendation before running the normal optimizer with it. The deeper search can take up to two minutes and may not find the global best combination.</p>
+<p>Selected-units mode optimizes only the checked units. For Epic battles, Explore unit combinations uses the checked army as a baseline and searches other troop and monster mixes from each family’s highest checked tier down through the selected range. Only checked mercenary types are permitted. Promising mixes are re-run through the full optimizer and replace the baseline only when their final ELD is higher. Explore mode may take several minutes and is a bounded search, not a guarantee of the global maximum.</p>
 <ol class="battle-guide-flow">
 <li><strong>Validate and prepare</strong><span>Resolve unit profiles, bonuses, capacity limits, enemy formation, and legal quantity rules.</span></li>
 <li><strong>Screen independent seeds</strong><span>Create several different starting army structures so the search is not dependent on one initial guess.</span></li>

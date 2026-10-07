@@ -77,6 +77,10 @@ assert.ok(availability.availableIds.includes('s8-ranged'),'Every lower Specialis
 assert.ok(['m9-flying','m9-mounted','m9-melee','m9-ranged','m8-flying'].every(id=>availability.availableIds.includes(id)),'One selected top-tier Monster must unlock its full tier and lower tiers for review');
 assert.ok(availability.availableIds.includes('e8'),'A selected Engineer must make lower Engineer tiers available');
 assert.ok(availability.availableIds.includes('merc-owned')&&!availability.availableIds.includes('merc-unowned'),'Review must never infer mercenary ownership');
+const narrowAvailability=inferReviewAvailability({units:reviewUnits,selectedIds:['g9-ranged','s9-melee','m9-flying','e9','merc-owned'],maxTierDepth:0});
+assert.ok(narrowAvailability.availableIds.includes('g9-flying')&&!narrowAvailability.availableIds.includes('g8-flying'),'A zero-depth Explore range must include the full highest tier but no lower tiers');
+assert.ok(narrowAvailability.availableIds.includes('m9-ranged')&&!narrowAvailability.availableIds.includes('m8-flying'),'The Monster Explore range must honor the same depth limit');
+assert.deepEqual(narrowAvailability.mandatoryIds,['merc-owned'],'Tier limits must not change selected mercenaries');
 assert.deepEqual(availability.mandatoryIds,['merc-owned'],'Review must make every selected mercenary mandatory regardless of quantity-optimization mode');
 const allSelectedIds=reviewUnits.filter(unit=>unit.category!=='mercenary').map(unit=>unit.id);
 const allSelectedAvailability=inferReviewAvailability({units:reviewUnits,selectedIds:allSelectedIds});

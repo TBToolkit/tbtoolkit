@@ -30,12 +30,13 @@ const OPTIMIZER_RESULT_KEY='tbtoolkit.epicOptimizer.lastResult.v2';
 const ENCOUNTER_RESULT_STORE_KEY='tbtoolkit.epicEncounterResults.v1';
 const planBackfillAccountId=window.parent!==window?new URLSearchParams(location.search).get('planBackfill'):null;
 const EPIC_NORM_POINTS_PER_CHEST={ARACHNE:300e6/35,ARCANOMANCER:800e6/52,ARMAGEDDON:750e6/35,BASILISK:750e6/35,BRIAREUS:800e6/52,CHIMERA:2e6,DOOMSDAY:50e6/7,FENRIR:2e6,HELLFORGE:150e6/7,JORMUNGANDR:5e6,'SHADOW CITY':13.5e9/70};
-const REVIEW_SELECTION_UI_ENABLED=true;
+const REVIEW_SELECTION_UI_ENABLED=false;
 const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoLeadership'},mercenary:{limit:'authority',fill:'authorityFill',auto:'autoAuthority'},monster:{limit:'dominance',fill:'dominanceFill',auto:'autoDominance'}};
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;
+let exploreUnitStructures=false;let exploreTierDepth=2;
 let epicChestRewards=new Map();
 let tinmanChestRewards=new Map(),tinmanLevelData=[];
 let pendingBiffImport=null;
@@ -1253,10 +1254,12 @@ function setOptimizeButtonState(){
   const errors=any?validate():[];
   els.optimizeArmy.disabled=!!epicWorker;
   els.optimizeArmy.textContent=epicResultCurrent?'Re-optimize Army':'Optimize Army';
+  updateExploreControls();
 
-  if(epicWorker)els.optimizeHelp.textContent='Optimization is running.';
+  if(epicWorker)els.optimizeHelp.textContent=exploreUnitStructures?'Exploring unit combinations and fully optimizing finalists…':'Optimization is running.';
   else if(!any)els.optimizeHelp.textContent='Select units, then click Optimize Army.';
   else if(errors.length)els.optimizeHelp.textContent='Click Optimize Army to review any required inputs.';
+  else if(exploreUnitStructures&&isBattleOptimizeMode())els.optimizeHelp.textContent='Your checked army is the baseline. Explore mode may take several minutes and only changes it for higher final ELD.';
   else if(epicResultCurrent)els.optimizeHelp.textContent='Change any input or selection, then re-optimize when ready.';
   else els.optimizeHelp.textContent='Ready. Click Optimize Army to calculate the best quantities.';
 }
@@ -1318,6 +1321,9 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
+  if(progress.phase==='explore-screen')return 'Screening other eligible unit combinations…';
+  if(progress.exploreStage==='baseline')return 'Fully optimizing your starting army…';
+  if(progress.exploreStage==='finalist')return `Fully optimizing finalist ${progress.candidateIndex} of ${progress.candidateCount}…`;
   if(progress.phase==='seed'||progress.phase==='seed-screen')return 'Comparing independent starting army structures…';
   if(progress.phase==='local')return 'Optimizing the strongest independent structures…';
   if(progress.phase==='evolution')return 'Exploring new death and attack-order structures…';
@@ -1819,6 +1825,7 @@ function renderEpicOptimizedResult(opt){
 }
 function startEpicOptimization(){
   if(!isAnyEpicOptimizeMode()||epicWorker)return;
+  const exploring=isBattleOptimizeMode()&&exploreUnitStructures;
 
   // Final authoritative reconciliation at user action time. This avoids
   // Android/Chrome form-restoration timing differences during initial load.
@@ -1832,6 +1839,7 @@ function startEpicOptimization(){
   if(errors.length){setOptimizeButtonState();return;}
 
   resolveAutoFills(baseEngineInputs());
+  const reusableBaseline=exploring&&epicResultCurrent&&lastOptimizedEpicPayload&&lastOptimizedEpicSignature===currentEpicEffectiveSignature()?lastOptimizedEpicPayload:null;
   const requestId=++epicRequestId;
   epicResultCurrent=false;
   els.optimizeArmy.disabled=true;
@@ -1841,7 +1849,7 @@ function startEpicOptimization(){
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=createOptimizerWorker();
+    epicWorker=createOptimizerWorker({watchdogMs:exploring?390000:undefined});
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -1885,7 +1893,21 @@ function startEpicOptimization(){
           quantities:msg.payload?.quantities
         });
         updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.totalEvaluations??msg.payload?.diagnostics?.evaluations,expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,bestExpectedLifetimeDamage:msg.payload?.diagnostics?.maximumExpectedLifetimeDamage,practicalTieBreakApplied:!!msg.payload?.diagnostics?.practicalTieBreakApplied,practicalTieBreakLossPct:msg.payload?.diagnostics?.practicalTieBreakLossPct});
+        if(msg.payload?.exploration?.changedSelection&&Array.isArray(msg.payload.exploredSelectedIds)){
+          const chosen=new Set(msg.payload.exploredSelectedIds);
+          const selected=modeState().selectedIds;
+          selected.troop=units.troop.filter(unit=>chosen.has(unit.id)).map(unit=>unit.id);
+          selected.monster=units.monster.filter(unit=>chosen.has(unit.id)).map(unit=>unit.id);
+          syncCustomOrders();saveState();renderAllSelections();
+        }
         renderEpicOptimizedResult(msg.payload);
+        if(msg.payload?.exploration){
+          const summary=msg.payload.exploration;
+          els.resultStatus.textContent+=summary.changedSelection
+            ?` · Explore found +${((summary.finalEld/summary.baselineEld-1)*100).toFixed(2)}% ELD (${summary.fullyOptimizedCandidates} finalists fully tested)`
+            :` · Explore kept your starting army (${summary.fullyOptimizedCandidates} finalists fully tested)`;
+          if(summary.note)els.resultStatus.textContent+=` · ${summary.note}`;
+        }
         lastOptimizedEpicPayload=msg.payload;
         epicResultCurrent=true;
         lastOptimizedEpicSignature=currentEpicEffectiveSignature();
@@ -1927,7 +1949,9 @@ function startEpicOptimization(){
     fixedMercenaryIds:includeMercs?[]:[...(modeState().selectedIds.mercenary||[])],
     fixedAuthorityMaximum:Math.max(0,Math.floor(parseNumber(modeState().inputs.authority))),
     bonuses:epicBonusPayload(),
-    capacityLimits:effectiveEpicCapacityLimits()
+    capacityLimits:effectiveEpicCapacityLimits(),
+    exploreMode:exploring,exploreTierDepth,timeBudgetMs:exploring?360000:undefined,
+    baselineResult:reusableBaseline
   });
 }
 
@@ -2079,6 +2103,7 @@ function configureModeUI(){
   updateVisibleStepNumbers();
   setOptimizeButtonState();
   setReviewSelectionState();
+  updateExploreControls();
 }
 function applyStateToInputs(){
   const i=normalizeBonusProfileInputs(modeState().inputs);
@@ -2155,6 +2180,17 @@ function isBattleOptimizeMode(){
 }
 function isAnyEpicOptimizeMode(){
   return activeMode==='optimizer'||isBattleOptimizeMode();
+}
+function updateExploreControls(){
+  const controls=document.getElementById('exploreControls'),toggle=document.getElementById('exploreUnitStructures'),depthLabel=document.getElementById('exploreDepthLabel'),depth=document.getElementById('exploreTierDepth');
+  if(!controls||!toggle||!depthLabel||!depth)return;
+  const available=isBattleOptimizeMode();controls.hidden=!available;
+  toggle.checked=exploreUnitStructures;toggle.disabled=!!epicWorker;
+  depthLabel.hidden=!exploreUnitStructures;depth.value=String(exploreTierDepth);depth.disabled=!!epicWorker;
+  const summary=document.getElementById('explorePoolSummary');
+  if(summary)summary.textContent=exploreUnitStructures
+    ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher.`
+    :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
 }
 
 function isCustomOrderMode(){
@@ -3697,6 +3733,12 @@ function wireEvents(){
     saveState();recalculate();
   });
   els.optimizeArmy.addEventListener('click',startEpicOptimization);
+  document.getElementById('exploreUnitStructures')?.addEventListener('change',event=>{
+    exploreUnitStructures=!!event.target.checked;updateExploreControls();setOptimizeButtonState();
+  });
+  document.getElementById('exploreTierDepth')?.addEventListener('change',event=>{
+    exploreTierDepth=Math.max(0,Math.min(4,Number(event.target.value)||0));updateExploreControls();setOptimizeButtonState();
+  });
   els.cancelOptimization.addEventListener('click',()=>{
     if(epicWorker){epicWorker.terminate();epicWorker=null;}
     stopOptimizerElapsedTimer();
