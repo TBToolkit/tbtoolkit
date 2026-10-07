@@ -25,6 +25,11 @@ assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/stacking<\/loc>/);
 assert.doesNotMatch(sitemap,/epic-stacker\.html/,'Legacy redirect must not be indexed as a separate page.');
 const robots=await readFile('dist/robots.txt','utf8');
 assert.match(robots,/Sitemap: https:\/\/tbtoolkit\.com\/sitemap\.xml/);
+const calendar=await readFile('dist/calendar.html','utf8');
+const resources=await readFile('dist/resources.html','utf8');
+assert.match(calendar,/<h2>Nexus Portal Calendar<\/h2>[\s\S]*?href="https:\/\/nexusportal\.voltron\.me\/calendar"/,'The Event Calendar must link to the Nexus Portal calendar.');
+assert.ok(calendar.indexOf('Nexus Portal Calendar')<calendar.indexOf('class="calendar-frame"'),'The Nexus Portal link should appear above the embedded calendar.');
+assert.doesNotMatch(resources,/nexusportal\.voltron\.me\/calendar/,'Resources must not duplicate the calendar link.');
 for(const legacy of ['assets/images/home-concept.png','assets/images/homepage-approved.png','js/epic-optimizer-worker.js']){
   await assert.rejects(stat(`dist/${legacy}`),{code:'ENOENT'},`${legacy} should remain source-only.`);
 }
