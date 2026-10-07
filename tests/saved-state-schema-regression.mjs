@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {LEGACY_SAVED_STATE_KEYS,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION,migrateSavedState,readLatestSavedState} from '../js/saved-state-schema.mjs';
+import {LEGACY_SAVED_STATE_KEYS,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION,migrateSavedState,preferNewerSavedState,readLatestSavedState} from '../js/saved-state-schema.mjs';
 
 const values=new Map();
 const storage={getItem:key=>values.get(key)??null};
@@ -13,6 +13,10 @@ values.set(SAVED_STATE_KEY,JSON.stringify({schemaVersion:SAVED_STATE_SCHEMA_VERS
 const current=readLatestSavedState(storage,readJson);
 assert.equal(current.sourceKey,SAVED_STATE_KEY);
 assert.ok(current.state.accounts.new);
+const diskSnapshot={schemaVersion:SAVED_STATE_SCHEMA_VERSION,storageRevision:10,accounts:{old:{name:'Old'}}};
+const databaseSnapshot={schemaVersion:SAVED_STATE_SCHEMA_VERSION,storageRevision:20,accounts:{new:{name:'New'}}};
+assert.ok(preferNewerSavedState(diskSnapshot,databaseSnapshot).accounts.new,'A newer browser backup must restore selections when localStorage could not save them.');
+assert.ok(preferNewerSavedState(databaseSnapshot,diskSnapshot).accounts.new,'An older backup must never replace newer local data.');
 assert.throws(()=>migrateSavedState({},16),/unsupported schema/);
 assert.throws(()=>migrateSavedState({},SAVED_STATE_SCHEMA_VERSION+1),/unsupported schema/);
 console.log(JSON.stringify({ok:true,schemaVersion:SAVED_STATE_SCHEMA_VERSION}));
