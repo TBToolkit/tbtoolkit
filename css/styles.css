@@ -368,6 +368,10 @@ button { font: inherit; }
 
 /* Calendar */
 .calendar-section { padding-top:34px; }
+.calendar-community-card { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:20px 24px; margin-bottom:18px; }
+.calendar-community-card h2 { margin:0 0 5px; font-size:1.1rem; }
+.calendar-community-card p { margin:0; color:var(--muted); font-size:.88rem; }
+.calendar-community-card .button { flex:none; }
 .calendar-shell { overflow:hidden; padding:10px; background:#050c15; }
 .calendar-frame { display:block; width:100%; height:760px; border:0; background:#fff; border-radius:8px; }
 .calendar-note { color:var(--muted); font-size:.84rem; line-height:1.55; margin:12px 3px 0; }
@@ -415,6 +419,8 @@ button { font: inherit; }
   .compact-biff p { font-size:.86rem; line-height:1.38; }
   .compact-biff cite { font-size:.72rem; }
   .calendar-shell { padding:5px; }
+  .calendar-community-card { align-items:stretch; flex-direction:column; }
+  .calendar-community-card .button { text-align:center; }
   .calendar-frame { height:560px; }
 }
 

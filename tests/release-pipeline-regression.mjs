@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {readFile,rm} from 'node:fs/promises';
+import {readFile,rm,stat} from 'node:fs/promises';
 
 execFileSync(process.execPath,['scripts/build-site.mjs'],{stdio:'inherit'});
 const manifest=JSON.parse(await readFile('dist/deployment-manifest.json','utf8'));
 const html=await readFile('dist/stacking.html','utf8');
+assert.match(html,/<link rel="canonical" href="https:\/\/tbtoolkit\.com\/stacking">/,'Calculator must declare its preferred public URL.');
+assert.match(html,/<body class="[^"]*battle-mode-active[^"]*">/,'Calculator must ship its final layout before JavaScript initializes.');
+assert.match(html,/<div class="battle-beta-panel" id="battleBetaPanel">/,'Initial calculator panel must not be hidden until JavaScript runs.');
 const entryMatch=html.match(/js\/epic-stacker\.js\?v=([a-f0-9]{16})/);
 assert.ok(entryMatch,'Built HTML must use a content-derived asset identity.');
 assert.equal(entryMatch[1],manifest.assetVersion);
@@ -17,5 +20,18 @@ const headers=await readFile('dist/_headers','utf8');
 assert.match(headers,/\/css\/\*[\s\S]*max-age=0/,'Fallback asset cache policy must ship with the deployment.');
 assert.match(headers,/\/js\/\*[\s\S]*max-age=0/,'Fallback script cache policy must ship with the deployment.');
 assert.equal(manifest.storageSchemaVersion,20);
+const sitemap=await readFile('dist/sitemap.xml','utf8');
+assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/stacking<\/loc>/);
+assert.doesNotMatch(sitemap,/epic-stacker\.html/,'Legacy redirect must not be indexed as a separate page.');
+const robots=await readFile('dist/robots.txt','utf8');
+assert.match(robots,/Sitemap: https:\/\/tbtoolkit\.com\/sitemap\.xml/);
+const calendar=await readFile('dist/calendar.html','utf8');
+const resources=await readFile('dist/resources.html','utf8');
+assert.match(calendar,/<h2>Nexus Portal Calendar<\/h2>[\s\S]*?href="https:\/\/nexusportal\.voltron\.me\/calendar"/,'The Event Calendar must link to the Nexus Portal calendar.');
+assert.ok(calendar.indexOf('Nexus Portal Calendar')<calendar.indexOf('class="calendar-frame"'),'The Nexus Portal link should appear above the embedded calendar.');
+assert.doesNotMatch(resources,/nexusportal\.voltron\.me\/calendar/,'Resources must not duplicate the calendar link.');
+for(const legacy of ['assets/images/home-concept.png','assets/images/homepage-approved.png','js/epic-optimizer-worker.js']){
+  await assert.rejects(stat(`dist/${legacy}`),{code:'ENOENT'},`${legacy} should remain source-only.`);
+}
 await rm('dist',{recursive:true,force:true});
 console.log(JSON.stringify({ok:true,assetVersion:manifest.assetVersion}));

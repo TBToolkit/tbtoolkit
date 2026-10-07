@@ -1987,7 +1987,7 @@ function configureModeUI(){
   });
 
   els.modeDescription.textContent=battle
-    ?'Build and optimize an army for Epic Monster or Player vs. Player battles.'
+    ?'Build and optimize an army for Total Battle Epic Monster or Player vs. Player battles.'
     : classic
       ?'Automatically orders selected squads for Epic battles using the Squad Separation setting.'
       : optimizer
