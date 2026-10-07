@@ -4,14 +4,14 @@
 <script src="js/page-state-bootstrap.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="Build Total Battle armies for Epic Monster and Player vs. Player battles. Customize the default death order or optimize supported Epic battles." name="description"/>
-<title>Battle Calculator | TB Toolkit</title>
+<meta content="Free Total Battle stacking calculator for Epic Monster and PvP battles. Choose troops and monsters, optimize your army, or customize its death order." name="description"/>
+<title>Total Battle Stacking Calculator for Epic &amp; PvP | TB Toolkit</title>
 <link href="css/styles.css?v=1.16.0" rel="stylesheet"/>
 <link href="css/epic-stacker.css?v=1.16.0" rel="stylesheet"/>
 <script defer src="js/site.js?v=1.16.0"></script>
 <script src="js/epic-stacker.js?v=1.16.0" type="module"></script>
 </head>
-<body class="epic-page topdown-stacker-page">
+<body class="epic-page topdown-stacker-page battle-mode-active">
 <header class="site-header">
 <div class="container header-row">
 <a class="brand" href="index.html" aria-label="TB Toolkit home">
@@ -30,9 +30,9 @@
 <div class="epic-heading">
 <div>
 <div class="breadcrumb">Home / Stacking</div>
-<h1>Battle Calculator</h1>
+<h1>Total Battle Stacking Calculator</h1>
 
-<p class="mode-description battle-page-description" id="modeDescription">Build and optimize an army for Epic Monster or Player vs. Player battles.</p>
+<p class="mode-description battle-page-description" id="modeDescription">Build and optimize an army for Total Battle Epic Monster or Player vs. Player battles.</p>
 <div class="calculator-reference-row"><button class="calculator-guide-link" data-battle-guide="overview" type="button">How Epic battles are calculated</button></div>
 <details class="battle-calculator-notes">
 <summary>Assumptions &amp; saved data</summary>
@@ -47,7 +47,7 @@
 
 <div class="validation-box" id="validationBox"></div>
 <div class="battle-top-layout" id="battleTopLayout">
-<div class="battle-beta-panel" hidden id="battleBetaPanel">
+<div class="battle-beta-panel" id="battleBetaPanel">
 <section class="topdown-panel battle-config-panel player-clan-panel">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">1</span><h2>Player &amp; Clan</h2></div>
