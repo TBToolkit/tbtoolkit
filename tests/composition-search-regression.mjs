@@ -70,9 +70,9 @@ const reviewUnits=[
 ];
 const availability=inferReviewAvailability({units:reviewUnits,selectedIds:['g9-ranged','s9-melee','m9-flying','e9','merc-owned']});
 assert.ok(availability.availableIds.includes('g9-ranged'),'The selected top-tier Guardsman must remain available');
-assert.ok(!availability.availableIds.includes('g9-flying'),'An unselected Guardsman in the highest tier must remain unavailable');
+assert.ok(availability.availableIds.includes('g9-flying'),'The highest selected Guardsman tier must make every unit in that tier available');
 assert.ok(availability.availableIds.includes('g8-flying'),'Every lower Guardsman tier unit must be inferred as available');
-assert.ok(!availability.availableIds.includes('s9-ranged'),'An unselected Specialist in the highest tier must remain unavailable');
+assert.ok(availability.availableIds.includes('s9-ranged'),'The highest selected Specialist tier must make every unit in that tier available');
 assert.ok(availability.availableIds.includes('s8-ranged'),'Every lower Specialist tier unit must be inferred as available');
 assert.ok(['m9-flying','m9-mounted','m9-melee','m9-ranged','m8-flying'].every(id=>availability.availableIds.includes(id)),'One selected top-tier Monster must unlock its full tier and lower tiers for review');
 assert.ok(availability.availableIds.includes('e8'),'A selected Engineer must make lower Engineer tiers available');
@@ -82,7 +82,7 @@ const allSelectedIds=reviewUnits.filter(unit=>unit.category!=='mercenary').map(u
 const allSelectedAvailability=inferReviewAvailability({units:reviewUnits,selectedIds:allSelectedIds});
 assert.equal(compositionSignature(allSelectedAvailability.availableIds),compositionSignature(allSelectedIds),'Selecting all troops and monsters must treat the selection as an availability pool without adding unrelated units');
 const tierStructures=createReviewTierStructures({units:reviewUnits,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds});
-assert.ok(tierStructures.some(row=>row.floors.GUARDSMAN===8&&row.selectedIds.includes('g8-flying')&&row.selectedIds.includes('g9-ranged')&&!row.selectedIds.includes('g9-flying')),'Review structures must preserve partial top-tier unlocks while including complete lower tiers');
+assert.ok(tierStructures.some(row=>row.floors.GUARDSMAN===8&&row.selectedIds.includes('g8-flying')&&row.selectedIds.includes('g9-ranged')&&row.selectedIds.includes('g9-flying')),'Review structures must include the full eligible top tier and lower tiers');
 assert.ok(tierStructures.every(row=>row.selectedIds.includes('merc-owned')),'Explicitly owned mandatory mercenaries must remain in every review tier structure');
 const lattice=await adaptiveTierLatticeSearch({structures:tierStructures,currentIds:['g9-ranged','s9-melee','m9-flying','e9','merc-owned'],beamWidth:8,maxEvaluations:100,evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.includes('g8-flying')&&ids.includes('m8-flying')?2000:ids.length}})});
 assert.ok(lattice.evaluations<=100,'Adaptive tier search must respect its evaluation budget');

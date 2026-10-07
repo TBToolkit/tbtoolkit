@@ -20,7 +20,7 @@ function reviewGroupKey(unit){
 
 export function inferReviewAvailability({units,selectedIds}){
   const rows=units??[],byId=new Map(rows.map(unit=>[unit.id,unit]));
-  const selected=sortedUnique(selectedIds).filter(id=>byId.has(id)),selectedSet=new Set(selected);
+  const selected=sortedUnique(selectedIds).filter(id=>byId.has(id));
   const available=new Set(selected);
   const unlockFamilies=['GUARDSMAN','SPECIALIST','ENGINEER'];
   for(const unitClass of unlockFamilies){
@@ -30,7 +30,7 @@ export function inferReviewAvailability({units,selectedIds}){
     for(const unit of rows){
       if(unit.category!=='troop'||String(unit.unitClass).toUpperCase()!==unitClass)continue;
       const tier=finite(unit.tierNumber);
-      if(tier<highestTier||(tier===highestTier&&(unitClass==='ENGINEER'||selectedSet.has(unit.id))))available.add(unit.id);
+      if(tier<=highestTier)available.add(unit.id);
     }
   }
   const selectedMonsters=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='monster');

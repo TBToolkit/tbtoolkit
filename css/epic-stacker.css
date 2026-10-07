@@ -613,8 +613,8 @@ details.advanced{margin-top:8px;padding-top:7px}
 .selection-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;background:#101f2b;border-bottom:1px solid #263847}
 .selection-card-title h3{margin:0;color:#f0f4f7;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
 .selection-card-title>div>span{display:block;margin-top:2px;color:#8497a8;font-size:10px}
-.category-master,.level-master,.subgroup-master{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#cbd6df;font-size:11px;font-weight:800}
-.category-master input,.level-master input,.subgroup-master input,.hierarchy-unit input{accent-color:#e9a020}
+.level-master,.subgroup-master{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:#cbd6df;font-size:11px;font-weight:800}
+.level-master input,.subgroup-master input,.hierarchy-unit input{accent-color:#e9a020}
 .hierarchy-list{padding:6px;max-height:none;overflow:visible}
 .selection-level,.selection-subgroup{border:1px solid var(--level-border,#263849);border-radius:7px;background:#0a151e;margin-bottom:5px;overflow:hidden}
 .selection-level:last-child{margin-bottom:0}
@@ -3842,10 +3842,6 @@ html,body{overflow-x:hidden}
   }
   .selection-card.is-collapsed .selection-card-chevron{transform:rotate(180deg)}
   .selection-card.is-collapsed .hierarchy-list{display:none}
-  .category-master{
-    min-height:40px;
-    padding-left:8px;
-  }
   .battle-mode-active .selection-optimize-row{
     bottom:8px;
     margin:0 8px 8px;

@@ -7,7 +7,7 @@ import {REBUILD_COST_UNIT_COUNT,unitRebuildCost} from '../js/unit-rebuild-costs.
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../stacking.html',import.meta.url),'utf8');
-assert.match(html,/<h2>Selection<\/h2>[\s\S]*?<p>Select only the units you want to send into battle\. Selecting all available units can cause optimization to time out\./,'Selection must explain battle intent and warn against selecting every available unit.');
+assert.match(html,/<h2>Selection<\/h2>[\s\S]*?<p>Select only the units you want to send into battle\.[\s\S]*?Find Better Units can explore other troops and monsters/,'Selection must explain manual choices and optional unit discovery.');
 const optimizerWorker=fs.readFileSync(new URL('../js/epic-quantity-optimizer.mjs',import.meta.url),'utf8');
 const optimizerEntry=fs.readFileSync(new URL('../js/epic-optimizer-worker.mjs',import.meta.url),'utf8');
 const workspaceModel=fs.readFileSync(new URL('../js/workspace-model.mjs',import.meta.url),'utf8');
@@ -80,9 +80,11 @@ assert.match(source,/An encounter named .* already exists/, 'Encounter creation 
 assert.match(source,/biffImportError\.classList\.toggle\(['"]show['"]/, 'Import naming errors must be visibly rendered');
 assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encounter naming errors must be visibly rendered');
 assert.match(html,/hidden id="reviewSelection"/, 'Review Selection must start hidden until an eligible battle is configured');
-assert.match(source,/const REVIEW_SELECTION_UI_ENABLED=false;/, 'Review Selection must remain dormant behind a recoverable feature flag');
+assert.match(source,/const REVIEW_SELECTION_UI_ENABLED=true;/, 'Optional unit discovery must be enabled for Epic battles');
 assert.match(source,/function isReviewSelectionAvailable\(\)\{return REVIEW_SELECTION_UI_ENABLED&&/, 'Review Selection visibility must require the feature flag');
-assert.match(source,/if\(REVIEW_SELECTION_UI_ENABLED\)els\.reviewSelection\?\.addEventListener/, 'Dormant Review Selection must not initialize its launch listener');
+assert.match(source,/if\(REVIEW_SELECTION_UI_ENABLED\)els\.reviewSelection\?\.addEventListener/, 'Unit discovery must initialize its launch listener');
+assert.match(html,/id="reviewSelection"[^>]*>Find Better Units<\/button>/,'Selection must expose the optional deeper search.');
+for(const id of ['guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster'])assert.doesNotMatch(html,new RegExp(`id="${id}"`),`Remove the bulk-select control ${id}.`);
 assert.doesNotMatch(html,/<option value="basic">/, 'Standard must not appear in the calculation-method selector');
 assert.doesNotMatch(html,/<strong>Standard<\/strong>/, 'Standard must not appear as a user-facing calculation method in the Guide');
 assert.match(html,/<option id="battleMethodOptimizeOption" value="optimize">Optimize<\/option>\s*<option value="custom">Custom<\/option>/, 'Optimize must be the first calculation method');
@@ -92,8 +94,8 @@ assert.doesNotMatch(html,/Practical tie-break|near-optimal range/, 'The Guide mu
 assert.match(html,/Highest-ELD selection[\s\S]*?Opening-sacrifice check/, 'The Guide must explain mathematical-maximum selection and the constrained sacrifice check');
 assert.match(source,/source\.activeBattleMethod===['"]optimize['"]\?['"]optimize['"]:['"]custom['"]/, 'Saved Standard workspaces must remain compatible by opening in Custom');
 assert.match(html,/Optimized Potential: Current Selection[\s\S]*?Optimized Potential: Recommended Selection/,'Review Selection must distinguish optimized potential from the currently displayed method result');
-assert.match(html,/id="reviewMethodNote"[\s\S]*?may be higher than the Standard result/,'Standard users must be told why Review Selection ELD may be higher');
-assert.match(source,/No better unit selection was found/,'An unchanged winning selection must not be described as a recommendation');
+assert.match(html,/id="reviewMethodNote"[\s\S]*?may be higher than the Custom result/,'Custom users must be told why unit-discovery ELD may be higher');
+assert.match(source,/No better unit mix was found within the search budget/,'An unchanged winning selection must not be described as a recommendation');
 assert.match(source,/mercenary=\[\.\.\.\(modeState\(\)\.selectedIds\.mercenary\|\|\[\]\)\]/, 'Accepting a review must preserve the workspace mercenary selection');
 assert.match(source,/row\.icon\|\|unit\?\.icon[\s\S]*?class="result-unit-icon"/, 'Result quantity tiles must render the matching unit icon');
 assert.doesNotMatch(source,/class="result-leader"/, 'Result quantity tiles must not render the old dotted leader');
