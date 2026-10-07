@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
   adaptiveTierLatticeSearch,analyzeTierCompleteness,createCompositionNeighborhood,createReviewTierStructures,evaluateSelectionProposal,exhaustiveCompositionSearch,
-  inferReviewAvailability,
+  inferReviewAvailability,createTierExclusionChallenges,
   exhaustiveGroupCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
 
@@ -48,6 +48,16 @@ assert.equal(Math.max(...seeded.results.map(row=>row.result.expectedTotalLifetim
 const fixedMercenary=await exhaustiveCompositionSearch({candidateIds:['troop-a','troop-b'],mandatoryIds:['merc-owned'],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length,capacities:{},squads:ids.map(id=>({id,name:id,quantity:1,expectedLifetimeDamage:1}))}})});
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.includes('merc-owned')),'Fixed selected mercenaries must remain in every explored composition');
 assert.ok(fixedMercenary.results.every(row=>row.selectedIds.every(id=>['troop-a','troop-b','merc-owned'].includes(id))),'Composition search must never add an unselected mercenary');
+const challengeUnits=[
+  {id:'g9',category:'troop',unitClass:'GUARDSMAN',tierNumber:9},{id:'g8',category:'troop',unitClass:'GUARDSMAN',tierNumber:8},
+  {id:'m9',category:'monster',tierNumber:9},{id:'m8',category:'monster',tierNumber:8},
+  {id:'m7-a',category:'monster',tierNumber:7},{id:'m7-b',category:'monster',tierNumber:7},
+  {id:'merc-owned',category:'mercenary',tierNumber:7},{id:'merc-other',category:'mercenary',tierNumber:7}
+];
+const challengeAvailability=inferReviewAvailability({units:challengeUnits,selectedIds:['g9','m9','merc-owned'],maxTierDepth:2});
+const challenges=createTierExclusionChallenges({units:challengeUnits,currentIds:['g9','m9','merc-owned'],availableIds:challengeAvailability.availableIds,mandatoryIds:challengeAvailability.mandatoryIds,maxTierDepth:2});
+assert.ok(challenges.find(group=>group.key==='MONSTER')?.candidates.some(row=>compositionSignature(row.selectedIds)===compositionSignature(['g9','g8','m9','m8','m7-a','merc-owned'])),'A deliberate lowest-tier monster exclusion must survive coarse screening');
+assert.ok(challenges.every(group=>group.candidates.every(row=>row.selectedIds.includes('merc-owned')&&!row.selectedIds.includes('merc-other'))),'Exclusion challenges must preserve only selected mercenaries');
 const grouped=await exhaustiveGroupCompositionSearch({groups:[{id:'tier-1',unitIds:['a','b']},{id:'tier-2',unitIds:['c']}],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length}})});
 assert.equal(grouped.evaluations,3,'Two tier groups must produce three non-empty group structures');
 assert.ok(grouped.results.some(row=>compositionSignature(row.selectedIds)==='a|b|c'),'Grouped search must include the complete tier structure');

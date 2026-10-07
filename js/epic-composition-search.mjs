@@ -46,6 +46,32 @@ export function inferReviewAvailability({units,selectedIds,maxTierDepth=Infinity
   return{selectedIds:selected,availableIds:sortedUnique([...available]),mandatoryIds};
 }
 
+// Protect one deliberate exclusion from each eligible family against the
+// coarse tier/quantity screen. A broad tier anchor can score poorly with a
+// cheap quantity seed even when omitting one squad wins after full optimization.
+export function createTierExclusionChallenges({units,currentIds,availableIds,mandatoryIds=[],maxTierDepth=2}){
+  const rows=units??[],current=new Set(currentIds??[]),available=new Set(availableIds??[]);
+  const depth=Math.max(0,Math.min(4,Math.floor(finite(maxTierDepth,2))));
+  const families=[
+    {key:'MONSTER',match:unit=>unit.category==='monster',depth},
+    {key:'GUARDSMAN',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='GUARDSMAN',depth:Math.min(1,depth)},
+    {key:'SPECIALIST',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='SPECIALIST',depth:Math.min(1,depth)},
+    {key:'ENGINEER',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='ENGINEER',depth:Math.min(1,depth)}
+  ];
+  const groups=families.map(family=>{
+    const selected=rows.filter(unit=>current.has(unit.id)&&family.match(unit));
+    if(!selected.length)return{key:family.key,anchorIds:[],excludedIds:[]};
+    const highest=Math.max(...selected.map(unit=>finite(unit.tierNumber)));
+    const anchor=rows.filter(unit=>available.has(unit.id)&&family.match(unit)&&finite(unit.tierNumber)<=highest&&finite(unit.tierNumber)>=highest-family.depth);
+    return{key:family.key,anchorIds:anchor.map(unit=>unit.id),excludedIds:anchor.filter(unit=>finite(unit.tierNumber)===highest-family.depth).map(unit=>unit.id)};
+  });
+  const anchorIds=sortedUnique([...mandatoryIds,...groups.flatMap(group=>group.anchorIds)]);
+  return groups.filter(group=>group.excludedIds.length&&anchorIds.length>group.excludedIds.length).map(group=>({
+    key:group.key,
+    candidates:group.excludedIds.map(excludedId=>({excludedId,selectedIds:anchorIds.filter(id=>id!==excludedId)}))
+  }));
+}
+
 export function analyzeTierCompleteness({selectedIds,availableIds,units}){
   const selected=new Set(selectedIds??[]),available=new Set(availableIds??[]),groups=new Map();
   for(const unit of units??[]){

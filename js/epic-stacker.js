@@ -35,7 +35,7 @@ const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoL
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
-let appInitialized=false;let optimizerBestEldSoFar=0;
+let appInitialized=false;let optimizerBestEldSoFar=0;let optimizerExploreActive=false;
 let exploreUnitStructures=false;let exploreTierDepth=2;
 let epicChestRewards=new Map();
 let tinmanChestRewards=new Map(),tinmanLevelData=[];
@@ -1265,6 +1265,10 @@ function setOptimizeButtonState(){
 }
 function openOptimizerModal(){
   optimizerBestEldSoFar=0;
+  els.optimizerProgressEldLabel=document.getElementById('optimizerProgressEldLabel');
+  els.optimizerExploreProgress=document.getElementById('optimizerExploreProgress');
+  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Current trial / Best trial':'Current ELD / Best ELD';
+  if(els.optimizerExploreProgress){els.optimizerExploreProgress.hidden=!optimizerExploreActive;els.optimizerExploreProgress.textContent=optimizerExploreActive?'Checking your starting army before screening alternatives…':'';}
   renderOptimizerHealthLadder([]);
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
@@ -1321,9 +1325,9 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
-  if(progress.phase==='explore-screen')return 'Screening other eligible unit combinations…';
+  if(progress.phase==='explore-screen')return progress.exploreStage==='screen-complete'?'Screening complete; preparing full optimizations…':'Screening eligible unit combinations…';
   if(progress.exploreStage==='baseline')return 'Fully optimizing your starting army…';
-  if(progress.exploreStage==='finalist')return `Fully optimizing finalist ${progress.candidateIndex} of ${progress.candidateCount}…`;
+  if(progress.exploreStage==='finalist')return `Full optimization: finalist ${progress.candidateIndex} of ${progress.candidateCount}`;
   if(progress.phase==='seed'||progress.phase==='seed-screen')return 'Comparing independent starting army structures…';
   if(progress.phase==='local')return 'Optimizing the strongest independent structures…';
   if(progress.phase==='evolution')return 'Exploring new death and attack-order structures…';
@@ -1345,9 +1349,17 @@ function updateOptimizerProgress(progress={}){
   if(els.optimizerProgressTrack)els.optimizerProgressTrack.setAttribute('aria-valuenow',String(pct));
   if(els.optimizerProgressPercent)els.optimizerProgressPercent.textContent=`${pct}%`;
   if(els.optimizerProgressHeadline)els.optimizerProgressHeadline.textContent=optimizationHeadline(progress);
+  if(optimizerExploreActive&&els.optimizerExploreProgress){
+    const screened=Number(progress.screeningEvaluations)||0,verified=Number(progress.verifiedBestEld)||0;
+    const parts=[];
+    if(screened)parts.push(`${screened.toLocaleString('en-US')} quick screening evaluations`);
+    if(Number(progress.candidateCount)>0)parts.push(`${Number(progress.candidateCount)} finalists selected for full optimization`);
+    if(verified>0)parts.push(`Best fully optimized ELD: ${formatDamage(verified)}`);
+    els.optimizerExploreProgress.textContent=parts.join(' · ')||'Checking your starting army before screening alternatives…';
+  }
   if(els.optimizerProgressEvaluations){
     const e=Number(progress.evaluations||0);
-    els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} candidates evaluated`:'';
+    els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} quantity evaluations`:'';
   }
   const currentEld=Number(progress.expectedLifetimeDamage),previousBest=optimizerBestEldSoFar;
   const reportedBest=Number(progress.bestExpectedLifetimeDamage);
@@ -1845,6 +1857,7 @@ function startEpicOptimization(){
   els.optimizeArmy.disabled=true;
   els.resultStatus.textContent='Optimizing quantities…';
   els.resultStatus.classList.add('optimizing-status');
+  optimizerExploreActive=exploring;
   openOptimizerModal();
   startOptimizerElapsedTimer();
 
