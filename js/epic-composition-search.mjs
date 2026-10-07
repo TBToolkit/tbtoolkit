@@ -18,10 +18,11 @@ function reviewGroupKey(unit){
   return null;
 }
 
-export function inferReviewAvailability({units,selectedIds}){
+export function inferReviewAvailability({units,selectedIds,maxTierDepth=Infinity}){
   const rows=units??[],byId=new Map(rows.map(unit=>[unit.id,unit]));
-  const selected=sortedUnique(selectedIds).filter(id=>byId.has(id)),selectedSet=new Set(selected);
+  const selected=sortedUnique(selectedIds).filter(id=>byId.has(id));
   const available=new Set(selected);
+  const depth=Math.max(0,Math.floor(finite(maxTierDepth,Infinity)));
   const unlockFamilies=['GUARDSMAN','SPECIALIST','ENGINEER'];
   for(const unitClass of unlockFamilies){
     const selectedFamily=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='troop'&&String(unit.unitClass).toUpperCase()===unitClass);
@@ -30,19 +31,45 @@ export function inferReviewAvailability({units,selectedIds}){
     for(const unit of rows){
       if(unit.category!=='troop'||String(unit.unitClass).toUpperCase()!==unitClass)continue;
       const tier=finite(unit.tierNumber);
-      if(tier<highestTier||(tier===highestTier&&(unitClass==='ENGINEER'||selectedSet.has(unit.id))))available.add(unit.id);
+      if(tier<=highestTier&&tier>=highestTier-depth)available.add(unit.id);
     }
   }
   const selectedMonsters=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='monster');
   if(selectedMonsters.length){
     const highestTier=Math.max(...selectedMonsters.map(unit=>finite(unit.tierNumber)));
-    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier)available.add(unit.id);
+    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier&&finite(unit.tierNumber)>=highestTier-depth)available.add(unit.id);
   }
   // Mercenary ownership cannot be inferred. Explicitly selected mercenaries are
   // mandatory army members during Review Selection; optimization may adjust their
   // quantities, but the review must never add or remove mercenary types.
   const mandatoryIds=selected.filter(id=>byId.get(id)?.category==='mercenary');
   return{selectedIds:selected,availableIds:sortedUnique([...available]),mandatoryIds};
+}
+
+// Protect one deliberate exclusion from each eligible family against the
+// coarse tier/quantity screen. A broad tier anchor can score poorly with a
+// cheap quantity seed even when omitting one squad wins after full optimization.
+export function createTierExclusionChallenges({units,currentIds,availableIds,mandatoryIds=[],maxTierDepth=2}){
+  const rows=units??[],current=new Set(currentIds??[]),available=new Set(availableIds??[]);
+  const depth=Math.max(0,Math.min(4,Math.floor(finite(maxTierDepth,2))));
+  const families=[
+    {key:'MONSTER',match:unit=>unit.category==='monster',depth},
+    {key:'GUARDSMAN',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='GUARDSMAN',depth:Math.min(1,depth)},
+    {key:'SPECIALIST',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='SPECIALIST',depth:Math.min(1,depth)},
+    {key:'ENGINEER',match:unit=>unit.category==='troop'&&String(unit.unitClass).toUpperCase()==='ENGINEER',depth:Math.min(1,depth)}
+  ];
+  const groups=families.map(family=>{
+    const selected=rows.filter(unit=>current.has(unit.id)&&family.match(unit));
+    if(!selected.length)return{key:family.key,anchorIds:[],excludedIds:[]};
+    const highest=Math.max(...selected.map(unit=>finite(unit.tierNumber)));
+    const anchor=rows.filter(unit=>available.has(unit.id)&&family.match(unit)&&finite(unit.tierNumber)<=highest&&finite(unit.tierNumber)>=highest-family.depth);
+    return{key:family.key,anchorIds:anchor.map(unit=>unit.id),excludedIds:anchor.filter(unit=>finite(unit.tierNumber)===highest-family.depth).map(unit=>unit.id)};
+  });
+  const anchorIds=sortedUnique([...mandatoryIds,...groups.flatMap(group=>group.anchorIds)]);
+  return groups.filter(group=>group.excludedIds.length&&anchorIds.length>group.excludedIds.length).map(group=>({
+    key:group.key,
+    candidates:group.excludedIds.map(excludedId=>({excludedId,selectedIds:anchorIds.filter(id=>id!==excludedId)}))
+  }));
 }
 
 export function analyzeTierCompleteness({selectedIds,availableIds,units}){

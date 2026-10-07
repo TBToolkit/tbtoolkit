@@ -230,29 +230,30 @@
 
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Selecting all available units can cause optimization to time out. Select a level to include all its units, or expand it to choose individual units.</p></div>
-<div class="selection-heading-actions"><button class="toolbar-button review-selection-button" hidden id="reviewSelection" type="button">Review Selection</button><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
+<div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
+<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
 
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
-<div class="selection-card-title"><button aria-controls="guardsmanSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Guardsmen</span><span id="guardsmanCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="guardsmanMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="guardsmanSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Guardsmen</span><span id="guardsmanCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
 <div class="hierarchy-list" id="guardsmanSelection"></div>
 </article>
 <article class="selection-card selection-specialists">
-<div class="selection-card-title"><button aria-controls="specialistSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Specialists</span><span id="specialistCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="specialistMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="specialistSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Specialists</span><span id="specialistCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
 <div class="hierarchy-list" id="specialistSelection"></div>
 </article>
 <article class="selection-card selection-engineers">
-<div class="selection-card-title"><button aria-controls="engineerSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Engineers</span><span id="engineerCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="engineerMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="engineerSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Engineers</span><span id="engineerCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
 <div class="hierarchy-list" id="engineerSelection"></div>
 </article>
 <article class="selection-card selection-monsters">
-<div class="selection-card-title"><button aria-controls="monsterSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Monsters</span><span id="monsterCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="monsterMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="monsterSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Monsters</span><span id="monsterCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
 <div class="hierarchy-list" id="monsterSelection"></div>
 </article>
 <article class="selection-card selection-mercenaries">
-<div class="selection-card-title"><button aria-controls="mercenarySelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Mercenaries</span><span id="mercenaryCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button><label class="category-master"><input id="mercenaryMaster" type="checkbox"/><span>All</span></label></div>
+<div class="selection-card-title"><button aria-controls="mercenarySelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Mercenaries</span><span id="mercenaryCardCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
@@ -370,7 +371,7 @@
 <div class="stat-help-modal" hidden id="statHelpModal">
 <div class="stat-help-backdrop" data-stat-help-close></div>
 <div aria-describedby="statHelpText" aria-labelledby="statHelpTitle" aria-modal="true" class="stat-help-dialog" role="dialog">
-<div class="stat-help-header"><div><span class="stat-help-eyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
+<div class="stat-help-header"><div><span class="stat-help-eyebrow" id="statHelpEyebrow">Where to find this value</span><h2 id="statHelpTitle">Input Help</h2></div><button aria-label="Close help" class="stat-help-close" data-stat-help-close type="button">×</button></div>
 <p class="stat-help-text" id="statHelpText"></p>
 <div class="stat-help-gallery" id="statHelpGallery"></div>
 <button class="stat-help-guide-link" data-battle-guide="" hidden id="statHelpGuideLink" type="button">Learn how this affects calculations</button>
@@ -468,7 +469,7 @@
 <details data-guide-panel="optimizer" id="guide-optimizer" name="battle-guide-section">
 <summary><span>8</span>Optimizer workflow</summary>
 <div class="battle-guide-section-copy">
-<p>The optimizer searches only the units selected by the player. When mercenaries are excluded, their quantities remain fixed and their damage is included in the final score.</p>
+<p>Selected-units mode optimizes only the checked units. For Epic battles, Explore unit combinations uses the checked army as a baseline and searches other troop and monster mixes from each family’s highest checked tier down through the selected range. Only checked mercenary types are permitted. Promising mixes are re-run through the full optimizer and replace the baseline only when their final ELD is higher. Explore mode may take several minutes and is a bounded search, not a guarantee of the global maximum.</p>
 <ol class="battle-guide-flow">
 <li><strong>Validate and prepare</strong><span>Resolve unit profiles, bonuses, capacity limits, enemy formation, and legal quantity rules.</span></li>
 <li><strong>Screen independent seeds</strong><span>Create several different starting army structures so the search is not dependent on one initial guess.</span></li>
@@ -509,11 +510,11 @@
 <div class="review-progress-modal" hidden id="reviewProgressModal">
 <div class="review-progress-backdrop"></div>
 <div aria-describedby="reviewProgressDetail" aria-labelledby="reviewProgressTitle" aria-modal="true" class="review-progress-dialog" role="dialog">
-<div class="optimizer-spinner" aria-hidden="true"></div><div><span class="optimizer-eyebrow">Epic Monster</span><h2 id="reviewProgressTitle">Reviewing Selection</h2><p id="reviewProgressDetail">Preparing the selection review…</p><div aria-label="Review progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="reviewProgressTrack" role="progressbar"><i id="reviewProgressBar"></i></div><div class="optimizer-progress-meta"><span id="reviewProgressPercent">0%</span><span id="reviewElapsed">0:00</span></div><p class="review-progress-note">Your current selection will not change unless you accept a recommendation.</p><button class="toolbar-button optimizer-cancel" id="cancelReviewSelection" type="button">Cancel</button></div>
+<div class="optimizer-spinner" aria-hidden="true"></div><div><span class="optimizer-eyebrow">Epic Monster</span><h2 id="reviewProgressTitle">Finding Better Units</h2><p id="reviewProgressDetail">Preparing the unit search…</p><div aria-label="Review progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="reviewProgressTrack" role="progressbar"><i id="reviewProgressBar"></i></div><div class="optimizer-progress-meta"><span id="reviewProgressPercent">0%</span><span id="reviewElapsed">0:00</span></div><p class="review-progress-note">This deeper search may take up to two minutes. Your selection will not change unless you accept a recommendation.</p><button class="toolbar-button optimizer-cancel" id="cancelReviewSelection" type="button">Cancel</button></div>
 </div></div>
 
 <dialog class="workspace-dialog review-proposal-dialog" id="reviewProposalDialog">
-<form method="dialog"><h2>Review Selection</h2><p id="reviewProposalSummary"></p><div class="review-proposal-metrics"><div><span>Optimized Potential: Current Selection</span><strong id="reviewCurrentEld">—</strong></div><div><span>Optimized Potential: Recommended Selection</span><strong id="reviewProposedEld">—</strong></div><div><span>Estimated Improvement</span><strong id="reviewImprovement">—</strong></div></div><p class="review-method-note" hidden id="reviewMethodNote">These ELD values use optimized quantities to compare unit selections. They may be higher than the Standard result currently shown on the page.</p><div class="review-change-grid"><section><h3>Add</h3><ul id="reviewAddedUnits"></ul></section><section><h3>Remove</h3><ul id="reviewRemovedUnits"></ul></section></div><p class="review-mercenary-note">Selected mercenary types are always kept.</p><div class="dialog-actions"><button type="button" id="keepCurrentSelection">Keep Current</button><button type="button" id="acceptReviewSelection">Accept Recommendation</button></div></form>
+<form method="dialog"><h2>Unit Search Result</h2><p id="reviewProposalSummary"></p><div class="review-proposal-metrics"><div><span>Optimized Potential: Current Selection</span><strong id="reviewCurrentEld">—</strong></div><div><span>Optimized Potential: Recommended Selection</span><strong id="reviewProposedEld">—</strong></div><div><span>Estimated Improvement</span><strong id="reviewImprovement">—</strong></div></div><p class="review-method-note" hidden id="reviewMethodNote">These ELD values use optimized quantities to compare unit selections. They may be higher than the Custom result currently shown on the page.</p><div class="review-change-grid"><section><h3>Add</h3><ul id="reviewAddedUnits"></ul></section><section><h3>Remove</h3><ul id="reviewRemovedUnits"></ul></section></div><p class="review-mercenary-note">Selected mercenary types are always kept. This is the best practical mix found within the search budget, not a guarantee of the global maximum. Accepting it updates your selection; run Optimize Army afterward for a full result.</p><div class="dialog-actions"><button type="button" id="keepCurrentSelection">Keep Current</button><button type="button" id="acceptReviewSelection">Use These Units</button></div></form>
 </dialog>
 
 <div class="optimizer-modal" hidden id="optimizerModal">
@@ -521,8 +522,9 @@
 <div aria-describedby="optimizerProgressDetail" aria-labelledby="optimizerProgressTitle" aria-modal="true" class="optimizer-dialog" role="dialog">
 <div class="optimizer-spinner" aria-hidden="true"></div>
 <div class="optimizer-dialog-copy">
-<div class="optimizer-title-row"><div><span class="optimizer-eyebrow">Epic Stacker</span><h2 id="optimizerProgressTitle">Optimizing Army</h2></div><div class="optimizer-eld-compact" id="optimizerProgressDetail"><span>Current ELD / Best ELD</span><strong><b id="optimizerProgressCurrentEld">—</b><i>/</i><b id="optimizerProgressBestEld">—</b></strong></div></div>
+<div class="optimizer-title-row"><div><span class="optimizer-eyebrow">Epic Stacker</span><h2 id="optimizerProgressTitle">Optimizing Army</h2></div><div class="optimizer-eld-compact" id="optimizerProgressDetail"><span id="optimizerProgressEldLabel">Current ELD / Best ELD</span><strong><b id="optimizerProgressCurrentEld">—</b><i>/</i><b id="optimizerProgressBestEld">—</b></strong></div></div>
 <div class="optimizer-progress-heading"><p id="optimizerProgressHeadline">Preparing your selected squads…</p><strong id="optimizerElapsedTime">0:00</strong></div>
+<p class="optimizer-explore-progress" id="optimizerExploreProgress" hidden></p>
 <div aria-label="Optimization progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="optimizer-progress-track" id="optimizerProgressTrack" role="progressbar"><i id="optimizerProgressBar"></i></div>
 <div class="optimizer-progress-meta"><span id="optimizerProgressPercent">0%</span><span id="optimizerProgressEvaluations"></span></div>
 <section class="optimizer-health-ladder" aria-labelledby="optimizerHealthLadderTitle">
