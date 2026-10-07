@@ -104,6 +104,9 @@ self.onmessage=async event=>{
     verifiedBestEld=baselineEld;
     let explored=0,explorationNote='';
     if(message.exploreMode){
+      // A reusable baseline skips optimizeOne's progress events. Always send its
+      // actual ladder before screening so the popup never starts with a blank chart.
+      self.postMessage({type:'progress',requestId,payload:{phase:'baseline-ready',exploreStage:'baseline-ready',progressPct:40,expectedLifetimeDamage:baselineEld,verifiedBestEld,healthLadder:ladderRows(result?.result),evaluations:cumulativeEvaluations}});
       const originalIds=[...message.selectedIds,...(message.fixedMercenaryIds||[])];
       let review=null;
       try{
@@ -128,6 +131,7 @@ self.onmessage=async event=>{
           const trial=optimizeOne(selectedIds,'finalist',index+1,candidates.length);explored++;
           if(preferHigherEldResult(result,trial)===trial){result=trial;result.exploredSelectedIds=candidate.selectedIds;}
           verifiedBestEld=Number(result?.result?.expectedTotalLifetimeDamage||0);
+          self.postMessage({type:'progress',requestId,payload:{phase:'finalist-complete',exploreStage:'finalist-complete',candidateIndex:index+1,candidateCount:candidates.length,expectedLifetimeDamage:Number(trial?.result?.expectedTotalLifetimeDamage||0),verifiedBestEld,healthLadder:ladderRows(trial?.result),screeningEvaluations,evaluations:cumulativeEvaluations,progressPct:50+Math.round((index+1)*43/Math.max(1,candidates.length))}});
         }catch(error){if(error?.code!=='TIME_BUDGET'&&!shouldAbort())throw error;explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;}
       }
       result.exploration={baselineEld,finalEld:Number(result?.result?.expectedTotalLifetimeDamage||0),screeningEvaluations,screenedCandidates:candidates.length,finalistCount:candidates.length,fullyOptimizedCandidates:explored,changedSelection:!!result.exploredSelectedIds,note:explorationNote};
