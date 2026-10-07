@@ -17,6 +17,7 @@ import {normalizeEpicOptimizerSignature} from './epic-optimizer-signature.mjs';
 import {EPIC_ARMY_GROUPS,epicArmyGroup,canReuseEpicOptimizerResult,copySharedEpicArmy} from './shared-epic-armies.mjs';
 import {REBUILD_COST_ASSUMPTION,unitRebuildCost} from './unit-rebuild-costs.mjs';
 import {cycleMarkersForOrder} from './custom-epic-cycle-markers.mjs';
+import {createExploreProgressState,advanceExploreProgress} from './epic-optimizer-progress.mjs';
 
 function estimatedEpicPoints(encounterName,eld){
   const bonus=String(encounterName||'').toUpperCase()==='TINMAN'
@@ -35,7 +36,7 @@ const CAPACITY_META={troop:{limit:'leadership',fill:'leadershipFill',auto:'autoL
 const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let activeCategory='troop';let activeMode='battle';let activeView='troop';let resolvedFills={troop:1,monster:1,mercenary:1};
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
-let appInitialized=false;let optimizerBestEldSoFar=0;let optimizerExploreActive=false;
+let appInitialized=false;let optimizerBestEldSoFar=0;let optimizerExploreActive=false;let optimizerExploreProgressState=null;
 let optimizerResultBackups=new Map();
 let canonicalAccountBackup=null;
 let optimizerPersistenceWarningShown=false;
@@ -1269,15 +1270,19 @@ function setOptimizeButtonState(){
   else if(epicResultCurrent)els.optimizeHelp.textContent='Change any input or selection, then re-optimize when ready.';
   else els.optimizeHelp.textContent='Ready. Click Optimize Army to calculate the best quantities.';
 }
-function openOptimizerModal(){
+function openOptimizerModal(baselinePayload=null){
   optimizerBestEldSoFar=0;
+  optimizerExploreProgressState=optimizerExploreActive?createExploreProgressState(baselinePayload):null;
   els.optimizerProgressEldLabel=document.getElementById('optimizerProgressEldLabel');
   els.optimizerExploreProgress=document.getElementById('optimizerExploreProgress');
-  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Current trial / Best trial':'Current ELD / Best ELD';
+  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Starting army / Best confirmed':'Current ELD / Best ELD';
   if(els.optimizerExploreProgress){els.optimizerExploreProgress.hidden=!optimizerExploreActive;els.optimizerExploreProgress.textContent=optimizerExploreActive?'Checking your starting army before screening alternatives…':'';}
-  renderOptimizerHealthLadder([]);
-  if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent='—';
-  if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent='—';
+  const initial=optimizerExploreProgressState;
+  renderOptimizerHealthLadder(initial?.rows||[]);
+  const chartTitle=document.getElementById('optimizerHealthLadderTitle');if(chartTitle)chartTitle.textContent=initial?.chartTitle||'Best Army Health Ladder';
+  const chart=document.getElementById('optimizerHealthLadder');if(chart)chart.setAttribute('aria-label',initial?`${initial.chartTitle}; horizontal position is predicted death order`:'Squad health ladder for the best army found so far; horizontal position is predicted death order');
+  if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=initial?.currentEld?formatDamage(initial.currentEld):'—';
+  if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=initial?.verifiedBestEld?formatDamage(initial.verifiedBestEld):'—';
   if(!els.optimizerModal)return;
   els.optimizerModal.hidden=false;
   document.body.classList.add('optimizer-modal-open');
@@ -1302,7 +1307,7 @@ function renderOptimizerHealthLadder(rows=[]){
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
   const yLabel=make('text',{x:9,y:150,transform:'rotate(-90 9 150)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
   const xLabel=make('text',{x:300,y:305,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent=chartStyle()==='separated'?'POSITION WITHIN ARMY TYPE →':'DEATH ORDER →';svg.append(xLabel);
-  if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent='Waiting for the first best army…';svg.append(label);return;}
+  if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent=optimizerExploreProgressState?.emptyMessage||'Waiting for the first best army…';svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
   for(const y of [20,145,270])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
@@ -1331,8 +1336,10 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
+  if(progress.exploreStage==='baseline-ready')return 'Your starting army is ready; screening alternatives…';
   if(progress.phase==='explore-screen')return progress.exploreStage==='screen-complete'?'Screening complete; preparing full optimizations…':'Screening eligible unit combinations…';
   if(progress.exploreStage==='baseline')return 'Fully optimizing your starting army…';
+  if(progress.exploreStage==='finalist-complete')return `Finalist ${progress.candidateIndex} of ${progress.candidateCount} fully optimized`;
   if(progress.exploreStage==='finalist')return `Full optimization: finalist ${progress.candidateIndex} of ${progress.candidateCount}`;
   if(progress.phase==='seed'||progress.phase==='seed-screen')return 'Comparing independent starting army structures…';
   if(progress.phase==='local')return 'Optimizing the strongest independent structures…';
@@ -1356,16 +1363,33 @@ function updateOptimizerProgress(progress={}){
   if(els.optimizerProgressPercent)els.optimizerProgressPercent.textContent=`${pct}%`;
   if(els.optimizerProgressHeadline)els.optimizerProgressHeadline.textContent=optimizationHeadline(progress);
   if(optimizerExploreActive&&els.optimizerExploreProgress){
-    const screened=Number(progress.screeningEvaluations)||0,verified=Number(progress.verifiedBestEld)||0;
+    const screened=Number(progress.screeningEvaluations)||0,verified=Number(progress.verifiedBestEld)||optimizerExploreProgressState?.verifiedBestEld||0;
     const parts=[];
-    if(screened)parts.push(`${screened.toLocaleString('en-US')} quick screening evaluations`);
-    if(Number(progress.candidateCount)>0)parts.push(`${Number(progress.candidateCount)} finalists selected for full optimization`);
+    if(progress.exploreStage==='screen'||progress.exploreStage==='screen-complete')parts.push('Showing your starting army during screening');
+    if(progress.exploreStage==='finalist'||progress.exploreStage==='finalist-complete')parts.push(`Showing the best army in finalist ${Number(progress.candidateIndex)||0} of ${Number(progress.candidateCount)||0}`);
+    if(screened)parts.push(`${screened.toLocaleString('en-US')} combinations screened`);
+    if(progress.exploreStage==='screen-complete'&&Number(progress.candidateCount)>0)parts.push(`${Number(progress.candidateCount)} finalists to optimize`);
     if(verified>0)parts.push(`Best fully optimized ELD: ${formatDamage(verified)}`);
     els.optimizerExploreProgress.textContent=parts.join(' · ')||'Checking your starting army before screening alternatives…';
   }
   if(els.optimizerProgressEvaluations){
     const e=Number(progress.evaluations||0);
-    els.optimizerProgressEvaluations.textContent=e?`${e.toLocaleString('en-US')} quantity evaluations`:'';
+    const screened=Number(progress.screeningEvaluations)||0;
+    els.optimizerProgressEvaluations.textContent=optimizerExploreActive&&progress.phase==='explore-screen'
+      ?`${screened.toLocaleString('en-US')} combinations screened`
+      :e?`${e.toLocaleString('en-US')} quantity evaluations`:'';
+  }
+  if(optimizerExploreActive&&optimizerExploreProgressState){
+    const before=optimizerExploreProgressState;
+    optimizerExploreProgressState=advanceExploreProgress(before,progress);
+    const current=optimizerExploreProgressState;
+    if(current.revision!==before.revision)renderOptimizerHealthLadder(current.rows);
+    const chartTitle=document.getElementById('optimizerHealthLadderTitle');if(chartTitle)chartTitle.textContent=current.chartTitle;
+    const chart=document.getElementById('optimizerHealthLadder');if(chart)chart.setAttribute('aria-label',`${current.chartTitle}; horizontal position is predicted death order`);
+    if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=current.trialKey.startsWith('finalist-')?'Current finalist / Best confirmed':'Starting army / Best confirmed';
+    if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=current.currentEld?formatDamage(current.currentEld):'—';
+    if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=current.verifiedBestEld?formatDamage(current.verifiedBestEld):'—';
+    return;
   }
   const currentEld=Number(progress.expectedLifetimeDamage),previousBest=optimizerBestEldSoFar;
   const reportedBest=Number(progress.bestExpectedLifetimeDamage);
@@ -1864,7 +1888,7 @@ function startEpicOptimization(){
   els.resultStatus.textContent='Optimizing quantities…';
   els.resultStatus.classList.add('optimizing-status');
   optimizerExploreActive=exploring;
-  openOptimizerModal();
+  openOptimizerModal(reusableBaseline);
   startOptimizerElapsedTimer();
 
   try{
