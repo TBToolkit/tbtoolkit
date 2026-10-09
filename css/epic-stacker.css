@@ -4345,8 +4345,8 @@ body.battle-mode-active [data-section-panel] > .battle-only-column-title{cursor:
 body.battle-mode-active [data-section-panel] > .topdown-panel-heading:hover .input-section-toggle,
 body.battle-mode-active [data-section-panel] > .battle-only-column-title:hover .input-section-toggle{border-color:#f3af34}
 body.battle-mode-active .battle-top-layout .battle-select-grid{max-width:none!important;width:100%;box-sizing:border-box}
-body.battle-mode-active .player-clan-panel .battle-select-grid,
-body.battle-mode-active .battle-settings-panel .battle-select-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:0!important}
+body.battle-mode-active #battleBetaPanel .player-clan-panel .battle-select-grid,
+body.battle-mode-active #battleBetaPanel .battle-settings-panel .battle-select-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:0!important}
 .player-account-area,.player-clan-link-row,.battle-method-area,.battle-encounter-area{min-width:0}
 body.battle-mode-active .player-clan-panel .player-account-area,
 body.battle-mode-active .battle-settings-panel .battle-method-area{padding-right:24px;border-right:1px solid #304658}
@@ -4378,8 +4378,8 @@ body.battle-mode-active .selection-area>.optimizer-merc-option{margin:14px 14px 
   body.battle-mode-active .global-bonus-area{border-left:0;border-top:1px solid #304658;padding:16px 0 0}
 }
 @media(max-width:900px){
-  body.battle-mode-active .player-clan-panel .battle-select-grid,
-  body.battle-mode-active .battle-settings-panel .battle-select-grid{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+  body.battle-mode-active #battleBetaPanel .player-clan-panel .battle-select-grid,
+  body.battle-mode-active #battleBetaPanel .battle-settings-panel .battle-select-grid{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
   body.battle-mode-active .player-clan-panel .player-account-area,
   body.battle-mode-active .battle-settings-panel .battle-method-area{border-right:0;border-bottom:1px solid #304658;padding:0 0 14px}
   body.battle-mode-active .player-clan-panel .player-clan-link-row,
