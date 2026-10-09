@@ -4191,7 +4191,7 @@ body.battle-mode-active .battle-top-layout .battle-select-grid{
   max-width:1100px;
 }
 @media(min-width:900px){
-  body.battle-mode-active .compact-limit-list{
+  body.battle-mode-active .setup-block .compact-limit-list{
     display:grid!important;
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
     gap:16px!important;
@@ -4253,13 +4253,34 @@ body.battle-mode-active .battle-top-layout .battle-select-grid{
 .battle-mode-active .advanced-settings-column.is-collapsed>:not(.battle-only-column-title),
 .battle-mode-active .selection-area.is-collapsed>:not(.topdown-panel-heading),
 .battle-mode-active #orderView.is-collapsed>:not(.topdown-panel-heading){display:none!important}
+.battle-mode-active .selection-area.is-collapsed .topdown-panel-heading p,
+.battle-mode-active #orderView.is-collapsed .topdown-panel-heading p,
+.battle-mode-active .selection-area.is-collapsed #clearAllSelections,
+.battle-mode-active #orderView.is-collapsed #resetCustomOrderDefault{display:none!important}
 body.battle-mode-active .battle-top-layout .setup-block.is-collapsed,
 body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed{padding-bottom:0!important}
 @media(max-width:760px){
-  .input-section-summary{max-width:42%;font-size:.61rem}
-  .battle-mode-active .battle-config-heading,
-  .battle-mode-active .selection-heading,
-  .battle-mode-active .custom-order-v2-heading{gap:7px}
+  .battle-mode-active .battle-config-panel.is-collapsed .topdown-panel-heading,
+  .battle-mode-active .selection-area.is-collapsed .topdown-panel-heading,
+  .battle-mode-active #orderView.is-collapsed .topdown-panel-heading,
+  .battle-mode-active .setup-block.is-collapsed .battle-only-column-title,
+  .battle-mode-active .advanced-settings-column.is-collapsed .battle-only-column-title{
+    flex-wrap:wrap;
+    gap:7px;
+  }
+  .battle-mode-active .is-collapsed .input-section-summary:not([hidden]){
+    order:10;
+    flex:1 0 100%;
+    max-width:none;
+    margin:0;
+    padding-left:34px;
+    text-align:left;
+    font-size:.62rem;
+  }
+  .battle-mode-active .is-collapsed .input-section-toggle{order:5}
+  .battle-mode-active .selection-area.is-collapsed .section-heading-copy,
+  .battle-mode-active #orderView.is-collapsed .section-heading-copy{flex:1 1 auto}
+  .battle-mode-active .selection-area.is-collapsed .selection-heading-actions{flex:0 0 auto}
 }
 .squad-order-item.has-cycle-break{
   position:relative;
