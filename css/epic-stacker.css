@@ -1220,10 +1220,10 @@ details.advanced{margin-top:8px;padding-top:7px}
 
 .selection-optimize-row{
   display:flex;
-  flex-direction:column;
-  align-items:flex-start;
+  flex-direction:row;
+  align-items:center;
   justify-content:flex-start;
-  gap:7px;
+  gap:14px;
   padding:12px;
   border-top:1px solid rgba(255,255,255,.055);
 }
