@@ -3570,6 +3570,39 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
+  const inputSectionPanels={
+    player:document.querySelector('.player-clan-panel'),
+    battle:document.querySelector('.battle-settings-panel'),
+    limits:document.querySelector('.setup-block'),
+    bonuses:document.querySelector('.advanced-settings-column'),
+    selection:document.querySelector('.selection-area'),
+    order:document.getElementById('orderView')
+  };
+  const inputSectionLabels={player:'Player and Clan',battle:'Battle',limits:'Army Limits',bonuses:'Unit Bonuses',selection:'Selection',order:'Custom Die Order'};
+  const inputSectionSummary=key=>{
+    const selectedText=id=>document.getElementById(id)?.selectedOptions?.[0]?.textContent?.trim()||'';
+    if(key==='player')return [selectedText('accountSelect'),document.getElementById('clanProfileStatus')?.textContent?.trim()].filter(Boolean).join(' · ');
+    if(key==='battle')return [selectedText('battleTypeSelect'),selectedText('encounterSelect'),selectedText('battleMethodSelect')].filter(Boolean).join(' · ');
+    if(key==='limits')return ['leadership','authority','dominance'].map(id=>`${id[0].toUpperCase()} ${document.getElementById(id)?.value||'—'}`).join(' · ');
+    if(key==='bonuses')return 'Unit and global bonuses';
+    if(key==='selection'){
+      const count=[...document.querySelectorAll('.selection-card-title [id$="Count"]')].reduce((sum,node)=>sum+(Number.parseInt(node.textContent,10)||0),0);
+      return `${count} unit types selected`;
+    }
+    const count=document.querySelectorAll('#orderView .squad-order-item').length;
+    return `${count} squads ordered`;
+  };
+  document.querySelectorAll('[data-section-toggle]').forEach(button=>button.addEventListener('click',()=>{
+    const key=button.dataset.sectionToggle;
+    const panel=inputSectionPanels[key];
+    if(!panel)return;
+    const collapsed=panel.classList.toggle('is-collapsed');
+    button.setAttribute('aria-expanded',String(!collapsed));
+    button.setAttribute('aria-label',`${collapsed?'Expand':'Collapse'} ${inputSectionLabels[key]}`);
+    button.querySelector('span').textContent=collapsed?'+':'−';
+    const summary=document.querySelector(`[data-section-summary="${key}"]`);
+    if(summary){summary.textContent=collapsed?inputSectionSummary(key):'';summary.hidden=!collapsed;}
+  }));
   document.getElementById('useClanNorm')?.addEventListener('click',useLinkedClanNorm);
   document.getElementById('saveNormToClan')?.addEventListener('click',saveCurrentNormToClan);
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}

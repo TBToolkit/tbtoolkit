@@ -63,13 +63,20 @@ assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(html,/class="selection-card-grid"[\s\S]*?<div class="explore-controls" id="exploreControls"[\s\S]*?<div class="selection-optimize-row optimizer-only"><button[^>]*id="optimizeArmy"[\s\S]*?<div class="selection-optimize-guidance">[\s\S]*?id="optimizeHelp"[\s\S]*?data-battle-guide="optimizer"/,'Explore must sit after unit selection, immediately above the left-first action and its guidance.');
-assert.match(css,/\.selection-optimize-row\{[\s\S]*?flex-direction:column;[\s\S]*?align-items:flex-start;/,'Optimize and its guidance must align on the left.');
+assert.match(css,/\.selection-optimize-row\{[\s\S]*?flex-direction:row;[\s\S]*?align-items:center;/,'Optimize guidance must sit to the right of its button on desktop.');
+assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.selection-optimize-row\{flex-direction:column;/,'Optimize guidance must stack on narrow screens.');
+for(const key of ['player','battle','limits','bonuses','selection','order']){
+  assert.match(html,new RegExp(`data-section-toggle="${key}"[^>]*aria-expanded="true"`),`${key} must start expanded.`);
+  assert.match(html,new RegExp(`data-section-summary="${key}" hidden`),`${key} must have a collapsed summary.`);
+}
+assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');
+assert.match(source,/inputSectionPanels[\s\S]*?classList\.toggle\('is-collapsed'\)[\s\S]*?aria-expanded/,'Section controls must toggle panel visibility and accessibility state.');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
 assert.match(source,/function openBattleGuide\([\s\S]*?battleGuideReturnFocus/,'The guide must restore focus to its opening control');
 assert.match(source,/if\(e\.key!=='Tab'\)return;/,'The guide must keep keyboard focus within the open modal');
 assert.match(source,/function updateBonusGroupStatus\([\s\S]*?textContent='Mixed'/,'Collapsed Monster and Human rows must disclose customized child profiles');
 assert.match(css,/\.bonus-profile-disclosure\{[\s\S]*?font-family:inherit/,'Expandable profile labels must inherit the calculator typography');
-assert.match(css,/@media \(min-width:1101px\) and \(max-width:1320px\)[\s\S]*?advanced-settings-column\{grid-column:1\/-1/,'Unit Bonuses must move below sections 1 and 2 before its values become cramped');
+assert.match(css,/body\.battle-mode-active \.battle-top-layout \.advanced-settings-column\{[\s\S]*?grid-column:1!important;/,'Unit Bonuses must occupy its own full-width row.');
 assert.doesNotMatch(html,/id="useCustomFamilyBonuses"/,'The old all-or-nothing custom-family control must not remain');
 assert.match(source,/useCustomProfileBonuses:true/,'Optimizer and Review Selection must receive the resolved profile matrix');
 assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');

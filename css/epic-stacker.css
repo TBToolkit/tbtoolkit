@@ -4159,6 +4159,108 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   line-height:1.45;
 }
 .custom-cycle-note[hidden]{display:none!important}
+
+/* Input workflow: one full-width, optionally collapsible card per step. */
+body.battle-mode-active .battle-top-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:14px!important;
+}
+body.battle-mode-active #battleBetaPanel,
+body.battle-mode-active .battle-top-layout>.setup-panel,
+body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+  display:contents!important;
+}
+body.battle-mode-active .battle-top-layout .battle-config-panel,
+body.battle-mode-active .battle-top-layout .setup-block,
+body.battle-mode-active .battle-top-layout .advanced-settings-column{
+  grid-column:1!important;
+  grid-row:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  box-sizing:border-box!important;
+}
+body.battle-mode-active .battle-top-layout .setup-block,
+body.battle-mode-active .battle-top-layout .advanced-settings-column{
+  padding:14px!important;
+}
+body.battle-mode-active .battle-top-layout .battle-select-grid{
+  max-width:1100px;
+}
+@media(min-width:900px){
+  body.battle-mode-active .compact-limit-list{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:16px!important;
+    max-width:1100px;
+  }
+  body.battle-mode-active .compact-limit-list .limit-row{
+    border:1px solid #304658;
+    border-radius:8px;
+    padding:12px!important;
+    background:#0d1b27;
+  }
+}
+@media(max-width:1100px){
+  body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+    display:contents!important;
+  }
+}
+.battle-mode-active .battle-config-heading,
+.battle-mode-active .battle-only-column-title,
+.battle-mode-active .selection-heading,
+.battle-mode-active .custom-order-v2-heading{
+  position:relative;
+}
+.battle-mode-active .battle-only-column-title{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+}
+.input-section-toggle{
+  flex:0 0 auto;
+  display:inline-grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  margin-left:auto;
+  border:1px solid #496074;
+  border-radius:7px;
+  background:#0a1925;
+  color:#f3af34;
+  font:inherit;
+  font-size:1.1rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.input-section-toggle:hover{border-color:#f3af34;background:#152b3a}
+.input-section-toggle:focus-visible{outline:2px solid #f3af34;outline-offset:2px}
+.input-section-summary{
+  min-width:0;
+  margin-left:auto;
+  color:#9fb2c1;
+  font-size:.68rem;
+  line-height:1.35;
+  text-align:right;
+}
+.input-section-summary[hidden]{display:none!important}
+.input-section-summary:not([hidden])+.input-section-toggle{margin-left:0}
+.battle-mode-active .battle-config-panel.is-collapsed>:not(.topdown-panel-heading),
+.battle-mode-active .setup-block.is-collapsed>:not(.battle-only-column-title),
+.battle-mode-active .advanced-settings-column.is-collapsed>:not(.battle-only-column-title),
+.battle-mode-active .selection-area.is-collapsed>:not(.topdown-panel-heading),
+.battle-mode-active #orderView.is-collapsed>:not(.topdown-panel-heading){display:none!important}
+body.battle-mode-active .battle-top-layout .setup-block.is-collapsed,
+body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed{padding-bottom:0!important}
+@media(max-width:760px){
+  .input-section-summary{max-width:42%;font-size:.61rem}
+  .battle-mode-active .battle-config-heading,
+  .battle-mode-active .selection-heading,
+  .battle-mode-active .custom-order-v2-heading{gap:7px}
+}
 .squad-order-item.has-cycle-break{
   position:relative;
   margin-top:22px;

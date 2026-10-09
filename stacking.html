@@ -51,7 +51,7 @@
 <section class="topdown-panel battle-config-panel player-clan-panel">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">1</span><h2>Player &amp; Clan</h2></div>
-
+<span class="input-section-summary" data-section-summary="player" hidden></span><button class="input-section-toggle" data-section-toggle="player" aria-label="Collapse Player and Clan" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <div class="battle-select-grid">
 <div class="player-clan-primary">
@@ -70,6 +70,7 @@
 <section class="topdown-panel battle-config-panel battle-settings-panel">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">2</span><h2>Battle</h2></div>
+<span class="input-section-summary" data-section-summary="battle" hidden></span><button class="input-section-toggle" data-section-toggle="battle" aria-label="Collapse Battle" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <div class="battle-select-grid">
 <label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
@@ -139,7 +140,7 @@
 
 <div class="setup-grid">
 <div class="setup-block">
-<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Army Limits</h2><div class="live-damage-slot" data-live-damage="limits"></div></div>
+<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Army Limits</h2><div class="live-damage-slot" data-live-damage="limits"></div><span class="input-section-summary" data-section-summary="limits" hidden></span><button class="input-section-toggle" data-section-toggle="limits" aria-label="Collapse Army Limits" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 <h3>Army Limits</h3>
 <div class="limit-list compact-limit-list">
 
@@ -178,7 +179,7 @@
 </div>
 
 <div class="advanced-settings-column">
-<div class="battle-only-column-title"><span class="section-kicker">4</span><h2>Unit Bonuses</h2><button aria-label="About unit bonus profiles" class="stat-help-button section-heading-help" data-stat-help="unitBonusProfiles" title="How are bonuses assigned?" type="button">?</button><div class="live-damage-slot" data-live-damage="combat"></div></div>
+<div class="battle-only-column-title"><span class="section-kicker">4</span><h2>Unit Bonuses</h2><button aria-label="About unit bonus profiles" class="stat-help-button section-heading-help" data-stat-help="unitBonusProfiles" title="How are bonuses assigned?" type="button">?</button><div class="live-damage-slot" data-live-damage="combat"></div><span class="input-section-summary" data-section-summary="bonuses" hidden></span><button class="input-section-toggle" data-section-toggle="bonuses" aria-label="Collapse Unit Bonuses" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 <section class="advanced advanced-settings-panel always-open">
 <div class="advanced-settings-content">
 
@@ -231,7 +232,7 @@
 <section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
 <div class="topdown-panel-heading selection-heading">
 <div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
-<div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
+<div class="selection-heading-actions"><span class="input-section-summary" data-section-summary="selection" hidden></span><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button><button class="input-section-toggle" data-section-toggle="selection" aria-label="Collapse Selection" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 </div>
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
@@ -261,7 +262,7 @@
 
 <section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
 <div class="topdown-panel-heading custom-order-v2-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div><button class="toolbar-button custom-order-reset" id="resetCustomOrderDefault" type="button">Reset to Default Order</button></div><p>Drag a squad tile into the order you want it to die. Units can be mixed between tiers within Troops, Monsters, or Mercs. On a phone, use the arrow buttons.</p></div>
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div><button class="toolbar-button custom-order-reset" id="resetCustomOrderDefault" type="button">Reset to Default Order</button></div><p>Drag a squad tile into the order you want it to die. Units can be mixed between tiers within Troops, Monsters, or Mercs. On a phone, use the arrow buttons.</p></div><span class="input-section-summary" data-section-summary="order" hidden></span><button class="input-section-toggle" data-section-toggle="order" aria-label="Collapse Custom Die Order" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <p class="custom-cycle-note" id="customCycleNote" hidden>Cycle lines show predicted death thresholds for this Epic when your army attacks first. A tile with two cycle numbers shows army-first / Epic-first outcomes. These are estimates based on the current calculated stack.</p>
 <div class="custom-order-floating-metric" id="customOrderFloatingMetric" hidden><span>Live Result</span><div class="live-damage-slot" data-live-damage="order-sticky"></div></div>
