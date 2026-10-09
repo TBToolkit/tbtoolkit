@@ -4259,6 +4259,8 @@ body.battle-mode-active .battle-top-layout .battle-select-grid{
 .battle-mode-active #orderView.is-collapsed #resetCustomOrderDefault{display:none!important}
 body.battle-mode-active .battle-top-layout .setup-block.is-collapsed,
 body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed{padding-bottom:0!important}
+body.battle-mode-active .battle-top-layout .setup-block.is-collapsed .battle-only-column-title,
+body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed .battle-only-column-title{margin-bottom:0!important}
 @media(max-width:760px){
   .battle-mode-active .battle-config-panel.is-collapsed .topdown-panel-heading,
   .battle-mode-active .selection-area.is-collapsed .topdown-panel-heading,
@@ -4278,6 +4280,7 @@ body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapse
     font-size:.62rem;
   }
   .battle-mode-active .is-collapsed .input-section-toggle{order:5}
+  .battle-mode-active .battle-only-column-title .input-section-toggle{margin-left:auto!important}
   .battle-mode-active .selection-area.is-collapsed .section-heading-copy,
   .battle-mode-active #orderView.is-collapsed .section-heading-copy{flex:1 1 auto}
   .battle-mode-active .selection-area.is-collapsed .selection-heading-actions{flex:0 0 auto}
