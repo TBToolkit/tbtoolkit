@@ -70,7 +70,9 @@ for(const key of ['player','battle','limits','bonuses','selection','order']){
   assert.match(html,new RegExp(`data-section-summary="${key}" hidden`),`${key} must have a collapsed summary.`);
 }
 assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');
-assert.match(source,/inputSectionPanels[\s\S]*?classList\.toggle\('is-collapsed'\)[\s\S]*?aria-expanded/,'Section controls must toggle panel visibility and accessibility state.');
+assert.match(source,/inputSectionPanels[\s\S]*?aria-expanded[\s\S]*?classList\.toggle\('is-collapsed'\)/,'Section controls must toggle panel visibility and accessibility state.');
+assert.match(source,/header\?\.addEventListener\('click'[\s\S]*?button\.click\(\)/,'The entire section heading must toggle without intercepting nested controls.');
+assert.match(siteScript,/statefulSections[\s\S]*?savedPageView\?\.sections[\s\S]*?sections\[section\.dataset\.sectionPanel\]/,'Input section state must survive page navigation.');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
 assert.match(source,/function openBattleGuide\([\s\S]*?battleGuideReturnFocus/,'The guide must restore focus to its opening control');
 assert.match(source,/if\(e\.key!=='Tab'\)return;/,'The guide must keep keyboard focus within the open modal');
@@ -163,7 +165,10 @@ assert.match(html,/class="player-clan-primary">[\s\S]*id="accountSelect"[\s\S]*i
 assert.match(css,/\.player-clan-primary\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 76px 112px/,'The account selector must shrink to make room for the compact temple selector and divisor.');
 assert.match(css,/\.player-clan-panel \.temple-level-select\{[\s\S]*?width:76px/,'Temple Level needs only a compact two-digit selector.');
 assert.doesNotMatch(html,/temple-setting-note/,'The obsolete Temple Level description must be removed.');
-assert.match(html,/battle-settings-panel[\s\S]*Battle Type[\s\S]*Encounter[\s\S]*Clan Norm[\s\S]*Calculation Method/,'Encounter-specific inputs must remain together in the Battle section.');
+assert.match(html,/battle-settings-panel[\s\S]*class="battle-method-area"[\s\S]*Battle Type[\s\S]*Calculation Method[\s\S]*class="battle-encounter-area"[\s\S]*Encounter[\s\S]*Clan Norm/,'Battle type and method must share the left area, with encounter controls on the right.');
+assert.match(html,/class="player-account-area"[\s\S]*id="accountSelect"[\s\S]*class="player-clan-link-row"/,'Player and clan controls must have separate side-by-side areas.');
+assert.match(html,/class="unit-bonus-top-grid"[\s\S]*class="unit-bonus-matrix-area"[\s\S]*class="global-bonus-area"[\s\S]*class="separation-mode-only"/,'The matrix and global bonuses must share a desktop row, with Custom separation below.');
+assert.match(html,/id="exploreControls"[\s\S]*class="optimizer-only optimizer-merc-option"[\s\S]*id="optimizeArmy"/,'Mercenary optimization belongs with Explore and Optimize.');
 assert.match(html,/id="encounterPlanMembers"[^>]*max="100"[^>]*min="1"[^>]*value="100"/,'Clan members must default to 100 and be capped at 100.');
 assert.match(source,/let step=5;/,'Dynamic Battle sections must continue numbering after the four fixed setup sections.');
 assert.match(source,/function clearPrediction\(\)[\s\S]*encounterPlanEntry\)els\.encounterPlanEntry\.hidden=true[\s\S]*updateVisibleStepNumbers\(\)/,'Hiding Epic-only planning must immediately renumber PvP and unsupported encounter sections.');

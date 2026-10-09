@@ -4339,3 +4339,55 @@ body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapse
 }
 .order-list.drag-active .squad-order-item.dragging .squad-order-cycle{visibility:hidden}
 
+/* Full-width input cards: grouped controls and clickable section headings. */
+body.battle-mode-active [data-section-panel] > .topdown-panel-heading,
+body.battle-mode-active [data-section-panel] > .battle-only-column-title{cursor:pointer}
+body.battle-mode-active [data-section-panel] > .topdown-panel-heading:hover .input-section-toggle,
+body.battle-mode-active [data-section-panel] > .battle-only-column-title:hover .input-section-toggle{border-color:#f3af34}
+body.battle-mode-active .battle-top-layout .battle-select-grid{max-width:none!important;width:100%;box-sizing:border-box}
+body.battle-mode-active .player-clan-panel .battle-select-grid,
+body.battle-mode-active .battle-settings-panel .battle-select-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:0!important}
+.player-account-area,.player-clan-link-row,.battle-method-area,.battle-encounter-area{min-width:0}
+body.battle-mode-active .player-clan-panel .player-account-area,
+body.battle-mode-active .battle-settings-panel .battle-method-area{padding-right:24px;border-right:1px solid #304658}
+body.battle-mode-active .player-clan-panel .player-clan-link-row,
+body.battle-mode-active .battle-settings-panel .battle-encounter-area{padding-left:24px}
+body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:minmax(0,1fr) 76px 112px}
+body.battle-mode-active .player-clan-panel .account-actions{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px}
+body.battle-mode-active .player-clan-panel .player-clan-link-row{grid-template-columns:minmax(0,1fr) 130px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-method-area{display:grid;gap:12px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-method-area>p,
+body.battle-mode-active .battle-settings-panel .battle-encounter-area>p{margin:0;color:#99b7cb;font-size:.68rem;line-height:1.45}
+body.battle-mode-active .battle-settings-panel .battle-encounter-area{display:grid;gap:10px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(150px,190px) minmax(222px,250px)}
+body.battle-mode-active .battle-settings-panel .encounter-actions{max-width:450px}
+@media(min-width:900px){
+  body.battle-mode-active .setup-block .compact-limit-list{max-width:none;width:100%;gap:24px!important}
+  body.battle-mode-active .compact-limit-list .limit-row{position:relative}
+  body.battle-mode-active .compact-limit-list .limit-row:not(:first-child)::before{content:"";position:absolute;left:-13px;top:12px;bottom:12px;width:1px;background:#496074}
+}
+body.battle-mode-active .unit-bonus-top-grid{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(240px,1fr);gap:24px;align-items:start}
+body.battle-mode-active .unit-bonus-matrix-area,
+body.battle-mode-active .global-bonus-area{min-width:0}
+body.battle-mode-active .global-bonus-area{align-self:stretch;border-left:1px solid #304658;padding-left:24px}
+body.battle-mode-active .global-bonus-area h3{margin-top:0}
+body.battle-mode-active .global-bonus-grid{grid-template-columns:minmax(0,1fr)}
+body.battle-mode-active .selection-area>.optimizer-merc-option{margin:14px 14px 0;padding:12px 14px;border:1px solid #304658;border-radius:8px;background:#0a1925}
+@media(max-width:1100px){
+  body.battle-mode-active .unit-bonus-top-grid{grid-template-columns:minmax(0,1fr);gap:16px}
+  body.battle-mode-active .global-bonus-area{border-left:0;border-top:1px solid #304658;padding:16px 0 0}
+}
+@media(max-width:900px){
+  body.battle-mode-active .player-clan-panel .battle-select-grid,
+  body.battle-mode-active .battle-settings-panel .battle-select-grid{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+  body.battle-mode-active .player-clan-panel .player-account-area,
+  body.battle-mode-active .battle-settings-panel .battle-method-area{border-right:0;border-bottom:1px solid #304658;padding:0 0 14px}
+  body.battle-mode-active .player-clan-panel .player-clan-link-row,
+  body.battle-mode-active .battle-settings-panel .battle-encounter-area{padding:0}
+}
+@media(max-width:600px){
+  body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:minmax(0,1fr) 76px 112px}
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:430px){body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:76px minmax(0,1fr)}}
+

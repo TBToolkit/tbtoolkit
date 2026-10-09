@@ -3592,17 +3592,29 @@ function wireEvents(){
     const count=document.querySelectorAll('#orderView .squad-order-item').length;
     return `${count} squads ordered`;
   };
-  document.querySelectorAll('[data-section-toggle]').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelectorAll('[data-section-toggle]').forEach(button=>{
     const key=button.dataset.sectionToggle;
     const panel=inputSectionPanels[key];
     if(!panel)return;
-    const collapsed=panel.classList.toggle('is-collapsed');
-    button.setAttribute('aria-expanded',String(!collapsed));
-    button.setAttribute('aria-label',`${collapsed?'Expand':'Collapse'} ${inputSectionLabels[key]}`);
-    button.querySelector('span').textContent=collapsed?'+':'−';
-    const summary=document.querySelector(`[data-section-summary="${key}"]`);
-    if(summary){summary.textContent=collapsed?inputSectionSummary(key):'';summary.hidden=!collapsed;}
-  }));
+    const syncSection=()=>{
+      const collapsed=panel.classList.contains('is-collapsed');
+      button.setAttribute('aria-expanded',String(!collapsed));
+      button.setAttribute('aria-label',`${collapsed?'Expand':'Collapse'} ${inputSectionLabels[key]}`);
+      button.querySelector('span').textContent=collapsed?'+':'−';
+      const summary=document.querySelector(`[data-section-summary="${key}"]`);
+      if(summary){summary.textContent=collapsed?inputSectionSummary(key):'';summary.hidden=!collapsed;}
+    };
+    button.addEventListener('click',()=>{
+      panel.classList.toggle('is-collapsed');
+      syncSection();
+    });
+    const header=button.closest('.topdown-panel-heading, .battle-only-column-title');
+    header?.addEventListener('click',event=>{
+      if(event.target.closest('button, a, input, select, label, summary, details'))return;
+      button.click();
+    });
+    syncSection();
+  });
   document.getElementById('useClanNorm')?.addEventListener('click',useLinkedClanNorm);
   document.getElementById('saveNormToClan')?.addEventListener('click',saveCurrentNormToClan);
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}

@@ -37,6 +37,7 @@ document.querySelectorAll('[data-year]').forEach((el) => {
 // Keep each page exactly where the user left it while navigating within the site.
 const pageViewKey = `tbtoolkit.page-view.v1:${location.pathname}`;
 const statefulDetails = [...document.querySelectorAll('details')];
+const statefulSections = [...document.querySelectorAll('[data-section-panel]')];
 let savedPageView = null;
 
 try {
@@ -51,19 +52,28 @@ statefulDetails.forEach((detail, index) => {
   const open = savedPageView?.details?.[detailKey(detail, index)];
   if (typeof open === 'boolean') detail.open = open;
 });
+statefulSections.forEach((section) => {
+  const collapsed = savedPageView?.sections?.[section.dataset.sectionPanel];
+  if (typeof collapsed === 'boolean') section.classList.toggle('is-collapsed', collapsed);
+});
 let hashTarget = null;
 try { hashTarget = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null; } catch {}
 if (hashTarget?.tagName === 'DETAILS') hashTarget.open = true;
 
 const savePageView = () => {
   const details = {};
+  const sections = {};
   statefulDetails.forEach((detail, index) => {
     details[detailKey(detail, index)] = detail.open;
+  });
+  statefulSections.forEach((section) => {
+    sections[section.dataset.sectionPanel] = section.classList.contains('is-collapsed');
   });
   try {
     sessionStorage.setItem(pageViewKey, JSON.stringify({
       scrollY: Math.max(0, Math.round(window.scrollY)),
-      details
+      details,
+      sections
     }));
   } catch {
     // Storage can be unavailable in private or restricted browser contexts.
@@ -71,6 +81,9 @@ const savePageView = () => {
 };
 
 statefulDetails.forEach((detail) => detail.addEventListener('toggle', savePageView));
+document.addEventListener('click', (event) => {
+  if (event.target.closest('[data-section-toggle], [data-section-panel] > .topdown-panel-heading, [data-section-panel] > .battle-only-column-title')) savePageView();
+});
 window.addEventListener('pagehide', savePageView);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') savePageView();
