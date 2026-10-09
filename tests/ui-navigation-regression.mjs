@@ -62,6 +62,8 @@ assert.equal((html.match(/data-guide-panel=/g)||[]).length,9,'The mechanics guid
 assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit independently[\s\S]*?Player Account[\s\S]*?Link to this clan/,'The guide must explain shared Epic armies and player-to-clan linking.');
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
+assert.match(html,/class="selection-card-grid"[\s\S]*?<div class="explore-controls" id="exploreControls"[\s\S]*?<div class="selection-optimize-row optimizer-only"><button[^>]*id="optimizeArmy"[\s\S]*?<div class="selection-optimize-guidance">[\s\S]*?id="optimizeHelp"[\s\S]*?data-battle-guide="optimizer"/,'Explore must sit after unit selection, immediately above the left-first action and its guidance.');
+assert.match(css,/\.selection-optimize-row\{[\s\S]*?flex-direction:column;[\s\S]*?align-items:flex-start;/,'Optimize and its guidance must align on the left.');
 assert.match(source,/STAT_HELP_GUIDE_SECTION[\s\S]*?bonusDD:'chance'[\s\S]*?bonusHealth:'health'[\s\S]*?bonusStrength:'damage'/,'Input help must route into the relevant calculation-guide section');
 assert.match(source,/function openBattleGuide\([\s\S]*?battleGuideReturnFocus/,'The guide must restore focus to its opening control');
 assert.match(source,/if\(e\.key!=='Tab'\)return;/,'The guide must keep keyboard focus within the open modal');
@@ -145,8 +147,8 @@ assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no cl
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
 assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
 assert.doesNotMatch(html,/id="clanProfileSelect"/,'Clan links must be managed in Clan Overview, not duplicated as a calculator dropdown.');
-assert.match(html,/id="clanProfileStatus"[\s\S]*href="chests\.html#planSetup" id="manageClanLink">Manage link/,'The calculator must show a read-only clan status with a direct management shortcut.');
-assert.match(source,/manage\.href=`chests\.html\?\$\{query\}#planSetup`/,'The shortcut must carry the selected player and clan to Plan Setup.');
+assert.match(html,/id="clanProfileStatus"[\s\S]*href="clan\.html#planSetup" id="manageClanLink">Manage link/,'The calculator must show a read-only clan status with a direct management shortcut.');
+assert.match(source,/manage\.href=`clan\.html\?\$\{query\}#planSetup`/,'The shortcut must carry the selected player and clan to Plan Setup.');
 assert.doesNotMatch(source,/getElementById\('clanProfileSelect'\)/,'The calculator must not silently retain a second link editor.');
 assert.match(siteScript,/if \(!hashTarget && Number\.isFinite\(savedPageView\?\.scrollY\)\)/,'A management deep link must take precedence over an older saved scroll position.');
 assert.match(html,/player-clan-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');

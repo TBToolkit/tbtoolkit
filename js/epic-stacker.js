@@ -967,7 +967,7 @@ function renderClanProfileLink(){
   const linkedId=currentAccount()?.clanProfileId||'',profiles=readClanProfiles(localStorage).profiles;
   const manage=document.getElementById('manageClanLink'),query=new URLSearchParams({player:currentAccount()?.id||''});
   if(linkedId)query.set('clan',linkedId);
-  if(manage)manage.href=`chests.html?${query}#planSetup`;
+  if(manage)manage.href=`clan.html?${query}#planSetup`;
   const profile=profiles.find(item=>item.id===linkedId);
   members.readOnly=!!profile;
   if(profile)members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));

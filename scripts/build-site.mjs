@@ -7,7 +7,7 @@ import {SAVED_STATE_SCHEMA_VERSION} from '../js/saved-state-schema.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const output=path.join(root,'dist');
 const sourceDirectories=['assets','css','data','downloads','js'];
-const deploymentFiles=['_headers','robots.txt'];
+const deploymentFiles=['_headers','_redirects','robots.txt'];
 const htmlFiles=(await readdir(root)).filter(name=>name.endsWith('.html'));
 const runtimeFiles=[];
 // Keep editable source artwork and compatibility code in Git, not in the public site.
@@ -22,7 +22,7 @@ const sourceOnlyFiles=new Set([
 const sitePages=new Map([
   ['index.html','/'],
   ['stacking.html','/stacking'],
-  ['chests.html','/chests'],
+  ['clan.html','/clan'],
   ['calendar.html','/calendar'],
   ['research.html','/research'],
   ['resources.html','/resources'],

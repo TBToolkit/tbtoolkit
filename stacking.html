@@ -20,7 +20,7 @@
 </a>
 <button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle type="button"><span></span><span></span><span></span></button>
 <nav aria-label="Main navigation" class="nav" data-nav>
-<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Stacking</a><a href="chests.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
+<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Stacking</a><a href="clan.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
 </nav>
 </div>
 </header>
@@ -64,7 +64,7 @@
 </div>
 </div>
 <span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".player,.stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span>
-<div class="player-clan-link-row"><div class="battle-select-field clan-link-summary"><span>Clan Profile</span><div class="clan-link-summary-line"><strong id="clanProfileStatus">No clan linked</strong><a href="chests.html#planSetup" id="manageClanLink">Manage link</a></div></div><label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label></div>
+<div class="player-clan-link-row"><div class="battle-select-field clan-link-summary"><span>Clan Profile</span><div class="clan-link-summary-line"><strong id="clanProfileStatus">No clan linked</strong><a href="clan.html#planSetup" id="manageClanLink">Manage link</a></div></div><label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label></div>
 </div>
 </section>
 <section class="topdown-panel battle-config-panel battle-settings-panel">
@@ -79,7 +79,7 @@
 </select></label>
 <div class="battle-encounter-fields"><label class="battle-select-field" for="encounterSelect"><span>Encounter</span>
 <select id="encounterSelect"></select></label>
-<div class="battle-select-field battle-norm-field" hidden id="encounterNormField"><span>Clan Norm</span><div class="battle-norm-input"><span class="battle-norm-value"><input aria-label="Clan norm value" id="encounterPlanNorm" inputmode="decimal" min="0" step="any" type="number" value="1"><span aria-hidden="true" id="encounterPlanUnitSuffix">B</span></span><select id="encounterPlanUnit" aria-label="Clan norm unit"><option value="B">B</option><option value="M">M</option><option value="K">K</option></select><label class="battle-norm-basis"><span class="epic-basis-switch"><input checked id="encounterPlanBasis" role="switch" type="checkbox"><i></i></span><span id="encounterPlanBasisMode">Points</span></label></div><small id="encounterNormSource"></small><div class="battle-norm-actions" id="encounterNormActions" hidden><button id="useClanNorm" type="button" hidden>Use clan norm</button><button id="saveNormToClan" type="button" hidden>Save norm to clan</button><a href="chests.html">Open Clan Overview</a></div></div></div>
+<div class="battle-select-field battle-norm-field" hidden id="encounterNormField"><span>Clan Norm</span><div class="battle-norm-input"><span class="battle-norm-value"><input aria-label="Clan norm value" id="encounterPlanNorm" inputmode="decimal" min="0" step="any" type="number" value="1"><span aria-hidden="true" id="encounterPlanUnitSuffix">B</span></span><select id="encounterPlanUnit" aria-label="Clan norm unit"><option value="B">B</option><option value="M">M</option><option value="K">K</option></select><label class="battle-norm-basis"><span class="epic-basis-switch"><input checked id="encounterPlanBasis" role="switch" type="checkbox"><i></i></span><span id="encounterPlanBasisMode">Points</span></label></div><small id="encounterNormSource"></small><div class="battle-norm-actions" id="encounterNormActions" hidden><button id="useClanNorm" type="button" hidden>Use clan norm</button><button id="saveNormToClan" type="button" hidden>Save norm to clan</button><a href="clan.html">Open Clan Overview</a></div></div></div>
 <span class="workspace-actions encounter-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span>
 <div class="epic-army-sharing" id="epicArmySharing" hidden><div><strong id="epicArmySharingTitle">Shared Epic army</strong><small id="epicArmySharingStatus"></small></div><div class="epic-army-sharing-actions"><button id="toggleEpicArmySharing" type="button">Use shared army</button><button id="replaceSharedEpicArmy" type="button" hidden>Share this army instead</button></div></div>
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
@@ -233,8 +233,6 @@
 <div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
 <div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
 </div>
-<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
-
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
 <div class="selection-card-title"><button aria-controls="guardsmanSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Guardsmen</span><span id="guardsmanCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
@@ -257,7 +255,8 @@
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
-<div class="selection-optimize-row optimizer-only"><div><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
+<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
+<div class="selection-optimize-row optimizer-only"><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button><div class="selection-optimize-guidance"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div></div>
 </section>
 
 <section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
@@ -539,7 +538,7 @@
 
 </main>
 
-<footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking</a><a href="chests.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms &amp; Disclaimer</a></nav></div></footer>
+<footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking</a><a href="clan.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms &amp; Disclaimer</a></nav></div></footer>
 </body>
 </html>
 
