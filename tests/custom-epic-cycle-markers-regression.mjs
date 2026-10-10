@@ -19,6 +19,7 @@ assert.deepEqual(cycleMarkersForOrder(['first','missing','third'],friendly,epic)
 assert.equal(cycleMarkersForOrder(['third','first'],friendly,epic)[1].startsCycle,true);
 const stacker=readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const styles=readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
+const html=readFileSync(new URL('../stacking.html',import.meta.url),'utf8');
 assert.match(stacker,/row\.classList\.add\('dragging'\);beginDragCycleBoundaries\(target\)/);
 assert.match(stacker,/target\.insertBefore\(line,rows\[slot\.index\]\)/);
 assert.match(stacker,/positionDragCycleBoundaries\(target\)\};/);
@@ -26,10 +27,12 @@ assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.has-cycle-bre
 assert.match(styles,/\.cycle-drag-boundary\{/);
 assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.dragging \.squad-order-cycle\{visibility:hidden\}/);
 assert.match(stacker,/const cycleMarkers=cycleMarkersForOrder\(rows\.map\(s=>String\(s\.id\)\),r\.cases\?\.friendlyFirst\?\.death,r\.cases\?\.epicFirst\?\.death\)/,'Battle Details must reuse the Custom view cycle calculation.');
-assert.match(stacker,/marker\.startsCycle\?`<span class="prediction-cycle-start">Cycle /,'Battle Details must label each new cycle on its first unit row.');
+assert.match(html,/<thead><tr><th>Unit<\/th><th>Cycle<\/th><th>Qty<\/th>/,'Epic Battle Details must place Cycle between Unit and Qty.');
 assert.doesNotMatch(stacker,/class="prediction-cycle-divider"/,'Cycle markers must not add a separate table row.');
+assert.doesNotMatch(stacker,/class="prediction-cycle-start"/,'Cycle boundary lines must not carry a label.');
 assert.match(stacker,/class="prediction-cycle-badge"[^`]+aria-label=/,'Battle Details must label each squad cycle accessibly.');
-assert.match(stacker,/class="prediction-unit-line"><span class="prediction-unit-name">[\s\S]*?\$\{cycleBadge\}/,'Cycle badges must sit next to unit names.');
+assert.match(stacker,/<td><span class="prediction-unit-name">[\s\S]*?<\/td><td>\$\{cycleBadge\}<\/td><td>\$\{formatInteger\(s\.quantity\)\}/,'Cycle badges must occupy their own cell between Unit and Qty.');
 assert.match(styles,/\.prediction-table \.prediction-cycle-row\.starts-cycle td\{[\s\S]*?border-top:2px solid var\(--cycle-accent/,'New cycles must use a bold, colored row border.');
+assert.match(styles,/\.epic-prediction-panel \.prediction-table td:nth-child\(8\)\{width:13%\}/,'Epic table must allocate width to all eight columns.');
 for(let cycle=1;cycle<=6;cycle++)assert.match(styles,new RegExp(`\\.prediction-table \\.prediction-cycle-${cycle}\\{--cycle-accent:`),`Cycle color ${cycle} must be defined.`);
 console.log('Custom Epic cycle markers regression checks passed.');

@@ -4476,10 +4476,13 @@ body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(
 .prediction-table .prediction-cycle-4{--cycle-accent:#c7abf8;--cycle-background:#302944}
 .prediction-table .prediction-cycle-5{--cycle-accent:#f5aa83;--cycle-background:#45302a}
 .prediction-table .prediction-cycle-6{--cycle-accent:#91bcff;--cycle-background:#23334c}
-.prediction-table .prediction-unit-line{display:flex;align-items:center;gap:4px;min-width:0}
-.prediction-table .prediction-unit-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prediction-table .prediction-unit-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prediction-table .prediction-cycle-badge{
-  flex:0 0 auto;
+  display:inline-block;
+  box-sizing:border-box;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
   padding:1px 4px;
   border:1px solid var(--cycle-accent,#e8b65d);
   border-radius:3px;
@@ -4491,22 +4494,26 @@ body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(
   white-space:nowrap;
 }
 .prediction-table .prediction-cycle-row.starts-cycle td{
-  padding-top:11px;
   border-top:2px solid var(--cycle-accent,#e8b65d);
 }
-.prediction-table .prediction-cycle-row.starts-cycle td:first-child{position:relative}
-.prediction-table .prediction-cycle-start{
-  position:absolute;
-  top:-7px;
-  left:5px;
-  z-index:1;
-  padding:0 3px;
-  color:var(--cycle-accent,#e8b65d);
-  background:#091824;
-  font-size:.56rem;
-  font-weight:800;
-  letter-spacing:.04em;
-  line-height:1;
-  white-space:nowrap;
+.epic-prediction-panel .prediction-table th:nth-child(1),
+.epic-prediction-panel .prediction-table td:nth-child(1){width:26%}
+.epic-prediction-panel .prediction-table th:nth-child(2),
+.epic-prediction-panel .prediction-table td:nth-child(2){width:10%;text-align:center}
+.epic-prediction-panel .prediction-table th:nth-child(3),
+.epic-prediction-panel .prediction-table td:nth-child(3){width:9%}
+.epic-prediction-panel .prediction-table th:nth-child(4),
+.epic-prediction-panel .prediction-table td:nth-child(4){width:7%}
+.epic-prediction-panel .prediction-table th:nth-child(5),
+.epic-prediction-panel .prediction-table td:nth-child(5){width:8%}
+.epic-prediction-panel .prediction-table th:nth-child(6),
+.epic-prediction-panel .prediction-table td:nth-child(6){width:13%}
+.epic-prediction-panel .prediction-table th:nth-child(7),
+.epic-prediction-panel .prediction-table td:nth-child(7){width:14%}
+.epic-prediction-panel .prediction-table th:nth-child(8),
+.epic-prediction-panel .prediction-table td:nth-child(8){width:13%}
+@media(max-width:700px){
+  .epic-prediction-panel .battle-details>.prediction-table-wrap{overflow-x:auto!important}
+  .epic-prediction-panel .prediction-table{min-width:570px!important}
 }
 
