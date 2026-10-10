@@ -26,7 +26,10 @@ assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.has-cycle-bre
 assert.match(styles,/\.cycle-drag-boundary\{/);
 assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.dragging \.squad-order-cycle\{visibility:hidden\}/);
 assert.match(stacker,/const cycleMarkers=cycleMarkersForOrder\(rows\.map\(s=>String\(s\.id\)\),r\.cases\?\.friendlyFirst\?\.death,r\.cases\?\.epicFirst\?\.death\)/,'Battle Details must reuse the Custom view cycle calculation.');
-assert.match(stacker,/marker\.startsCycle\?`<tr class="prediction-cycle-divider"/,'Battle Details must mark each new cycle.');
+assert.match(stacker,/marker\.startsCycle\?`<span class="prediction-cycle-start">Cycle /,'Battle Details must label each new cycle on its first unit row.');
+assert.doesNotMatch(stacker,/class="prediction-cycle-divider"/,'Cycle markers must not add a separate table row.');
 assert.match(stacker,/class="prediction-cycle-badge"[^`]+aria-label=/,'Battle Details must label each squad cycle accessibly.');
-assert.match(styles,/\.prediction-table \.prediction-cycle-divider td\{/,'Battle Details cycle dividers must be styled.');
+assert.match(stacker,/class="prediction-unit-line"><span class="prediction-unit-name">[\s\S]*?\$\{cycleBadge\}/,'Cycle badges must sit next to unit names.');
+assert.match(styles,/\.prediction-table \.prediction-cycle-row\.starts-cycle td\{[\s\S]*?border-top:2px solid var\(--cycle-accent/,'New cycles must use a bold, colored row border.');
+for(let cycle=1;cycle<=6;cycle++)assert.match(styles,new RegExp(`\\.prediction-table \\.prediction-cycle-${cycle}\\{--cycle-accent:`),`Cycle color ${cycle} must be defined.`);
 console.log('Custom Epic cycle markers regression checks passed.');

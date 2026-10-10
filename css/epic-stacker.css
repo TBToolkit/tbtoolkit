@@ -4470,38 +4470,43 @@ body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(
 }
 
 /* Epic Battle Details uses the same simulated cycle markers as Custom die order. */
-.prediction-table .prediction-unit-name{display:block;overflow:hidden;text-overflow:ellipsis}
+.prediction-table .prediction-cycle-1{--cycle-accent:#e8b65d;--cycle-background:#42331b}
+.prediction-table .prediction-cycle-2{--cycle-accent:#6bd6df;--cycle-background:#12363d}
+.prediction-table .prediction-cycle-3{--cycle-accent:#9ddd7b;--cycle-background:#213c2b}
+.prediction-table .prediction-cycle-4{--cycle-accent:#c7abf8;--cycle-background:#302944}
+.prediction-table .prediction-cycle-5{--cycle-accent:#f5aa83;--cycle-background:#45302a}
+.prediction-table .prediction-cycle-6{--cycle-accent:#91bcff;--cycle-background:#23334c}
+.prediction-table .prediction-unit-line{display:flex;align-items:center;gap:4px;min-width:0}
+.prediction-table .prediction-unit-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prediction-table .prediction-cycle-badge{
-  display:inline-block;
-  max-width:100%;
-  margin-top:3px;
+  flex:0 0 auto;
   padding:1px 4px;
-  border:1px solid #8b6c31;
+  border:1px solid var(--cycle-accent,#e8b65d);
   border-radius:3px;
-  color:#ffd27d;
-  background:#41331a;
+  color:var(--cycle-accent,#e8b65d);
+  background:var(--cycle-background,#42331b);
   font-size:.52rem;
   font-weight:800;
   line-height:1.1;
   white-space:nowrap;
 }
-.prediction-table .prediction-cycle-divider td{
-  width:auto!important;
-  padding:6px 2px 3px;
-  border-bottom:0;
-  color:#e8bb65;
-  text-align:center!important;
+.prediction-table .prediction-cycle-row.starts-cycle td{
+  padding-top:11px;
+  border-top:2px solid var(--cycle-accent,#e8b65d);
+}
+.prediction-table .prediction-cycle-row.starts-cycle td:first-child{position:relative}
+.prediction-table .prediction-cycle-start{
+  position:absolute;
+  top:-7px;
+  left:5px;
+  z-index:1;
+  padding:0 3px;
+  color:var(--cycle-accent,#e8b65d);
+  background:#091824;
   font-size:.56rem;
   font-weight:800;
   letter-spacing:.04em;
-  line-height:1.2;
-}
-.prediction-table .prediction-cycle-divider td::before,
-.prediction-table .prediction-cycle-divider td::after{
-  content:"";
-  display:inline-block;
-  width:calc((100% - 110px)/2);
-  margin:0 5px 3px;
-  border-top:1px solid #c99636;
+  line-height:1;
+  white-space:nowrap;
 }
 
