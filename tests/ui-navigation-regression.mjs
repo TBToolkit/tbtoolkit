@@ -70,6 +70,8 @@ for(const key of ['player','battle','limits','bonuses','selection','order']){
   assert.match(html,new RegExp(`data-section-summary="${key}" hidden`),`${key} must have a collapsed summary.`);
 }
 assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');
+assert.match(css,/@media\(min-width:900px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?left:50%;[\s\S]*?transform:translate\(-50%,-50%\);/,'Collapsed summaries must sit in the center of desktop section headers.');
+assert.match(css,/@media\(max-width:899px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?text-align:center;/,'Collapsed summaries must remain centered on narrower screens.');
 assert.match(source,/inputSectionPanels[\s\S]*?aria-expanded[\s\S]*?classList\.toggle\('is-collapsed'\)/,'Section controls must toggle panel visibility and accessibility state.');
 assert.match(source,/const toggleSection=\(\)=>\{[\s\S]*?header\?\.addEventListener\('click'[\s\S]*?event\.target\.closest\('button, a, input, select, label, summary, details'\)[\s\S]*?toggleSection\(\)/,'The entire section heading must toggle directly without intercepting nested controls.');
 assert.match(css,/body\.battle-mode-active #battleBetaPanel \.battle-config-panel\.is-collapsed>:not\(\.topdown-panel-heading\)\{display:none!important\}/,'Collapsed Player and Battle bodies must override their high-specificity grid display rules.');

@@ -4439,3 +4439,33 @@ body.battle-mode-active .selection-area>.explore-controls{margin:8px 14px 0}
 .optimizer-merc-guidance{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
 body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(.topdown-panel-heading){display:none!important}
 
+/* A collapsed card's status belongs in the middle, with its toggle at the edge. */
+@media(min-width:900px){
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-summary:not([hidden]){
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:max-content;
+    max-width:42%;
+    margin:0;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    pointer-events:none;
+  }
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-toggle{margin-left:auto!important}
+}
+@media(max-width:899px){
+  body.battle-mode-active [data-section-panel].is-collapsed>.topdown-panel-heading,
+  body.battle-mode-active [data-section-panel].is-collapsed>.battle-only-column-title{flex-wrap:wrap}
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-summary:not([hidden]){
+    position:static;
+    order:10;
+    flex:1 0 100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+    transform:none;
+    text-align:center;
+  }
+}
+
