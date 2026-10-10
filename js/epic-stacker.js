@@ -1479,6 +1479,8 @@ function loadEncounterNormSettings(){
   const isTinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
   const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&(isTinman||!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()]);
   if(els.encounterNormField)els.encounterNormField.hidden=!supported;
+  const clanShortcut=document.getElementById('clanOverviewShortcut');
+  if(clanShortcut)clanShortcut.hidden=!supported;
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
@@ -3604,14 +3606,15 @@ function wireEvents(){
       const summary=document.querySelector(`[data-section-summary="${key}"]`);
       if(summary){summary.textContent=collapsed?inputSectionSummary(key):'';summary.hidden=!collapsed;}
     };
-    button.addEventListener('click',()=>{
+    const toggleSection=()=>{
       panel.classList.toggle('is-collapsed');
       syncSection();
-    });
+    };
+    button.addEventListener('click',toggleSection);
     const header=button.closest('.topdown-panel-heading, .battle-only-column-title');
     header?.addEventListener('click',event=>{
       if(event.target.closest('button, a, input, select, label, summary, details'))return;
-      button.click();
+      toggleSection();
     });
     syncSection();
   });

@@ -4391,3 +4391,51 @@ body.battle-mode-active .selection-area>.optimizer-merc-option{margin:14px 14px 
 }
 @media(max-width:430px){body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:76px minmax(0,1fr)}}
 
+/* Compact account actions and keep the Clan Overview shortcut beside the norm. */
+@media(min-width:901px){
+  body.battle-mode-active .player-clan-panel .account-actions{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+}
+body.battle-mode-active .battle-settings-panel .battle-encounter-fields{
+  grid-template-columns:minmax(140px,170px) minmax(222px,230px) max-content;
+  align-items:start;
+  gap:8px;
+}
+body.battle-mode-active .battle-settings-panel .battle-norm-input{grid-template-columns:minmax(0,76px) 54px 80px;gap:6px}
+body.battle-mode-active .battle-settings-panel .battle-norm-input.is-chests{grid-template-columns:minmax(0,76px) 80px}
+.clan-overview-shortcut{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:start;
+  min-height:42px;
+  margin-top:19px;
+  padding:0 9px;
+  border:1px solid #526b7f;
+  border-radius:6px;
+  background:#172d3b;
+  color:#e2eef4;
+  font-size:.64rem;
+  font-weight:800;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.clan-overview-shortcut[hidden]{display:none!important}
+.clan-overview-shortcut:hover,.clan-overview-shortcut:focus-visible{border-color:#edac32;color:#ffd276}
+@media(max-width:1200px){
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(120px,170px) minmax(222px,230px)}
+  .clan-overview-shortcut{grid-column:1/-1;justify-self:start;margin-top:0}
+}
+@media(max-width:600px){
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(0,1fr)!important}
+  .clan-overview-shortcut{grid-column:auto}
+}
+
+/* Match the two optimization choices and explain when mercenary search helps. */
+body.battle-mode-active .selection-area>.optimizer-merc-option{margin-bottom:0}
+body.battle-mode-active .selection-area>.explore-controls{margin:8px 14px 0}
+.explore-toggle{font-size:1rem;font-weight:400}
+.explore-toggle input,
+.optimizer-merc-option .compact-option-row input{width:22px;height:22px;margin:0;flex:0 0 22px}
+.optimizer-merc-guidance{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
+body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(.topdown-panel-heading){display:none!important}
+
