@@ -967,7 +967,7 @@ function renderClanProfileLink(){
   const linkedId=currentAccount()?.clanProfileId||'',profiles=readClanProfiles(localStorage).profiles;
   const manage=document.getElementById('manageClanLink'),query=new URLSearchParams({player:currentAccount()?.id||''});
   if(linkedId)query.set('clan',linkedId);
-  if(manage)manage.href=`chests.html?${query}#planSetup`;
+  if(manage)manage.href=`clan.html?${query}#planSetup`;
   const profile=profiles.find(item=>item.id===linkedId);
   members.readOnly=!!profile;
   if(profile)members.value=String(Math.min(100,Math.max(1,Math.floor(Number(profile.plan?.recipients)||100))));
@@ -1479,6 +1479,8 @@ function loadEncounterNormSettings(){
   const isTinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
   const supported=activeMode==='battle'&&currentEncounter()?.builtIn&&(isTinman||!!EPIC_NORM_POINTS_PER_CHEST[String(currentEncounter()?.name||'').toUpperCase()]);
   if(els.encounterNormField)els.encounterNormField.hidden=!supported;
+  const clanShortcut=document.getElementById('clanOverviewShortcut');
+  if(clanShortcut)clanShortcut.hidden=!supported;
   if(!supported)return {saved,clanNorm,selected};
   els.encounterPlanNorm.value=String(selected.norm??1);
   els.encounterPlanUnit.value=['B','M','K'].includes(selected.unit)?selected.unit:'B';
@@ -1651,10 +1653,19 @@ function renderPrediction(opt){
     }
   }
 
-  els.predictionRows.innerHTML=rows.map(s=>{
+  const cycleMarkers=cycleMarkersForOrder(rows.map(s=>String(s.id)),r.cases?.friendlyFirst?.death,r.cases?.epicFirst?.death);
+  els.predictionRows.innerHTML=rows.map((s,index)=>{
+    const marker=cycleMarkers[index];
+    const cycleLabel=marker.cycle===null?'':marker.alternateCycle!==null&&marker.alternateCycle!==marker.cycle
+      ?`Cycle ${marker.cycle} / ${marker.alternateCycle}`:`Cycle ${marker.cycle}`;
+    const cycleTitle=marker.cycle===null?'':marker.alternateCycle===null
+      ?`Your army attacks first: dies in cycle ${marker.cycle}`
+      :`Your army attacks first: cycle ${marker.cycle}; Epic attacks first: cycle ${marker.alternateCycle}`;
+    const cycleBadge=cycleLabel?`<span class="prediction-cycle-badge" title="${escapeHtml(cycleTitle)}" aria-label="${escapeHtml(cycleTitle)}">${escapeHtml(cycleLabel)}</span>`:'';
+    const cycleTone=marker.cycle===null?'':` prediction-cycle-${((marker.cycle-1)%6)+1}`;
     const note=optimizerContext?unusualMap.get(String(s.id)):null;
     const flag=SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
-    return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
+    return `<tr class="prediction-cycle-row${cycleTone}${marker.startsCycle?' starts-cycle':''}"><td><span class="prediction-unit-name">${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</span></td><td>${cycleBadge}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
   const openingNotes=optimizerContext?(opt.diagnostics?.unusualSacrifices??[]).filter(note=>note.reason==='opening-sacrifice'):[];
   const openingNote=document.getElementById('openingSacrificeNote');
@@ -3570,6 +3581,52 @@ function handleCalculatorNumericNavigation(id,input,e){
 
 function wireEvents(){
   wireStatHelp();
+  const inputSectionPanels={
+    player:document.querySelector('.player-clan-panel'),
+    battle:document.querySelector('.battle-settings-panel'),
+    limits:document.querySelector('.setup-block'),
+    bonuses:document.querySelector('.advanced-settings-column'),
+    selection:document.querySelector('.selection-area'),
+    order:document.getElementById('orderView')
+  };
+  const inputSectionLabels={player:'Player and Clan',battle:'Battle',limits:'Army Limits',bonuses:'Unit Bonuses',selection:'Selection',order:'Custom Die Order'};
+  const inputSectionSummary=key=>{
+    const selectedText=id=>document.getElementById(id)?.selectedOptions?.[0]?.textContent?.trim()||'';
+    if(key==='player')return [selectedText('accountSelect'),document.getElementById('clanProfileStatus')?.textContent?.trim()].filter(Boolean).join(' · ');
+    if(key==='battle')return [selectedText('battleTypeSelect'),selectedText('encounterSelect'),selectedText('battleMethodSelect')].filter(Boolean).join(' · ');
+    if(key==='limits')return ['leadership','authority','dominance'].map(id=>`${id[0].toUpperCase()} ${document.getElementById(id)?.value||'—'}`).join(' · ');
+    if(key==='bonuses')return 'Unit and global bonuses';
+    if(key==='selection'){
+      const count=[...document.querySelectorAll('.selection-card-title [id$="Count"]')].reduce((sum,node)=>sum+(Number.parseInt(node.textContent,10)||0),0);
+      return `${count} unit types selected`;
+    }
+    const count=document.querySelectorAll('#orderView .squad-order-item').length;
+    return `${count} squads ordered`;
+  };
+  document.querySelectorAll('[data-section-toggle]').forEach(button=>{
+    const key=button.dataset.sectionToggle;
+    const panel=inputSectionPanels[key];
+    if(!panel)return;
+    const syncSection=()=>{
+      const collapsed=panel.classList.contains('is-collapsed');
+      button.setAttribute('aria-expanded',String(!collapsed));
+      button.setAttribute('aria-label',`${collapsed?'Expand':'Collapse'} ${inputSectionLabels[key]}`);
+      button.querySelector('span').textContent=collapsed?'+':'−';
+      const summary=document.querySelector(`[data-section-summary="${key}"]`);
+      if(summary){summary.textContent=collapsed?inputSectionSummary(key):'';summary.hidden=!collapsed;}
+    };
+    const toggleSection=()=>{
+      panel.classList.toggle('is-collapsed');
+      syncSection();
+    };
+    button.addEventListener('click',toggleSection);
+    const header=button.closest('.topdown-panel-heading, .battle-only-column-title');
+    header?.addEventListener('click',event=>{
+      if(event.target.closest('button, a, input, select, label, summary, details'))return;
+      toggleSection();
+    });
+    syncSection();
+  });
   document.getElementById('useClanNorm')?.addEventListener('click',useLinkedClanNorm);
   document.getElementById('saveNormToClan')?.addEventListener('click',saveCurrentNormToClan);
   for(const id of ['encounterPlanNorm','encounterPlanUnit']){const input=els[id];input?.addEventListener('input',()=>{saveManualEncounterNorm();updateEncounterPlan();});input?.addEventListener('change',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});}

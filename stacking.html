@@ -7,9 +7,9 @@
 <meta content="Free Total Battle stacking calculator for Epic Monster and PvP battles. Choose troops and monsters, optimize your army, or customize its death order." name="description"/>
 <title>Total Battle Stacking Calculator for Epic &amp; PvP | TB Toolkit</title>
 <link href="css/styles.css?v=1.16.0" rel="stylesheet"/>
-<link href="css/epic-stacker.css?v=1.16.0" rel="stylesheet"/>
-<script defer src="js/site.js?v=1.16.0"></script>
-<script src="js/epic-stacker.js?v=1.16.0" type="module"></script>
+<link href="css/epic-stacker.css?v=1.16.1" rel="stylesheet"/>
+<script defer src="js/site.js?v=1.16.1"></script>
+<script src="js/epic-stacker.js?v=1.16.1" type="module"></script>
 </head>
 <body class="epic-page topdown-stacker-page battle-mode-active">
 <header class="site-header">
@@ -20,7 +20,7 @@
 </a>
 <button aria-expanded="false" aria-label="Open menu" class="menu-toggle" data-menu-toggle type="button"><span></span><span></span><span></span></button>
 <nav aria-label="Main navigation" class="nav" data-nav>
-<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Stacking</a><a href="chests.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
+<a href="index.html">Home</a><a aria-current="page" href="stacking.html">Stacking</a><a href="clan.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a>
 </nav>
 </div>
 </header>
@@ -48,12 +48,13 @@
 <div class="validation-box" id="validationBox"></div>
 <div class="battle-top-layout" id="battleTopLayout">
 <div class="battle-beta-panel" id="battleBetaPanel">
-<section class="topdown-panel battle-config-panel player-clan-panel">
+<section class="topdown-panel battle-config-panel player-clan-panel" data-section-panel="player">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">1</span><h2>Player &amp; Clan</h2></div>
-
+<span class="input-section-summary" data-section-summary="player" hidden></span><button class="input-section-toggle" data-section-toggle="player" aria-label="Collapse Player and Clan" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <div class="battle-select-grid">
+<div class="player-account-area">
 <div class="player-clan-primary">
 <label class="battle-select-field" for="accountSelect"><span>Player Account</span>
 <select id="accountSelect"></select></label>
@@ -64,35 +65,42 @@
 </div>
 </div>
 <span class="workspace-actions account-actions"><button id="addAccount" type="button">New</button><button id="duplicateAccount" type="button">Duplicate</button><button id="renameAccount" type="button">Rename</button><button id="removeAccount" type="button">Remove</button><button id="exportAccount" type="button">Export</button><button id="importAccount" type="button">Import</button><input accept=".player,.stacks,.biff,application/json" hidden id="biffFileInput" type="file"/></span>
-<div class="player-clan-link-row"><div class="battle-select-field clan-link-summary"><span>Clan Profile</span><div class="clan-link-summary-line"><strong id="clanProfileStatus">No clan linked</strong><a href="chests.html#planSetup" id="manageClanLink">Manage link</a></div></div><label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label></div>
+</div>
+<div class="player-clan-link-row"><div class="battle-select-field clan-link-summary"><span>Clan Profile</span><div class="clan-link-summary-line"><strong id="clanProfileStatus">No clan linked</strong><a href="clan.html#planSetup" id="manageClanLink">Manage link</a></div></div><label class="battle-select-field clan-members-field" for="encounterPlanMembers"><span>Clan Members</span><input id="encounterPlanMembers" inputmode="numeric" max="100" min="1" step="1" type="number" value="100"></label></div>
 </div>
 </section>
-<section class="topdown-panel battle-config-panel battle-settings-panel">
+<section class="topdown-panel battle-config-panel battle-settings-panel" data-section-panel="battle">
 <div class="topdown-panel-heading battle-config-heading">
 <div><span class="section-kicker">2</span><h2>Battle</h2></div>
+<span class="input-section-summary" data-section-summary="battle" hidden></span><button class="input-section-toggle" data-section-toggle="battle" aria-label="Collapse Battle" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <div class="battle-select-grid">
+<div class="battle-method-area">
 <label class="battle-select-field" for="battleTypeSelect"><span>Battle Type</span>
 <select id="battleTypeSelect">
 <option value="epic">Epic Monster</option>
 <option value="pvp">Player vs. Player</option>
 </select></label>
-<div class="battle-encounter-fields"><label class="battle-select-field" for="encounterSelect"><span>Encounter</span>
-<select id="encounterSelect"></select></label>
-<div class="battle-select-field battle-norm-field" hidden id="encounterNormField"><span>Clan Norm</span><div class="battle-norm-input"><span class="battle-norm-value"><input aria-label="Clan norm value" id="encounterPlanNorm" inputmode="decimal" min="0" step="any" type="number" value="1"><span aria-hidden="true" id="encounterPlanUnitSuffix">B</span></span><select id="encounterPlanUnit" aria-label="Clan norm unit"><option value="B">B</option><option value="M">M</option><option value="K">K</option></select><label class="battle-norm-basis"><span class="epic-basis-switch"><input checked id="encounterPlanBasis" role="switch" type="checkbox"><i></i></span><span id="encounterPlanBasisMode">Points</span></label></div><small id="encounterNormSource"></small><div class="battle-norm-actions" id="encounterNormActions" hidden><button id="useClanNorm" type="button" hidden>Use clan norm</button><button id="saveNormToClan" type="button" hidden>Save norm to clan</button><a href="chests.html">Open Clan Overview</a></div></div></div>
-<span class="workspace-actions encounter-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span>
-<div class="epic-army-sharing" id="epicArmySharing" hidden><div><strong id="epicArmySharingTitle">Shared Epic army</strong><small id="epicArmySharingStatus"></small></div><div class="epic-army-sharing-actions"><button id="toggleEpicArmySharing" type="button">Use shared army</button><button id="replaceSharedEpicArmy" type="button" hidden>Share this army instead</button></div></div>
 <label class="battle-select-field" for="battleMethodSelect"><span>Calculation Method</span>
 <select id="battleMethodSelect">
 <option id="battleMethodOptimizeOption" value="optimize">Optimize</option>
 <option value="custom">Custom</option>
 </select></label>
+<p id="battleMethodNote"></p>
+</div>
+<div class="battle-encounter-area">
+<div class="battle-encounter-fields"><label class="battle-select-field" for="encounterSelect"><span>Encounter</span>
+<select id="encounterSelect"></select></label>
+<div class="battle-select-field battle-norm-field" hidden id="encounterNormField"><span>Clan Norm</span><div class="battle-norm-input"><span class="battle-norm-value"><input aria-label="Clan norm value" id="encounterPlanNorm" inputmode="decimal" min="0" step="any" type="number" value="1"><span aria-hidden="true" id="encounterPlanUnitSuffix">B</span></span><select id="encounterPlanUnit" aria-label="Clan norm unit"><option value="B">B</option><option value="M">M</option><option value="K">K</option></select><label class="battle-norm-basis"><span class="epic-basis-switch"><input checked id="encounterPlanBasis" role="switch" type="checkbox"><i></i></span><span id="encounterPlanBasisMode">Points</span></label></div><small id="encounterNormSource"></small><div class="battle-norm-actions" id="encounterNormActions" hidden><button id="useClanNorm" type="button" hidden>Use clan norm</button><button id="saveNormToClan" type="button" hidden>Save norm to clan</button></div></div><a class="clan-overview-shortcut" id="clanOverviewShortcut" href="clan.html" hidden>Open Clan Overview</a></div>
+<span class="workspace-actions encounter-actions"><button id="addEncounter" type="button">New</button><button id="duplicateEncounter" type="button">Duplicate</button><button id="editEncounter" type="button">Edit</button><button id="removeEncounter" type="button">Remove</button></span>
+<div class="epic-army-sharing" id="epicArmySharing" hidden><div><strong id="epicArmySharingTitle">Shared Epic army</strong><small id="epicArmySharingStatus"></small></div><div class="epic-army-sharing-actions"><button id="toggleEpicArmySharing" type="button">Use shared army</button><button id="replaceSharedEpicArmy" type="button" hidden>Share this army instead</button></div></div>
 <label class="battle-select-field pvp-enemy-field" for="pvpEnemyUnitSelect" hidden id="pvpEnemyUnitField"><span>Enemy Unit</span>
 <select id="pvpEnemyUnitSelect"></select>
 <small class="battle-select-help">Used to apply the correct PvP matchup bonuses. Enemy quantity and provider stats are not required.</small>
 </label>
+<p id="battleContextNote"></p>
 </div>
-<div class="battle-selection-summary"><p id="battleContextNote"></p><p id="battleMethodNote"></p></div>
+</div>
 </section>
 </div>
 
@@ -138,8 +146,8 @@
 </div>
 
 <div class="setup-grid">
-<div class="setup-block">
-<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Army Limits</h2><div class="live-damage-slot" data-live-damage="limits"></div></div>
+<div class="setup-block" data-section-panel="limits">
+<div class="battle-only-column-title"><span class="section-kicker">3</span><h2>Army Limits</h2><div class="live-damage-slot" data-live-damage="limits"></div><span class="input-section-summary" data-section-summary="limits" hidden></span><button class="input-section-toggle" data-section-toggle="limits" aria-label="Collapse Army Limits" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 <h3>Army Limits</h3>
 <div class="limit-list compact-limit-list">
 
@@ -167,20 +175,14 @@
 </div>
 <p class="setting-note">Max Fill finds the fullest safe stack at or below the entered army limit. Turn it off to enter your own fill percentage.</p>
 <div class="checkbox-row" id="arachneRow"><input id="arachne" type="checkbox"/><label for="arachne">Fighting Arachne Swarm</label></div>
-<div class="optimizer-only optimizer-merc-option">
-<label class="checkbox-row compact-option-row"><input id="includeMercenariesInOptimization" type="checkbox"/><span>Include Mercenaries in Optimization</span></label>
-<details class="inline-info-help"><summary aria-label="About mercenary optimization" title="More information">i</summary>
-<div class="inline-info-card" role="dialog" aria-label="Include Mercenaries in Optimization help">
-<button class="inline-info-close" type="button" aria-label="Close help">×</button>
-<strong>Include Mercenaries in Optimization</strong>
-<p>Leave this off to optimize Troops and Monsters only. Selected mercenaries use the Standard method. You can add, remove, or change mercenaries and Authority settings after optimization; Results and Battle Details update immediately without re-optimizing.</p>
-<p>Turn it on to optimize Troops, Monsters, and selected Mercenaries together. Your Authority fill becomes a maximum: the result will never exceed it, but may use less Authority when that produces more expected lifetime damage. Changing mercenaries then requires re-optimization and can increase optimization time.</p></div></details></div>
 </div>
 
-<div class="advanced-settings-column">
-<div class="battle-only-column-title"><span class="section-kicker">4</span><h2>Unit Bonuses</h2><button aria-label="About unit bonus profiles" class="stat-help-button section-heading-help" data-stat-help="unitBonusProfiles" title="How are bonuses assigned?" type="button">?</button><div class="live-damage-slot" data-live-damage="combat"></div></div>
+<div class="advanced-settings-column" data-section-panel="bonuses">
+<div class="battle-only-column-title"><span class="section-kicker">4</span><h2>Unit Bonuses</h2><button aria-label="About unit bonus profiles" class="stat-help-button section-heading-help" data-stat-help="unitBonusProfiles" title="How are bonuses assigned?" type="button">?</button><div class="live-damage-slot" data-live-damage="combat"></div><span class="input-section-summary" data-section-summary="bonuses" hidden></span><button class="input-section-toggle" data-section-toggle="bonuses" aria-label="Collapse Unit Bonuses" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 <section class="advanced advanced-settings-panel always-open">
 <div class="advanced-settings-content">
+<div class="unit-bonus-top-grid">
+<div class="unit-bonus-matrix-area">
 
 <div class="bonus-matrix" role="group" aria-label="Unit bonuses by profile">
 <div class="bonus-matrix-header"><span>Unit <button aria-label="How to select the correct unit bonus profile" class="stat-help-button" data-stat-help="bonusUnit" type="button">?</button></span><span>Double Damage <button aria-label="Where to find Double Damage" class="stat-help-button" data-stat-help="bonusDD" type="button">?</button></span><span>Strike Twice <button aria-label="Where to find Strike Twice" class="stat-help-button" data-stat-help="bonusST" type="button">?</button></span><span>Health <button aria-label="Where to find Health" class="stat-help-button" data-stat-help="bonusHealth" type="button">?</button></span><span>Strength <button aria-label="Where to find Strength" class="stat-help-button" data-stat-help="bonusStrength" type="button">?</button></span><span>Mode</span></div>
@@ -200,12 +202,15 @@
 <div class="bonus-matrix-row" data-bonus-profile="epicHunter"><strong>Epic Hunters</strong><div class="percent-field"><input aria-label="Epic Hunter Double Damage" class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strike Twice" class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Health" class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strength" class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div><label class="bonus-auto-toggle"><input id="autoEpicHunterBonuses" type="checkbox" checked/><span>Auto</span></label></div>
 </div>
 <p class="setting-note epic-v2-note">Monster species follow Monsters, and human troop classes follow Humans, by default. Expand either row to enter profile-specific bonuses.</p>
-<div class="advanced-divider"></div>
+</div>
+<div class="global-bonus-area">
 <h3>Global Battle Bonuses</h3>
 <div class="combat-input-grid global-bonus-grid">
 <div class="help-input-field" id="strengthAgainstEpicField"><div class="help-field-heading"><label for="strengthAgainstEpic">Strength PvE</label><button aria-label="Show where to find Strength PvE" class="stat-help-button" data-stat-help="strengthAgainstEpic" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="strengthAgainstEpic" inputmode="decimal" type="text" value="3225"/><span>%</span></div></div>
 <div class="help-input-field pvp-only-stat-field" hidden id="pvpHealthField"><div class="help-field-heading"><label for="pvpHealth">Health PvP</label><button aria-label="Show where to find Health PvP" class="stat-help-button" data-stat-help="pvpHealth" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input formatted-number" id="pvpHealth" inputmode="decimal" type="text" value="0"/><span>%</span></div></div>
 <div class="help-input-field pvp-only-stat-field" hidden id="pvpStrengthField"><div class="help-field-heading"><label for="pvpStrength">Strength PvP</label><button aria-label="Show where to find Strength PvP" class="stat-help-button" data-stat-help="pvpStrength" title="Where do I find this?" type="button">?</button></div><div class="percent-field"><input class="epic-input" id="pvpStrength" inputmode="decimal" type="text" value="0"/><span>%</span></div></div>
+</div>
+</div>
 </div>
 
 <div class="separation-mode-only">
@@ -228,13 +233,11 @@
 
 </div><!-- /battle-top-layout -->
 
-<section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection">
+<section class="topdown-panel selection-area battle-sequenced-section" data-battle-step="selection" data-section-panel="selection">
 <div class="topdown-panel-heading selection-heading">
 <div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number" id="selectionStepNumber">4</span><h2>Selection</h2><div class="live-damage-slot" data-live-damage="selection"></div></div><p>Select only the units you want to send into battle. Select a tier to include its units, or expand it to choose individual units.</p></div>
-<div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button></div>
+<span class="input-section-summary" data-section-summary="selection" hidden></span><div class="selection-heading-actions"><button class="toolbar-button" id="clearAllSelections" type="button">Clear All</button><button class="input-section-toggle" data-section-toggle="selection" aria-label="Collapse Selection" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button></div>
 </div>
-<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
-
 <div class="selection-card-grid">
 <article class="selection-card selection-guardsmen">
 <div class="selection-card-title"><button aria-controls="guardsmanSelection" aria-expanded="true" class="selection-card-toggle" type="button"><span><span class="selection-card-name">Guardsmen</span><span id="guardsmanCount">0 selected</span></span><span aria-hidden="true" class="selection-card-chevron">⌃</span></button></div>
@@ -257,12 +260,22 @@
 <div class="hierarchy-list merc-hierarchy" id="mercenarySelection"></div>
 </article>
 </div>
-<div class="selection-optimize-row optimizer-only"><div><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button></div>
+<div class="optimizer-only optimizer-merc-option">
+<label class="checkbox-row compact-option-row"><input id="includeMercenariesInOptimization" type="checkbox"/><span>Include Mercenaries in Optimization</span></label>
+<details class="inline-info-help"><summary aria-label="About mercenary optimization" title="More information">i</summary>
+<div class="inline-info-card" role="dialog" aria-label="Include Mercenaries in Optimization help">
+<button class="inline-info-close" type="button" aria-label="Close help">×</button>
+<strong>Include Mercenaries in Optimization</strong>
+<p>Leave this off to optimize Troops and Monsters only. Selected mercenaries use the Standard method. You can add, remove, or change mercenaries and Authority settings after optimization; Results and Battle Details update immediately without re-optimizing.</p>
+<p>Turn it on to optimize Troops, Monsters, and selected Mercenaries together. Your Authority fill becomes a maximum: the result will never exceed it, but may use less Authority when that produces more expected lifetime damage. Changing mercenaries then requires re-optimization and can increase optimization time.</p></div></details>
+<small class="optimizer-merc-guidance">Leave this off unless you plan to send a substantial number of mercenaries. Including them can make optimization take longer.</small></div>
+<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Your checked units are the starting army. Explore mode may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
+<div class="selection-optimize-row optimizer-only"><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button><div class="selection-optimize-guidance"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div></div>
 </section>
 
-<section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" hidden id="orderView">
+<section class="topdown-panel order-view battle-sequenced-section" data-battle-step="order" data-section-panel="order" hidden id="orderView">
 <div class="topdown-panel-heading custom-order-v2-heading">
-<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div><button class="toolbar-button custom-order-reset" id="resetCustomOrderDefault" type="button">Reset to Default Order</button></div><p>Drag a squad tile into the order you want it to die. Units can be mixed between tiers within Troops, Monsters, or Mercs. On a phone, use the arrow buttons.</p></div>
+<div class="section-heading-copy"><div class="section-title-line"><span class="section-kicker managed-step-number">5</span><h2>Custom Die Order</h2><div class="live-damage-slot" data-live-damage="order"></div><button class="toolbar-button custom-order-reset" id="resetCustomOrderDefault" type="button">Reset to Default Order</button></div><p>Drag a squad tile into the order you want it to die. Units can be mixed between tiers within Troops, Monsters, or Mercs. On a phone, use the arrow buttons.</p></div><span class="input-section-summary" data-section-summary="order" hidden></span><button class="input-section-toggle" data-section-toggle="order" aria-label="Collapse Custom Die Order" aria-expanded="true" type="button"><span aria-hidden="true">−</span></button>
 </div>
 <p class="custom-cycle-note" id="customCycleNote" hidden>Cycle lines show predicted death thresholds for this Epic when your army attacks first. A tile with two cycle numbers shows army-first / Epic-first outcomes. These are estimates based on the current calculated stack.</p>
 <div class="custom-order-floating-metric" id="customOrderFloatingMetric" hidden><span>Live Result</span><div class="live-damage-slot" data-live-damage="order-sticky"></div></div>
@@ -301,7 +314,7 @@
 </details>
 <div class="prediction-table-wrap">
 <table class="prediction-table">
-<thead><tr><th>Unit</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Gold Revival</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
+<thead><tr><th>Unit</th><th>Cycle</th><th>Qty</th><th>Death</th><th>Attacks</th><th>Gold Revival</th><th>Damage / Opportunity</th><th>Lifetime Damage</th></tr></thead>
 <tbody id="predictionRows"></tbody>
 </table>
 </div>
@@ -539,7 +552,7 @@
 
 </main>
 
-<footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking</a><a href="chests.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms &amp; Disclaimer</a></nav></div></footer>
+<footer class="site-footer"><div class="container footer-row"><div>© <span data-year></span> TB Toolkit · Not affiliated with Scorewarrior.</div><nav aria-label="Footer navigation" class="footer-links"><a href="stacking.html">Stacking</a><a href="clan.html">Clan Overview</a><a href="calendar.html">Event Calendar</a><a href="research.html">Research</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms &amp; Disclaimer</a></nav></div></footer>
 </body>
 </html>
 

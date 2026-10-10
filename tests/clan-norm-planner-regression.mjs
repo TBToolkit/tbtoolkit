@@ -4,7 +4,7 @@ import {normPointsPerChest} from '../js/clan-net-resources.mjs';
 
 const root=new URL('../',import.meta.url);
 const [html,script,data]=await Promise.all([
-  readFile(new URL('chests.html',root),'utf8'),
+  readFile(new URL('clan.html',root),'utf8'),
   readFile(new URL('js/chests.js',root),'utf8'),
   readFile(new URL('data/norm-planner-data.json',root),'utf8').then(JSON.parse)
 ]);

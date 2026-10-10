@@ -22,6 +22,15 @@ assert.match(headers,/\/js\/\*[\s\S]*max-age=0/,'Fallback script cache policy mu
 assert.equal(manifest.storageSchemaVersion,20);
 const sitemap=await readFile('dist/sitemap.xml','utf8');
 assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/stacking<\/loc>/);
+assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/clan<\/loc>/,'Sitemap must list the new Clan Overview URL.');
+assert.doesNotMatch(sitemap,/<loc>https:\/\/tbtoolkit\.com\/chests<\/loc>/,'Legacy Clan Overview URL must not remain indexed.');
+const clan=await readFile('dist/clan.html','utf8');
+assert.match(clan,/<link rel="canonical" href="https:\/\/tbtoolkit\.com\/clan">/,'Clan Overview must identify its new canonical URL.');
+const redirects=await readFile('dist/_redirects','utf8');
+assert.match(redirects,/^\/chests \/clan 301$/m,'Existing Clan Overview bookmarks must redirect.');
+assert.match(redirects,/^\/chests\.html \/clan 301$/m,'Legacy HTML links must redirect.');
+const legacyClan=await readFile('dist/chests.html','utf8');
+assert.match(legacyClan,/location\.replace\('clan\.html'\+location\.search\+location\.hash\)/,'Legacy HTML fallback must preserve query strings and deep links.');
 assert.doesNotMatch(sitemap,/epic-stacker\.html/,'Legacy redirect must not be indexed as a separate page.');
 const robots=await readFile('dist/robots.txt','utf8');
 assert.match(robots,/Sitemap: https:\/\/tbtoolkit\.com\/sitemap\.xml/);

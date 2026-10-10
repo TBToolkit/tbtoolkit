@@ -1220,12 +1220,14 @@ details.advanced{margin-top:8px;padding-top:7px}
 
 .selection-optimize-row{
   display:flex;
+  flex-direction:row;
   align-items:center;
-  justify-content:flex-end;
+  justify-content:flex-start;
   gap:14px;
   padding:12px;
   border-top:1px solid rgba(255,255,255,.055);
 }
+.selection-optimize-guidance{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
 .optimize-help{
   color:#8293a2;
   font-size:.67rem;
@@ -1319,7 +1321,7 @@ body.optimizer-modal-open{overflow:hidden}
 @media(max-width:760px){
   .selection-area .selection-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .selection-optimize-row{flex-direction:column;align-items:stretch}
-  .optimize-help{text-align:center}
+  .optimize-help{text-align:left}
   .optimize-army-button{width:100%;min-height:48px;font-size:.88rem}
   .result-panel>.epic-prediction-panel .prediction-summary{grid-template-columns:1fr}
   .optimizer-dialog{grid-template-columns:1fr;width:min(440px,100%);padding:18px}
@@ -3255,7 +3257,7 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .live-damage-label{font-size:.56rem;font-weight:900;letter-spacing:.08em;color:#8193a2}.live-damage-slot strong{font-size:.82rem;color:#eef3f6}
 .live-damage-change{font-size:.60rem;font-weight:900}.live-damage-change.up{color:#55d982}.live-damage-change.down{color:#ff6b6b}.live-damage-change.neutral{color:#8495a4}
 .selection-heading-actions{display:flex;align-items:center;gap:12px}.live-damage-order{justify-content:flex-end;padding:0 12px 7px}
-.explore-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding:10px 14px;border-bottom:1px solid #2b4050;background:#0c1c28;color:#dae8ee;font-size:.74rem}.explore-controls[hidden],.explore-depth-label[hidden]{display:none!important}.explore-toggle,.explore-depth-label{display:inline-flex;align-items:center;gap:8px;font-weight:850}.explore-toggle input{accent-color:#eda72b;width:17px;height:17px}.explore-depth-label select{min-height:32px;border:1px solid #526d7e;border-radius:6px;background:#071522;color:#f5f7f8;padding:0 8px;font:inherit}.explore-controls small{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
+.explore-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;margin:14px 12px 8px;padding:10px 14px;border:1px solid #2b4050;border-radius:8px;background:#0c1c28;color:#dae8ee;font-size:.74rem}.explore-controls[hidden],.explore-depth-label[hidden]{display:none!important}.explore-toggle,.explore-depth-label{display:inline-flex;align-items:center;gap:8px;font-weight:850}.explore-toggle input{accent-color:#eda72b;width:17px;height:17px}.explore-depth-label select{min-height:32px;border:1px solid #526d7e;border-radius:6px;background:#071522;color:#f5f7f8;padding:0 8px;font:inherit}.explore-controls small{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
 .explore-toggle-group{display:inline-flex;align-items:center;gap:8px}.explore-info-button{flex:0 0 22px}
 .review-selection-button{border-color:#d79b2c;color:#ffd276;background:#17212a}.review-selection-button:hover:not(:disabled){border-color:#ffbd45;background:#242b2f}.review-selection-button:disabled{opacity:.48;cursor:not-allowed}
 .review-progress-modal{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;padding:18px}.review-progress-modal[hidden]{display:none!important}.review-progress-backdrop{position:absolute;inset:0;background:rgba(2,8,13,.78);backdrop-filter:blur(3px)}.review-progress-dialog{position:relative;z-index:1;width:min(520px,100%);display:grid;grid-template-columns:42px minmax(0,1fr);gap:14px;padding:20px;border:1px solid #40576a;border-radius:12px;background:linear-gradient(145deg,#152431,#0c1822);box-shadow:0 24px 70px rgba(0,0,0,.48)}.review-progress-dialog h2{margin:3px 0 5px;font-size:1.05rem}.review-progress-dialog p{color:#aebdca;line-height:1.45}.review-progress-note{font-size:.7rem}.review-proposal-dialog{width:min(680px,calc(100% - 24px))}.review-proposal-dialog form{display:grid;gap:14px}.review-proposal-dialog h2,.review-proposal-dialog p{margin:0}.review-proposal-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.review-proposal-metrics>div{display:grid;gap:4px;padding:10px;border:1px solid rgba(135,177,199,.25);border-radius:8px;background:#091824}.review-proposal-metrics span{color:#8fa1b1;font-size:.62rem;font-weight:800;line-height:1.35;text-transform:uppercase}.review-method-note{padding:9px 10px;border-left:3px solid #d99c29;background:#0a1722;color:#b9c7d1;font-size:.74rem;line-height:1.45}.review-change-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.review-change-grid section{padding:10px;border:1px solid rgba(135,177,199,.25);border-radius:8px;background:#091824}.review-change-grid h3{margin:0 0 6px;font-size:.75rem;text-transform:uppercase}.review-change-grid ul{margin:0;padding-left:18px;color:#c9d5de;font-size:.76rem;line-height:1.5}.review-mercenary-note{color:#aebdca;font-size:.74rem}
@@ -4157,6 +4159,132 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   line-height:1.45;
 }
 .custom-cycle-note[hidden]{display:none!important}
+
+/* Input workflow: one full-width, optionally collapsible card per step. */
+body.battle-mode-active .battle-top-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:14px!important;
+}
+body.battle-mode-active #battleBetaPanel,
+body.battle-mode-active .battle-top-layout>.setup-panel,
+body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+  display:contents!important;
+}
+body.battle-mode-active .battle-top-layout .battle-config-panel,
+body.battle-mode-active .battle-top-layout .setup-block,
+body.battle-mode-active .battle-top-layout .advanced-settings-column{
+  grid-column:1!important;
+  grid-row:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  box-sizing:border-box!important;
+}
+body.battle-mode-active .battle-top-layout .setup-block,
+body.battle-mode-active .battle-top-layout .advanced-settings-column{
+  padding:14px!important;
+}
+body.battle-mode-active .battle-top-layout .battle-select-grid{
+  max-width:1100px;
+}
+@media(min-width:900px){
+  body.battle-mode-active .setup-block .compact-limit-list{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:16px!important;
+    max-width:1100px;
+  }
+  body.battle-mode-active .compact-limit-list .limit-row{
+    border:1px solid #304658;
+    border-radius:8px;
+    padding:12px!important;
+    background:#0d1b27;
+  }
+}
+@media(max-width:1100px){
+  body.battle-mode-active .battle-top-layout>.setup-panel>.setup-grid{
+    display:contents!important;
+  }
+}
+.battle-mode-active .battle-config-heading,
+.battle-mode-active .battle-only-column-title,
+.battle-mode-active .selection-heading,
+.battle-mode-active .custom-order-v2-heading{
+  position:relative;
+}
+.battle-mode-active .battle-only-column-title{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+}
+.input-section-toggle{
+  flex:0 0 auto;
+  display:inline-grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  margin-left:auto;
+  border:1px solid #496074;
+  border-radius:7px;
+  background:#0a1925;
+  color:#f3af34;
+  font:inherit;
+  font-size:1.1rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.input-section-toggle:hover{border-color:#f3af34;background:#152b3a}
+.input-section-toggle:focus-visible{outline:2px solid #f3af34;outline-offset:2px}
+.input-section-summary{
+  min-width:0;
+  margin-left:auto;
+  color:#9fb2c1;
+  font-size:.68rem;
+  line-height:1.35;
+  text-align:right;
+}
+.input-section-summary[hidden]{display:none!important}
+.input-section-summary:not([hidden])+.input-section-toggle{margin-left:0}
+.battle-mode-active .battle-config-panel.is-collapsed>:not(.topdown-panel-heading),
+.battle-mode-active .setup-block.is-collapsed>:not(.battle-only-column-title),
+.battle-mode-active .advanced-settings-column.is-collapsed>:not(.battle-only-column-title),
+.battle-mode-active .selection-area.is-collapsed>:not(.topdown-panel-heading),
+.battle-mode-active #orderView.is-collapsed>:not(.topdown-panel-heading){display:none!important}
+.battle-mode-active .selection-area.is-collapsed .topdown-panel-heading p,
+.battle-mode-active #orderView.is-collapsed .topdown-panel-heading p,
+.battle-mode-active .selection-area.is-collapsed #clearAllSelections,
+.battle-mode-active #orderView.is-collapsed #resetCustomOrderDefault{display:none!important}
+body.battle-mode-active .battle-top-layout .setup-block.is-collapsed,
+body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed{padding-bottom:0!important}
+body.battle-mode-active .battle-top-layout .setup-block.is-collapsed .battle-only-column-title,
+body.battle-mode-active .battle-top-layout .advanced-settings-column.is-collapsed .battle-only-column-title{margin-bottom:0!important}
+@media(max-width:760px){
+  .battle-mode-active .battle-config-panel.is-collapsed .topdown-panel-heading,
+  .battle-mode-active .selection-area.is-collapsed .topdown-panel-heading,
+  .battle-mode-active #orderView.is-collapsed .topdown-panel-heading,
+  .battle-mode-active .setup-block.is-collapsed .battle-only-column-title,
+  .battle-mode-active .advanced-settings-column.is-collapsed .battle-only-column-title{
+    flex-wrap:wrap;
+    gap:7px;
+  }
+  .battle-mode-active .is-collapsed .input-section-summary:not([hidden]){
+    order:10;
+    flex:1 0 100%;
+    max-width:none;
+    margin:0;
+    padding-left:34px;
+    text-align:left;
+    font-size:.62rem;
+  }
+  .battle-mode-active .is-collapsed .input-section-toggle{order:5}
+  .battle-mode-active .battle-only-column-title .input-section-toggle{margin-left:auto!important}
+  .battle-mode-active .selection-area.is-collapsed .section-heading-copy,
+  .battle-mode-active #orderView.is-collapsed .section-heading-copy{flex:1 1 auto}
+  .battle-mode-active .selection-area.is-collapsed .selection-heading-actions{flex:0 0 auto}
+}
 .squad-order-item.has-cycle-break{
   position:relative;
   margin-top:22px;
@@ -4210,4 +4338,182 @@ body.battle-mode-active .compact-limit-list .limit-title-row .auto-fill-toggle{
   pointer-events:none;
 }
 .order-list.drag-active .squad-order-item.dragging .squad-order-cycle{visibility:hidden}
+
+/* Full-width input cards: grouped controls and clickable section headings. */
+body.battle-mode-active [data-section-panel] > .topdown-panel-heading,
+body.battle-mode-active [data-section-panel] > .battle-only-column-title{cursor:pointer}
+body.battle-mode-active [data-section-panel] > .topdown-panel-heading:hover .input-section-toggle,
+body.battle-mode-active [data-section-panel] > .battle-only-column-title:hover .input-section-toggle{border-color:#f3af34}
+body.battle-mode-active .battle-top-layout .battle-select-grid{max-width:none!important;width:100%;box-sizing:border-box}
+body.battle-mode-active #battleBetaPanel .player-clan-panel .battle-select-grid,
+body.battle-mode-active #battleBetaPanel .battle-settings-panel .battle-select-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:0!important}
+.player-account-area,.player-clan-link-row,.battle-method-area,.battle-encounter-area{min-width:0}
+body.battle-mode-active .player-clan-panel .player-account-area,
+body.battle-mode-active .battle-settings-panel .battle-method-area{padding-right:24px;border-right:1px solid #304658}
+body.battle-mode-active .player-clan-panel .player-clan-link-row,
+body.battle-mode-active .battle-settings-panel .battle-encounter-area{padding-left:24px}
+body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:minmax(0,1fr) 76px 112px}
+body.battle-mode-active .player-clan-panel .account-actions{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px}
+body.battle-mode-active .player-clan-panel .player-clan-link-row{grid-template-columns:minmax(0,1fr) 130px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-method-area{display:grid;gap:12px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-method-area>p,
+body.battle-mode-active .battle-settings-panel .battle-encounter-area>p{margin:0;color:#99b7cb;font-size:.68rem;line-height:1.45}
+body.battle-mode-active .battle-settings-panel .battle-encounter-area{display:grid;gap:10px;align-content:start}
+body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(150px,190px) minmax(222px,250px)}
+body.battle-mode-active .battle-settings-panel .encounter-actions{max-width:450px}
+@media(min-width:900px){
+  body.battle-mode-active .setup-block .compact-limit-list{max-width:none;width:100%;gap:24px!important}
+  body.battle-mode-active .compact-limit-list .limit-row{position:relative}
+  body.battle-mode-active .compact-limit-list .limit-row:not(:first-child)::before{content:"";position:absolute;left:-13px;top:12px;bottom:12px;width:1px;background:#496074}
+}
+body.battle-mode-active .unit-bonus-top-grid{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(240px,1fr);gap:24px;align-items:start}
+body.battle-mode-active .unit-bonus-matrix-area,
+body.battle-mode-active .global-bonus-area{min-width:0}
+body.battle-mode-active .global-bonus-area{align-self:stretch;border-left:1px solid #304658;padding-left:24px}
+body.battle-mode-active .global-bonus-area h3{margin-top:0}
+body.battle-mode-active .global-bonus-grid{grid-template-columns:minmax(0,1fr)}
+body.battle-mode-active .selection-area>.optimizer-merc-option{margin:14px 14px 0;padding:12px 14px;border:1px solid #304658;border-radius:8px;background:#0a1925}
+@media(max-width:1100px){
+  body.battle-mode-active .unit-bonus-top-grid{grid-template-columns:minmax(0,1fr);gap:16px}
+  body.battle-mode-active .global-bonus-area{border-left:0;border-top:1px solid #304658;padding:16px 0 0}
+}
+@media(max-width:900px){
+  body.battle-mode-active #battleBetaPanel .player-clan-panel .battle-select-grid,
+  body.battle-mode-active #battleBetaPanel .battle-settings-panel .battle-select-grid{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+  body.battle-mode-active .player-clan-panel .player-account-area,
+  body.battle-mode-active .battle-settings-panel .battle-method-area{border-right:0;border-bottom:1px solid #304658;padding:0 0 14px}
+  body.battle-mode-active .player-clan-panel .player-clan-link-row,
+  body.battle-mode-active .battle-settings-panel .battle-encounter-area{padding:0}
+}
+@media(max-width:600px){
+  body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:minmax(0,1fr) 76px 112px}
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:430px){body.battle-mode-active .player-clan-panel .player-clan-primary{grid-template-columns:76px minmax(0,1fr)}}
+
+/* Compact account actions and keep the Clan Overview shortcut beside the norm. */
+@media(min-width:901px){
+  body.battle-mode-active .player-clan-panel .account-actions{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+}
+body.battle-mode-active .battle-settings-panel .battle-encounter-fields{
+  grid-template-columns:minmax(140px,170px) minmax(222px,230px) max-content;
+  align-items:start;
+  gap:8px;
+}
+body.battle-mode-active .battle-settings-panel .battle-norm-input{grid-template-columns:minmax(0,76px) 54px 80px;gap:6px}
+body.battle-mode-active .battle-settings-panel .battle-norm-input.is-chests{grid-template-columns:minmax(0,76px) 80px}
+.clan-overview-shortcut{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:start;
+  min-height:42px;
+  margin-top:19px;
+  padding:0 9px;
+  border:1px solid #526b7f;
+  border-radius:6px;
+  background:#172d3b;
+  color:#e2eef4;
+  font-size:.64rem;
+  font-weight:800;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.clan-overview-shortcut[hidden]{display:none!important}
+.clan-overview-shortcut:hover,.clan-overview-shortcut:focus-visible{border-color:#edac32;color:#ffd276}
+@media(max-width:1200px){
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(120px,170px) minmax(222px,230px)}
+  .clan-overview-shortcut{grid-column:1/-1;justify-self:start;margin-top:0}
+}
+@media(max-width:600px){
+  body.battle-mode-active .battle-settings-panel .battle-encounter-fields{grid-template-columns:minmax(0,1fr)!important}
+  .clan-overview-shortcut{grid-column:auto}
+}
+
+/* Match the two optimization choices and explain when mercenary search helps. */
+body.battle-mode-active .selection-area>.optimizer-merc-option{margin-bottom:0}
+body.battle-mode-active .selection-area>.explore-controls{margin:8px 14px 0}
+.explore-toggle{font-size:1rem;font-weight:400}
+.explore-toggle input,
+.optimizer-merc-option .compact-option-row input{width:22px;height:22px;margin:0;flex:0 0 22px}
+.optimizer-merc-guidance{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
+body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(.topdown-panel-heading){display:none!important}
+
+/* A collapsed card's status belongs in the middle, with its toggle at the edge. */
+@media(min-width:900px){
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-summary:not([hidden]){
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:max-content;
+    max-width:42%;
+    margin:0;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    pointer-events:none;
+  }
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-toggle{margin-left:auto!important}
+}
+@media(max-width:899px){
+  body.battle-mode-active [data-section-panel].is-collapsed>.topdown-panel-heading,
+  body.battle-mode-active [data-section-panel].is-collapsed>.battle-only-column-title{flex-wrap:wrap}
+  body.battle-mode-active [data-section-panel].is-collapsed .input-section-summary:not([hidden]){
+    position:static;
+    order:10;
+    flex:1 0 100%;
+    max-width:none;
+    margin:0;
+    padding:0;
+    transform:none;
+    text-align:center;
+  }
+}
+
+/* Epic Battle Details uses the same simulated cycle markers as Custom die order. */
+.prediction-table .prediction-cycle-1{--cycle-accent:#e8b65d;--cycle-background:#42331b}
+.prediction-table .prediction-cycle-2{--cycle-accent:#6bd6df;--cycle-background:#12363d}
+.prediction-table .prediction-cycle-3{--cycle-accent:#9ddd7b;--cycle-background:#213c2b}
+.prediction-table .prediction-cycle-4{--cycle-accent:#c7abf8;--cycle-background:#302944}
+.prediction-table .prediction-cycle-5{--cycle-accent:#f5aa83;--cycle-background:#45302a}
+.prediction-table .prediction-cycle-6{--cycle-accent:#91bcff;--cycle-background:#23334c}
+.prediction-table .prediction-unit-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prediction-table .prediction-cycle-badge{
+  display:inline-block;
+  box-sizing:border-box;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:1px 4px;
+  border:1px solid var(--cycle-accent,#e8b65d);
+  border-radius:3px;
+  color:var(--cycle-accent,#e8b65d);
+  background:var(--cycle-background,#42331b);
+  font-size:.52rem;
+  font-weight:800;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.prediction-table .prediction-cycle-row.starts-cycle td{
+  border-top:2px solid var(--cycle-accent,#e8b65d);
+}
+.epic-prediction-panel .prediction-table th:nth-child(1),
+.epic-prediction-panel .prediction-table td:nth-child(1){width:25%}
+.epic-prediction-panel .prediction-table th:nth-child(2),
+.epic-prediction-panel .prediction-table td:nth-child(2){width:10%;text-align:center}
+.epic-prediction-panel .prediction-table th:nth-child(3),
+.epic-prediction-panel .prediction-table td:nth-child(3){width:9%}
+.epic-prediction-panel .prediction-table th:nth-child(4),
+.epic-prediction-panel .prediction-table td:nth-child(4){width:7%}
+.epic-prediction-panel .prediction-table th:nth-child(5),
+.epic-prediction-panel .prediction-table td:nth-child(5){width:9%}
+.epic-prediction-panel .prediction-table th:nth-child(6),
+.epic-prediction-panel .prediction-table td:nth-child(6){width:13%}
+.epic-prediction-panel .prediction-table th:nth-child(7),
+.epic-prediction-panel .prediction-table td:nth-child(7){width:14%}
+.epic-prediction-panel .prediction-table th:nth-child(8),
+.epic-prediction-panel .prediction-table td:nth-child(8){width:13%}
+@media(max-width:700px){
+  .epic-prediction-panel .battle-details>.prediction-table-wrap{overflow-x:auto!important}
+  .epic-prediction-panel .prediction-table{min-width:570px!important}
+}
 
