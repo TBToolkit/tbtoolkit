@@ -25,4 +25,8 @@ assert.match(stacker,/positionDragCycleBoundaries\(target\)\};/);
 assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.has-cycle-break::before\{display:none\}/);
 assert.match(styles,/\.cycle-drag-boundary\{/);
 assert.match(styles,/\.order-list\.drag-active \.squad-order-item\.dragging \.squad-order-cycle\{visibility:hidden\}/);
+assert.match(stacker,/const cycleMarkers=cycleMarkersForOrder\(rows\.map\(s=>String\(s\.id\)\),r\.cases\?\.friendlyFirst\?\.death,r\.cases\?\.epicFirst\?\.death\)/,'Battle Details must reuse the Custom view cycle calculation.');
+assert.match(stacker,/marker\.startsCycle\?`<tr class="prediction-cycle-divider"/,'Battle Details must mark each new cycle.');
+assert.match(stacker,/class="prediction-cycle-badge"[^`]+aria-label=/,'Battle Details must label each squad cycle accessibly.');
+assert.match(styles,/\.prediction-table \.prediction-cycle-divider td\{/,'Battle Details cycle dividers must be styled.');
 console.log('Custom Epic cycle markers regression checks passed.');

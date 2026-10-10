@@ -1653,10 +1653,19 @@ function renderPrediction(opt){
     }
   }
 
-  els.predictionRows.innerHTML=rows.map(s=>{
+  const cycleMarkers=cycleMarkersForOrder(rows.map(s=>String(s.id)),r.cases?.friendlyFirst?.death,r.cases?.epicFirst?.death);
+  els.predictionRows.innerHTML=rows.map((s,index)=>{
+    const marker=cycleMarkers[index];
+    const cycleLabel=marker.cycle===null?'':marker.alternateCycle!==null&&marker.alternateCycle!==marker.cycle
+      ?`Cycle ${marker.cycle} / ${marker.alternateCycle}`:`Cycle ${marker.cycle}`;
+    const cycleTitle=marker.cycle===null?'':marker.alternateCycle===null
+      ?`Your army attacks first: dies in cycle ${marker.cycle}`
+      :`Your army attacks first: cycle ${marker.cycle}; Epic attacks first: cycle ${marker.alternateCycle}`;
+    const cycleBadge=cycleLabel?` <span class="prediction-cycle-badge" title="${escapeHtml(cycleTitle)}" aria-label="${escapeHtml(cycleTitle)}">${escapeHtml(cycleLabel)}</span>`:'';
+    const cycleDivider=marker.startsCycle?`<tr class="prediction-cycle-divider"><td colspan="7"><span>Cycle ${marker.cycle} begins</span></td></tr>`:'';
     const note=optimizerContext?unusualMap.get(String(s.id)):null;
     const flag=SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note?` <button class="sacrifice-flag" type="button" data-sacrifice-id="${escapeHtml(String(s.id))}" aria-label="Explain unusual early death for ${escapeHtml(s.name)}" title="Why does this squad die early?">?</button>`:'';
-    return `<tr><td>${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
+    return `${cycleDivider}<tr><td><span class="prediction-unit-name">${escapeHtml(s.tier)} · ${escapeHtml(s.name)}${flag}</span>${cycleBadge}</td><td>${formatInteger(s.quantity)}</td><td>${s.predictedDeathPosition??'—'}</td><td>${Number(s.averageAttackOpportunities||0).toFixed(1)}</td><td>${Math.round(actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold'))).toLocaleString('en-US')}</td><td>${formatDamage(s.expectedDamagePerOpportunity)}</td><td>${formatDamage(s.expectedLifetimeDamage)}</td></tr>`;
   }).join('');
   const openingNotes=optimizerContext?(opt.diagnostics?.unusualSacrifices??[]).filter(note=>note.reason==='opening-sacrifice'):[];
   const openingNote=document.getElementById('openingSacrificeNote');

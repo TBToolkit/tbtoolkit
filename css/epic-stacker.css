@@ -4469,3 +4469,39 @@ body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(
   }
 }
 
+/* Epic Battle Details uses the same simulated cycle markers as Custom die order. */
+.prediction-table .prediction-unit-name{display:block;overflow:hidden;text-overflow:ellipsis}
+.prediction-table .prediction-cycle-badge{
+  display:inline-block;
+  max-width:100%;
+  margin-top:3px;
+  padding:1px 4px;
+  border:1px solid #8b6c31;
+  border-radius:3px;
+  color:#ffd27d;
+  background:#41331a;
+  font-size:.52rem;
+  font-weight:800;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.prediction-table .prediction-cycle-divider td{
+  width:auto!important;
+  padding:6px 2px 3px;
+  border-bottom:0;
+  color:#e8bb65;
+  text-align:center!important;
+  font-size:.56rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  line-height:1.2;
+}
+.prediction-table .prediction-cycle-divider td::before,
+.prediction-table .prediction-cycle-divider td::after{
+  content:"";
+  display:inline-block;
+  width:calc((100% - 110px)/2);
+  margin:0 5px 3px;
+  border-top:1px solid #c99636;
+}
+
