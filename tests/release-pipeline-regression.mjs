@@ -36,7 +36,8 @@ const robots=await readFile('dist/robots.txt','utf8');
 assert.match(robots,/Sitemap: https:\/\/tbtoolkit\.com\/sitemap\.xml/);
 const calendar=await readFile('dist/calendar.html','utf8');
 const resources=await readFile('dist/resources.html','utf8');
-assert.match(calendar,/<h2>Nexus Portal Calendar<\/h2>[\s\S]*?href="https:\/\/nexusportal\.voltron\.me\/calendar"/,'The Event Calendar must link to the Nexus Portal calendar.');
+assert.match(calendar,/<a class="calendar-community-card card" href="https:\/\/nexusportal\.voltron\.me\/calendar"[^>]*>[\s\S]*?Nexus Portal Calendar[\s\S]*?<\/a>/,'The full Nexus Portal tile must link to its calendar.');
+assert.match(calendar,/<a aria-current="page" href="calendar\.html">Calendar<\/a>/,'The navigation label must read Calendar.');
 assert.ok(calendar.indexOf('Nexus Portal Calendar')<calendar.indexOf('class="calendar-frame"'),'The Nexus Portal link should appear above the embedded calendar.');
 assert.doesNotMatch(resources,/nexusportal\.voltron\.me\/calendar/,'Resources must not duplicate the calendar link.');
 for(const legacy of ['assets/images/home-concept.png','assets/images/homepage-approved.png','js/epic-optimizer-worker.js']){
