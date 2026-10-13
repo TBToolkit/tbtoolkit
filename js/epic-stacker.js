@@ -102,7 +102,7 @@ guardsmanDD:'10',specialistDD:'10',engineerDD:'10',
 guardsmanST:'5',specialistST:'5',engineerST:'5',
 autoBeastBonuses:true,autoDragonBonuses:true,autoElementalBonuses:true,autoGiantBonuses:true,
 autoHumanBonuses:true,autoGuardsmanBonuses:true,autoSpecialistBonuses:true,autoEngineerBonuses:true,autoEpicHunterBonuses:true,
-useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,
+useCustomFamilyBonuses:false,useCustomHealthInputs:false,includeMercenariesInOptimization:false,preserveMercenaries:false,
 arachne:false,battleType:'epic_standard',battleMethod:'optimize',enemyUnitId:'troop-g9-flying-corax-2',minimumSeparation:true,rankSeparation:'0.05',shareEpicArmy:false};}
 
 function normalizeBonusProfileInputs(inputs){
@@ -1066,6 +1066,7 @@ function epicBonusPayload(){
     arachne:activeMode!=='custom'&&!!i.arachne,
     enemySquadTypes:i.enemySquadTypes,
     includeMercenariesInOptimization:!!i.includeMercenariesInOptimization,
+    preserveMercenaries:!!i.includeMercenariesInOptimization&&!!i.preserveMercenaries,
     useCustomProfileBonuses:true,
     customProfileBonuses:Object.fromEntries(BONUS_PROFILE_ROWS.flatMap(({key})=>['Health','Strength','DD','ST'].map(stat=>[`${key}${stat}Pct`,parseNumber(i[`${key}${stat}`])]))),
   };
@@ -1222,6 +1223,7 @@ function currentEpicEffectiveSignature(){
     authorityFill:includeMercs?parseNumber(i.authorityFill):null,
     dominanceFill:parseNumber(i.dominanceFill),
     includeMercenariesInOptimization:includeMercs,
+    preserveMercenaries:includeMercs&&!!i.preserveMercenaries,
     arachne:activeMode!=='custom'&&!!i.arachne,
     enemySquadTypes:i.enemySquadTypes,
     monsterHealth:parseNumber(i.monsterHealth),
@@ -1873,12 +1875,14 @@ function renderEpicOptimizedResult(opt){
   els.resultStatus.textContent=activeMode==='battle'
     ?`${count} optimized squad${count===1?'':'s'}${alternativeShown?' · Best no-sacrifice alternative':''} · Total Battle mobile entry order`
     :`${count} optimized squad${count===1?'':'s'}${alternativeShown?' · Best no-sacrifice alternative':''} · mobile entry order`;
+  const preservation=opt?.result?.mercenaryPreservation;
+  if(preservation?.valid)els.resultStatus.textContent+=` · Mercenaries survive until cycle ${preservation.firstAllowedCycle} or later`;
   els.resultEmpty.hidden=true;
   els.resultGroups.hidden=false;
 }
 function startEpicOptimization(){
   if(!isAnyEpicOptimizeMode()||epicWorker)return;
-  const exploring=isBattleOptimizeMode()&&exploreUnitStructures;
+  const exploring=isBattleOptimizeMode()&&exploreUnitStructures&&!modeState().inputs.preserveMercenaries;
 
   // Final authoritative reconciliation at user action time. This avoids
   // Android/Chrome form-restoration timing differences during initial load.
@@ -2179,6 +2183,7 @@ function applyStateToInputs(){
   for(const {auto} of BONUS_INPUT_ROWS)if(els[auto])els[auto].checked=i[auto]!==false;
   els.arachne.checked=!!i.arachne;
   els.includeMercenariesInOptimization.checked=!!i.includeMercenariesInOptimization;
+  els.preserveMercenaries.checked=!!i.preserveMercenaries;
   if(els.pvpEnemyUnitSelect&&armyV2.length){
     const id=i.enemyUnitId||'troop-g9-flying-corax-2';
     els.pvpEnemyUnitSelect.value=armyV2.some(u=>u.id===id)?id:'troop-g9-flying-corax-2';
@@ -2207,6 +2212,7 @@ function readInputs(){
   for(const {auto} of BONUS_INPUT_ROWS)i[auto]=els[auto]?.checked!==false;
   i.useCustomFamilyBonuses=false;
   i.includeMercenariesInOptimization=!!els.includeMercenariesInOptimization?.checked;
+  i.preserveMercenaries=!!els.preserveMercenaries?.checked;
   saveState();
 }
 function updateSeparationModeUI(){
@@ -2242,10 +2248,14 @@ function updateExploreControls(){
   const controls=document.getElementById('exploreControls'),toggle=document.getElementById('exploreUnitStructures'),depthLabel=document.getElementById('exploreDepthLabel'),depth=document.getElementById('exploreTierDepth');
   if(!controls||!toggle||!depthLabel||!depth)return;
   const available=isBattleOptimizeMode();controls.hidden=!available;
-  toggle.checked=exploreUnitStructures;toggle.disabled=!!epicWorker;
+  const preserving=!!modeState().inputs.preserveMercenaries;
+  if(preserving)exploreUnitStructures=false;
+  toggle.checked=exploreUnitStructures;toggle.disabled=!!epicWorker||preserving;
   depthLabel.hidden=!exploreUnitStructures;depth.value=String(exploreTierDepth);depth.disabled=!!epicWorker;
   const summary=document.getElementById('explorePoolSummary');
-  if(summary)summary.textContent=exploreUnitStructures
+  if(summary)summary.textContent=preserving
+    ?'Mercenary preservation works with the exact units you selected. Turn it off to Explore unit combinations first.'
+    :exploreUnitStructures
     ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
 }
@@ -2864,6 +2874,10 @@ function resolveAutoFills(inputs){
 function validate(){
   const errors=[],hasAny=Object.values(modeState().selectedIds).some(a=>a.length);
   if(!hasAny)return errors;
+  if(isAnyEpicOptimizeMode()&&modeState().inputs.preserveMercenaries){
+    if(!modeState().inputs.includeMercenariesInOptimization)errors.push('Include Mercenaries in Optimization to preserve them.');
+    if(!modeState().selectedIds.mercenary.length)errors.push('Select at least one mercenary to preserve.');
+  }
   const inp=baseEngineInputs();
 
   {
@@ -3836,7 +3850,19 @@ function wireEvents(){
   els.arachne.addEventListener('change',recalculate);
   els.includeMercenariesInOptimization.addEventListener('change',()=>{
     modeState().inputs.includeMercenariesInOptimization=els.includeMercenariesInOptimization.checked;
+    if(!els.includeMercenariesInOptimization.checked){els.preserveMercenaries.checked=false;modeState().inputs.preserveMercenaries=false;}
+    updateExploreControls();
     saveState();recalculate();
+  });
+  els.preserveMercenaries.addEventListener('change',()=>{
+    const enabled=els.preserveMercenaries.checked;
+    modeState().inputs.preserveMercenaries=enabled;
+    if(enabled){
+      els.includeMercenariesInOptimization.checked=true;
+      modeState().inputs.includeMercenariesInOptimization=true;
+      exploreUnitStructures=false;
+    }
+    updateExploreControls();saveState();recalculate();
   });
   els.optimizeArmy.addEventListener('click',startEpicOptimization);
   document.getElementById('exploreUnitStructures')?.addEventListener('change',event=>{
@@ -3908,6 +3934,7 @@ async function init(){
   canonicalAccountBackup=(await hydrateCanonicalStorage(localStorage)).get(STORAGE_KEY)??null;
   optimizerResultBackups=await hydrateOptimizerResultBackups(localStorage);
   cacheElements();
+  els.preserveMercenaries=document.getElementById('preserveMercenaries');
   for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);
   loadSavedState();
