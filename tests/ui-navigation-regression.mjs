@@ -59,6 +59,12 @@ assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(html,/class="selection-card-grid"[\s\S]*?<div class="optimizer-only optimizer-merc-option">[\s\S]*?id="includeMercenariesInOptimization"[\s\S]*?<div class="explore-controls" id="exploreControls"[\s\S]*?<div class="selection-optimize-row optimizer-only"><button[^>]*id="optimizeArmy"[\s\S]*?<div class="selection-optimize-guidance">[\s\S]*?id="optimizeHelp"[\s\S]*?data-battle-guide="optimizer"/,'Selection must show Mercenaries above Explore, then the Optimize action and guidance.');
+for(const id of ['includeMercenariesInOptimization','preserveMercenaries','exploreUnitStructures']){
+  assert.match(html,new RegExp(`<input id="${id}"[^>]*type="checkbox"(?![^>]*checked)`),`${id} must start unchecked in the page`);
+}
+assert.match(source,/includeMercenariesInOptimization:false,preserveMercenaries:false/,'New workspaces must leave both mercenary options unchecked.');
+assert.match(source,/let exploreUnitStructures=false;/,'Explore must start unchecked for every page session.');
+assert.match(source,/if\(exploring\)exploreUnitStructures=false;/,'Explore must turn off after a successful run.');
 assert.match(css,/\.selection-optimize-row\{[\s\S]*?flex-direction:row;[\s\S]*?align-items:center;/,'Optimize guidance must sit to the right of its button on desktop.');
 assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.selection-optimize-row\{flex-direction:column;/,'Optimize guidance must stack on narrow screens.');
 for(const key of ['playerBattle','setup','selection','order']){
