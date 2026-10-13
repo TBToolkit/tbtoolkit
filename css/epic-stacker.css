@@ -4543,6 +4543,8 @@ body.battle-mode-active .player-battle-panel .temple-level-select{box-sizing:bor
 body.battle-mode-active .player-battle-panel .temple-bonus-copy{min-width:0;align-self:end;padding-bottom:7px}
 body.battle-mode-active .player-battle-right .battle-method-area,
 body.battle-mode-active .player-battle-right .battle-encounter-area{display:grid;gap:10px;min-width:0;padding:0;border:0}
+body.battle-mode-active .player-battle-right .battle-method-area{grid-template-columns:max-content max-content;column-gap:16px;align-items:start}
+body.battle-mode-active .player-battle-right .battle-method-area>p{grid-column:1/-1}
 body.battle-mode-active .player-battle-right .battle-method-area>p,
 body.battle-mode-active .player-battle-right .battle-encounter-area>p{margin:0;color:#99b7cb;font-size:.68rem;line-height:1.45}
 body.battle-mode-active .player-battle-right .battle-encounter-area{padding-top:14px;border-top:1px solid #304658}
@@ -4568,8 +4570,6 @@ body.battle-mode-active .setup-panel .global-bonus-area{display:none!important}
 .bonus-matrix[data-global-layout="pvp"] .bonus-matrix-row{min-width:780px;grid-template-columns:minmax(108px,1.3fr) repeat(6,minmax(76px,1fr)) 58px}
 .bonus-matrix [data-global-bonus-column][hidden]{display:none!important}
 .bonus-global-cell{min-width:0;text-align:center;color:#94aab9;font-size:.65rem}
-.bonus-global-row{background:#112535}
-.bonus-global-row>strong{color:#d8e8f2}
 .bonus-global-cell .help-input-field{min-width:0}
 .bonus-global-cell .help-field-heading{display:none}
 .bonus-global-cell .percent-field{min-width:0}
@@ -4582,6 +4582,10 @@ body.battle-mode-active .setup-panel .global-bonus-area{display:none!important}
   body.battle-mode-active .player-battle-grid{grid-template-columns:minmax(0,1fr)}
   body.battle-mode-active .player-battle-left{border-right:0;border-bottom:1px solid #304658;padding:0 0 16px}
   body.battle-mode-active .player-battle-right{padding:16px 0 0}
+}
+@media(max-width:700px){
+  body.battle-mode-active .player-battle-right .battle-method-area{grid-template-columns:minmax(0,1fr)}
+  body.battle-mode-active .player-battle-right .battle-method-area>p{grid-column:1}
 }
 @media(max-width:650px){
   body.battle-mode-active .player-battle-left .account-actions{grid-template-columns:repeat(3,minmax(0,1fr))}

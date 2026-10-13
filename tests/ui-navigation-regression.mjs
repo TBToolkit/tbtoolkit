@@ -28,15 +28,10 @@ assert.match(siteScript,/revealRestoredPage[\s\S]*removeProperty\('visibility'\)
 assert.match(html,/<head>\s*<script src="js\/page-state-bootstrap\.js"><\/script>/,'Stacking must initialize page restoration before styles can paint.');
 const navigation=source.slice(start,end);
 
-const monsterDD=navigation.indexOf("'monsterDD'");
-const monsterST=navigation.indexOf("'monsterST'");
-const monsterHealth=navigation.indexOf("'monsterHealth'");
-const monsterStrength=navigation.indexOf("'monsterStrength'");
-const guardsmanDD=navigation.indexOf("['DD','ST','Health','Strength']");
-const pvpHealth=navigation.indexOf("isPvp?'pvpHealth':null");
-const fenrirStrength=navigation.indexOf("?'fenrirStrength':null");
-assert.ok(pvpHealth>=0&&fenrirStrength>pvpHealth&&monsterDD>fenrirStrength&&monsterST>monsterDD&&monsterHealth>monsterST&&monsterStrength>monsterHealth&&guardsmanDD>monsterStrength,
-  'Numeric navigation must follow the shared bonus row before the unit profiles');
+assert.match(navigation,/const ids=\['leadership','authority','dominance',\.\.\.rowIds\('monster'\),\.\.\.BONUS_INPUT_ROWS\.flatMap/,
+  'Numeric navigation must visit the three limits before Monsters and the remaining unit rows');
+assert.match(navigation,/`\$\{key\}DD`,`\$\{key\}ST`,[\s\S]*?pvpHealth[\s\S]*?`\$\{key\}Health`,[\s\S]*?fenrirStrength[\s\S]*?pvpStrength':'strengthAgainstEpic'[\s\S]*?`\$\{key\}Strength`/,
+  'Each unit row must navigate its visible inputs from left to right');
 assert.match(source,/pvpEnemyUnitField\.hidden=type!==['"]pvp_single_cp['"]/, 'Enemy Unit selector must only show for one-squad PvP');
 assert.match(css,/#pvpEnemyUnitField\[hidden\][\s\S]*?display:none!important/, 'Hidden Enemy Unit selector must override grid display');
 assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidden PvP encounter model must override dialog label display');
@@ -73,6 +68,10 @@ for(const key of ['playerBattle','setup','selection','order']){
 assert.match(html,/data-section-panel="playerBattle"[\s\S]*?class="player-battle-left"[\s\S]*?id="accountSelect"[\s\S]*?class="player-clan-link-row"[\s\S]*?class="player-battle-right"[\s\S]*?data-battle-type="epic"[\s\S]*?data-battle-method="optimize"[\s\S]*?id="encounterSelect"/,'Player and Battle must have the requested two-column order and visible choice switches.');
 assert.match(html,/class="topdown-panel setup-panel" data-section-panel="setup"[\s\S]*?<h2>Army Limits &amp; Unit Bonuses<\/h2>[\s\S]*?class="setup-block"[\s\S]*?class="advanced-settings-column"/,'Army Limits and Unit Bonuses must share one collapsible section.');
 assert.match(source,/GLOBAL_BONUS_COLUMNS=\[[\s\S]*?pvpHealth[\s\S]*?fenrirStrength[\s\S]*?strengthAgainstEpic[\s\S]*?pvpStrength/,'Shared bonus columns must follow the requested mode-specific order.');
+assert.doesNotMatch(source,/bonus-global-row/,'The bonus matrix must not insert an All units row.');
+assert.match(source,/profile==='monster'[\s\S]*?cell\.append\(field\)[\s\S]*?profileExtraId\(profile,column\.key\)/,'Every profile row must have the applicable bonus input.');
+assert.match(css,/\.player-battle-right \.battle-method-area\{grid-template-columns:max-content max-content/,'Battle Type and Calculation Method must share one desktop row.');
+assert.doesNotMatch(html,/<div class="auto-update-note"><span class="live-dot"><\/span>Inputs saved on this device<\/div>/,'The Section 2 saved-inputs label must be removed.');
 assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');
 assert.match(css,/@media\(min-width:900px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?left:50%;[\s\S]*?transform:translate\(-50%,-50%\);/,'Collapsed summaries must sit in the center of desktop section headers.');
 assert.match(css,/@media\(max-width:899px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?text-align:center;/,'Collapsed summaries must remain centered on narrower screens.');

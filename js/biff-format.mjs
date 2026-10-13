@@ -21,6 +21,9 @@ const INPUT_KEYS=new Set([
   'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes',
   'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','shareEpicArmy'
 ]);
+for(const profile of ['beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
+  for(const bonus of ['PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'])INPUT_KEYS.add(`${profile}${bonus}`);
+}
 
 function fail(message){throw new Error(message);}
 function cleanText(value,label,{maximum=80}={}){

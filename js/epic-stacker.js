@@ -65,6 +65,10 @@ const LINKED_BONUS_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,...HUMAN_CHIL
 const BONUS_PROFILE_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
 const BONUS_INPUT_ROWS=Object.freeze([...MONSTER_CHILD_BONUS_ROWS,HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]);
 const BONUS_PROFILE_FIELD_IDS=Object.freeze(BONUS_INPUT_ROWS.flatMap(({key})=>['DD','ST','Health','Strength'].map(stat=>`${key}${stat}`)));
+const PROFILE_EXTRA_BONUSES=Object.freeze(['pvpHealth','fenrirStrength','strengthAgainstEpic','pvpStrength']);
+const PROFILE_EXTRA_FIELD_IDS=Object.freeze(BONUS_INPUT_ROWS.flatMap(({key})=>PROFILE_EXTRA_BONUSES.map(stat=>`${key}${stat[0].toUpperCase()}${stat.slice(1)}`)));
+function profileExtraId(profile,stat){return profile==='monster'?stat:`${profile}${stat[0].toUpperCase()}${stat.slice(1)}`;}
+function profileExtra(inputs,profile,stat){return parseNumber(inputs[profileExtraId(profile,stat)]??inputs[stat]);}
 function updateOptimizerElapsed(){
   if(!optimizerStartedAt)return;
   const elapsed=performance.now()-optimizerStartedAt;
@@ -131,6 +135,10 @@ function normalizeBonusProfileInputs(inputs){
   if(i[`${key}DD`]===undefined)i[`${key}DD`]=String(legacyManual?parseNumber(i.epicHunterDD):dd);
   if(i[`${key}ST`]===undefined)i[`${key}ST`]=String(legacyManual?parseNumber(i.epicHunterST):Math.max(0,st-5));
   if(i[auto]===undefined)i[auto]=!legacyManual;
+  for(const {key} of BONUS_INPUT_ROWS)for(const stat of PROFILE_EXTRA_BONUSES){
+    const id=profileExtraId(key,stat);
+    if(i[id]===undefined)i[id]=String(parseNumber(i[stat]??defaultInputs('battle')[stat]));
+  }
   return i;
 }
 function cloneIds(source){
@@ -1036,6 +1044,7 @@ function setDerivedField(id,value,readonly=true){
 function syncDerivedHealthInputs(){syncDerivedEpicBonuses();}
 function copyBonusRow(targetKey,sourceKey,readonly){
   for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${targetKey}${stat}`,parseNumber(els[`${sourceKey}${stat}`]?.value),readonly);
+  for(const stat of PROFILE_EXTRA_BONUSES)setDerivedField(profileExtraId(targetKey,stat),parseNumber(els[profileExtraId(sourceKey,stat)]?.value),readonly);
 }
 function updateBonusGroupStatus(rows,statusId,profile){
   const mixed=rows.some(({auto})=>!els[auto]?.checked);
@@ -1043,14 +1052,18 @@ function updateBonusGroupStatus(rows,statusId,profile){
   document.querySelector(`[data-bonus-profile="${profile}"]`)?.classList.toggle('has-mixed-profiles',mixed);
 }
 function syncDerivedEpicBonuses(){
+  const allStats=['Health','Strength','DD','ST'];
+  const extraStats=PROFILE_EXTRA_BONUSES;
   const mh=parseNumber(els.monsterHealth?.value),ms=parseNumber(els.monsterStrength?.value),dd=parseNumber(els.monsterDD?.value),st=parseNumber(els.monsterST?.value);
-  for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'monster',true);else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);}
+  for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'monster',true);else {for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(key,stat)]?.value),false);}}
   if(els.autoHumanBonuses?.checked){setDerivedField('humanHealth',Math.max(0,mh-100),true);setDerivedField('humanStrength',Math.max(0,ms-100),true);setDerivedField('humanDD',dd,true);setDerivedField('humanST',Math.max(0,st-5),true);}
-  else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`human${stat}`,parseNumber(els[`human${stat}`]?.value),false);
-  for(const {key,auto} of HUMAN_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'human',true);else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);}
+  else for(const stat of allStats)setDerivedField(`human${stat}`,parseNumber(els[`human${stat}`]?.value),false);
+  for(const stat of extraStats)setDerivedField(profileExtraId('human',stat),parseNumber(els[profileExtraId(els.autoHumanBonuses?.checked?'monster':'human',stat)]?.value),!!els.autoHumanBonuses?.checked);
+  for(const {key,auto} of HUMAN_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'human',true);else {for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(key,stat)]?.value),false);}}
   const {key,auto,healthOffset,strengthOffset}=EPIC_HUNTER_BONUS_ROW;
   if(els[auto]?.checked){setDerivedField(`${key}Health`,Math.max(0,mh-healthOffset),true);setDerivedField(`${key}Strength`,Math.max(0,ms-strengthOffset),true);setDerivedField(`${key}DD`,dd,true);setDerivedField(`${key}ST`,Math.max(0,st-5),true);}
-  else for(const stat of ['Health','Strength','DD','ST'])setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);
+  else for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);
+  for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(els[auto]?.checked?'monster':key,stat)]?.value),!!els[auto]?.checked);
   for(const row of BONUS_INPUT_ROWS){const label=els[row.auto]?.nextElementSibling;if(label)label.textContent=els[row.auto].checked?(LINKED_BONUS_ROWS.includes(row)?'Linked':'Auto'):'Manual';}
   updateBonusGroupStatus(MONSTER_CHILD_BONUS_ROWS,'monsterProfileStatus','monster');
   updateBonusGroupStatus(HUMAN_CHILD_BONUS_ROWS,'humanProfileStatus','human');
@@ -1069,7 +1082,7 @@ function epicBonusPayload(){
     includeMercenariesInOptimization:!!i.includeMercenariesInOptimization,
     preserveMercenaries:!!i.includeMercenariesInOptimization&&!!i.preserveMercenaries,
     useCustomProfileBonuses:true,
-    customProfileBonuses:Object.fromEntries(BONUS_PROFILE_ROWS.flatMap(({key})=>['Health','Strength','DD','ST'].map(stat=>[`${key}${stat}Pct`,parseNumber(i[`${key}${stat}`])]))),
+    customProfileBonuses:Object.fromEntries(BONUS_PROFILE_ROWS.flatMap(({key})=>['Health','Strength','DD','ST'].map(stat=>[`${key}${stat}Pct`,parseNumber(i[`${key}${stat}`])+(stat==='Strength'?profileExtra(i,key,'strengthAgainstEpic')-profileExtra(i,'monster','strengthAgainstEpic')+(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?profileExtra(i,key,'fenrirStrength')-profileExtra(i,'monster','fenrirStrength'):0):0)]))),
   };
 }
 function fixedStandardMercenaryQuantitiesForOptimizer(){
@@ -1236,6 +1249,7 @@ function currentEpicEffectiveSignature(){
     epicHunterStrength:parseNumber(i.epicHunterStrength),
     guardsmanStrength:parseNumber(i.guardsmanStrength),specialistStrength:parseNumber(i.specialistStrength),engineerStrength:parseNumber(i.engineerStrength),
     strengthAgainstEpic:parseNumber(i.strengthAgainstEpic),
+    profileStrengthBonuses:Object.entries(i).filter(([key])=>/^(beast|dragon|elemental|giant|human|guardsman|specialist|engineer|epicHunter)(StrengthAgainstEpic|FenrirStrength)$/.test(key)).sort(([a],[b])=>a.localeCompare(b)),
     ...(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?{fenrirStrength:parseNumber(i.fenrirStrength)}:{}),
     monsterDD:parseNumber(i.monsterDD),
     beastDD:parseNumber(i.beastDD),dragonDD:parseNumber(i.dragonDD),elementalDD:parseNumber(i.elementalDD),giantDD:parseNumber(i.giantDD),
@@ -2072,17 +2086,12 @@ function setupBonusMatrixColumns(){
   if(!matrix||matrix.dataset.globalColumnsReady)return;
   matrix.dataset.globalColumnsReady='true';
   const header=matrix.querySelector('.bonus-matrix-header');
-  const globalRow=document.createElement('div');
-  globalRow.className='bonus-matrix-row bonus-global-row';
-  globalRow.dataset.bonusProfile='global';
-  globalRow.innerHTML='<strong>All units</strong><span></span><span></span><span></span><span></span><span></span>';
-  header.after(globalRow);
   const rows=matrix.querySelectorAll('.bonus-matrix-row');
   for(const column of GLOBAL_BONUS_COLUMNS){
     const heading=document.createElement('span');
     heading.dataset.globalBonusColumn=column.key;
     heading.textContent=column.label;
-    heading.title=column.key==='fenrirStrength'?'Additional Strength against Fenrir. Stacks with other Strength bonuses.':`${column.label} applies to all units.`;
+    heading.title=column.key==='fenrirStrength'?'Additional Strength against Fenrir. Stacks with other Strength bonuses.':`${column.label} follows the Monsters value until this profile is set to Manual.`;
     if(column.key!=='fenrirStrength'){
       const help=document.createElement('button');
       help.type='button';help.className='stat-help-button';help.dataset.statHelp=column.key;
@@ -2093,11 +2102,18 @@ function setupBonusMatrixColumns(){
     for(const row of rows){
       const cell=document.createElement('div');
       cell.className='bonus-global-cell';cell.dataset.globalBonusColumn=column.key;
-      if(row.dataset.bonusProfile==='global'){
+      const profile=row.dataset.bonusProfile;
+      if(profile==='monster'){
         const field=document.getElementById(column.fieldId);
-        if(field){field.querySelector('input')?.setAttribute('aria-label',`${column.label} for all units`);cell.append(field);}
+        if(field){field.querySelector('input')?.setAttribute('aria-label',`Monster ${column.label}`);cell.append(field);}
       }else{
-        cell.textContent='—';cell.setAttribute('aria-label',`${column.label} comes from the All units row`);
+        const wrap=document.createElement('div');wrap.className='percent-field';
+        const input=document.createElement('input');
+        input.id=profileExtraId(profile,column.key);
+        input.className='epic-input family-derived-field';input.inputMode='decimal';input.type='text';
+        input.setAttribute('aria-label',`${profile} ${column.label}`);
+        const suffix=document.createElement('span');suffix.textContent='%';
+        wrap.append(input,suffix);cell.append(wrap);els[input.id]=input;
       }
       row.insertBefore(cell,row.children[column.before==='health'?3:row.children.length-2]);
     }
@@ -2246,7 +2262,7 @@ function configureModeUI(){
 }
 function applyStateToInputs(){
   const i=normalizeBonusProfileInputs(modeState().inputs);
-  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
+  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS,...PROFILE_EXTRA_FIELD_IDS]){
     if(!els[id])continue;
     els[id].value=i[id]??defaultInputs(activeMode)[id]??'';
   }
@@ -2276,7 +2292,7 @@ function applyStateToInputs(){
 }
 function readInputs(){
   const i=modeState().inputs;
-  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
+  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS,...PROFILE_EXTRA_FIELD_IDS]){
     if(els[id])i[id]=String(parseNumber(els[id].value));
   }
   i.rankSeparation=String(parseNumber(els.rankSeparation.value));
@@ -2873,8 +2889,12 @@ function refreshAfterBrowserRestore(){
 function baseEngineInputs(){
   const i=modeState().inputs;
   const isPvp=activeMode==='battle'&&String(i.battleType||state.modes.battle.activeBattleType||'').startsWith('pvp_');
-  const pvpHealth=isPvp?parseNumber(i.pvpHealth):0;
-  const pvpStrength=isPvp?parseNumber(i.pvpStrength):0;
+  const pvpHealth=isPvp?profileExtra(i,'monster','pvpHealth'):0;
+  const pvpStrength=isPvp?profileExtra(i,'monster','pvpStrength'):0;
+  const healthExtra=profile=>isPvp?profileExtra(i,profile,'pvpHealth'):0;
+  const strengthExtra=profile=>isPvp?profileExtra(i,profile,'pvpStrength'):0;
+  const epicExtra=profile=>!isPvp?profileExtra(i,profile,'strengthAgainstEpic')+(state.modes.battle.activeEncounterId==='epic-fenrir'?profileExtra(i,profile,'fenrirStrength'):0):0;
+  const epicDelta=profile=>epicExtra(profile)-epicExtra('monster');
   return{
     leadership:parseNumber(i.leadership),leadershipFill:parseNumber(i.leadershipFill)/100,
     authority:parseNumber(i.authority),authorityFill:parseNumber(i.authorityFill)/100,
@@ -2883,24 +2903,24 @@ function baseEngineInputs(){
     enemySquadTypes:i.enemySquadTypes,
     healthInputs:{
       MONSTER:parseNumber(i.monsterHealth)+pvpHealth,
-      BEAST:parseNumber(i.beastHealth)+pvpHealth,
-      DRAGON:parseNumber(i.dragonHealth)+pvpHealth,
-      ELEMENTAL:parseNumber(i.elementalHealth)+pvpHealth,
-      GIANT:parseNumber(i.giantHealth)+pvpHealth,
-      GUARDSMAN:parseNumber(i.guardsmanHealth)+pvpHealth,
-      SPECIALIST:parseNumber(i.specialistHealth)+pvpHealth,
-      ENGINEER:parseNumber(i.engineerHealth)+pvpHealth,
-      HUMAN:parseNumber(i.guardsmanHealth)+pvpHealth,
-      EPIC_HUNTER:parseNumber(i.epicHunterHealth)+pvpHealth
+      BEAST:parseNumber(i.beastHealth)+healthExtra('beast'),
+      DRAGON:parseNumber(i.dragonHealth)+healthExtra('dragon'),
+      ELEMENTAL:parseNumber(i.elementalHealth)+healthExtra('elemental'),
+      GIANT:parseNumber(i.giantHealth)+healthExtra('giant'),
+      GUARDSMAN:parseNumber(i.guardsmanHealth)+healthExtra('guardsman'),
+      SPECIALIST:parseNumber(i.specialistHealth)+healthExtra('specialist'),
+      ENGINEER:parseNumber(i.engineerHealth)+healthExtra('engineer'),
+      HUMAN:parseNumber(i.humanHealth)+healthExtra('human'),
+      EPIC_HUNTER:parseNumber(i.epicHunterHealth)+healthExtra('epicHunter')
     },
     monsterStrengthPct:parseNumber(i.monsterStrength)+pvpStrength,
-    beastStrengthPct:parseNumber(i.beastStrength)+pvpStrength,dragonStrengthPct:parseNumber(i.dragonStrength)+pvpStrength,elementalStrengthPct:parseNumber(i.elementalStrength)+pvpStrength,giantStrengthPct:parseNumber(i.giantStrength)+pvpStrength,
+    beastStrengthPct:parseNumber(i.beastStrength)+strengthExtra('beast')+epicDelta('beast'),dragonStrengthPct:parseNumber(i.dragonStrength)+strengthExtra('dragon')+epicDelta('dragon'),elementalStrengthPct:parseNumber(i.elementalStrength)+strengthExtra('elemental')+epicDelta('elemental'),giantStrengthPct:parseNumber(i.giantStrength)+strengthExtra('giant')+epicDelta('giant'),
     strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic)+(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?parseNumber(i.fenrirStrength):0),
-    guardsmanStrengthPct:parseNumber(i.guardsmanStrength)+pvpStrength,
-    specialistStrengthPct:parseNumber(i.specialistStrength)+pvpStrength,
-    engineerStrengthPct:parseNumber(i.engineerStrength)+pvpStrength,
-    humanStrengthPct:parseNumber(i.guardsmanStrength)+pvpStrength,
-    epicHunterStrengthPct:parseNumber(i.epicHunterStrength)+pvpStrength,
+    guardsmanStrengthPct:parseNumber(i.guardsmanStrength)+strengthExtra('guardsman')+epicDelta('guardsman'),
+    specialistStrengthPct:parseNumber(i.specialistStrength)+strengthExtra('specialist')+epicDelta('specialist'),
+    engineerStrengthPct:parseNumber(i.engineerStrength)+strengthExtra('engineer')+epicDelta('engineer'),
+    humanStrengthPct:parseNumber(i.humanStrength)+strengthExtra('human')+epicDelta('human'),
+    epicHunterStrengthPct:parseNumber(i.epicHunterStrength)+strengthExtra('epicHunter')+epicDelta('epicHunter'),
     pvpHealthPct:pvpHealth,pvpStrengthPct:pvpStrength,
     monsterDDPct:parseNumber(i.monsterDD),beastDDPct:parseNumber(i.beastDD),dragonDDPct:parseNumber(i.dragonDD),elementalDDPct:parseNumber(i.elementalDD),giantDDPct:parseNumber(i.giantDD),guardsmanDDPct:parseNumber(i.guardsmanDD),specialistDDPct:parseNumber(i.specialistDD),engineerDDPct:parseNumber(i.engineerDD),humanDDPct:parseNumber(i.guardsmanDD),epicHunterDDPct:parseNumber(i.epicHunterDD),
     monsterSTPct:parseNumber(i.monsterST),beastSTPct:parseNumber(i.beastST),dragonSTPct:parseNumber(i.dragonST),elementalSTPct:parseNumber(i.elementalST),giantSTPct:parseNumber(i.giantST),guardsmanSTPct:parseNumber(i.guardsmanST),specialistSTPct:parseNumber(i.specialistST),engineerSTPct:parseNumber(i.engineerST),humanSTPct:parseNumber(i.guardsmanST),epicHunterSTPct:parseNumber(i.epicHunterST),
@@ -2977,6 +2997,7 @@ function validate(){
     for(const {key} of BONUS_PROFILE_ROWS){
       for(const stat of ['Health','Strength'])if(parseNumber(modeState().inputs[`${key}${stat}`])<0)errors.push(`${key==='epicHunter'?'Epic Hunter':key[0].toUpperCase()+key.slice(1)} ${stat} cannot be negative.`);
       for(const stat of ['DD','ST']){const v=parseNumber(modeState().inputs[`${key}${stat}`]);if(v<0||v>100)errors.push(`${key==='epicHunter'?'Epic Hunter':key[0].toUpperCase()+key.slice(1)} ${stat==='DD'?'Double Damage':'Strike Twice'} must be between 0% and 100%.`);}
+      for(const stat of PROFILE_EXTRA_BONUSES)if(profileExtra(modeState().inputs,key,stat)<0)errors.push(`${key==='epicHunter'?'Epic Hunter':key[0].toUpperCase()+key.slice(1)} ${stat} cannot be negative.`);
     }
   }
   if(activeMode!=='optimizer'){
@@ -3524,7 +3545,7 @@ function switchMode(mode){
   loadSavedOptimizerResult();
   refreshActiveMode();
 }
-function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
+function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {key,auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;for(const stat of PROFILE_EXTRA_BONUSES)i[profileExtraId(key,stat)]=defaults[stat];}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. The optimizer compares troop and monster combinations within those limits. It uses only the mercenary types you select. This search can take up to six minutes. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
@@ -3641,14 +3662,16 @@ function calculatorNumericNavigationOrder(){
 
   // Follow the visual matrix row order. Auto-derived rows are skipped until
   // the player switches that row to Manual.
-  const ids=[
-    'leadership','authority','dominance',
-    isPvp?'pvpHealth':null,
-    !isPvp&&state.modes.battle.activeEncounterId==='epic-fenrir'?'fenrirStrength':null,
-    isPvp?'pvpStrength':'strengthAgainstEpic',
-    'monsterDD','monsterST','monsterHealth','monsterStrength',
-    ...BONUS_INPUT_ROWS.flatMap(({key})=>['DD','ST','Health','Strength'].map(stat=>`${key}${stat}`)),
+  const isFenrir=!isPvp&&state.modes.battle.activeEncounterId==='epic-fenrir';
+  const rowIds=key=>[
+    `${key}DD`,`${key}ST`,
+    isPvp?profileExtraId(key,'pvpHealth'):null,
+    `${key}Health`,
+    isFenrir?profileExtraId(key,'fenrirStrength'):null,
+    profileExtraId(key,isPvp?'pvpStrength':'strengthAgainstEpic'),
+    `${key}Strength`
   ];
+  const ids=['leadership','authority','dominance',...rowIds('monster'),...BONUS_INPUT_ROWS.flatMap(({key})=>rowIds(key))];
 
   return ids.filter(id=>{
     const input=els[id];
@@ -3668,7 +3691,7 @@ function handleCalculatorNumericNavigation(id,input,e){
   // Own both Tab and Enter so native browser focus cannot jump to a checkbox,
   // Fill field, help icon, or other non-calculator control.
   e.preventDefault();
-  if(['monsterHealth','monsterStrength','monsterDD','monsterST'].includes(id)){
+  if(['monsterHealth','monsterStrength','monsterDD','monsterST',...PROFILE_EXTRA_BONUSES].includes(id)){
     syncDerivedEpicBonuses();
   }
 
@@ -3691,7 +3714,7 @@ function wireEvents(){
   const inputSectionLabels={playerBattle:'Player and Battle',setup:'Army Limits and Unit Bonuses',selection:'Selection',order:'Custom Die Order'};
   const inputSectionSummary=key=>{
     const selectedText=id=>document.getElementById(id)?.selectedOptions?.[0]?.textContent?.trim()||'';
-    if(key==='playerBattle')return [selectedText('accountSelect'),selectedText('battleTypeSelect'),selectedText('encounterSelect'),selectedText('battleMethodSelect')].filter(Boolean).join(' · ');
+    if(key==='playerBattle')return [selectedText('accountSelect'),document.getElementById('clanProfileStatus')?.textContent?.trim(),selectedText('battleTypeSelect'),selectedText('battleMethodSelect'),selectedText('encounterSelect')].filter(Boolean).join(' · ');
     if(key==='setup')return ['leadership','authority','dominance'].map(id=>`${id[0].toUpperCase()} ${document.getElementById(id)?.value||'—'}`).join(' · ');
     if(key==='selection'){
       const count=[...document.querySelectorAll('.selection-card-title [id$="Count"]')].reduce((sum,node)=>sum+(Number.parseInt(node.textContent,10)||0),0);
@@ -3884,7 +3907,7 @@ function wireEvents(){
   if(els.battleMethodSelect)els.battleMethodSelect.addEventListener('change',()=>selectBattleMethod(els.battleMethodSelect.value));
   els.resultsMethodSwitch?.addEventListener('click',event=>{const button=event.target.closest('[data-results-method]');if(button)selectBattleMethod(button.dataset.resultsMethod,true);});
   const advancedIds=[
-    'monsterHealth','pvpHealth',...BONUS_PROFILE_FIELD_IDS,
+    'monsterHealth','pvpHealth',...BONUS_PROFILE_FIELD_IDS,...PROFILE_EXTRA_FIELD_IDS,
     'monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',
   ];
   for(const id of advancedIds){
@@ -3892,7 +3915,7 @@ function wireEvents(){
     input.addEventListener('focus',()=>selectWholeFieldOnFocus(input));
     input.addEventListener('keydown',e=>handleCalculatorNumericNavigation(id,input,e));
     input.addEventListener('input',()=>{
-      if(['monsterHealth','monsterStrength','monsterDD','monsterST','humanHealth','humanStrength','humanDD','humanST'].includes(id))syncDerivedEpicBonuses();
+      if(['monsterHealth','monsterStrength','monsterDD','monsterST','humanHealth','humanStrength','humanDD','humanST',...PROFILE_EXTRA_BONUSES,...PROFILE_EXTRA_BONUSES.map(stat=>profileExtraId('human',stat))].includes(id))syncDerivedEpicBonuses();
     });
     input.addEventListener('blur',()=>{
       if(['pvpHealth','pvpStrength'].includes(id))input.value=String(parseNumber(input.value));
