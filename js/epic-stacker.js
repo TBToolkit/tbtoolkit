@@ -90,7 +90,7 @@ leadership:'',leadershipFill:'99.99',autoLeadership:true,
 authority:'',authorityFill:'10.00',autoAuthority:false,
 dominance:'',dominanceFill:'99.99',autoDominance:true,
 monsterHealth:'1600',humanHealth:'1500',epicHunterHealth:'859',pvpHealth:'1600',
-monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10',
+monsterStrength:'2000',strengthAgainstEpic:'2000',fenrirStrength:'0',pvpStrength:'2000',monsterDD:'10',monsterST:'10',
 beastHealth:'1600',dragonHealth:'1600',elementalHealth:'1600',giantHealth:'1600',
 beastStrength:'2000',dragonStrength:'2000',elementalStrength:'2000',giantStrength:'2000',
 beastDD:'10',dragonDD:'10',elementalDD:'10',giantDD:'10',beastST:'10',dragonST:'10',elementalST:'10',giantST:'10',
@@ -1061,6 +1061,7 @@ function epicBonusPayload(){
     monsterHealthPct:parseNumber(i.monsterHealth),
     monsterStrengthPct:parseNumber(i.monsterStrength),
     strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic),
+    fenrirStrengthPct:activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?parseNumber(i.fenrirStrength):0,
     monsterDDPct:parseNumber(i.monsterDD),
     monsterSTPct:parseNumber(i.monsterST),
     arachne:activeMode!=='custom'&&!!i.arachne,
@@ -1235,6 +1236,7 @@ function currentEpicEffectiveSignature(){
     epicHunterStrength:parseNumber(i.epicHunterStrength),
     guardsmanStrength:parseNumber(i.guardsmanStrength),specialistStrength:parseNumber(i.specialistStrength),engineerStrength:parseNumber(i.engineerStrength),
     strengthAgainstEpic:parseNumber(i.strengthAgainstEpic),
+    ...(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?{fenrirStrength:parseNumber(i.fenrirStrength)}:{}),
     monsterDD:parseNumber(i.monsterDD),
     beastDD:parseNumber(i.beastDD),dragonDD:parseNumber(i.dragonDD),elementalDD:parseNumber(i.elementalDD),giantDD:parseNumber(i.giantDD),
     epicHunterDD:parseNumber(i.epicHunterDD),
@@ -2019,7 +2021,7 @@ function startEpicOptimization(){
 
 function updateVisibleStepNumbers(){
   if(activeMode!=='battle')return;
-  let step=5;
+  let step=3;
   document.querySelectorAll('.battle-sequenced-section').forEach(section=>{
     const style=getComputedStyle(section);
     if(section.hidden||style.display==='none'||style.visibility==='hidden')return;
@@ -2039,6 +2041,77 @@ function syncResultsMethodSwitch(){
     button.classList.toggle('is-active',selected);
     button.setAttribute('aria-pressed',String(selected));
   });
+}
+
+function syncBattleChoiceSwitches(){
+  const category=els.battleTypeSelect?.value||'epic';
+  const method=els.battleMethodSelect?.value||'custom';
+  document.querySelectorAll('[data-battle-type]').forEach(button=>{
+    const selected=button.dataset.battleType===category;
+    button.classList.toggle('is-active',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  });
+  document.querySelectorAll('[data-battle-method]').forEach(button=>{
+    const selected=button.dataset.battleMethod===method;
+    const disabled=category==='pvp'&&button.dataset.battleMethod==='optimize';
+    button.classList.toggle('is-active',selected);
+    button.setAttribute('aria-pressed',String(selected));
+    button.disabled=disabled;
+    button.title=disabled?'Optimize is not available for Player vs. Player battles.':'';
+  });
+}
+
+const GLOBAL_BONUS_COLUMNS=[
+  {key:'pvpHealth',label:'Health PvP',fieldId:'pvpHealthField',before:'health'},
+  {key:'fenrirStrength',label:'Fenrir Strength',fieldId:'fenrirStrengthField',before:'strength'},
+  {key:'strengthAgainstEpic',label:'Strength PvE',fieldId:'strengthAgainstEpicField',before:'strength'},
+  {key:'pvpStrength',label:'Strength PvP',fieldId:'pvpStrengthField',before:'strength'}
+];
+function setupBonusMatrixColumns(){
+  const matrix=document.querySelector('.bonus-matrix');
+  if(!matrix||matrix.dataset.globalColumnsReady)return;
+  matrix.dataset.globalColumnsReady='true';
+  const header=matrix.querySelector('.bonus-matrix-header');
+  const globalRow=document.createElement('div');
+  globalRow.className='bonus-matrix-row bonus-global-row';
+  globalRow.dataset.bonusProfile='global';
+  globalRow.innerHTML='<strong>All units</strong><span></span><span></span><span></span><span></span><span></span>';
+  header.after(globalRow);
+  const rows=matrix.querySelectorAll('.bonus-matrix-row');
+  for(const column of GLOBAL_BONUS_COLUMNS){
+    const heading=document.createElement('span');
+    heading.dataset.globalBonusColumn=column.key;
+    heading.textContent=column.label;
+    heading.title=column.key==='fenrirStrength'?'Additional Strength against Fenrir. Stacks with other Strength bonuses.':`${column.label} applies to all units.`;
+    if(column.key!=='fenrirStrength'){
+      const help=document.createElement('button');
+      help.type='button';help.className='stat-help-button';help.dataset.statHelp=column.key;
+      help.setAttribute('aria-label',`Where to find ${column.label}`);help.textContent='?';
+      heading.append(help);
+    }
+    header.insertBefore(heading,header.children[column.before==='health'?3:header.children.length-2]);
+    for(const row of rows){
+      const cell=document.createElement('div');
+      cell.className='bonus-global-cell';cell.dataset.globalBonusColumn=column.key;
+      if(row.dataset.bonusProfile==='global'){
+        const field=document.getElementById(column.fieldId);
+        if(field){field.querySelector('input')?.setAttribute('aria-label',`${column.label} for all units`);cell.append(field);}
+      }else{
+        cell.textContent='—';cell.setAttribute('aria-label',`${column.label} comes from the All units row`);
+      }
+      row.insertBefore(cell,row.children[column.before==='health'?3:row.children.length-2]);
+    }
+  }
+}
+function syncBonusMatrixColumns(){
+  const matrix=document.querySelector('.bonus-matrix');if(!matrix)return;
+  const isPvp=activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_');
+  const isFenrir=activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir';
+  matrix.dataset.globalLayout=isPvp?'pvp':isFenrir?'fenrir':'epic';
+  for(const column of GLOBAL_BONUS_COLUMNS){
+    const visible=isPvp?column.key.startsWith('pvp'):column.key==='strengthAgainstEpic'||(isFenrir&&column.key==='fenrirStrength');
+    matrix.querySelectorAll(`[data-global-bonus-column="${column.key}"]`).forEach(cell=>cell.hidden=!visible);
+  }
 }
 
 function selectBattleMethod(requested,preserveResultsPosition=false){
@@ -2087,7 +2160,7 @@ function configureModeUI(){
   else els.arachneRow.style.removeProperty('display');
   if(els.battleBetaPanel)els.battleBetaPanel.hidden=!battle;
   document.body.classList.toggle('battle-mode-active',battle);
-  if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'3':'1';
+  if(els.setupStepNumber)els.setupStepNumber.textContent=battle?'2':'1';
   if(els.selectionStepNumber&&!battle)els.selectionStepNumber.textContent='2';
   if(battle){
     refreshWorkspaceSelectors();
@@ -2115,6 +2188,7 @@ function configureModeUI(){
       if(els.battleMethodSelect)els.battleMethodSelect.value='custom';
     }
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=isPvp;
+    if(els.fenrirStrengthField)els.fenrirStrengthField.hidden=isPvp||state.modes.battle.activeEncounterId!=='epic-fenrir';
     if(els.pvpHealthField)els.pvpHealthField.hidden=!isPvp;
     if(els.pvpStrengthField)els.pvpStrengthField.hidden=!isPvp;
     if(els.pvpEnemyUnitField)els.pvpEnemyUnitField.hidden=type!=='pvp_single_cp';
@@ -2140,6 +2214,7 @@ function configureModeUI(){
   }
   if(!battle){
     if(els.strengthAgainstEpicField)els.strengthAgainstEpicField.hidden=false;
+    if(els.fenrirStrengthField)els.fenrirStrengthField.hidden=true;
     if(els.pvpHealthField)els.pvpHealthField.hidden=true;
     if(els.pvpStrengthField)els.pvpStrengthField.hidden=true;
     if(els.pvpEnemyUnitField)els.pvpEnemyUnitField.hidden=true;
@@ -2161,6 +2236,8 @@ function configureModeUI(){
   if(nums[1])nums[1].textContent=custom?'5':optimizer?'5':'4';
 
   syncDerivedEpicBonuses();
+  syncBonusMatrixColumns();
+  syncBattleChoiceSwitches();
   syncResultsMethodSwitch();
   updateVisibleStepNumbers();
   setOptimizeButtonState();
@@ -2169,7 +2246,7 @@ function configureModeUI(){
 }
 function applyStateToInputs(){
   const i=normalizeBonusProfileInputs(modeState().inputs);
-  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
+  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
     if(!els[id])continue;
     els[id].value=i[id]??defaultInputs(activeMode)[id]??'';
   }
@@ -2199,7 +2276,7 @@ function applyStateToInputs(){
 }
 function readInputs(){
   const i=modeState().inputs;
-  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
+  for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS]){
     if(els[id])i[id]=String(parseNumber(els[id].value));
   }
   i.rankSeparation=String(parseNumber(els.rankSeparation.value));
@@ -2818,7 +2895,7 @@ function baseEngineInputs(){
     },
     monsterStrengthPct:parseNumber(i.monsterStrength)+pvpStrength,
     beastStrengthPct:parseNumber(i.beastStrength)+pvpStrength,dragonStrengthPct:parseNumber(i.dragonStrength)+pvpStrength,elementalStrengthPct:parseNumber(i.elementalStrength)+pvpStrength,giantStrengthPct:parseNumber(i.giantStrength)+pvpStrength,
-    strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic),
+    strengthAgainstEpicPct:parseNumber(i.strengthAgainstEpic)+(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?parseNumber(i.fenrirStrength):0),
     guardsmanStrengthPct:parseNumber(i.guardsmanStrength)+pvpStrength,
     specialistStrengthPct:parseNumber(i.specialistStrength)+pvpStrength,
     engineerStrengthPct:parseNumber(i.engineerStrength)+pvpStrength,
@@ -2891,7 +2968,7 @@ function validate(){
 
   {
     if(parseNumber(modeState().inputs.monsterHealth)<0)errors.push('Enter Monster Health.');
-    for(const [key,label] of [['monsterStrength','Monster Strength'],['strengthAgainstEpic','Strength PvE']]){
+    for(const [key,label] of [['monsterStrength','Monster Strength'],['strengthAgainstEpic','Strength PvE'],['fenrirStrength','Fenrir Strength']]){
       if(parseNumber(modeState().inputs[key])<0)errors.push(`${label} cannot be negative.`);
     }
     for(const [key,label] of [['monsterDD','Monster Double Damage'],['monsterST','Monster Strike Twice']]){
@@ -3447,7 +3524,7 @@ function switchMode(mode){
   loadSavedOptimizerResult();
   refreshActiveMode();
 }
-function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
+function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. The optimizer compares troop and monster combinations within those limits. It uses only the mercenary types you select. This search can take up to six minutes. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
@@ -3566,10 +3643,11 @@ function calculatorNumericNavigationOrder(){
   // the player switches that row to Manual.
   const ids=[
     'leadership','authority','dominance',
+    isPvp?'pvpHealth':null,
+    !isPvp&&state.modes.battle.activeEncounterId==='epic-fenrir'?'fenrirStrength':null,
+    isPvp?'pvpStrength':'strengthAgainstEpic',
     'monsterDD','monsterST','monsterHealth','monsterStrength',
     ...BONUS_INPUT_ROWS.flatMap(({key})=>['DD','ST','Health','Strength'].map(stat=>`${key}${stat}`)),
-    isPvp?'pvpHealth':'strengthAgainstEpic',
-    isPvp?'pvpStrength':null,
   ];
 
   return ids.filter(id=>{
@@ -3605,20 +3683,16 @@ function handleCalculatorNumericNavigation(id,input,e){
 function wireEvents(){
   wireStatHelp();
   const inputSectionPanels={
-    player:document.querySelector('.player-clan-panel'),
-    battle:document.querySelector('.battle-settings-panel'),
-    limits:document.querySelector('.setup-block'),
-    bonuses:document.querySelector('.advanced-settings-column'),
+    playerBattle:document.querySelector('.player-battle-panel'),
+    setup:document.querySelector('.setup-panel'),
     selection:document.querySelector('.selection-area'),
     order:document.getElementById('orderView')
   };
-  const inputSectionLabels={player:'Player and Clan',battle:'Battle',limits:'Army Limits',bonuses:'Unit Bonuses',selection:'Selection',order:'Custom Die Order'};
+  const inputSectionLabels={playerBattle:'Player and Battle',setup:'Army Limits and Unit Bonuses',selection:'Selection',order:'Custom Die Order'};
   const inputSectionSummary=key=>{
     const selectedText=id=>document.getElementById(id)?.selectedOptions?.[0]?.textContent?.trim()||'';
-    if(key==='player')return [selectedText('accountSelect'),document.getElementById('clanProfileStatus')?.textContent?.trim()].filter(Boolean).join(' · ');
-    if(key==='battle')return [selectedText('battleTypeSelect'),selectedText('encounterSelect'),selectedText('battleMethodSelect')].filter(Boolean).join(' · ');
-    if(key==='limits')return ['leadership','authority','dominance'].map(id=>`${id[0].toUpperCase()} ${document.getElementById(id)?.value||'—'}`).join(' · ');
-    if(key==='bonuses')return 'Unit and global bonuses';
+    if(key==='playerBattle')return [selectedText('accountSelect'),selectedText('battleTypeSelect'),selectedText('encounterSelect'),selectedText('battleMethodSelect')].filter(Boolean).join(' · ');
+    if(key==='setup')return ['leadership','authority','dominance'].map(id=>`${id[0].toUpperCase()} ${document.getElementById(id)?.value||'—'}`).join(' · ');
     if(key==='selection'){
       const count=[...document.querySelectorAll('.selection-card-title [id$="Count"]')].reduce((sum,node)=>sum+(Number.parseInt(node.textContent,10)||0),0);
       return `${count} unit types selected`;
@@ -3692,6 +3766,16 @@ function wireEvents(){
     input.addEventListener('blur',()=>{formatFieldInteger(input);commitNumericEdit();});
   }
 
+  document.querySelectorAll('[data-battle-type]').forEach(button=>button.addEventListener('click',()=>{
+    if(button.dataset.battleType===els.battleTypeSelect.value)return;
+    els.battleTypeSelect.value=button.dataset.battleType;
+    els.battleTypeSelect.dispatchEvent(new Event('change',{bubbles:true}));
+  }));
+  document.querySelectorAll('[data-battle-method]').forEach(button=>button.addEventListener('click',()=>{
+    if(button.disabled||button.dataset.battleMethod===els.battleMethodSelect.value)return;
+    els.battleMethodSelect.value=button.dataset.battleMethod;
+    els.battleMethodSelect.dispatchEvent(new Event('change',{bubbles:true}));
+  }));
   if(els.battleTypeSelect)els.battleTypeSelect.addEventListener('change',()=>{
     if(activeMode!=='battle')return;
     readInputs();saveState();
@@ -3801,7 +3885,7 @@ function wireEvents(){
   els.resultsMethodSwitch?.addEventListener('click',event=>{const button=event.target.closest('[data-results-method]');if(button)selectBattleMethod(button.dataset.resultsMethod,true);});
   const advancedIds=[
     'monsterHealth','pvpHealth',...BONUS_PROFILE_FIELD_IDS,
-    'monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
+    'monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',
   ];
   for(const id of advancedIds){
     const input=els[id];if(!input)continue;
@@ -3936,9 +4020,13 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 async function init(){
+  cacheElements();
+  els.fenrirStrength=document.getElementById('fenrirStrength');
+  els.fenrirStrengthField=document.getElementById('fenrirStrengthField');
+  setupBonusMatrixColumns();
+  syncBonusMatrixColumns();
   canonicalAccountBackup=(await hydrateCanonicalStorage(localStorage)).get(STORAGE_KEY)??null;
   optimizerResultBackups=await hydrateOptimizerResultBackups(localStorage);
-  cacheElements();
   els.preserveMercenaries=document.getElementById('preserveMercenaries');
   for(const id of ['epicArmySharing','epicArmySharingTitle','epicArmySharingStatus','toggleEpicArmySharing','replaceSharedEpicArmy'])els[id]=document.getElementById(id);
   for(const id of ['monsterBonusDisclosure','monsterBonusDetails','monsterProfileStatus'])els[id]=document.getElementById(id);

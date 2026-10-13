@@ -11,7 +11,7 @@ const INPUT_KEYS=new Set([
   'leadership','leadershipFill','autoLeadership','authority','authorityFill','autoAuthority',
   'dominance','dominanceFill','autoDominance','monsterHealth','humanHealth','epicHunterHealth',
   'beastHealth','dragonHealth','elementalHealth','giantHealth',
-  'pvpHealth','monsterStrength','strengthAgainstEpic','pvpStrength','monsterDD','monsterST',
+  'pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',
   'humanStrength','epicHunterStrength','humanDD','epicHunterDD','humanST','epicHunterST',
   'beastStrength','dragonStrength','elementalStrength','giantStrength','beastDD','dragonDD','elementalDD','giantDD','beastST','dragonST','elementalST','giantST',
   'guardsmanHealth','specialistHealth','engineerHealth','guardsmanStrength','specialistStrength','engineerStrength',

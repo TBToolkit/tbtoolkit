@@ -4517,3 +4517,74 @@ body.battle-mode-active #battleBetaPanel .battle-config-panel.is-collapsed>:not(
   .epic-prediction-panel .prediction-table{min-width:570px!important}
 }
 
+/* Two-step battle setup: account and battle, then limits and bonuses. */
+body:not(.battle-mode-active) .setup-panel>.topdown-panel-heading .input-section-toggle,
+body:not(.battle-mode-active) .setup-panel>.topdown-panel-heading .input-section-summary{display:none!important}
+body.battle-mode-active #battleTopLayout>.setup-panel{display:block!important;min-width:0}
+body.battle-mode-active #battleTopLayout>.setup-panel>.topdown-panel-heading{display:flex!important;cursor:pointer}
+body.battle-mode-active #battleTopLayout>.setup-panel>.setup-grid{display:grid!important;grid-template-columns:minmax(260px,29%) minmax(0,1fr)!important;gap:0!important;align-items:start}
+body.battle-mode-active #battleTopLayout .setup-grid>.setup-block{grid-column:1!important;grid-row:1!important;border:0!important;border-right:1px solid #304658!important;border-radius:0!important}
+body.battle-mode-active #battleTopLayout .setup-grid>.advanced-settings-column{grid-column:2!important;grid-row:1!important;border:0!important;border-radius:0!important}
+body.battle-mode-active #battleTopLayout .setup-grid .battle-only-column-title,
+body.battle-mode-active #battleTopLayout .setup-grid .setup-block>h3{display:none!important}
+body.battle-mode-active #battleTopLayout .setup-block .compact-limit-list{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+body.battle-mode-active #battleTopLayout .compact-limit-list .limit-row::before{display:none!important}
+body.battle-mode-active #battleTopLayout .setup-panel.is-collapsed>.setup-grid{display:none!important}
+body.battle-mode-active #battleTopLayout .setup-panel.is-collapsed>.topdown-panel-heading .auto-update-note{display:none!important}
+
+body.battle-mode-active .player-battle-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:14px}
+body.battle-mode-active .player-battle-left{display:grid;align-content:start;gap:16px;padding-right:24px;border-right:1px solid #304658;min-width:0}
+body.battle-mode-active .player-battle-right{display:grid;align-content:start;gap:16px;padding-left:24px;min-width:0}
+body.battle-mode-active .player-battle-left .player-clan-link-row{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:12px;padding:16px 0 0;border-top:1px solid #304658}
+body.battle-mode-active .player-battle-left .account-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+body.battle-mode-active .player-battle-panel .temple-setting{display:contents}
+body.battle-mode-active .player-battle-panel .temple-setting label{min-width:0;width:76px}
+body.battle-mode-active .player-battle-panel .temple-level-select{box-sizing:border-box;width:76px;min-width:0;padding-left:10px;padding-right:20px}
+body.battle-mode-active .player-battle-panel .temple-bonus-copy{min-width:0;align-self:end;padding-bottom:7px}
+body.battle-mode-active .player-battle-right .battle-method-area,
+body.battle-mode-active .player-battle-right .battle-encounter-area{display:grid;gap:10px;min-width:0;padding:0;border:0}
+body.battle-mode-active .player-battle-right .battle-method-area>p,
+body.battle-mode-active .player-battle-right .battle-encounter-area>p{margin:0;color:#99b7cb;font-size:.68rem;line-height:1.45}
+body.battle-mode-active .player-battle-right .battle-encounter-area{padding-top:14px;border-top:1px solid #304658}
+body.battle-mode-active .player-battle-right .battle-encounter-fields{display:grid;grid-template-columns:minmax(140px,170px) minmax(222px,230px) max-content;gap:8px;align-items:start}
+body.battle-mode-active .player-battle-right .encounter-actions{max-width:450px}
+.battle-choice-switch{display:flex;width:max-content;max-width:100%;gap:3px;padding:3px;border:1px solid #496074;border-radius:8px;background:#081723}
+.battle-choice-switch button{min-width:110px;padding:9px 13px;border:0;border-radius:5px;background:transparent;color:#bdd1df;font:inherit;font-weight:800;cursor:pointer}
+.battle-choice-switch button.is-active{background:#eda928;color:#081723}
+.battle-choice-switch button:not(.is-active):hover{background:#183447}
+.battle-choice-switch button:disabled{opacity:.45;cursor:not-allowed}
+.battle-choice-switch button:focus-visible{outline:2px solid #f3af34;outline-offset:2px}
+#battleTypeSelect[hidden],#battleMethodSelect[hidden]{display:none!important}
+
+body.battle-mode-active .setup-panel .unit-bonus-top-grid{display:block}
+body.battle-mode-active .setup-panel .global-bonus-area{display:none!important}
+.global-bonus-area{display:none!important}
+.unit-bonus-matrix-area{overflow-x:auto}
+.bonus-matrix[data-global-layout] .bonus-matrix-header,
+.bonus-matrix[data-global-layout] .bonus-matrix-row{min-width:690px;grid-template-columns:minmax(108px,1.3fr) repeat(5,minmax(76px,1fr)) 58px}
+.bonus-matrix[data-global-layout="fenrir"] .bonus-matrix-header,
+.bonus-matrix[data-global-layout="fenrir"] .bonus-matrix-row,
+.bonus-matrix[data-global-layout="pvp"] .bonus-matrix-header,
+.bonus-matrix[data-global-layout="pvp"] .bonus-matrix-row{min-width:780px;grid-template-columns:minmax(108px,1.3fr) repeat(6,minmax(76px,1fr)) 58px}
+.bonus-matrix [data-global-bonus-column][hidden]{display:none!important}
+.bonus-global-cell{min-width:0;text-align:center;color:#94aab9;font-size:.65rem}
+.bonus-global-row{background:#112535}
+.bonus-global-row>strong{color:#d8e8f2}
+.bonus-global-cell .help-input-field{min-width:0}
+.bonus-global-cell .help-field-heading{display:none}
+.bonus-global-cell .percent-field{min-width:0}
+.bonus-global-cell .epic-input{width:100%;min-width:0;padding:8px 20px 8px 7px;text-align:right;font-size:.76rem}
+.bonus-global-cell .percent-field>span{right:7px;font-size:.68rem}
+@media(max-width:1050px){
+  body.battle-mode-active #battleTopLayout>.setup-panel>.setup-grid{grid-template-columns:minmax(0,1fr)!important}
+  body.battle-mode-active #battleTopLayout .setup-grid>.setup-block{grid-column:1!important;grid-row:1!important;border-right:0!important;border-bottom:1px solid #304658!important}
+  body.battle-mode-active #battleTopLayout .setup-grid>.advanced-settings-column{grid-column:1!important;grid-row:2!important}
+  body.battle-mode-active .player-battle-grid{grid-template-columns:minmax(0,1fr)}
+  body.battle-mode-active .player-battle-left{border-right:0;border-bottom:1px solid #304658;padding:0 0 16px}
+  body.battle-mode-active .player-battle-right{padding:16px 0 0}
+}
+@media(max-width:650px){
+  body.battle-mode-active .player-battle-left .account-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  body.battle-mode-active .player-battle-right .battle-encounter-fields{grid-template-columns:minmax(0,1fr)}
+}
+

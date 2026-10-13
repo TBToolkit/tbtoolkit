@@ -28,6 +28,7 @@ export function deriveBonusInputs(input) {
   const monsterHealthPct = finiteNumber(input.monsterHealthPct, 'Monster Health %');
   const monsterStrengthPct = finiteNumber(input.monsterStrengthPct, 'Monster Strength %');
   const strengthAgainstEpicPct = finiteNumber(input.strengthAgainstEpicPct, 'Strength Against Epic %');
+  const fenrirStrengthPct = finiteNumber(input.fenrirStrengthPct??0, 'Fenrir Strength %');
   const monsterDDPct = finiteNumber(input.monsterDDPct, 'Monster Double Damage %');
   const monsterSTPct = finiteNumber(input.monsterSTPct, 'Monster Strike Twice %');
 
@@ -131,12 +132,14 @@ export function deriveBonusInputs(input) {
       },
     },
     strengthAgainstEpic: pctPoints(strengthAgainstEpicPct, 'Strength Against Epic %'),
+    fenrirStrength: pctPoints(fenrirStrengthPct, 'Fenrir Strength %'),
     arachne: Boolean(input.arachne),
     enemySquadTypes,
     userFacing: {
       monsterHealthPct,
       monsterStrengthPct,
       strengthAgainstEpicPct,
+      fenrirStrengthPct,
       monsterDDPct,
       monsterSTPct,
       ...resolved,

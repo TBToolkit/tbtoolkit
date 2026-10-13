@@ -72,7 +72,7 @@ function prepareSquadTemplate(unit,bonusInputs,preparedEnemySquads=null){
   const pDD = clampProbability(family.dd + intrinsicDD);
   const pST = clampProbability(family.st);
 
-  const commonBonus = 1 + family.strength + bonusInputs.strengthAgainstEpic + Number(unit.bonuses?.epic ?? 0) + (bonusInputs.arachne ? Number(unit.bonuses?.arachne ?? 0) : 0);
+  const commonBonus = 1 + family.strength + bonusInputs.strengthAgainstEpic + (bonusInputs.fenrirStrength??0) + Number(unit.bonuses?.epic ?? 0) + (bonusInputs.arachne ? Number(unit.bonuses?.arachne ?? 0) : 0);
   const targetDamages=(preparedEnemySquads??enemySquadsForBattle(bonusInputs)).map((enemy,targetOrder)=>{
     const matchup=Number(unit.bonuses?.[MATCHUP_KEY[enemy.type]]??0);
     return {target:enemy.type,targetId:enemy.id,targetCopy:enemy.copy,targetOrder,matchup,
