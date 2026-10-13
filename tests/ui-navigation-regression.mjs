@@ -70,6 +70,11 @@ assert.match(html,/class="topdown-panel setup-panel" data-section-panel="setup"[
 assert.match(source,/GLOBAL_BONUS_COLUMNS=\[[\s\S]*?pvpHealth[\s\S]*?fenrirStrength[\s\S]*?strengthAgainstEpic[\s\S]*?pvpStrength/,'Shared bonus columns must follow the requested mode-specific order.');
 assert.doesNotMatch(source,/bonus-global-row/,'The bonus matrix must not insert an All units row.');
 assert.match(source,/profile==='monster'[\s\S]*?cell\.append\(field\)[\s\S]*?profileExtraId\(profile,column\.key\)/,'Every profile row must have the applicable bonus input.');
+assert.match(source,/field\.querySelector\('\.help-field-heading'\)\?\.remove\(\)/,'The matrix must not repeat a bonus label above the Monster input.');
+assert.match(css,/\[data-section-panel\]>\.topdown-panel-heading,[\s\S]*?\[data-section-panel\]>\.battle-only-column-title\{position:relative\}/,'Collapsed summaries must be positioned against their own headers.');
+assert.match(source,/refreshCollapsedInputSummaries=\(\)=>\{[\s\S]*?summary\.textContent=inputSectionSummary\(key\)/,'Collapsed summaries must refresh when account or input values change.');
+assert.match(css,/\.battle-encounter-fields:has\(#encounterNormField\[hidden\]\)\{grid-template-columns:minmax\(260px,1fr\)\}/,'The PvP Encounter control must use the available row width.');
+assert.match(html,/class="battle-norm-heading">Clan Norm <small id="encounterNormSource"><\/small><\/span>/,'Clan norm source belongs beside its label rather than below the input.');
 assert.match(css,/\.player-battle-right \.battle-method-area\{grid-template-columns:max-content max-content/,'Battle Type and Calculation Method must share one desktop row.');
 assert.doesNotMatch(html,/<div class="auto-update-note"><span class="live-dot"><\/span>Inputs saved on this device<\/div>/,'The Section 2 saved-inputs label must be removed.');
 assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');

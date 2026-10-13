@@ -37,6 +37,7 @@ const units={troop:[],monster:[],mercenary:[]};let armyV2=[];const els={};let ac
 let epicWorker=null;let epicRequestId=0;let epicResultCurrent=false;let lastOptimizedEpicSignature='';let lastEpicRunDiagnostics=null;let lastOptimizedEpicPayload=null;
 let reviewWorker=null;let reviewRequestId=0;let pendingReviewProposal=null;let reviewStartedAt=0;let reviewElapsedTimer=null;let reviewInputSignature='';
 let appInitialized=false;let optimizerBestEldSoFar=0;let optimizerExploreActive=false;let optimizerExploreProgressState=null;
+let refreshCollapsedInputSummaries=()=>{};
 let optimizerResultBackups=new Map();
 let canonicalAccountBackup=null;
 let optimizerPersistenceWarningShown=false;
@@ -1481,10 +1482,15 @@ function activeClanEncounterNorm(encounterName){
 function renderEncounterNormSource(clanNorm){
   const profile=linkedClanProfile(localStorage,currentAccount()?.clanProfileId),source=els.encounterPlanNorm?.dataset.source;
   const actions=document.getElementById('encounterNormActions'),use=document.getElementById('useClanNorm'),save=document.getElementById('saveNormToClan');
-  if(els.encounterNormSource)els.encounterNormSource.textContent=profile
+  const sourceDetails=profile
     ?source==='clan'&&clanNorm?`From ${profile.name} · edit clan requirements in Clan Overview.`:clanNorm?`Manual override · ${profile.name} is unchanged.`:`Manual norm · no norm for this encounter in ${profile.name}.`
     :currentAccount()?.clanProfileId?'Linked clan profile unavailable · this norm is local.':'Manual norm · no clan profile linked.';
-  if(els.encounterNormSource&&String(currentEncounter()?.name||'').toUpperCase()==='TINMAN')els.encounterNormSource.textContent+=` Tinman points bonus: ${Math.min(100,Math.max(0,Number(profile?.plan?.tinman?.bonus)||0))}%.`;
+  if(els.encounterNormSource){
+    const tinman=String(currentEncounter()?.name||'').toUpperCase()==='TINMAN';
+    const tinmanBonus=tinman?` · Tinman +${Math.min(100,Math.max(0,Number(profile?.plan?.tinman?.bonus)||0))}%`:'';
+    els.encounterNormSource.textContent=(profile&&source==='clan'&&clanNorm?`From ${profile.name}`:source==='manual'?'Manual':'Local')+tinmanBonus;
+    els.encounterNormSource.title=sourceDetails+(tinman?` Tinman points bonus: ${Math.min(100,Math.max(0,Number(profile?.plan?.tinman?.bonus)||0))}%.`: '');
+  }
   if(actions){actions.hidden=!profile;use.hidden=!clanNorm||source==='clan';save.hidden=!profile||source==='clan';}
 }
 function loadEncounterNormSettings(){
@@ -2105,7 +2111,7 @@ function setupBonusMatrixColumns(){
       const profile=row.dataset.bonusProfile;
       if(profile==='monster'){
         const field=document.getElementById(column.fieldId);
-        if(field){field.querySelector('input')?.setAttribute('aria-label',`Monster ${column.label}`);cell.append(field);}
+        if(field){field.querySelector('input')?.setAttribute('aria-label',`Monster ${column.label}`);field.querySelector('.help-field-heading')?.remove();cell.append(field);}
       }else{
         const wrap=document.createElement('div');wrap.className='percent-field';
         const input=document.createElement('input');
@@ -2310,6 +2316,7 @@ function readInputs(){
   i.includeMercenariesInOptimization=!!els.includeMercenariesInOptimization?.checked;
   i.preserveMercenaries=!!els.preserveMercenaries?.checked;
   saveState();
+  refreshCollapsedInputSummaries();
 }
 function updateSeparationModeUI(){
   const optimizing=isAnyEpicOptimizeMode();
@@ -3722,6 +3729,13 @@ function wireEvents(){
     }
     const count=document.querySelectorAll('#orderView .squad-order-item').length;
     return `${count} squads ordered`;
+  };
+  refreshCollapsedInputSummaries=()=>{
+    for(const [key,panel] of Object.entries(inputSectionPanels)){
+      if(!panel?.classList.contains('is-collapsed'))continue;
+      const summary=document.querySelector(`[data-section-summary="${key}"]`);
+      if(summary)summary.textContent=inputSectionSummary(key);
+    }
   };
   document.querySelectorAll('[data-section-toggle]').forEach(button=>{
     const key=button.dataset.sectionToggle;
