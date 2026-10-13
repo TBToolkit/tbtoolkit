@@ -9,7 +9,7 @@ const account={
   battle:{
     activeBattleCategory:'epic',activeBattleMethod:'custom',activeEncounterByType:{epic:'raid',pvp:'pvp-single'},activeEncounterId:'raid',
     workspaces:{raid:{
-      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',autoBeastBonuses:false,humanHealth:'2400',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterNormSource:'clan',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
+      inputs:{battleType:'epic',leadership:'365000',minimumSeparation:true,shareEpicArmy:true,beastHealth:'2525',beastStrengthAgainstEpic:'3100',autoBeastBonuses:false,humanHealth:'2400',humanPvpHealth:'1800',autoHumanBonuses:false,specialistHealth:'2345',autoSpecialistBonuses:false,clanMembers:88,encounterNorm:500,encounterNormUnit:'M',encounterNormBasis:'points',encounterNormSource:'clan',encounterPlanStrategy:'mercenary-monster',ignoredInput:'no'},
       selectedIds:{troop:['known','missing'],monster:[],mercenary:[]},
       methods:{
         basic:{},
@@ -33,6 +33,8 @@ assert.equal(raw.account.workspaces[0].inputs.specialistHealth,'2345');
 assert.equal(raw.account.workspaces[0].inputs.autoSpecialistBonuses,false);
 assert.equal(raw.account.workspaces[0].inputs.autoHumanBonuses,false);
 assert.equal(raw.account.workspaces[0].inputs.beastHealth,'2525');
+assert.equal(raw.account.workspaces[0].inputs.beastStrengthAgainstEpic,'3100');
+assert.equal(raw.account.workspaces[0].inputs.humanPvpHealth,'1800');
 assert.equal(raw.account.workspaces[0].inputs.autoBeastBonuses,false);
 assert.deepEqual({clanMembers:raw.account.workspaces[0].inputs.clanMembers,norm:raw.account.workspaces[0].inputs.encounterNorm,unit:raw.account.workspaces[0].inputs.encounterNormUnit,basis:raw.account.workspaces[0].inputs.encounterNormBasis,strategy:raw.account.workspaces[0].inputs.encounterPlanStrategy},{clanMembers:88,norm:500,unit:'M',basis:'points',strategy:'mercenary-monster'});
 assert.equal(raw.account.workspaces[0].resultCache.build,'optimizer-current');
@@ -66,6 +68,7 @@ assert.equal(imported.account.battle.workspaces['raid-2'].inputs.specialistHealt
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.shareEpicArmy,true);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoSpecialistBonuses,false);
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.beastHealth,'2525');
+assert.equal(imported.account.battle.workspaces['raid-2'].inputs.beastStrengthAgainstEpic,'3100');
 assert.equal(imported.account.battle.workspaces['raid-2'].inputs.autoBeastBonuses,false);
 assert.deepEqual({clanMembers:imported.account.battle.workspaces['raid-2'].inputs.clanMembers,norm:imported.account.battle.workspaces['raid-2'].inputs.encounterNorm,unit:imported.account.battle.workspaces['raid-2'].inputs.encounterNormUnit,basis:imported.account.battle.workspaces['raid-2'].inputs.encounterNormBasis,strategy:imported.account.battle.workspaces['raid-2'].inputs.encounterPlanStrategy},{clanMembers:88,norm:500,unit:'M',basis:'points',strategy:'mercenary-monster'});
 assert.deepEqual(imported.account.battle.workspaces['raid-2'].selectedIds.troop,['known']);

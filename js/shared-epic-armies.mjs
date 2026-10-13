@@ -7,7 +7,7 @@ export const EPIC_ARMY_GROUPS=Object.freeze({
 
 const ENCOUNTER_ONLY_INPUTS=new Set([
   'battleType','battleMethod','arachne','enemySquadTypes','enemyUnitId',
-  'pvpHealth','pvpStrength','clanMembers','encounterNorm','encounterNormUnit',
+  'pvpHealth','pvpStrength','fenrirStrength','clanMembers','encounterNorm','encounterNormUnit',
   'encounterNormBasis','encounterPlanStrategy','shareEpicArmy'
 ]);
 
@@ -16,7 +16,7 @@ export function epicArmyGroup(encounterId){
 }
 
 export function canReuseEpicOptimizerResult(encounterId){
-  return !!epicArmyGroup(encounterId)&&encounterId!=='epic-arachne';
+  return !!epicArmyGroup(encounterId)&&encounterId!=='epic-arachne'&&encounterId!=='epic-fenrir';
 }
 
 export function copySharedEpicArmy(source,target){

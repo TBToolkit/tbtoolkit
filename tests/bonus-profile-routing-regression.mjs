@@ -36,4 +36,14 @@ assert.equal(cursed.bonusFamily,'GUARDSMAN');
 assert.equal(cursed.effectiveHealth,20);
 assert.ok(Math.abs(cursed.pDD-.06)<1e-12);
 
+const fenrirBonuses=deriveBonusInputs({
+  monsterHealthPct:1000,monsterStrengthPct:2000,strengthAgainstEpicPct:1000,fenrirStrengthPct:500,
+  monsterDDPct:10,monsterSTPct:20,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED']
+});
+const normalBonuses=deriveBonusInputs({
+  monsterHealthPct:1000,monsterStrengthPct:2000,strengthAgainstEpicPct:1000,
+  monsterDDPct:10,monsterSTPct:20,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED']
+});
+assert.equal(buildSquad({...unit,species:'BEAST'},1,fenrirBonuses).firstStrike.deterministicDamage-buildSquad({...unit,species:'BEAST'},1,normalBonuses).firstStrike.deterministicDamage,50,'Fenrir Strength adds to the ordinary strength bonuses.');
+
 console.log(JSON.stringify({ok:true,routes:11}));

@@ -4,6 +4,11 @@ export function optimizerLadderRows(result){
     .map(squad=>({id:squad.id,category:squad.category,tier:squad.tier,effectiveHealth:squad.effectiveHealth,deathPosition:squad.predictedDeathPosition}));
 }
 
+export function filterEligibleProgress(progress,preserving){
+  if(!preserving||progress?.candidateEligible===true)return progress;
+  return{...progress,expectedLifetimeDamage:null,bestExpectedLifetimeDamage:null,healthLadder:null};
+}
+
 export function createExploreProgressState(baselinePayload=null){
   const baselineEld=Math.max(0,Number(baselinePayload?.result?.expectedTotalLifetimeDamage)||0);
   return{

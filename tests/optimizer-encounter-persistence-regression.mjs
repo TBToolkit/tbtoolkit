@@ -113,6 +113,7 @@ assert.equal(context.lastOptimizedEpicSignature,canonicalSignature,'Restored leg
 const inputs={leadership:'450000',rankSeparation:'0.05',minimumSeparation:true,monsterDD:'14'};
 const signatureContext=vm.createContext({
   activeMode:'battle',
+  state:{modes:{battle:{activeEncounterId:'epic-doomsday'}}},
   isAnyEpicOptimizeMode:()=>true,
   modeState:()=>({inputs,selectedIds:{troop:['corax'],monster:[],mercenary:[]}}),
   parseNumber:value=>Number(value)||0

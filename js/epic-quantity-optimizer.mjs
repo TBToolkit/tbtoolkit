@@ -10,6 +10,24 @@ function healthLadderSnapshot(result){
   return (result?.squads??[]).filter(squad=>Number(squad.quantity)>0).map(squad=>({id:squad.id,category:squad.category,tier:squad.tier,effectiveHealth:squad.effectiveHealth,deathPosition:squad.predictedDeathPosition}));
 }
 
+export function mercenaryPreservationStatus(result){
+  // Every Authority squad is a mercenary, including Epic Monster Hunters.
+  const mercenaries=(result?.squads??[]).filter(squad=>squad.capacityType==='AUTHORITY'&&Number(squad.quantity)>0);
+  const cases=[result?.cases?.friendlyFirst,result?.cases?.epicFirst];
+  const totalCycles=Math.max(0,...cases.map(battle=>Number(battle?.cycles)||0));
+  const firstAllowedCycle=Math.floor(totalCycles/2)+1;
+  const deaths=mercenaries.map(squad=>({
+    id:squad.id,
+    name:squad.name,
+    friendlyFirstCycle:cases[0]?.death?.[squad.id]?.cycle??null,
+    epicFirstCycle:cases[1]?.death?.[squad.id]?.cycle??null
+  }));
+  return{
+    valid:mercenaries.length>0&&cases.every(Boolean)&&deaths.every(row=>row.friendlyFirstCycle>=Math.floor(Number(cases[0].cycles)/2)+1&&row.epicFirstCycle>=Math.floor(Number(cases[1].cycles)/2)+1),
+    totalCycles,firstAllowedCycle,deaths
+  };
+}
+
 function controlledScore(payload){
   const shouldAbort=payload?.bonuses?.__shouldAbort;
   if(typeof shouldAbort==='function'&&shouldAbort()){
@@ -23,7 +41,9 @@ function controlledScore(payload){
       context=prepareEpicScoringContext({units:payload.units,bonuses});
       OPTIMIZER_SCORING_CONTEXTS.set(bonuses,context);
     }
-    return scoreEpicArmy({...payload,scoringContext:context,recordEvents:false});
+    const result=scoreEpicArmy({...payload,scoringContext:context,recordEvents:false});
+    if(bonuses.preserveMercenaries)result.mercenaryPreservation=mercenaryPreservationStatus(result);
+    return result;
   }
   return scoreEpicArmy({...payload,recordEvents:false});
 }
@@ -123,6 +143,7 @@ export function repairCapacity({ units, quantities, capacityLimits, minimumQuant
 }
 
 function candidateFeasible({ result, limits }) {
+  if(result.mercenaryPreservation?.valid===false)return false;
   for (const type of CAPACITY_TYPES) if ((result.capacities[type] ?? 0) > limits[type]) return false;
   return true;
 }
@@ -184,6 +205,7 @@ function optimizeFromSeed({
       stageCount:stageFractions.length,
       evaluations,
       expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+      candidateEligible:!bonuses?.preserveMercenaries||result.mercenaryPreservation?.valid===true,
       healthLadder:healthLadderSnapshot(result),
       capacities:{...result.capacities},
       minHealthSeparationPct:result.separationSummary.minPct,
@@ -293,6 +315,7 @@ function optimizeFromSeed({
         acceptedMoves:stageAccepted,
         evaluations,
         expectedLifetimeDamage:result.expectedTotalLifetimeDamage,
+        candidateEligible:!bonuses?.preserveMercenaries||result.mercenaryPreservation?.valid===true,
         healthLadder:healthLadderSnapshot(result),
         capacities:{...result.capacities},
         minHealthSeparationPct:result.separationSummary.minPct,
@@ -391,7 +414,7 @@ function hybridTroopStructurePreserved(result,selected,minimumHealthSeparationPc
   // We only retain tier-lineage ordering as a weak feasibility hint.
   return true;
 }
-function seedFeasible({units,quantities,bonuses,capacityLimits}){const result=controlledScore({units,quantities,bonuses}),limits=limitsOf(capacityLimits);for(const t of CAPACITY_TYPES)if((result.capacities[t]??0)>limits[t])return false;return true;}
+function seedFeasible({units,quantities,bonuses,capacityLimits}){const result=controlledScore({units,quantities,bonuses}),limits=limitsOf(capacityLimits);return candidateFeasible({result,limits});}
 
 function hashOrder(unitId,salt){
   let x=(Number(unitId)^Number(salt))>>>0;
@@ -461,7 +484,7 @@ function evolutionaryRefine({units,selected,bonuses,capacityLimits,seeds,minimum
     // Preserve high fitness while retaining different death-order basins.
     for(const c of candidates){const sig=deathSignature(c.result);if(!seen.has(sig)||next.length<Math.ceil(populationSize*.6)){next.push(c);seen.add(sig);}if(next.length>=populationSize)break;}
     population=next;
-    if(typeof onProgress==='function')onProgress({phase:'evolution',generation:gen+1,generationCount:generations,evaluations,expectedLifetimeDamage:population[0].result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(population[0].result)});
+    if(typeof onProgress==='function')onProgress({phase:'evolution',generation:gen+1,generationCount:generations,evaluations,expectedLifetimeDamage:population[0].result.expectedTotalLifetimeDamage,candidateEligible:!bonuses?.preserveMercenaries||population[0].result.mercenaryPreservation?.valid===true,healthLadder:healthLadderSnapshot(population[0].result)});
   }
   return {best:population[0],population,evaluations};
 }
@@ -528,7 +551,7 @@ function opportunityThresholdRefine({units,selected,bonuses,capacityLimits,start
     }
     if(!best)break;
     quantities=best.quantities; result=best.result; accepted++;
-    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(result),target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
+    if(typeof onProgress==='function')onProgress({phase:'threshold',round:round+1,roundCount:maxRounds,evaluations,acceptedMoves:accepted,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,candidateEligible:!bonuses?.preserveMercenaries||result.mercenaryPreservation?.valid===true,healthLadder:healthLadderSnapshot(result),target:best.target,donor:best.donor,beforeOpp:best.beforeOpp,afterOpp:best.afterOpp});
   }
   return {quantities,result,evaluations,acceptedMoves:accepted};
 }
@@ -840,7 +863,7 @@ function groupRedistributionRefine({units,selected,bonuses,capacityLimits,start,
       basinSeeds.push(alternate??top);
       summaries.push({key:g.key,size:n,budget,rawBestEld:top.result.expectedTotalLifetimeDamage,alternateEld:alternate?.result.expectedTotalLifetimeDamage??null});
     }
-    if(typeof onProgress==='function')onProgress({phase:'group-redistribution',round:1,roundCount:1,groupIndex:gi,groupCount:groups.length,evaluations,acceptedMoves:accepted,groupKey:g.key,expectedLifetimeDamage:best.result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(best.result)});
+    if(typeof onProgress==='function')onProgress({phase:'group-redistribution',round:1,roundCount:1,groupIndex:gi,groupCount:groups.length,evaluations,acceptedMoves:accepted,groupKey:g.key,expectedLifetimeDamage:best.result.expectedTotalLifetimeDamage,candidateEligible:!bonuses?.preserveMercenaries||best.result.mercenaryPreservation?.valid===true,healthLadder:healthLadderSnapshot(best.result)});
   }
   basinSeeds.sort((x,y)=>y.result.expectedTotalLifetimeDamage-x.result.expectedTotalLifetimeDamage);
   const chosen=[],seenTypes=new Set();
@@ -917,7 +940,7 @@ function adaptiveDeathPositionRefine({
       evaluations+=Number(local.diagnostics?.evaluations??0);
       const candidate={quantities:{...local.quantities},result:local.result,source:'adaptive-death-position',targetName:seed.targetName,fromDeath:seed.fromDeath,toDeath:seed.toDeath};
       if(Number(candidate.result.expectedTotalLifetimeDamage||0)>Number(passBest.result.expectedTotalLifetimeDamage||0)+1e-6)passBest=candidate;
-      if(typeof onProgress==='function')onProgress({phase:'death-position',passIndex:pass,passCount:maxPasses,seedIndex:i,seedCount:diverse.length,evaluations,expectedLifetimeDamage:candidate.result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(candidate.result)});
+      if(typeof onProgress==='function')onProgress({phase:'death-position',passIndex:pass,passCount:maxPasses,seedIndex:i,seedCount:diverse.length,evaluations,expectedLifetimeDamage:candidate.result.expectedTotalLifetimeDamage,candidateEligible:!bonuses?.preserveMercenaries||candidate.result.mercenaryPreservation?.valid===true,healthLadder:healthLadderSnapshot(candidate.result)});
     }
     summaries.push({pass:pass+1,rawCandidates:raw.length,polishedBasins:diverse.length,startEld:Number(champion.result.expectedTotalLifetimeDamage||0),bestEld:Number(passBest.result.expectedTotalLifetimeDamage||0),bestMove:passBest===champion?null:{unit:passBest.targetName,from:passBest.fromDeath,to:passBest.toDeath}});
     if(passBest===champion)break;
@@ -1286,6 +1309,7 @@ function finalConvergencePolish({
 export function optimizeEpicQuantities(args) {
   args={...args,bonuses:{...(args.bonuses||{}),__shouldAbort:args.shouldAbort}};
   const selected=selectUnits(args.units,args.selectedIds,args.selectedNames); if(!selected.length)throw new Error('At least one selected squad is required.');
+  if(args.bonuses.preserveMercenaries&&!selected.some(unit=>unit.capacityType==='AUTHORITY'))throw new Error('Select at least one mercenary and include mercenaries in optimization to use preservation mode.');
   const limits=limitsOf(args.capacityLimits),minSep=Math.max(.01,Number(args.minimumHealthSeparationPct??.01));
   const structureValidator=(result,chosen)=>hybridTroopStructurePreserved(result,chosen,minSep);
   if(args.initialQuantities)return optimizeFromSeed({...args,structureValidator});
@@ -1298,21 +1322,27 @@ export function optimizeEpicQuantities(args) {
   for(const salt of [17,53,101,211])seedDefs.push({name:`diverse-${salt}`,make:()=>makeEqualHealthSeed({...args,order:'hash',salt,separationPct:.08})});
   if(args.bonuses?.includeMercenariesInOptimization&&selected.some(unit=>unit.capacityType==='AUTHORITY')){
     for(const factor of [.75,.5,.25])seedDefs.push({name:`authority-${Math.round(factor*100)}`,make:()=>scaleAuthoritySeed({units:selected,quantities:createLegacyHealthLadderSeed({...args,separationPct:.05}),factor,minimumQuantity:Number(args.minimumQuantity??1)})});
+    if(args.bonuses.preserveMercenaries){
+      for(const factor of [.1,.025,.005])seedDefs.push({name:`authority-${factor}`,make:()=>scaleAuthoritySeed({units:selected,quantities:createLegacyHealthLadderSeed({...args,separationPct:.05}),factor,minimumQuantity:Number(args.minimumQuantity??1)})});
+    }
   }
 
   let totalEvaluations=0;
   const seedScores=[];
   for(let i=0;i<seedDefs.length;i++){
     const d=seedDefs[i],quantities=d.make(),result=controlledScore({units:args.units,quantities,bonuses:args.bonuses}); totalEvaluations++;
-    if(seedFeasible({units:args.units,quantities,bonuses:args.bonuses,capacityLimits:limits})&&structureValidator(result,selected))seedScores.push({name:d.name,quantities,result});
-    if(typeof args.onProgress==='function')args.onProgress({phase:'seed-screen',seedIndex:i,seedCount:seedDefs.length,evaluations:totalEvaluations,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,healthLadder:healthLadderSnapshot(result)});
+    const eligible=candidateFeasible({result,limits})&&structureValidator(result,selected);
+    if(eligible)seedScores.push({name:d.name,quantities,result});
+    if(typeof args.onProgress==='function')args.onProgress({phase:'seed-screen',seedIndex:i,seedCount:seedDefs.length,evaluations:totalEvaluations,expectedLifetimeDamage:result.expectedTotalLifetimeDamage,candidateEligible:eligible,healthLadder:healthLadderSnapshot(result)});
   }
-  if(!seedScores.length)throw new Error('Unable to construct a feasible optimizer starting population.');
+  if(!seedScores.length)throw new Error(args.bonuses.preserveMercenaries?'No army could keep every selected mercenary in the last half of the predicted battle. Try a lower Authority fill or fewer mercenary types.':'Unable to construct a feasible optimizer starting population.');
   seedScores.sort((a,b)=>b.result.expectedTotalLifetimeDamage-a.result.expectedTotalLifetimeDamage);
 
   // Optimize several independent basins with a medium-cost deterministic local search.
   const finalists=[];
-  const localSeeds=[...seedScores.filter(seed=>!seed.name.startsWith('authority-')).slice(0,4),...seedScores.filter(seed=>seed.name.startsWith('authority-'))];
+  const localSeeds=args.bonuses.preserveMercenaries
+    ?[...seedScores.filter(seed=>!seed.name.startsWith('authority-')).slice(0,4),...seedScores.filter(seed=>seed.name.startsWith('authority-')).slice(0,2)]
+    :[...seedScores.filter(seed=>!seed.name.startsWith('authority-')).slice(0,4),...seedScores.filter(seed=>seed.name.startsWith('authority-'))];
   const localSeedCount=localSeeds.length;
   for(let i=0;i<localSeedCount;i++){
     const s=localSeeds[i];
@@ -1475,5 +1505,10 @@ export function optimizeEpicQuantities(args) {
   // Candidate scoring suppresses event logs to avoid hundreds of thousands of
   // short-lived objects. Materialize the complete trace only for the winner.
   out.result=scoreEpicArmy({units:args.units,quantities:out.quantities,bonuses:args.bonuses});
+  if(args.bonuses.preserveMercenaries){
+    out.result.mercenaryPreservation=mercenaryPreservationStatus(out.result);
+    if(!out.result.mercenaryPreservation.valid)throw new Error('No optimized army met the mercenary preservation rule. Try a lower Authority fill or fewer mercenary types.');
+    out.diagnostics.mercenaryPreservation=out.result.mercenaryPreservation;
+  }
   return out;
 }

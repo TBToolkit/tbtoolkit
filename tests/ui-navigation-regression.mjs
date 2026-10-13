@@ -28,14 +28,10 @@ assert.match(siteScript,/revealRestoredPage[\s\S]*removeProperty\('visibility'\)
 assert.match(html,/<head>\s*<script src="js\/page-state-bootstrap\.js"><\/script>/,'Stacking must initialize page restoration before styles can paint.');
 const navigation=source.slice(start,end);
 
-const monsterDD=navigation.indexOf("'monsterDD'");
-const monsterST=navigation.indexOf("'monsterST'");
-const monsterHealth=navigation.indexOf("'monsterHealth'");
-const monsterStrength=navigation.indexOf("'monsterStrength'");
-const guardsmanDD=navigation.indexOf("['DD','ST','Health','Strength']");
-const pvpHealth=navigation.indexOf("isPvp?'pvpHealth':'strengthAgainstEpic'");
-assert.ok(monsterDD>=0&&monsterST>monsterDD&&monsterHealth>monsterST&&monsterStrength>monsterHealth&&guardsmanDD>monsterStrength&&pvpHealth>guardsmanDD,
-  'Numeric navigation must follow the visible unit-bonus matrix before global bonuses');
+assert.match(navigation,/const ids=\['leadership','authority','dominance',\.\.\.rowIds\('monster'\),\.\.\.BONUS_INPUT_ROWS\.flatMap/,
+  'Numeric navigation must visit the three limits before Monsters and the remaining unit rows');
+assert.match(navigation,/`\$\{key\}DD`,`\$\{key\}ST`,[\s\S]*?pvpHealth[\s\S]*?`\$\{key\}Health`,[\s\S]*?fenrirStrength[\s\S]*?pvpStrength':'strengthAgainstEpic'[\s\S]*?`\$\{key\}Strength`/,
+  'Each unit row must navigate its visible inputs from left to right');
 assert.match(source,/pvpEnemyUnitField\.hidden=type!==['"]pvp_single_cp['"]/, 'Enemy Unit selector must only show for one-squad PvP');
 assert.match(css,/#pvpEnemyUnitField\[hidden\][\s\S]*?display:none!important/, 'Hidden Enemy Unit selector must override grid display');
 assert.match(css,/#pvpModelField\[hidden\][\s\S]*?display:none!important/, 'Hidden PvP encounter model must override dialog label display');
@@ -63,12 +59,30 @@ assert.match(html,/data-guide-panel="sharing"[\s\S]*?Use shared army[\s\S]*?Edit
 assert.match(html,/Expected damage per opportunity[\s\S]*?first-strike damage \+ Strike Twice chance × second-strike damage/,'The guide must explain target-specific Strike Twice damage');
 assert.match(html,/data-battle-guide="optimizer"[^>]*>How optimization works/,'Optimize must link directly to its workflow explanation');
 assert.match(html,/class="selection-card-grid"[\s\S]*?<div class="optimizer-only optimizer-merc-option">[\s\S]*?id="includeMercenariesInOptimization"[\s\S]*?<div class="explore-controls" id="exploreControls"[\s\S]*?<div class="selection-optimize-row optimizer-only"><button[^>]*id="optimizeArmy"[\s\S]*?<div class="selection-optimize-guidance">[\s\S]*?id="optimizeHelp"[\s\S]*?data-battle-guide="optimizer"/,'Selection must show Mercenaries above Explore, then the Optimize action and guidance.');
+for(const id of ['includeMercenariesInOptimization','preserveMercenaries','exploreUnitStructures']){
+  assert.match(html,new RegExp(`<input id="${id}"[^>]*type="checkbox"(?![^>]*checked)`),`${id} must start unchecked in the page`);
+}
+assert.match(source,/includeMercenariesInOptimization:false,preserveMercenaries:false/,'New workspaces must leave both mercenary options unchecked.');
+assert.match(source,/let exploreUnitStructures=false;/,'Explore must start unchecked for every page session.');
+assert.match(source,/if\(exploring\)exploreUnitStructures=false;/,'Explore must turn off after a successful run.');
 assert.match(css,/\.selection-optimize-row\{[\s\S]*?flex-direction:row;[\s\S]*?align-items:center;/,'Optimize guidance must sit to the right of its button on desktop.');
 assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.selection-optimize-row\{flex-direction:column;/,'Optimize guidance must stack on narrow screens.');
-for(const key of ['player','battle','limits','bonuses','selection','order']){
+for(const key of ['playerBattle','setup','selection','order']){
   assert.match(html,new RegExp(`data-section-toggle="${key}"[^>]*aria-expanded="true"`),`${key} must start expanded.`);
   assert.match(html,new RegExp(`data-section-summary="${key}" hidden`),`${key} must have a collapsed summary.`);
 }
+assert.match(html,/data-section-panel="playerBattle"[\s\S]*?class="player-battle-left"[\s\S]*?id="accountSelect"[\s\S]*?class="player-clan-link-row"[\s\S]*?class="player-battle-right"[\s\S]*?data-battle-type="epic"[\s\S]*?data-battle-method="optimize"[\s\S]*?id="encounterSelect"/,'Player and Battle must have the requested two-column order and visible choice switches.');
+assert.match(html,/class="topdown-panel setup-panel" data-section-panel="setup"[\s\S]*?<h2>Army Limits &amp; Unit Bonuses<\/h2>[\s\S]*?class="setup-block"[\s\S]*?class="advanced-settings-column"/,'Army Limits and Unit Bonuses must share one collapsible section.');
+assert.match(source,/GLOBAL_BONUS_COLUMNS=\[[\s\S]*?pvpHealth[\s\S]*?fenrirStrength[\s\S]*?strengthAgainstEpic[\s\S]*?pvpStrength/,'Shared bonus columns must follow the requested mode-specific order.');
+assert.doesNotMatch(source,/bonus-global-row/,'The bonus matrix must not insert an All units row.');
+assert.match(source,/profile==='monster'[\s\S]*?cell\.append\(field\)[\s\S]*?profileExtraId\(profile,column\.key\)/,'Every profile row must have the applicable bonus input.');
+assert.match(source,/field\.querySelector\('\.help-field-heading'\)\?\.remove\(\)/,'The matrix must not repeat a bonus label above the Monster input.');
+assert.match(css,/\[data-section-panel\]>\.topdown-panel-heading,[\s\S]*?\[data-section-panel\]>\.battle-only-column-title\{position:relative\}/,'Collapsed summaries must be positioned against their own headers.');
+assert.match(source,/refreshCollapsedInputSummaries=\(\)=>\{[\s\S]*?summary\.textContent=inputSectionSummary\(key\)/,'Collapsed summaries must refresh when account or input values change.');
+assert.match(css,/\.battle-encounter-fields:has\(#encounterNormField\[hidden\]\)\{grid-template-columns:minmax\(260px,1fr\)\}/,'The PvP Encounter control must use the available row width.');
+assert.match(html,/class="battle-norm-heading">Clan Norm <small id="encounterNormSource"><\/small><\/span>/,'Clan norm source belongs beside its label rather than below the input.');
+assert.match(css,/\.player-battle-right \.battle-method-area\{grid-template-columns:max-content max-content/,'Battle Type and Calculation Method must share one desktop row.');
+assert.doesNotMatch(html,/<div class="auto-update-note"><span class="live-dot"><\/span>Inputs saved on this device<\/div>/,'The Section 2 saved-inputs label must be removed.');
 assert.match(css,/Input workflow: one full-width[\s\S]*?grid-template-columns:minmax\(0,1fr\)!important/,'Battle inputs must stack as full-width cards.');
 assert.match(css,/@media\(min-width:900px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?left:50%;[\s\S]*?transform:translate\(-50%,-50%\);/,'Collapsed summaries must sit in the center of desktop section headers.');
 assert.match(css,/@media\(max-width:899px\)\{[\s\S]*?\.is-collapsed \.input-section-summary:not\(\[hidden\]\)\{[\s\S]*?text-align:center;/,'Collapsed summaries must remain centered on narrower screens.');
@@ -81,7 +95,7 @@ assert.match(source,/function openBattleGuide\([\s\S]*?battleGuideReturnFocus/,'
 assert.match(source,/if\(e\.key!=='Tab'\)return;/,'The guide must keep keyboard focus within the open modal');
 assert.match(source,/function updateBonusGroupStatus\([\s\S]*?textContent='Mixed'/,'Collapsed Monster and Human rows must disclose customized child profiles');
 assert.match(css,/\.bonus-profile-disclosure\{[\s\S]*?font-family:inherit/,'Expandable profile labels must inherit the calculator typography');
-assert.match(css,/body\.battle-mode-active \.battle-top-layout \.advanced-settings-column\{[\s\S]*?grid-column:1!important;/,'Unit Bonuses must occupy its own full-width row.');
+assert.match(css,/#battleTopLayout \.setup-grid>\.advanced-settings-column\{grid-column:2!important;grid-row:1!important/,'Unit Bonuses must sit beside Army Limits.');
 assert.doesNotMatch(html,/id="useCustomFamilyBonuses"/,'The old all-or-nothing custom-family control must not remain');
 assert.match(source,/useCustomProfileBonuses:true/,'Optimizer and Review Selection must receive the resolved profile matrix');
 assert.match(source,/fill:pointColor,'font-size':8\.5,'font-weight':900/, 'Optimizer health-ladder unit labels must remain legible without crowding the plot');
@@ -157,25 +171,25 @@ assert.match(source,/tinmanChestRewards=new Map\(/,'Tinman encounter strategy mu
 assert.match(source,/received=monster==='TINMAN'\?tinmanEncounterRewards\(linkedClanProfile\(localStorage,currentAccount\(\)\?\.clanProfileId\)\)/,'Tinman strategy must use the linked clan summons for per-member income.');
 assert.doesNotMatch(html,/Manual norm · clan profile optional|Optional · no clan profile required/,'Clan-profile helper labels must not clutter Battle or Encounter Strategy.');
 assert.match(html,/id="encounterSelect"[\s\S]*id="encounterNormField"[\s\S]*id="encounterPlanNorm"[\s\S]*id="encounterPlanUnit"/,'Built-in Epic clan norms must be entered beside the encounter selector.');
-assert.match(html,/player-clan-panel[\s\S]*Player &amp; Clan[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must have their own setup section.');
+assert.match(html,/player-battle-panel[\s\S]*Player &amp; Battle[\s\S]*id="accountSelect"[\s\S]*id="encounterPlanMembers"/,'Player and clan-wide inputs must be in the combined first section.');
 assert.doesNotMatch(html,/id="clanProfileSelect"/,'Clan links must be managed in Clan Overview, not duplicated as a calculator dropdown.');
 assert.match(html,/id="clanProfileStatus"[\s\S]*href="clan\.html#planSetup" id="manageClanLink">Manage link/,'The calculator must show a read-only clan status with a direct management shortcut.');
 assert.match(source,/manage\.href=`clan\.html\?\$\{query\}#planSetup`/,'The shortcut must carry the selected player and clan to Plan Setup.');
 assert.doesNotMatch(source,/getElementById\('clanProfileSelect'\)/,'The calculator must not silently retain a second link editor.');
 assert.match(siteScript,/if \(!hashTarget && Number\.isFinite\(savedPageView\?\.scrollY\)\)/,'A management deep link must take precedence over an older saved scroll position.');
-assert.match(html,/player-clan-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');
+assert.match(html,/player-battle-panel[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"/,'Temple level and its revival divisor must live with the player account settings.');
 assert.match(html,/class="player-clan-primary">[\s\S]*id="accountSelect"[\s\S]*id="templeLevel"[\s\S]*id="templeMultiplier"[\s\S]*<\/div>\s*<span class="workspace-actions account-actions">/,'Account, temple level, and divisor must share a row with account actions underneath.');
 assert.match(css,/\.player-clan-primary\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) 76px 112px/,'The account selector must shrink to make room for the compact temple selector and divisor.');
 assert.match(css,/\.player-clan-panel \.temple-level-select\{[\s\S]*?width:76px/,'Temple Level needs only a compact two-digit selector.');
 assert.doesNotMatch(html,/temple-setting-note/,'The obsolete Temple Level description must be removed.');
-assert.match(html,/battle-settings-panel[\s\S]*class="battle-method-area"[\s\S]*Battle Type[\s\S]*Calculation Method[\s\S]*class="battle-encounter-area"[\s\S]*Encounter[\s\S]*Clan Norm/,'Battle type and method must share the left area, with encounter controls on the right.');
-assert.match(html,/class="player-account-area"[\s\S]*id="accountSelect"[\s\S]*class="player-clan-link-row"/,'Player and clan controls must have separate side-by-side areas.');
-assert.match(html,/class="unit-bonus-top-grid"[\s\S]*class="unit-bonus-matrix-area"[\s\S]*class="global-bonus-area"[\s\S]*class="separation-mode-only"/,'The matrix and global bonuses must share a desktop row, with Custom separation below.');
+assert.match(html,/player-battle-right[\s\S]*class="battle-method-area"[\s\S]*Battle Type[\s\S]*Calculation Method[\s\S]*class="battle-encounter-area"[\s\S]*Encounter[\s\S]*Clan Norm/,'Battle type and method must sit above encounter controls in the right area.');
+assert.match(html,/class="player-account-area"[\s\S]*id="accountSelect"[\s\S]*class="player-clan-link-row"/,'Player account must sit above clan controls.');
+assert.match(html,/class="unit-bonus-top-grid"[\s\S]*class="unit-bonus-matrix-area"[\s\S]*class="global-bonus-area"[\s\S]*class="separation-mode-only"/,'The matrix must contain the shared bonus fields, with Custom separation below.');
 assert.match(html,/id="includeMercenariesInOptimization"[\s\S]*class="optimizer-merc-guidance"[\s\S]*id="exploreControls"[\s\S]*id="optimizeArmy"/,'Mercenary guidance must appear above Explore and Optimize.');
 assert.match(html,/id="encounterNormActions"[\s\S]*id="saveNormToClan"[\s\S]*id="clanOverviewShortcut"[^>]*>Open Clan Overview<\/a>[\s\S]*class="workspace-actions encounter-actions"/,'Clan Overview must share the encounter row, with encounter actions below.');
 assert.match(source,/clanOverviewShortcut[\s\S]*?hidden=!supported/,'The Clan Overview shortcut must follow Epic norm availability.');
 assert.match(html,/id="encounterPlanMembers"[^>]*max="100"[^>]*min="1"[^>]*value="100"/,'Clan members must default to 100 and be capped at 100.');
-assert.match(source,/let step=5;/,'Dynamic Battle sections must continue numbering after the four fixed setup sections.');
+assert.match(source,/let step=3;/,'Dynamic Battle sections must continue numbering after the two combined setup sections.');
 assert.match(source,/function clearPrediction\(\)[\s\S]*encounterPlanEntry\)els\.encounterPlanEntry\.hidden=true[\s\S]*updateVisibleStepNumbers\(\)/,'Hiding Epic-only planning must immediately renumber PvP and unsupported encounter sections.');
 assert.doesNotMatch(html,/<section class="encounter-plan-preview"[\s\S]*My clan norm[\s\S]*id="encounterPlanNorm"/,'The Results planner must use the shared setup norm rather than duplicate the input.');
 assert.match(source,/function normalizeEncounterNorm\(\)[\s\S]*value>0&&value<1&&unit==='B'[\s\S]*value>=1000&&unit==='M'/,'The setup norm must automatically normalize between K, M, and B.');
@@ -205,7 +219,7 @@ for(const [strategy,label] of [['full','Revive All'],['mercenary-monster','Reviv
 assert.match(html,/<div class="output-visual-column">[\s\S]*<section class="topdown-panel encounter-plan-standalone battle-sequenced-section" id="encounterPlanEntry" hidden>[\s\S]*<h2>Encounter Strategy<\/h2>[\s\S]*<section class="topdown-panel layer-chart-panel/,'Encounter Strategy must be a numbered, always-expanded section immediately above Visual.');
 assert.match(html,/<header>[\s\S]*id="encounterPlanTitle"[\s\S]*class="encounter-plan-attacks"[\s\S]*id="encounterPlanHits"/,'Estimated attacks must align with the encounter title in the plan header.');
 assert.doesNotMatch(html,/Encounter plan · first draft|id="toggleEncounterPlan"|id="closeEncounterPlan"/,'Encounter Strategy must not retain draft, close, or collapse controls.');
-assert.match(html,/managed-step-number">7<\/span><h2>Encounter Strategy<\/h2>[\s\S]*managed-step-number">8<\/span> Visual/,'Encounter Strategy and Visual must have sequential fallback section numbers.');
+assert.match(html,/managed-step-number">5<\/span><h2>Encounter Strategy<\/h2>[\s\S]*managed-step-number">6<\/span> Visual/,'Encounter Strategy and Visual must have sequential fallback section numbers.');
 assert.deepEqual(calculateEncounterPlan({normPoints:1_000_000_000,pointsPerAttack:100_000_000,goldByCategory:{mercenary:100,monster:200,troop:300},strategy:'mercenary-monster'}),{hits:10,goldPerHit:300,silverPerHit:0,dragonCoinsPerHit:0,rebuildCostsComplete:true,totalGold:3000,totalSilver:0,totalDragonCoins:0,pointsPerGold:100_000_000/300});
 assert.equal(REBUILD_COST_UNIT_COUNT,93,'Every trainable troop and monster must have a rebuild-cost record.');
 assert.deepEqual(unitRebuildCost('troop-g9-flying-corax-2'),{quantity:4200,silver:32000000,dragonCoins:0,silverEach:32000000/4200,dragonCoinsEach:0});
@@ -238,7 +252,7 @@ assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative 
 assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');
 assert.match(source,/SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS&&note\?` <button class="sacrifice-flag"/, 'Sacrifice flag rendering must remain behind the reversible display switch');
 assert.match(source,/monsterHealth:'1600'[\s\S]*?pvpHealth:'1600'/, 'New accounts must default Monster Health and PvP Health to 1600%');
-assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
+assert.match(source,/monsterStrength:'2000',strengthAgainstEpic:'2000',fenrirStrength:'0',pvpStrength:'2000',monsterDD:'10',monsterST:'10'/, 'New accounts must use the requested combat defaults');
 assert.match(source,/minimumSeparation:true,rankSeparation:'0\.05'/, 'Minimum Separation must default on and fixed separation must default to 0.05%');
 assert.match(css,/\.hierarchy-list\{padding:6px;max-height:none;overflow:visible\}/, 'Battle workspace Selection columns must grow without internal vertical scrolling');
 assert.match(css,/\.level-selection-list\{display:grid;gap:0;max-height:none;overflow:visible\}/, 'Legacy workspace Selection lists must grow without internal vertical scrolling');
@@ -311,5 +325,5 @@ assert.match(source,/lastOptimizedEpicSignature!==currentEpicEffectiveSignature\
 assert.match(source,/hasSavedOptimizerCacheForEncounter\(imported,encounterId,workspace\)/,'Shared Epic encounters must be prepared from eligible peer optimizer caches.');
 assert.match(source,/saveEncounterCostModel\(\);\s*try\{writeSavedJson/,'Every encounter-plan recalculation must save the cost model and portable strategy.');
 
-console.log(JSON.stringify({ok:true,matrixOrder:['monsterDD','monsterST','monsterHealth','monsterStrength','profiles','globals']}));
+console.log(JSON.stringify({ok:true,matrixOrder:['shared bonuses','monsterDD','monsterST','monsterHealth','monsterStrength','profiles']}));
 
