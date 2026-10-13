@@ -1274,15 +1274,16 @@ function setOptimizeButtonState(){
 }
 function openOptimizerModal(baselinePayload=null){
   optimizerBestEldSoFar=0;
+  const preserving=!!modeState().inputs.preserveMercenaries;
   optimizerExploreProgressState=optimizerExploreActive?createExploreProgressState(baselinePayload):null;
   els.optimizerProgressEldLabel=document.getElementById('optimizerProgressEldLabel');
   els.optimizerExploreProgress=document.getElementById('optimizerExploreProgress');
-  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Starting army / Best confirmed':'Current ELD / Best ELD';
+  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Starting army / Best confirmed':preserving?'Eligible ELD / Best eligible ELD':'Current ELD / Best ELD';
   if(els.optimizerExploreProgress){els.optimizerExploreProgress.hidden=!optimizerExploreActive;els.optimizerExploreProgress.textContent=optimizerExploreActive?'Checking your starting army before screening alternatives…':'';}
   const initial=optimizerExploreProgressState;
   renderOptimizerHealthLadder(initial?.rows||[]);
-  const chartTitle=document.getElementById('optimizerHealthLadderTitle');if(chartTitle)chartTitle.textContent=initial?.chartTitle||'Best Army Health Ladder';
-  const chart=document.getElementById('optimizerHealthLadder');if(chart)chart.setAttribute('aria-label',initial?`${initial.chartTitle}; horizontal position is predicted death order`:'Squad health ladder for the best army found so far; horizontal position is predicted death order');
+  const chartTitle=document.getElementById('optimizerHealthLadderTitle');if(chartTitle)chartTitle.textContent=initial?.chartTitle||(preserving?'Best Eligible Army Health Ladder':'Best Army Health Ladder');
+  const chart=document.getElementById('optimizerHealthLadder');if(chart)chart.setAttribute('aria-label',initial?`${initial.chartTitle}; horizontal position is predicted death order`:`Squad health ladder for the best ${preserving?'eligible ':''}army found so far; horizontal position is predicted death order`);
   if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=initial?.currentEld?formatDamage(initial.currentEld):'—';
   if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=initial?.verifiedBestEld?formatDamage(initial.verifiedBestEld):'—';
   if(!els.optimizerModal)return;
@@ -1309,7 +1310,7 @@ function renderOptimizerHealthLadder(rows=[]){
   const ns='http://www.w3.org/2000/svg',make=(tag,attrs={})=>{const node=document.createElementNS(ns,tag);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
   const yLabel=make('text',{x:9,y:150,transform:'rotate(-90 9 150)','text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});yLabel.textContent='SQUAD HEALTH';svg.append(yLabel);
   const xLabel=make('text',{x:300,y:305,'text-anchor':'middle',fill:'#718594','font-size':8,'font-weight':800,'letter-spacing':'.08em'});xLabel.textContent=chartStyle()==='separated'?'POSITION WITHIN ARMY TYPE →':'DEATH ORDER →';svg.append(xLabel);
-  if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent=optimizerExploreProgressState?.emptyMessage||'Waiting for the first best army…';svg.append(label);return;}
+  if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent=optimizerExploreProgressState?.emptyMessage||(modeState().inputs.preserveMercenaries?'Searching for an eligible army…':'Waiting for the first best army…');svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
   for(const y of [20,145,270])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
@@ -2183,7 +2184,9 @@ function applyStateToInputs(){
   for(const {auto} of BONUS_INPUT_ROWS)if(els[auto])els[auto].checked=i[auto]!==false;
   els.arachne.checked=!!i.arachne;
   els.includeMercenariesInOptimization.checked=!!i.includeMercenariesInOptimization;
-  els.preserveMercenaries.checked=!!i.preserveMercenaries;
+  i.preserveMercenaries=!!i.includeMercenariesInOptimization&&!!i.preserveMercenaries;
+  els.preserveMercenaries.checked=i.preserveMercenaries;
+  els.preserveMercenaries.disabled=!i.includeMercenariesInOptimization;
   if(els.pvpEnemyUnitSelect&&armyV2.length){
     const id=i.enemyUnitId||'troop-g9-flying-corax-2';
     els.pvpEnemyUnitSelect.value=armyV2.some(u=>u.id===id)?id:'troop-g9-flying-corax-2';
@@ -2258,6 +2261,12 @@ function updateExploreControls(){
     :exploreUnitStructures
     ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
+}
+function updatePreservationControls(){
+  if(!els.preserveMercenaries)return;
+  const included=!!els.includeMercenariesInOptimization?.checked;
+  els.preserveMercenaries.disabled=!included;
+  if(!included){els.preserveMercenaries.checked=false;modeState().inputs.preserveMercenaries=false;}
 }
 
 function isCustomOrderMode(){
@@ -3850,18 +3859,14 @@ function wireEvents(){
   els.arachne.addEventListener('change',recalculate);
   els.includeMercenariesInOptimization.addEventListener('change',()=>{
     modeState().inputs.includeMercenariesInOptimization=els.includeMercenariesInOptimization.checked;
-    if(!els.includeMercenariesInOptimization.checked){els.preserveMercenaries.checked=false;modeState().inputs.preserveMercenaries=false;}
+    updatePreservationControls();
     updateExploreControls();
     saveState();recalculate();
   });
   els.preserveMercenaries.addEventListener('change',()=>{
     const enabled=els.preserveMercenaries.checked;
     modeState().inputs.preserveMercenaries=enabled;
-    if(enabled){
-      els.includeMercenariesInOptimization.checked=true;
-      modeState().inputs.includeMercenariesInOptimization=true;
-      exploreUnitStructures=false;
-    }
+    if(enabled)exploreUnitStructures=false;
     updateExploreControls();saveState();recalculate();
   });
   els.optimizeArmy.addEventListener('click',startEpicOptimization);

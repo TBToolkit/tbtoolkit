@@ -3,6 +3,7 @@ import {runOptimizeReviewSelection} from './epic-review-engine.mjs';
 import {preferHigherEldResult} from './epic-explore-compare.mjs';
 import {compositionSignature} from './epic-composition-search.mjs';
 import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
+import {filterEligibleProgress} from './epic-optimizer-progress.mjs';
 import {APP_BUILD,ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
 
 const OPTIMIZER_TIME_BUDGET_MS=180000;
@@ -85,7 +86,8 @@ self.onmessage=async event=>{
       else if(progress.phase==='convergence-polish')scope+=`|pass:${progress.passIndex??''}`;
       if(scope!==lastEvaluationScope){cumulativeEvaluations+=raw;lastEvaluationScope=scope;}else cumulativeEvaluations+=Math.max(0,raw-lastRawEvaluations);
       lastRawEvaluations=raw;
-      self.postMessage({type:'progress',requestId,payload:{...progress,exploreStage,candidateIndex,candidateCount,screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations,healthLadder:mergeFixedMercenaryLadder(progress.healthLadder,fixedMercenaryRows),progressPct:message.exploreMode?Math.min(96,exploreStage==='baseline'?5+Math.round(progressPercent(progress)*.35):50+Math.round((candidateIndex-1+progressPercent(progress)/100)*43/Math.max(1,candidateCount))):Math.min(97,progressPercent(progress))}});
+      const visible=filterEligibleProgress(progress,!!message.bonuses?.preserveMercenaries);
+      self.postMessage({type:'progress',requestId,payload:{...visible,exploreStage,candidateIndex,candidateCount,screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations,healthLadder:visible.healthLadder===null?null:mergeFixedMercenaryLadder(visible.healthLadder,fixedMercenaryRows),progressPct:message.exploreMode?Math.min(96,exploreStage==='baseline'?5+Math.round(progressPercent(progress)*.35):50+Math.round((candidateIndex-1+progressPercent(progress)/100)*43/Math.max(1,candidateCount))):Math.min(97,progressPercent(progress))}});
       }});
       if(!result||!Object.keys(fixedQuantities).length)return result;
       const coreResult=result.result;
