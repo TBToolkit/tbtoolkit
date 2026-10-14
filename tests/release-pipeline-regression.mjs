@@ -21,6 +21,9 @@ assert.match(headers,/\/css\/\*[\s\S]*max-age=0/,'Fallback asset cache policy mu
 assert.match(headers,/\/js\/\*[\s\S]*max-age=0/,'Fallback script cache policy must ship with the deployment.');
 assert.equal(manifest.storageSchemaVersion,20);
 const sitemap=await readFile('dist/sitemap.xml','utf8');
+const verificationFile='google4c3a349bc3136dc3.html';
+assert.equal(await readFile(`dist/${verificationFile}`,'utf8'),`google-site-verification: ${verificationFile}\n`,'Search Console verification file must be deployed unchanged.');
+assert.doesNotMatch(sitemap,/google4c3a349bc3136dc3\.html/,'Verification file must not appear in the sitemap.');
 assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/stacking<\/loc>/);
 assert.match(sitemap,/<loc>https:\/\/tbtoolkit\.com\/clan<\/loc>/,'Sitemap must list the new Clan Overview URL.');
 assert.doesNotMatch(sitemap,/<loc>https:\/\/tbtoolkit\.com\/chests<\/loc>/,'Legacy Clan Overview URL must not remain indexed.');
