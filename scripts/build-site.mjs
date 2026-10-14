@@ -22,6 +22,7 @@ const sourceOnlyFiles=new Set([
 const sitePages=new Map([
   ['index.html','/'],
   ['stacking.html','/stacking'],
+  ['epic-monster-stacking-guide.html','/epic-monster-stacking-guide'],
   ['clan.html','/clan'],
   ['calendar.html','/calendar'],
   ['research.html','/research'],
