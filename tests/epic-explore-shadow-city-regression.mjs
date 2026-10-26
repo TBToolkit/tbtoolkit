@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {APP_BUILD} from '../js/build-info.mjs';
+import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
+import {inferReviewAvailability} from '../js/epic-composition-search.mjs';
+const units=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url)));
+const fixture=JSON.parse(fs.readFileSync(new URL('./fixtures/explore-shadow-city.json',import.meta.url)));
+const selectedIds=units.filter(u=>['G9','S8','E9','M9'].includes(u.tier)).map(u=>u.id);
+const allowed=new Set(inferReviewAvailability({units,selectedIds,maxTierDepth:2}).availableIds);
+let output,failure;
+globalThis.fetch=async()=>({ok:true,json:async()=>units});
+globalThis.self={postMessage:m=>{
+  if(m.type==='result')output=m.payload;
+  if(m.type==='error')failure=m;
+  if(m.type==='progress'&&m.payload.exploreStage==='finalist-complete')console.log(JSON.stringify({candidate:m.payload.candidateIndex,eld:m.payload.expectedLifetimeDamage}));
+}};
+await import('../js/epic-optimizer-worker.mjs');
+const started=performance.now();
+await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,...fixture,exploreMode:true,exploreTierDepth:2,timeBudgetMs:180000}});
+assert.equal(failure,undefined,failure?.message);
+assert.ok(output?.result.expectedTotalLifetimeDamage>=4326615110065.445,'Explore must recover or exceed the known manual solution from the actual initial tiers');
+assert.ok(output.exploredSelectedIds.every(id=>allowed.has(id)));
+const verified=scoreEpicArmy({units,quantities:output.quantities,bonuses:fixture.bonuses});
+assert.ok(Math.abs(verified.expectedTotalLifetimeDamage/output.result.expectedTotalLifetimeDamage-1)<1e-12);
+for(const [key,limit] of Object.entries(fixture.capacityLimits))assert.ok(verified.capacities[key]<=limit);
+assert.ok(verified.squads.every(s=>Number.isInteger(s.quantity)&&s.quantity>=1));
+assert.equal(verified.strictHealthAdjustments,0,'Final quantities should need no hidden health trimming');
+console.log(JSON.stringify({ok:true,elapsedMs:performance.now()-started,eld:verified.expectedTotalLifetimeDamage,exploration:output.exploration}));

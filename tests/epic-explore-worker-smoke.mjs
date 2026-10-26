@@ -29,3 +29,11 @@ assert.ok(freshBaselineProgress?.healthLadder?.length>0,'A fresh baseline must s
 assert.ok(messages.some(message=>message.requestId===2&&message.type==='progress'&&message.payload?.exploreStage==='finalist-complete'),'Each fully optimized finalist must announce its confirmed result.');
 assert.ok(fresh.exploration.finalEld>=fresh.exploration.baselineEld,'The integrated result must never be worse than its fully optimized baseline');
 console.log(JSON.stringify({ok:true,fullyOptimizedCandidates:output.exploration.fullyOptimizedCandidates,screenedCandidates:output.exploration.screenedCandidates,freshBaseline:Math.round(fresh.exploration.baselineEld),freshFinal:Math.round(fresh.exploration.finalEld)}));
+
+const mercenary=army.find(unit=>unit.category==='mercenary'&&unit.tierNumber===2);
+await self.onmessage({data:{type:'optimize',requestId:3,appBuild:APP_BUILD,selectedIds,exploreMode:true,exploreTierDepth:0,timeBudgetMs:120_000,fixedMercenaryIds:[mercenary.id],fixedQuantities:{[mercenary.name]:7},fixedAuthorityMaximum:mercenary.capacityCost*7,bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:2000,monsterDDPct:10,monsterSTPct:10,arachne:false,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED'],includeMercenariesInOptimization:false,useCustomFamilyBonuses:false},capacityLimits:{LEADERSHIP:10000,DOMINANCE:10000,AUTHORITY:0}}});
+assert.equal(messages.find(m=>m.requestId===3&&m.type==='error'),undefined);
+const fixed=messages.find(m=>m.requestId===3&&m.type==='result')?.payload;
+assert.equal(fixed?.result.squads.find(s=>s.id===mercenary.id)?.quantity,7,'Explore must preserve fixed mercenary quantities');
+assert.ok(fixed.exploration.finalEld>=fixed.exploration.baselineEld);
+console.log('Explore with fixed mercenaries passed.');

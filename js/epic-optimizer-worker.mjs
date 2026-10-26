@@ -1,7 +1,7 @@
-import {optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
-import {runOptimizeReviewSelection} from './epic-review-engine.mjs';
-import {exploreCandidatePool,preferHigherEldResult} from './epic-explore-compare.mjs';
-import {compositionSignature,createTierReplacementChallenges,inferReviewAvailability} from './epic-composition-search.mjs';
+import {mercenaryPreservationStatus,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
+import {runExploreSearch} from './epic-explore-search.mjs';
+import {preferHigherEldResult} from './epic-explore-compare.mjs';
+import {compositionSignature} from './epic-composition-search.mjs';
 import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
 import {filterEligibleProgress} from './epic-optimizer-progress.mjs';
 import {APP_BUILD,ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
@@ -111,22 +111,15 @@ self.onmessage=async event=>{
       self.postMessage({type:'progress',requestId,payload:{phase:'baseline-ready',exploreStage:'baseline-ready',progressPct:40,expectedLifetimeDamage:baselineEld,verifiedBestEld,healthLadder:ladderRows(result?.result),evaluations:cumulativeEvaluations}});
       const originalIds=[...message.selectedIds,...(message.fixedMercenaryIds||[])];
       const maxTierDepth=Math.max(0,Math.min(4,Number(message.exploreTierDepth)||0));
-      const availability=inferReviewAvailability({units,selectedIds:originalIds,maxTierDepth});
-      // Generate these outside the quick review so its weak seed scores (or a
-      // screening timeout) cannot discard every sparse peer-family replacement.
-      const replacementFinalists=createTierReplacementChallenges({units,currentIds:originalIds,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds})
-        .flatMap(group=>group.candidates.map(row=>({...row,challenge:group.key}))).slice(0,4);
-      let review=null;
-      try{
-        const remaining=timeBudgetMs-(performance.now()-startedAt);
-        if(remaining>25_000)review=await runOptimizeReviewSelection({units,currentIds:originalIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,maxTierDepth:Math.max(0,Math.min(4,Number(message.exploreTierDepth)||0)),includeChallengeFinalists:true,timeBudgetMs:Math.min(45_000,remaining-20_000),onProgress:progress=>{screeningEvaluations=Number(progress.evaluations)||0;self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen',progressPct:40+Math.round(Number(progress.progressPct||0)*.09),screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations}});}});
-      }catch(error){if(error?.code!=='TIME_BUDGET')throw error;explorationNote='The unit-combination screen reached its time limit; your original optimized army was kept.';}
+      const remaining=timeBudgetMs-(performance.now()-startedAt);
+      const review=remaining>25_000?runExploreSearch({units,currentIds:originalIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,maxTierDepth,timeBudgetMs:Math.min(60_000,remaining*.4),onProgress:progress=>{screeningEvaluations=progress.evaluations;self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen',progressPct:40+Math.round(progress.progressPct*.09),screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations}});}}):null;
+      if(!review)explorationNote='The search reached its time limit; the original optimized army was kept.';
       const byId=new Map(units.map(unit=>[unit.id,unit]));
       const fixedNames=new Set(Object.keys(fixedQuantities));
       const baselineMercs=new Set(originalIds.filter(id=>byId.get(id)?.category==='mercenary'));
       screeningEvaluations=review?.evaluations??screeningEvaluations;
       const seen=new Set([compositionSignature(originalIds)]);
-      const pool=exploreCandidatePool({...review,replacementFinalists});
+      const pool={candidates:review?.finalists||[],limit:8};
       const candidates=pool.candidates.filter(row=>{
         const signature=compositionSignature(row.selectedIds);
         if(seen.has(signature)||!row.selectedIds.some(id=>byId.get(id)?.category==='troop'||byId.get(id)?.category==='monster')||row.selectedIds.filter(id=>byId.get(id)?.category==='mercenary').length!==baselineMercs.size||![...baselineMercs].every(id=>row.selectedIds.includes(id)))return false;
@@ -135,15 +128,28 @@ self.onmessage=async event=>{
       self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen-complete',progressPct:49,screeningEvaluations,candidateCount:candidates.length,verifiedBestEld,evaluations:cumulativeEvaluations}});
       for(const [index,candidate] of candidates.entries()){
         if(timeBudgetMs-(performance.now()-startedAt)<20_000){explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;}
-        const selectedIds=candidate.selectedIds.filter(id=>!fixedNames.has(byId.get(id)?.name));
+        const selectedIds=candidate.selectedIds.filter(id=>!fixedNames.has(id)&&!fixedNames.has(byId.get(id)?.name));
         try{
-          const trial=optimizeOne(selectedIds,'finalist',index+1,candidates.length);explored++;
+          let trial=optimizeOne(selectedIds,'finalist',index+1,candidates.length);explored++;
+          if(candidate.quantities&&!Object.keys(fixedQuantities).length&&!shouldAbort()){
+            try{
+              const continuation=optimizeEpicQuantities({units,selectedIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,initialQuantities:candidate.quantities,minimumHealthSeparationPct:.01,minimumQuantity:1,maxRoundsPerStage:8,shouldAbort});
+              if(!message.bonuses?.preserveMercenaries||mercenaryPreservationStatus(continuation.result).valid)trial=preferHigherEldResult(trial,continuation);
+            }catch(error){
+              // A continuation is optional; never lose a completed full result.
+              if(error.code!=='TIME_BUDGET'&&!error.message?.startsWith('Initial optimizer seed is not feasible'))throw error;
+            }
+          }
           if(preferHigherEldResult(result,trial)===trial){result=trial;result.exploredSelectedIds=candidate.selectedIds;}
           verifiedBestEld=Number(result?.result?.expectedTotalLifetimeDamage||0);
           self.postMessage({type:'progress',requestId,payload:{phase:'finalist-complete',exploreStage:'finalist-complete',candidateIndex:index+1,candidateCount:candidates.length,expectedLifetimeDamage:Number(trial?.result?.expectedTotalLifetimeDamage||0),verifiedBestEld,healthLadder:ladderRows(trial?.result),screeningEvaluations,evaluations:cumulativeEvaluations,progressPct:50+Math.round((index+1)*43/Math.max(1,candidates.length))}});
-        }catch(error){if(error?.code!=='TIME_BUDGET'&&!shouldAbort())throw error;explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;}
+        }catch(error){
+          if(error?.message?.startsWith('No army could keep every selected mercenary')||error?.message?.startsWith('Unable to construct a feasible optimizer starting population')||error?.message?.startsWith('Initial optimizer seed is not feasible'))continue;
+          if(error?.code!=='TIME_BUDGET'&&!shouldAbort())throw error;
+          explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;
+        }
       }
-      result.exploration={baselineEld,finalEld:Number(result?.result?.expectedTotalLifetimeDamage||0),screeningEvaluations,screenedCandidates:candidates.length,finalistCount:candidates.length,fullyOptimizedCandidates:explored,changedSelection:!!result.exploredSelectedIds,note:explorationNote};
+      result.exploration={baselineEld,finalEld:Number(result?.result?.expectedTotalLifetimeDamage||0),screeningEvaluations,searchDiagnostics:review?{uniqueStructures:review.uniqueStructures,generatedStructures:review.generatedStructures,refinements:review.refinements,elapsedMs:review.elapsedMs}:null,screenedCandidates:candidates.length,finalistCount:candidates.length,fullyOptimizedCandidates:explored,changedSelection:!!result.exploredSelectedIds,note:explorationNote};
     }
     self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
     self.postMessage({type:'result',requestId,payload:result,diagnostics:{optimizerBuild:EPIC_OPTIMIZER_BUILD,engineBuild:EPIC_COMBAT_ENGINE_BUILD,mechanicsBuild:COMBAT_MECHANICS_BUILD,armyDatabase:ARMY_DATABASE_BUILD,armyCount:units.length,seedStrategy:result?.diagnostics?.seedStrategy,totalEvaluations:result?.diagnostics?.totalEvaluations,inputPayload:message.bonuses,capacityLimits:message.capacityLimits,fixedCapacityUsage:fixedUsage,timeBudgetMs}});

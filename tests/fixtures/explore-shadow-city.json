@@ -1,0 +1,59 @@
+{
+  "bonuses": {
+    "monsterHealthPct": 2901.5,
+    "monsterStrengthPct": 6335,
+    "strengthAgainstEpicPct": 2590,
+    "fenrirStrengthPct": 0,
+    "monsterDDPct": 41.1,
+    "monsterSTPct": 18.6,
+    "arachne": false,
+    "enemySquadTypes": [
+      "FLYING",
+      "MOUNTED",
+      "MELEE",
+      "RANGED"
+    ],
+    "includeMercenariesInOptimization": false,
+    "preserveMercenaries": false,
+    "useCustomProfileBonuses": true,
+    "customProfileBonuses": {
+      "beastHealthPct": 2901.5,
+      "beastStrengthPct": 6335,
+      "beastDDPct": 41.1,
+      "beastSTPct": 18.6,
+      "dragonHealthPct": 2901.5,
+      "dragonStrengthPct": 6335,
+      "dragonDDPct": 41.1,
+      "dragonSTPct": 18.6,
+      "elementalHealthPct": 2901.5,
+      "elementalStrengthPct": 6335,
+      "elementalDDPct": 41.1,
+      "elementalSTPct": 18.6,
+      "giantHealthPct": 2901.5,
+      "giantStrengthPct": 6335,
+      "giantDDPct": 41.1,
+      "giantSTPct": 18.6,
+      "guardsmanHealthPct": 2801.5,
+      "guardsmanStrengthPct": 6235,
+      "guardsmanDDPct": 41.1,
+      "guardsmanSTPct": 13.6,
+      "specialistHealthPct": 2801.5,
+      "specialistStrengthPct": 6235,
+      "specialistDDPct": 41.1,
+      "specialistSTPct": 13.6,
+      "engineerHealthPct": 2801.5,
+      "engineerStrengthPct": 6235,
+      "engineerDDPct": 41.1,
+      "engineerSTPct": 13.6,
+      "epicHunterHealthPct": 2160.5,
+      "epicHunterStrengthPct": 5594,
+      "epicHunterDDPct": 41.1,
+      "epicHunterSTPct": 13.6
+    }
+  },
+  "capacityLimits": {
+    "LEADERSHIP": 1349331,
+    "AUTHORITY": 0,
+    "DOMINANCE": 261217
+  }
+}
