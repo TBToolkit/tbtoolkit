@@ -46,6 +46,67 @@ export function diverseExploreRows(rows,units,limit){
   return picked.slice(0,limit);
 }
 
+export function createExploreNeighbors({units,selectedIds,availableIds,mandatoryIds=[]}){
+  const selected=new Set(selectedIds),mandatory=new Set(mandatoryIds),allowed=new Set(availableIds);
+  const groups=new Map(),rows=new Map();
+  const add=ids=>{
+    if(!ids.some(id=>!mandatory.has(id)))return;
+    const key=compositionSignature(ids);
+    if(key!==compositionSignature(selectedIds))rows.set(key,{selectedIds:ids});
+  };
+  for(const u of units){
+    if(!allowed.has(u.id)||mandatory.has(u.id)||u.category==='mercenary')continue;
+    const key=groupKey(u);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u.id);
+    add(selected.has(u.id)?selectedIds.filter(id=>id!==u.id):[...selectedIds,u.id]);
+  }
+  // Cover whole-group moves before spending the budget on individual units.
+  const singles=[...rows.values()];rows.clear();
+  for(const ids of groups.values()){
+    add(selectedIds.filter(id=>!ids.includes(id)));
+    add([...new Set([...selectedIds,...ids])]);
+  }
+  for(const row of singles)add(row.selectedIds);
+  return[...rows.values()];
+}
+
+// Reallocate the winner's quantities after a composition change. A cold ladder
+// alone can hide useful deletions by discarding the optimized battle structure.
+export function runExploreNeighborhood({units,currentIds,originalIds,quantities={},bonuses,capacityLimits,fixedQuantities={},maxTierDepth,timeBudgetMs=15_000,excludedSignatures=new Set()}){
+  const deadline=performance.now()+timeBudgetMs;
+  const availability=inferReviewAvailability({units,selectedIds:originalIds,maxTierDepth});
+  const neighbors=createExploreNeighbors({units,...availability,selectedIds:currentIds});
+  const fixed=new Set(Object.keys(fixedQuantities));
+  const rows=[];let refinements=0;
+  for(const row of neighbors){
+    if(performance.now()>deadline)break;
+    if(excludedSignatures.has(compositionSignature(row.selectedIds)))continue;
+    const selected=units.filter(u=>row.selectedIds.includes(u.id)&&!fixed.has(u.id)&&!fixed.has(u.name));
+    if(!selected.length)continue;
+    const selectedIds=selected.map(u=>u.id);
+    const warm=Object.fromEntries(selected.map(u=>[u.name,Math.max(1,Number(quantities[u.name]??quantities[u.id])||1)]));
+    for(const type of ['LEADERSHIP','DOMINANCE','AUTHORITY']){
+      const members=selected.filter(u=>u.capacityType===type);
+      const used=members.reduce((sum,u)=>sum+u.capacityCost*warm[u.name],0);
+      if(used)for(const u of members)warm[u.name]=Math.max(1,Math.floor(warm[u.name]*Number(capacityLimits[type]||0)/used));
+    }
+    const cold=createLegacyHealthLadderSeed({units,selectedIds,bonuses,capacityLimits,separationPct:.05});
+    let best=null;
+    for(const seed of [warm,cold]){
+      try{
+        const trial=optimizeEpicQuantities({units,selectedIds,bonuses,capacityLimits,initialQuantities:seed,minimumHealthSeparationPct:.01,minimumQuantity:1,stageFractions:[.02,.005,.001],maxRoundsPerStage:3,shouldAbort:()=>performance.now()>deadline});
+        const result=Object.keys(fixedQuantities).length?scoreEpicArmy({units,bonuses,quantities:{...trial.quantities,...fixedQuantities},recordEvents:false}):trial.result;
+        refinements++;
+        if(bonuses?.preserveMercenaries&&!mercenaryPreservationStatus(result).valid)continue;
+        const candidate={...row,quantities:trial.quantities,result};
+        if(!best||eld(candidate)>eld(best))best=candidate;
+      }catch(error){if(error.code==='TIME_BUDGET')break;if(!error.message?.startsWith('Initial optimizer seed is not feasible'))throw error;}
+    }
+    if(best)rows.push(best);
+  }
+  rows.sort((a,b)=>eld(b)-eld(a));
+  return{candidate:rows[0]?{selectedIds:rows[0].selectedIds,quantities:rows[0].quantities,screenedEld:eld(rows[0])}:null,refinements,neighbors:rows.length};
+}
+
 export function runExploreSearch({units,currentIds,bonuses,capacityLimits,fixedQuantities={},maxTierDepth,timeBudgetMs=60_000,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+timeBudgetMs;
   const space=createExploreStructures({units,currentIds,maxTierDepth});

@@ -16,9 +16,10 @@ globalThis.self={postMessage:m=>{
 }};
 await import('../js/epic-optimizer-worker.mjs');
 const started=performance.now();
-await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,...fixture,exploreMode:true,exploreTierDepth:2,timeBudgetMs:180000}});
+await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,...fixture,exploreMode:true,exploreTierDepth:2,timeBudgetMs:Number(process.argv[2])||180000}});
 assert.equal(failure,undefined,failure?.message);
-assert.ok(output?.result.expectedTotalLifetimeDamage>=4326615110065.445,'Explore must recover or exceed the known manual solution from the actual initial tiers');
+assert.ok(output?.result.expectedTotalLifetimeDamage>=4353226487170.4395,'Explore must recover or exceed the known manual solution from the actual initial tiers');
+assert.ok(output.exploration.neighborhoodPasses>0,'Explore must revisit nearby selections after optimizing its broad finalists');
 assert.ok(output.exploredSelectedIds.every(id=>allowed.has(id)));
 const verified=scoreEpicArmy({units,quantities:output.quantities,bonuses:fixture.bonuses});
 assert.ok(Math.abs(verified.expectedTotalLifetimeDamage/output.result.expectedTotalLifetimeDamage-1)<1e-12);
@@ -26,3 +27,4 @@ for(const [key,limit] of Object.entries(fixture.capacityLimits))assert.ok(verifi
 assert.ok(verified.squads.every(s=>Number.isInteger(s.quantity)&&s.quantity>=1));
 assert.equal(verified.strictHealthAdjustments,0,'Final quantities should need no hidden health trimming');
 console.log(JSON.stringify({ok:true,elapsedMs:performance.now()-started,eld:verified.expectedTotalLifetimeDamage,exploration:output.exploration}));
+if(process.argv[3])fs.writeFileSync(process.argv[3],JSON.stringify(output,null,2));
