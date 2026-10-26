@@ -1,3 +1,4 @@
+import {exploreContextKey} from './epic-explore-results.mjs';
 export const BIFF_FORMAT='tbtoolkit-biff';
 export const BIFF_SCHEMA_VERSION=2;
 export const BIFF_MAX_BYTES=5*1024*1024;
@@ -212,6 +213,20 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   for(const workspace of source.workspaces){
     const encounterId=encounterIdMap.get(workspace.encounterId)||workspace.encounterId;
     const resultCache=normalizeOptimizerResultCache(workspace.resultCache);
+    // Imported accounts/custom encounters may receive new IDs. Rebind only a
+    // comparison belonging to this source workspace, preserving all input checks.
+    const comparison=resultCache?.payload?.exploreResults;
+    if(comparison?.version===1&&comparison.owner===source.id+'|'+workspace.encounterId){
+      try{
+        const context=JSON.parse(comparison.context);
+        if(context.owner===comparison.owner&&context.encounter?.id===workspace.encounterId){
+          comparison.owner=accountId+'|'+encounterId;context.owner=comparison.owner;
+          context.encounter.id=encounterId;
+          if(context.inputs?.encounterNormSource==='clan')context.inputs.encounterNormSource='default';
+          comparison.context=exploreContextKey(context);
+        }
+      }catch{delete resultCache.payload.exploreResults;}
+    }
     const selectedIds={};const custom=workspace.customOrder;
     for(const category of CATEGORIES)selectedIds[category]=filterKnownIds(workspace.selectedIds[category],knownUnits,warnings,`${encounterId} ${category} selection`);
     const allowedByCategory=Object.fromEntries(CATEGORIES.map(category=>[category,new Set(selectedIds[category])]));

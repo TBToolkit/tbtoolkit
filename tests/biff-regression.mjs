@@ -97,3 +97,19 @@ const fixture=parseBiff(await readFile(new URL('./fixtures/biff-v1-account.biff'
 assert.equal(fixture.account.name,'Fixture Account');
 
 console.log(JSON.stringify({ok:true,schemaVersion:BIFF_SCHEMA_VERSION,accountId:imported.account.id,warnings:imported.warnings.length}));
+// Explore finalists must survive player serialization and account/encounter ID remapping.
+const withExplore=structuredClone(account);
+const savedComparison={version:1,owner:'main|raid',context:JSON.stringify({owner:'main|raid',encounter:{id:'raid'},inputs:{encounterNormSource:'clan'},effective:'unchanged'}),activeId:'second',armies:[{id:'first',label:'Starting army',selectedIds:['known'],payload:{quantities:{known:42},result:{expectedTotalLifetimeDamage:123}}},{id:'second',label:'Finalist 1',selectedIds:['known'],payload:{quantities:{known:43},result:{expectedTotalLifetimeDamage:124}}}]};
+withExplore.battle.workspaces.raid.methods.optimize.resultCache.payload.exploreResults=savedComparison;
+const portable=parseBiff(serializeAccountToBiff(withExplore));
+assert.deepEqual(portable.account.workspaces[0].resultCache.payload.exploreResults.armies,savedComparison.armies);
+const remapped=materializeImportedAccount(portable,{existingAccountIds:['main'],existingEncounterIds:['raid'],builtInEncounterIds:['epic-doomsday','pvp-single'],optimizerCacheBuild:'optimizer-current'});
+const mappedId=Object.keys(remapped.account.customEncounters)[0];
+const restoredComparison=remapped.account.battle.workspaces[mappedId].methods.optimize.resultCache.payload.exploreResults;
+assert.equal(restoredComparison.owner,remapped.account.id+'|'+mappedId);
+assert.equal(JSON.parse(restoredComparison.context).encounter.id,mappedId);
+assert.equal(JSON.parse(restoredComparison.context).effective,'unchanged');
+assert.equal(JSON.parse(restoredComparison.context).inputs.encounterNormSource,'default');
+assert.equal(restoredComparison.activeId,'second');
+assert.deepEqual(restoredComparison.armies,savedComparison.armies);
+console.log('Player export/import retains Explore finalists, chosen army, and remapped ownership.');
