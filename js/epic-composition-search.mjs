@@ -72,6 +72,33 @@ export function createTierExclusionChallenges({units,currentIds,availableIds,man
   }));
 }
 
+// Protect sparse alternatives from a coarse seed ranking: replace a selected
+// lower-tier combat bundle with each single unit of an available peer family.
+export function createTierReplacementChallenges({units,currentIds,availableIds,mandatoryIds=[]}){
+  const current=new Set(currentIds??[]),available=new Set(availableIds??[]);
+  const combat=unit=>unit.category==='troop'&&String(unit.combatType).toUpperCase()!=='SIEGE';
+  const family=unit=>String(unit.unitClass).toUpperCase();
+  const selected=(units??[]).filter(unit=>current.has(unit.id)&&combat(unit));
+  const groups=[];
+  for(const sourceFamily of [...new Set(selected.map(family))]){
+    const members=selected.filter(unit=>family(unit)===sourceFamily);
+    const tier=Math.min(...members.map(unit=>finite(unit.tierNumber)));
+    const removed=members.filter(unit=>finite(unit.tierNumber)===tier);
+    if(removed.length<2||removed.some(unit=>mandatoryIds.includes(unit.id)))continue;
+    const peers=(units??[]).filter(unit=>available.has(unit.id)&&combat(unit)&&family(unit)!==sourceFamily&&finite(unit.tierNumber)===tier);
+    for(const targetFamily of [...new Set(peers.map(family))]){
+      if(selected.some(unit=>family(unit)===targetFamily&&finite(unit.tierNumber)===tier))continue;
+      const excluded=new Set(removed.map(unit=>unit.id));
+      const base=[...(currentIds??[]),...mandatoryIds].filter(id=>!excluded.has(id));
+      const candidates=peers.filter(unit=>family(unit)===targetFamily).map(unit=>({
+        selectedIds:sortedUnique([...base,unit.id]),addedId:unit.id,removedIds:[...excluded]
+      }));
+      groups.push({key:`${sourceFamily}-to-${targetFamily}-${tier}`,tier,candidates});
+    }
+  }
+  return groups.sort((a,b)=>a.tier-b.tier||a.key.localeCompare(b.key));
+}
+
 export function analyzeTierCompleteness({selectedIds,availableIds,units}){
   const selected=new Set(selectedIds??[]),available=new Set(availableIds??[]),groups=new Map();
   for(const unit of units??[]){

@@ -67,4 +67,13 @@ fields.monsterStrength.value='2456.75';
 vm.runInContext('syncDerivedEpicBonuses()',editContext);
 assert.equal(fields.humanStrength.value,'2356.75','Enabling Auto must replace manual text with the derived value');
 assert.equal(fields.humanStrength.disabled,true);
+fields.monsterST.value='18.6';
+vm.runInContext('syncDerivedEpicBonuses()',editContext);
+for(const key of ['human','guardsman','specialist','engineer','epicHunter']){
+  assert.equal(fields[`${key}ST`].value,'13.6',`${key} Strike Twice must hide floating-point subtraction noise`);
+}
+fields.autoHumanBonuses.checked=false;documentStub.activeElement=fields.humanST;
+fields.humanST.value='13.600000000000001';
+vm.runInContext('syncDerivedEpicBonuses()',editContext);
+assert.equal(fields.humanST.value,'13.600000000000001','Manual input precision must remain untouched while editing');
 console.log('Inline bonus calculations and Human decimal editing passed.');

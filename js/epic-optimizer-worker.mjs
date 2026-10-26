@@ -1,7 +1,7 @@
 import {optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {runOptimizeReviewSelection} from './epic-review-engine.mjs';
-import {preferHigherEldResult} from './epic-explore-compare.mjs';
-import {compositionSignature} from './epic-composition-search.mjs';
+import {exploreCandidatePool,preferHigherEldResult} from './epic-explore-compare.mjs';
+import {compositionSignature,createTierReplacementChallenges,inferReviewAvailability} from './epic-composition-search.mjs';
 import {scoreEpicArmy,validateArmyDatabase} from './epic-combat-engine-v2.mjs';
 import {filterEligibleProgress} from './epic-optimizer-progress.mjs';
 import {APP_BUILD,ARMY_DATABASE_BUILD,EPIC_COMBAT_ENGINE_BUILD,COMBAT_MECHANICS_BUILD,EPIC_OPTIMIZER_BUILD} from './build-info.mjs';
@@ -110,6 +110,12 @@ self.onmessage=async event=>{
       // actual ladder before screening so the popup never starts with a blank chart.
       self.postMessage({type:'progress',requestId,payload:{phase:'baseline-ready',exploreStage:'baseline-ready',progressPct:40,expectedLifetimeDamage:baselineEld,verifiedBestEld,healthLadder:ladderRows(result?.result),evaluations:cumulativeEvaluations}});
       const originalIds=[...message.selectedIds,...(message.fixedMercenaryIds||[])];
+      const maxTierDepth=Math.max(0,Math.min(4,Number(message.exploreTierDepth)||0));
+      const availability=inferReviewAvailability({units,selectedIds:originalIds,maxTierDepth});
+      // Generate these outside the quick review so its weak seed scores (or a
+      // screening timeout) cannot discard every sparse peer-family replacement.
+      const replacementFinalists=createTierReplacementChallenges({units,currentIds:originalIds,availableIds:availability.availableIds,mandatoryIds:availability.mandatoryIds})
+        .flatMap(group=>group.candidates.map(row=>({...row,challenge:group.key}))).slice(0,4);
       let review=null;
       try{
         const remaining=timeBudgetMs-(performance.now()-startedAt);
@@ -120,11 +126,12 @@ self.onmessage=async event=>{
       const baselineMercs=new Set(originalIds.filter(id=>byId.get(id)?.category==='mercenary'));
       screeningEvaluations=review?.evaluations??screeningEvaluations;
       const seen=new Set([compositionSignature(originalIds)]);
-      const candidates=[...(review?.challengeFinalists||[]),...(review?.finalists||[])].filter(row=>{
+      const pool=exploreCandidatePool({...review,replacementFinalists});
+      const candidates=pool.candidates.filter(row=>{
         const signature=compositionSignature(row.selectedIds);
         if(seen.has(signature)||!row.selectedIds.some(id=>byId.get(id)?.category==='troop'||byId.get(id)?.category==='monster')||row.selectedIds.filter(id=>byId.get(id)?.category==='mercenary').length!==baselineMercs.size||![...baselineMercs].every(id=>row.selectedIds.includes(id)))return false;
         seen.add(signature);return true;
-      }).slice(0,7);
+      }).slice(0,pool.limit);
       self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen-complete',progressPct:49,screeningEvaluations,candidateCount:candidates.length,verifiedBestEld,evaluations:cumulativeEvaluations}});
       for(const [index,candidate] of candidates.entries()){
         if(timeBudgetMs-(performance.now()-startedAt)<20_000){explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;}
