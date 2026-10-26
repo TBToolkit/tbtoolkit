@@ -37,4 +37,34 @@ assert.equal(engine.healthInputs.MONSTER,3500);
 assert.equal(engine.healthInputs.BEAST,3600,'PvP Health must use the Beast row override');
 assert.equal(engine.monsterStrengthPct,3800);
 assert.equal(engine.beastStrengthPct,3700,'PvP Strength must use the Beast row override');
-console.log('Inline bonus calculations passed.');
+// Exercise live synchronization while a manual Human decimal is being typed.
+const bonusRows=source.slice(source.indexOf('const HUMAN_BONUS_ROW='),source.indexOf('function updateOptimizerElapsed()'));
+const fields={};
+const documentStub={activeElement:null,querySelector:()=>null};
+const editContext=vm.createContext({els:fields,document:documentStub,parseNumber:value=>Number(String(value).replaceAll(',',''))||0});
+vm.runInContext(`${bonusRows}${functionSource('setDerivedField','epicBonusPayload')}`,editContext);
+function field(value='0'){return{value,checked:true,setAttribute(){}};}
+for(const key of ['monster','beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
+  for(const stat of ['Health','Strength','DD','ST'])fields[`${key}${stat}`]=field('100');
+  for(const stat of ['PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'])fields[key==='monster'?stat[0].toLowerCase()+stat.slice(1):`${key}${stat}`]=field('50');
+  fields[`auto${key[0].toUpperCase()+key.slice(1)}Bonuses`]=field();
+}
+fields.autoHumanBonuses.checked=false;
+for(const stat of ['Health','Strength','DD','ST','PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength']){
+  const input=fields[`human${stat}`];documentStub.activeElement=input;
+  for(const text of ['', '.', '12.', '12.5', '12.50']){
+    input.value=text;vm.runInContext('syncDerivedEpicBonuses()',editContext);
+    assert.equal(input.value,text,`Typing ${text} in Human ${stat} must preserve the active edit`);
+    assert.equal(input.disabled,false);
+  }
+  if(['Health','Strength','DD','ST'].includes(stat))assert.equal(fields[`guardsman${stat}`].value,'12.5','Linked children must still receive the parsed decimal');
+}
+documentStub.activeElement=null;
+vm.runInContext('syncDerivedEpicBonuses()',editContext);
+assert.equal(fields.humanStrength.value,'12.5','A completed manual edit can normalize after focus leaves');
+fields.autoHumanBonuses.checked=true;documentStub.activeElement=fields.humanStrength;
+fields.monsterStrength.value='2456.75';
+vm.runInContext('syncDerivedEpicBonuses()',editContext);
+assert.equal(fields.humanStrength.value,'2356.75','Enabling Auto must replace manual text with the derived value');
+assert.equal(fields.humanStrength.disabled,true);
+console.log('Inline bonus calculations and Human decimal editing passed.');

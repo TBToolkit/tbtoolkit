@@ -1036,7 +1036,8 @@ function copyWorkspace(source){return source?JSON.parse(JSON.stringify(source)):
 
 function setDerivedField(id,value,readonly=true){
   if(!els[id])return;
-  els[id].value=Number.isFinite(Number(value))?String(Math.max(0,Number(value))):'0';
+  // Keep in-progress manual text (including a trailing decimal point) intact.
+  if(readonly||document.activeElement!==els[id])els[id].value=Number.isFinite(Number(value))?String(Math.max(0,Number(value))):'0';
   els[id].readOnly=readonly;
   els[id].disabled=readonly;
   els[id].tabIndex=readonly?-1:0;
