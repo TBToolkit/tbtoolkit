@@ -232,7 +232,7 @@ assert.doesNotMatch(html,/<select id="encounterPlanStrategy">/,'Revival strategi
 assert.match(source,/for\(const row of els\.encounterPlanStrategies\?\.querySelectorAll\('tr\[data-strategy\]'\)/,'Every strategy row must be recalculated from the same norm and army.');
 assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Encounters without a point estimate must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
-assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics\}/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
+assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics,/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
 assert.match(source,/function persistOptimizerResult\(key,saved\)[\s\S]*mirrorOptimizerResult\(key,saved\)[\s\S]*writeSavedJson\(localStorage,key,saved\)/,'A newly completed optimization must have a durable backup independent of localStorage.');
 assert.doesNotMatch(source,/localStorage\.removeItem\(candidate\.key\)/,'A full browser-storage origin must not evict older optimized encounters.');
 assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*persistOptimizerResult\(optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');

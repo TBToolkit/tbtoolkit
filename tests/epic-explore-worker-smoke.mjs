@@ -37,3 +37,10 @@ const fixed=messages.find(m=>m.requestId===3&&m.type==='result')?.payload;
 assert.equal(fixed?.result.squads.find(s=>s.id===mercenary.id)?.quantity,7,'Explore must preserve fixed mercenary quantities');
 assert.ok(fixed.exploration.finalEld>=fixed.exploration.baselineEld);
 console.log('Explore with fixed mercenaries passed.');
+
+assert.ok(fresh.exploreResults.armies.length>=2,'Worker must return a baseline plus completed finalists');
+assert.equal(fresh.exploreResults.armies[0].label,'Starting army');
+assert.ok(fresh.exploreResults.armies.some(a=>a.id===fresh.exploreResults.activeId),'The chosen army must be in the comparison');
+assert.equal(new Set(fresh.exploreResults.armies.map(a=>a.id)).size,fresh.exploreResults.armies.length);
+for(const army of fixed.exploreResults.armies){assert.equal(army.payload.result.squads.find(s=>s.id===mercenary.id)?.quantity,7);assert.equal(army.payload.result.cases,undefined);assert.equal(army.payload.exploreResults,undefined);}
+console.log('Explore worker retains completed finalist payloads, including fixed mercenaries.');

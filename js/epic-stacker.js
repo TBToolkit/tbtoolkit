@@ -1,3 +1,4 @@
+import {exploreArmyKey,exploreContextKey,exploreResultRows} from './epic-explore-results.mjs';
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs';
 import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs';
@@ -43,7 +44,7 @@ let canonicalAccountBackup=null;
 let optimizerPersistenceWarningShown=false;
 let accountPersistenceWarningShown=false;
 let pendingAccountBackup=Promise.resolve(false);
-let exploreUnitStructures=false;let exploreTierDepth=2;
+let exploreUnitStructures=false;let exploreTierDepth=2;let applyingExploreChoice=false;
 let epicChestRewards=new Map();
 let tinmanChestRewards=new Map(),tinmanLevelData=[];
 let pendingBiffImport=null;
@@ -816,7 +817,7 @@ function compactOptimizerPayloadForStorage(payload){
     'fixedMercenaries','optimizerCoreExpectedLifetimeDamage',
     'combinedExpectedLifetimeDamage'
   ])if(diagnostics[key]!==undefined)persistedDiagnostics[key]=diagnostics[key];
-  return{quantities:{...(payload.quantities||{})},result,diagnostics:persistedDiagnostics};
+  return{quantities:{...(payload.quantities||{})},result,diagnostics:persistedDiagnostics,...(payload.exploreResults?{exploreResults:payload.exploreResults}:{})};
 }
 function persistOptimizerResult(key,saved){
   optimizerResultBackups.set(key,saved);
@@ -1267,7 +1268,65 @@ function currentEpicEffectiveSignature(){
   };
   return JSON.stringify(effective);
 }
+
+function exploreComparisonOwner(){return String(state.activeAccountId)+'|'+String(state.modes.battle.activeEncounterId);}
+function exploreComparisonContext(){
+  return exploreContextKey({owner:exploreComparisonOwner(),effective:currentEpicEffectiveSignature(),inputs:modeState().inputs,selected:Object.fromEntries(Object.entries(modeState().selectedIds).map(([key,ids])=>[key,[...ids].sort()])),temple:templeLevel(),encounter:currentEncounter(),pointsRate:estimatedEpicPoints(currentEncounter()?.name,1e12)});
+}
+function renderExploreResultsPanel(open=false){
+  const panel=document.getElementById('exploreResultsPanel');if(!panel)return;
+  const comparison=lastOptimizedEpicPayload?.exploreResults;
+  const visible=isBattleOptimizeMode()&&comparison?.version===1&&comparison.owner===exploreComparisonOwner()&&comparison.context===exploreComparisonContext();
+  panel.hidden=!visible;
+  if(!visible){
+    if(comparison&&!applyingExploreChoice&&!epicWorker&&isBattleOptimizeMode()&&comparison.owner===exploreComparisonOwner()){
+      delete lastOptimizedEpicPayload.exploreResults;saveOptimizerResult();
+    }
+    return;
+  }
+  if(open)panel.open=true;
+  const sort=document.getElementById('exploreResultsSort'),body=document.getElementById('exploreResultsRows');
+  const expanded=new Set([...body.querySelectorAll('details[open]')].map(el=>el.dataset.army));
+  const encounter=currentEncounter();
+  const rows=exploreResultRows(comparison,{sort:sort.value,goldForSquad:s=>actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold')),pointsForEld:eld=>encounter?.builtIn?estimatedEpicPoints(encounter.name,eld):null});
+  document.getElementById('exploreResultsCount').textContent='· '+rows.length+' armies';
+  document.getElementById('exploreResultsStatus').textContent=rows.some(row=>row.active)?'Selected: '+rows.find(row=>row.active).label:'Choose a saved finalist to use its exact quantities.';
+  body.innerHTML=rows.map(row=>{
+    const index=comparison.armies.findIndex(a=>a.id===row.id),groups=new Map(),tiers=new Map();
+    for(const squad of row.squads){
+      const unit=armyV2.find(u=>u.id===squad.id),group=unit?.category==='monster'?'Monsters':unit?.category==='mercenary'?'Mercenaries':({GUARDSMAN:'Guardsmen',SPECIALIST:'Specialists',ENGINEER:'Engineers'}[unit?.unitClass]||'Troops');
+      if(!groups.has(group))groups.set(group,[]);groups.get(group).push(squad);tiers.set(squad.tier,(tiers.get(squad.tier)||0)+1);
+    }
+    const detail=[...groups].map(([group,squads])=>'<section><h4>'+escapeHtml(group)+'</h4><ul>'+squads.sort((a,b)=>tierNumber(b.tier)-tierNumber(a.tier)||a.name.localeCompare(b.name)).map(s=>'<li><span>'+escapeHtml(s.tier+' · '+s.name)+'</span><strong>'+formatInteger(s.quantity)+'</strong></li>').join('')+'</ul></section>').join('');
+    const badges=[row.best?'Best ELD':'',row.fewest?'Fewest unit types':'',row.active?'Currently selected':''].filter(Boolean).map(x=>'<span class="explore-result-badge">'+x+'</span>').join('');
+    const loss=row.best?'—':row.lossPct>0&&row.lossPct<.000001?'<0.000001%':row.lossPct.toFixed(6).replace(/\.?0+$/,'')+'%';
+    return '<tr class="'+(row.active?'is-current':'')+'"><td><strong>'+escapeHtml(row.label)+'</strong><small>'+escapeHtml([...tiers].map(([tier,count])=>tier+' × '+count).join(' · '))+'</small>'+badges+'</td><td>'+row.unitCount+'</td><td title="'+row.eld+'">'+formatDamage(row.eld)+'</td><td>'+escapeHtml(loss)+'</td><td>'+(row.points===null?'—':formatDamage(row.points))+'</td><td>'+Math.round(row.gold).toLocaleString('en-US')+'</td><td>'+(row.efficiency===null?'—':formatDamage(row.efficiency))+'</td><td><button type="button" data-explore-use="'+index+'" '+(row.active||epicWorker?'disabled':'')+' aria-label="Use '+escapeHtml(row.label)+'">'+(row.active?'Selected':'Use this army')+'</button></td></tr><tr><td colspan="8"><details data-army="'+index+'" '+(expanded.has(String(index))?'open':'')+'><summary>'+escapeHtml(row.label)+' — selected units and exact quantities</summary><div class="explore-army-groups">'+detail+'</div></details></td></tr>';
+  }).join('');
+  if(!panel.dataset.bound){
+    panel.dataset.bound='true';sort.addEventListener('change',()=>renderExploreResultsPanel());
+    body.addEventListener('click',event=>{const button=event.target.closest('[data-explore-use]');if(button)useExploreArmy(Number(button.dataset.exploreUse));});
+  }
+}
+function useExploreArmy(index){
+  if(epicWorker)return;
+  readInputs();
+  const comparison=lastOptimizedEpicPayload?.exploreResults;
+  if(!comparison||comparison.context!==exploreComparisonContext()||comparison.owner!==exploreComparisonOwner()){renderExploreResultsPanel();return;}
+  const army=comparison.armies[index];if(!army)return;
+  applyingExploreChoice=true;
+  try{
+    const chosen=new Set(army.selectedIds),selected=modeState().selectedIds;
+    for(const category of ['troop','monster','mercenary'])selected[category]=units[category].filter(u=>chosen.has(u.id)).map(u=>u.id);
+    comparison.activeId=army.id;
+    lastOptimizedEpicPayload={...army.payload,exploreResults:comparison};
+    syncCustomOrders();renderAllSelections();renderEpicOptimizedResult(lastOptimizedEpicPayload);
+    epicResultCurrent=true;lastOptimizedEpicSignature=currentEpicEffectiveSignature();comparison.context=exploreComparisonContext();
+    saveOptimizerResult();renderExploreResultsPanel(true);
+    document.getElementById('exploreResultsStatus').textContent=army.label+' selected. You can choose another army here.';
+  }finally{applyingExploreChoice=false;setOptimizeButtonState();document.querySelector('#exploreResultsRows details[data-army="'+index+'"] summary')?.focus();}
+}
 function setOptimizeButtonState(){
+  renderExploreResultsPanel();
   if(!els.optimizeArmy||!isAnyEpicOptimizeMode())return;
   if(!appInitialized){
     els.optimizeArmy.disabled=true;
@@ -1978,6 +2037,7 @@ function startEpicOptimization(){
           quantities:msg.payload?.quantities
         });
         updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.totalEvaluations??msg.payload?.diagnostics?.evaluations,expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,bestExpectedLifetimeDamage:msg.payload?.diagnostics?.maximumExpectedLifetimeDamage,practicalTieBreakApplied:!!msg.payload?.diagnostics?.practicalTieBreakApplied,practicalTieBreakLossPct:msg.payload?.diagnostics?.practicalTieBreakLossPct});
+        if(!exploring&&lastOptimizedEpicPayload?.exploreResults?.context===exploreComparisonContext()){msg.payload.exploreResults={...lastOptimizedEpicPayload.exploreResults,activeId:exploreArmyKey(msg.payload)};}
         if(msg.payload?.exploration?.changedSelection&&Array.isArray(msg.payload.exploredSelectedIds)){
           const chosen=new Set(msg.payload.exploredSelectedIds);
           const selected=modeState().selectedIds;
@@ -1996,10 +2056,12 @@ function startEpicOptimization(){
         lastOptimizedEpicPayload=msg.payload;
         epicResultCurrent=true;
         lastOptimizedEpicSignature=currentEpicEffectiveSignature();
+        if(msg.payload.exploreResults){msg.payload.exploreResults.context=exploreComparisonContext();msg.payload.exploreResults.owner=exploreComparisonOwner();}
         saveOptimizerResult();
         // Explore is a one-time search. Subsequent input changes should use
         // the chosen unit types unless the player explicitly opts in again.
         if(exploring)exploreUnitStructures=false;
+        renderExploreResultsPanel(true);
       }catch(error){
         console.error(error);
         showValidation([error.message||'The Epic optimizer result could not be rendered.']);

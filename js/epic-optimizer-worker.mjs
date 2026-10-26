@@ -1,3 +1,4 @@
+import {captureExploreArmy,collectExploreArmies} from './epic-explore-results.mjs';
 import {mercenaryPreservationStatus,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {runExploreSearch,runExploreNeighborhood} from './epic-explore-search.mjs';
 import {preferHigherEldResult} from './epic-explore-compare.mjs';
@@ -101,7 +102,7 @@ self.onmessage=async event=>{
     let result=message.exploreMode&&message.baselineResult?.result?.expectedTotalLifetimeDamage>0
       ?structuredClone(message.baselineResult)
       :optimizeOne(message.selectedIds,message.exploreMode?'baseline':'');
-    delete result.exploredSelectedIds;delete result.exploration;
+    delete result.exploredSelectedIds;delete result.exploration;delete result.exploreResults;
     const baselineEld=Number(result?.result?.expectedTotalLifetimeDamage||0);
     verifiedBestEld=baselineEld;
     let explored=0,explorationNote='';
@@ -110,6 +111,7 @@ self.onmessage=async event=>{
       // actual ladder before screening so the popup never starts with a blank chart.
       self.postMessage({type:'progress',requestId,payload:{phase:'baseline-ready',exploreStage:'baseline-ready',progressPct:40,expectedLifetimeDamage:baselineEld,verifiedBestEld,healthLadder:ladderRows(result?.result),evaluations:cumulativeEvaluations}});
       const originalIds=[...message.selectedIds,...(message.fixedMercenaryIds||[])];
+      const completedArmies=[captureExploreArmy(result,originalIds,'Starting army')];
       const maxTierDepth=Math.max(0,Math.min(4,Number(message.exploreTierDepth)||0));
       const remaining=timeBudgetMs-(performance.now()-startedAt);
       const review=remaining>25_000?runExploreSearch({units,currentIds:originalIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,maxTierDepth,timeBudgetMs:Math.min(60_000,remaining*.4),onProgress:progress=>{screeningEvaluations=progress.evaluations;self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen',progressPct:40+Math.round(progress.progressPct*.09),screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations}});}}):null;
@@ -153,6 +155,7 @@ self.onmessage=async event=>{
               if(error.code==='TIME_BUDGET')explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';
             }
           }
+          completedArmies.push(captureExploreArmy(trial,candidate.selectedIds,`Finalist ${index+1}`));
           if(preferHigherEldResult(result,trial)===trial){result=trial;result.exploredSelectedIds=candidate.selectedIds;}
           verifiedBestEld=Number(result?.result?.expectedTotalLifetimeDamage||0);
           self.postMessage({type:'progress',requestId,payload:{phase:'finalist-complete',exploreStage:'finalist-complete',candidateIndex:index+1,candidateCount:broadCandidates+2,expectedLifetimeDamage:Number(trial?.result?.expectedTotalLifetimeDamage||0),verifiedBestEld,healthLadder:ladderRows(trial?.result),screeningEvaluations,evaluations:cumulativeEvaluations,progressPct:50+Math.round((index+1)*43/Math.max(1,broadCandidates+2))}});
@@ -162,6 +165,7 @@ self.onmessage=async event=>{
           explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;
         }
       }
+      result.exploreResults=collectExploreArmies(completedArmies,result);
       result.exploration={baselineEld,finalEld:Number(result?.result?.expectedTotalLifetimeDamage||0),screeningEvaluations,neighborhoodPasses,neighborhoodRefinements,searchDiagnostics:review?{uniqueStructures:review.uniqueStructures,generatedStructures:review.generatedStructures,refinements:review.refinements,elapsedMs:review.elapsedMs}:null,screenedCandidates:candidates.length,finalistCount:candidates.length,fullyOptimizedCandidates:explored,changedSelection:!!result.exploredSelectedIds,note:explorationNote};
     }
     self.postMessage({type:'progress',requestId,payload:{phase:'finalizing',progressPct:98,evaluations:result?.diagnostics?.totalEvaluations??result?.diagnostics?.evaluations}});
