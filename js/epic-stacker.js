@@ -1285,10 +1285,12 @@ function renderExploreResultsPanel(open=false){
     return;
   }
   if(open)panel.open=true;
-  const sort=document.getElementById('exploreResultsSort'),body=document.getElementById('exploreResultsRows');
-  const expanded=new Set([...body.querySelectorAll('details[open]')].map(el=>el.dataset.army));
+  const body=document.getElementById('exploreResultsRows');
+  const sort=panel.dataset.sort||'eld',direction=panel.dataset.direction||'desc';
+  const expanded=new Set([...body.querySelectorAll('[data-explore-toggle][aria-expanded="true"]')].map(el=>el.dataset.exploreToggle));
   const encounter=currentEncounter();
-  const rows=exploreResultRows(comparison,{sort:sort.value,goldForSquad:s=>actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold')),pointsForEld:eld=>encounter?.builtIn?estimatedEpicPoints(encounter.name,eld):null});
+  const rows=exploreResultRows(comparison,{sort,direction,goldForSquad:s=>actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold')),pointsForEld:eld=>encounter?.builtIn?estimatedEpicPoints(encounter.name,eld):null});
+  panel.querySelectorAll('[data-explore-sort]').forEach(button=>{const active=button.dataset.exploreSort===sort;button.closest('th').setAttribute('aria-sort',active?(direction==='asc'?'ascending':'descending'):'none');button.querySelector('span').textContent=active?(direction==='asc'?'↑':'↓'):'↕';});
   document.getElementById('exploreResultsCount').textContent='· '+rows.length+' armies';
   document.getElementById('exploreResultsStatus').textContent=rows.some(row=>row.active)?'Selected: '+rows.find(row=>row.active).label:'Choose a saved finalist to use its exact quantities.';
   body.innerHTML=rows.map(row=>{
@@ -1298,13 +1300,15 @@ function renderExploreResultsPanel(open=false){
       if(!groups.has(group))groups.set(group,[]);groups.get(group).push(squad);tiers.set(squad.tier,(tiers.get(squad.tier)||0)+1);
     }
     const detail=[...groups].map(([group,squads])=>'<section><h4>'+escapeHtml(group)+'</h4><ul>'+squads.sort((a,b)=>tierNumber(b.tier)-tierNumber(a.tier)||a.name.localeCompare(b.name)).map(s=>'<li><span>'+escapeHtml(s.tier+' · '+s.name)+'</span><strong>'+formatInteger(s.quantity)+'</strong></li>').join('')+'</ul></section>').join('');
+    const composition=['Guardsmen','Specialists','Engineers','Monsters','Mercenaries','Troops'].filter(group=>['Guardsmen','Specialists','Engineers','Monsters'].includes(group)||groups.has(group)).map(group=>{const counts=new Map();for(const squad of groups.get(group)||[])counts.set(squad.tier,(counts.get(squad.tier)||0)+1);return '<div class="explore-composition-group" aria-label="'+group+'">'+[...counts].sort(([a],[b])=>tierNumber(b)-tierNumber(a)).map(([tier,count])=>'<span style="color:'+(TIER_COLORS[tierNumber(tier)]||'#b6c9d5')+'">'+escapeHtml(tier)+' <span class="explore-tier-count">('+count+')</span></span>').join('')+'</div>';}).join('');
     const badges=[row.best?'Best ELD':'',row.fewest?'Fewest unit types':'',row.active?'Currently selected':''].filter(Boolean).map(x=>'<span class="explore-result-badge">'+x+'</span>').join('');
     const loss=row.best?'—':row.lossPct>0&&row.lossPct<.000001?'<0.000001%':row.lossPct.toFixed(6).replace(/\.?0+$/,'')+'%';
-    return '<tr class="'+(row.active?'is-current':'')+'"><td><strong>'+escapeHtml(row.label)+'</strong><small>'+escapeHtml([...tiers].map(([tier,count])=>tier+' × '+count).join(' · '))+'</small>'+badges+'</td><td>'+row.unitCount+'</td><td title="'+row.eld+'">'+formatDamage(row.eld)+'</td><td>'+escapeHtml(loss)+'</td><td>'+(row.points===null?'—':formatDamage(row.points))+'</td><td>'+Math.round(row.gold).toLocaleString('en-US')+'</td><td>'+(row.efficiency===null?'—':formatDamage(row.efficiency))+'</td><td><button type="button" data-explore-use="'+index+'" '+(row.active||epicWorker?'disabled':'')+' aria-label="Use '+escapeHtml(row.label)+'">'+(row.active?'Selected':'Use this army')+'</button></td></tr><tr><td colspan="8"><details data-army="'+index+'" '+(expanded.has(String(index))?'open':'')+'><summary>'+escapeHtml(row.label)+' — selected units and exact quantities</summary><div class="explore-army-groups">'+detail+'</div></details></td></tr>';
+    return '<tr class="'+(row.active?'is-current':'')+'"><td><button type="button" class="explore-row-toggle" data-explore-toggle="'+index+'" aria-expanded="'+expanded.has(String(index))+'" aria-controls="exploreArmyDetails'+index+'" aria-label="Show quantities for '+escapeHtml(row.label)+'">'+(expanded.has(String(index))?'▾':'▸')+'</button></td><td><div class="explore-finalist-name"><strong>'+escapeHtml(row.label)+'</strong>'+badges+'</div></td><td><div class="explore-composition">'+composition+'</div></td><td>'+row.unitCount+'</td><td title="'+row.eld+'">'+formatDamage(row.eld)+'</td><td>'+escapeHtml(loss)+'</td><td>'+(row.points===null?'—':formatDamage(row.points))+'</td><td>'+Math.round(row.gold).toLocaleString('en-US')+'</td><td>'+(row.efficiency===null?'—':formatDamage(row.efficiency))+'</td><td><button type="button" data-explore-use="'+index+'" '+(row.active||epicWorker?'disabled':'')+' aria-label="Use '+escapeHtml(row.label)+'">'+(row.active?'Selected':'Use this army')+'</button></td></tr><tr id="exploreArmyDetails'+index+'" class="explore-quantity-row" '+(expanded.has(String(index))?'':'hidden')+'><td colspan="10"><div class="explore-army-groups">'+detail+'</div></td></tr>';
   }).join('');
   if(!panel.dataset.bound){
-    panel.dataset.bound='true';sort.addEventListener('change',()=>renderExploreResultsPanel());
-    body.addEventListener('click',event=>{const button=event.target.closest('[data-explore-use]');if(button)useExploreArmy(Number(button.dataset.exploreUse));});
+    panel.dataset.bound='true';
+    panel.querySelectorAll('[data-explore-sort]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.exploreSort;panel.dataset.direction=(panel.dataset.sort||'eld')===key?((panel.dataset.direction||'desc')==='asc'?'desc':'asc'):(['units','gold','loss','name'].includes(key)?'asc':'desc');panel.dataset.sort=key;renderExploreResultsPanel();}));
+    body.addEventListener('click',event=>{const button=event.target.closest('[data-explore-use]');if(button){useExploreArmy(Number(button.dataset.exploreUse));return;}const toggle=event.target.closest('[data-explore-toggle]');if(toggle){const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'▾':'▸';document.getElementById(toggle.getAttribute('aria-controls')).hidden=!open;}});
   }
 }
 function useExploreArmy(index){
@@ -1323,7 +1327,7 @@ function useExploreArmy(index){
     epicResultCurrent=true;lastOptimizedEpicSignature=currentEpicEffectiveSignature();comparison.context=exploreComparisonContext();
     saveOptimizerResult();renderExploreResultsPanel(true);
     document.getElementById('exploreResultsStatus').textContent=army.label+' selected. You can choose another army here.';
-  }finally{applyingExploreChoice=false;setOptimizeButtonState();document.querySelector('#exploreResultsRows details[data-army="'+index+'"] summary')?.focus();}
+  }finally{applyingExploreChoice=false;setOptimizeButtonState();document.querySelector('#exploreResultsRows [data-explore-toggle="'+index+'"]')?.focus();}
 }
 function setOptimizeButtonState(){
   renderExploreResultsPanel();

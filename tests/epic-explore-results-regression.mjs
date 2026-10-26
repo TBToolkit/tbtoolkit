@@ -41,3 +41,9 @@ const key=exploreContextKey({owner:'p|shadow',inputs:{health:1,limit:2},selectio
 assert.equal(key,exploreContextKey({selection:['a'],inputs:{limit:2,health:1},owner:'p|shadow'}));
 for(const change of [{owner:'other|shadow'},{owner:'p|other'},{inputs:{health:2,limit:2}},{selection:['b']}])assert.notEqual(key,exploreContextKey({owner:'p|shadow',inputs:{health:1,limit:2},selection:['a'],...change}));
 console.log('Explore comparison collection, metrics, deduplication, compact persistence, and context checks passed.');
+for(const [sort,first] of [['eld',simple.id],['points',simple.id],['loss',starting.id],['units',simple.id],['name',simple.id]]){
+ const ascending=exploreResultRows(comparison,{...metrics,sort,direction:'asc'});
+ const descending=exploreResultRows(comparison,{...metrics,sort,direction:'desc'});
+ assert.equal(ascending[0].id,first,sort+' ascending');
+ assert.equal(descending[1].id,first,sort+' descending');
+}
