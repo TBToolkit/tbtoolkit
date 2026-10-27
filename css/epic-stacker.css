@@ -4639,6 +4639,8 @@ body.battle-mode-active [data-section-panel]>.battle-only-column-title{position:
 .explore-results-table th button{white-space:normal;text-align:inherit;display:inline-flex;align-items:center;gap:5px}
 .explore-results-table th[aria-sort="ascending"] button,.explore-results-table th[aria-sort="descending"] button{color:#f3b529}
 .explore-results-table .explore-row-toggle{font-size:1.15rem;min-width:24px;min-height:24px;color:#f3b529}
+.explore-results-table tbody tr:has(.explore-row-toggle){cursor:pointer}
+.explore-results-table tbody tr:has(.explore-row-toggle):hover{background:#17313f}
 .explore-quantity-row[hidden]{display:none}
 .explore-quantity-row>td{background:#091620;text-align:left}
 .explore-results-toolbar{justify-content:flex-end;margin:8px 0}

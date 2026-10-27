@@ -1307,7 +1307,16 @@ function renderExploreResultsPanel(open=false){
   if(!panel.dataset.bound){
     panel.dataset.bound='true';
     panel.querySelectorAll('[data-explore-sort]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.exploreSort;panel.dataset.direction=(panel.dataset.sort||'eld')===key?((panel.dataset.direction||'desc')==='asc'?'desc':'asc'):(['units','gold','loss','name'].includes(key)?'asc':'desc');panel.dataset.sort=key;renderExploreResultsPanel();}));
-    body.addEventListener('click',event=>{const button=event.target.closest('[data-explore-use]');if(button){useExploreArmy(Number(button.dataset.exploreUse));return;}const toggle=event.target.closest('[data-explore-toggle]');if(toggle){const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'▾':'▸';document.getElementById(toggle.getAttribute('aria-controls')).hidden=!open;}});
+    body.addEventListener('click',event=>{
+      const button=event.target.closest('[data-explore-use]');
+      if(button){useExploreArmy(Number(button.dataset.exploreUse));return;}
+      const toggle=event.target.closest('tr')?.querySelector('[data-explore-toggle]');
+      if(toggle){
+        const open=toggle.getAttribute('aria-expanded')!=='true';
+        toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'▾':'▸';
+        document.getElementById(toggle.getAttribute('aria-controls')).hidden=!open;
+      }
+    });
   }
 }
 function useExploreArmy(index){
