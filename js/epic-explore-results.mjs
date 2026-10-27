@@ -1,3 +1,30 @@
+import {parseNumber} from './ui-utils.mjs';
+
+// Keep this scope limited to Army Limits & Unit Bonuses (Section 2).
+// Selections, Explore settings, clan planning, and account settings are separate.
+export function exploreSection2Context(owner,inputs){
+  const numeric=['leadership','authority','dominance','leadershipFill','authorityFill','dominanceFill','strengthAgainstEpic','fenrirStrength','pvpHealth','pvpStrength','rankSeparation'];
+  const flags=['autoLeadership','autoAuthority','autoDominance','arachne','minimumSeparation'];
+  for(const profile of ['monster','beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
+    numeric.push(...['Health','Strength','DD','ST','PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'].map(stat=>profile+stat));
+    if(profile!=='monster')flags.push('auto'+profile[0].toUpperCase()+profile.slice(1)+'Bonuses');
+  }
+  const values={};
+  for(const key of numeric)values[key]=parseNumber(inputs?.[key]);
+  for(const key of flags)values[key]=!!inputs?.[key];
+  return exploreContextKey({scope:'section2',owner,inputs:values});
+}
+
+export function exploreComparisonMatches(comparison,owner,inputs){
+  if(comparison?.version!==1||comparison.owner!==owner)return false;
+  try{
+    const saved=JSON.parse(comparison.context);
+    // Older panels saved the entire workspace; project their original inputs
+    // onto Section 2 so existing player files and browser results still work.
+    return saved.owner===owner&&saved.inputs&&exploreSection2Context(owner,saved.inputs)===exploreSection2Context(owner,inputs);
+  }catch{return false;}
+}
+
 export function exploreArmyKey(payload){
   return JSON.stringify((payload?.result?.squads||[]).filter(s=>s.quantity>0).map(s=>[s.id,s.quantity]).sort(([a],[b])=>a.localeCompare(b)));
 }

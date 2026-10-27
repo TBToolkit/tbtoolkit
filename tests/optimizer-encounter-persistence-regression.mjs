@@ -155,3 +155,23 @@ assert.equal(preserved.get('optimizer.new').payload.result.eld,22);
 assert.deepEqual(backedUp,['optimizer.new']);
 
 console.log(JSON.stringify({ok:true,encounters:['arachne','doomsday'],quotaFallback:true}));
+
+// A shared army's current selections/signature may differ from its last Explore.
+// Restore the encounter's own saved comparison even while it should be hidden.
+failStorage=false;encounterId='doomsday';
+context.state.activeAccountId='player';
+workspaces.doomsday.inputs.shareEpicArmy=true;
+const ownComparison={version:1,owner:'player|doomsday',context:'original Section 2',armies:[{id:'own-finalist'}]};
+workspaces.doomsday.resultCache={build:'optimizer:test-build',signature:'old-inputs',savedAt:1,payload:{result:{eld:22},exploreResults:ownComparison}};
+storage.clear();
+context.canReuseEpicOptimizerResult=()=>true;
+context.currentEpicEffectiveSignature=()=> 'changed-inputs';
+context.linkedEpicArmyWorkspaces=()=>[{id:'doomsday',workspace:workspaces.doomsday},{id:'peer',workspace:{resultCache:{build:'optimizer:test-build',signature:'changed-inputs',savedAt:2,payload:{result:{eld:33}}}}}];
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload.result.eld,33,'Continue reusing a matching shared army result');
+assert.equal(context.lastOptimizedEpicPayload.exploreResults.owner,'player|doomsday','Keep this encounter’s own comparison when reusing a shared result');
+assert.equal(workspaces.doomsday.resultCache.payload.exploreResults.owner,'player|doomsday');
+context.linkedEpicArmyWorkspaces=()=>[{id:'doomsday',workspace:workspaces.doomsday}];
+context.currentEpicEffectiveSignature=()=> 'different-again';
+vm.runInContext('loadSavedOptimizerResult()',context);
+assert.equal(context.lastOptimizedEpicPayload.exploreResults.armies[0].id,'own-finalist','A hidden shared comparison must survive reload with no matching result');

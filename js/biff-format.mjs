@@ -219,9 +219,9 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
     if(comparison?.version===1&&comparison.owner===source.id+'|'+workspace.encounterId){
       try{
         const context=JSON.parse(comparison.context);
-        if(context.owner===comparison.owner&&context.encounter?.id===workspace.encounterId){
+        if(context.owner===comparison.owner&&(context.scope==='section2'||context.encounter?.id===workspace.encounterId)){
           comparison.owner=accountId+'|'+encounterId;context.owner=comparison.owner;
-          context.encounter.id=encounterId;
+          if(context.encounter)context.encounter.id=encounterId;
           if(context.inputs?.encounterNormSource==='clan')context.inputs.encounterNormSource='default';
           comparison.context=exploreContextKey(context);
         }
