@@ -14,8 +14,8 @@ export function createExploreProgressState(baselinePayload=null){
   return{
     trialKey:'baseline',trialBestEld:baselineEld,currentEld:baselineEld,
     verifiedBestEld:baselineEld,rows:optimizerLadderRows(baselinePayload?.result),
-    chartTitle:'Starting Army Health Ladder',
-    emptyMessage:'Optimizing your starting army…',revision:baselineEld>0?1:0
+    chartTitle:'Explore Starting Point Health Ladder',
+    emptyMessage:'Optimizing the Explore starting point…',revision:baselineEld>0?1:0
   };
 }
 
@@ -29,21 +29,22 @@ export function advanceExploreProgress(previous,progress={}){
     next.trialKey='baseline';next.trialBestEld=value;next.currentEld=value;
     next.verifiedBestEld=Math.max(next.verifiedBestEld,value);
     next.rows=Array.isArray(progress.healthLadder)?progress.healthLadder:[];
-    next.chartTitle='Starting Army Health Ladder';next.revision++;
+    next.chartTitle='Explore Starting Point Health Ladder';next.revision++;
     return next;
   }
   if(progress.exploreStage==='screen'||progress.exploreStage==='screen-complete'){
-    next.chartTitle='Starting Army Health Ladder';
+    next.chartTitle='Explore Starting Point Health Ladder';
     next.emptyMessage='Screening unit combinations…';
     return next;
   }
-  if(progress.exploreStage==='finalist'||progress.exploreStage==='finalist-complete'){
-    const key=`finalist-${Number(progress.candidateIndex)||0}`;
+  if(progress.exploreStage==='finalist'||progress.exploreStage==='finalist-complete'||progress.exploreStage==='user-army'){
+    const userArmy=progress.exploreStage==='user-army';
+    const key=userArmy?'user-army':`finalist-${Number(progress.candidateIndex)||0}`;
     if(key!==next.trialKey){
       next.trialKey=key;next.trialBestEld=0;next.currentEld=0;
       next.rows=[];next.revision++;
     }
-    next.chartTitle=`Finalist ${Number(progress.candidateIndex)||0} of ${Number(progress.candidateCount)||0} Health Ladder`;
+    next.chartTitle=userArmy?'Your Selected Army Health Ladder':`Finalist ${Number(progress.candidateIndex)||0} of ${Number(progress.candidateCount)||0} Health Ladder`;
     next.emptyMessage=`Preparing finalist ${Number(progress.candidateIndex)||0}…`;
     if(progress.exploreStage==='finalist-complete'){
       next.currentEld=value;next.trialBestEld=value;

@@ -110,12 +110,12 @@ assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encount
 assert.doesNotMatch(html,/id="reviewSelection"/,'The separate preliminary-recommendation button must be removed.');
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection must expose the integrated Explore mode toggle.');
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"[\s\S]*?<\/label><button[^>]*data-stat-help="exploreUnitStructures"/,'Explore help must be a separate button that does not toggle the checkbox.');
-assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*can take up to six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
+assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*safety limit is six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations',eyebrow:'Unit selection guide'[^\n]*highest unlocked tier[^\n]*will not search that group[^\n]*winning army[^\n]*until you change them or run Explore again/,'Explore help must explain group selection, tier limits, and how the chosen units persist.');
 assert.match(html,/id="exploreTierDepth"[\s\S]*?<option value="2" selected>/,'Explore mode must default to a two-tier range.');
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');
 assert.match(source,/saveOptimizerResult\(\);\s*\/\/ Explore is a one-time search\.[\s\S]*?if\(exploring\)exploreUnitStructures=false;/,'Successful Explore runs must return to selected-units-only optimization.');
-assert.match(optimizerEntry,/runOptimizeReviewSelection[\s\S]*?optimizeOne\(selectedIds,'finalist'/,'Finalists must pass through the full optimizer before comparison.');
+assert.match(optimizerEntry,/runExploreSearch[\s\S]*?optimizeOne\(selectedIds,'finalist'/,'Finalists must pass through the full optimizer before comparison.');
 assert.match(optimizerEntry,/preferHigherEldResult\(result,trial\)===trial/,'A finalist may replace the baseline only with higher fully optimized ELD.');
 for(const id of ['guardsmanMaster','specialistMaster','engineerMaster','monsterMaster','mercenaryMaster'])assert.doesNotMatch(html,new RegExp(`id="${id}"`),`Remove the bulk-select control ${id}.`);
 assert.doesNotMatch(html,/<option value="basic">/, 'Standard must not appear in the calculation-method selector');
@@ -232,7 +232,7 @@ assert.doesNotMatch(html,/<select id="encounterPlanStrategy">/,'Revival strategi
 assert.match(source,/for\(const row of els\.encounterPlanStrategies\?\.querySelectorAll\('tr\[data-strategy\]'\)/,'Every strategy row must be recalculated from the same norm and army.');
 assert.match(source,/encounterPlanContext=pointsEstimate===null\?null/,'Encounters without a point estimate must not expose an unusable encounter plan.');
 assert.match(source,/function compactOptimizerPayloadForStorage\(payload\)[\s\S]*delete result\.cases[\s\S]*delete diagnostics\.practicalCandidateSummary/,'Saved optimizer results must omit unused high-volume simulation data.');
-assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics\}/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
+assert.match(source,/return\{quantities:\{\.\.\.\(payload\.quantities\|\|\{\}\)\},result,diagnostics:persistedDiagnostics,/,'Saved optimizer results must exclude the secondary initial result and search-only payload fields.');
 assert.match(source,/function persistOptimizerResult\(key,saved\)[\s\S]*mirrorOptimizerResult\(key,saved\)[\s\S]*writeSavedJson\(localStorage,key,saved\)/,'A newly completed optimization must have a durable backup independent of localStorage.');
 assert.doesNotMatch(source,/localStorage\.removeItem\(candidate\.key\)/,'A full browser-storage origin must not evict older optimized encounters.');
 assert.match(source,/currentBattleWorkspace\(\)\.resultCache=saved;[\s\S]*persistOptimizerResult\(optimizerResultStorageKey\(\),saved\)/,'The encounter workspace must retain its optimizer result before browser-storage persistence is attempted.');
@@ -265,7 +265,7 @@ assert.match(optimizerWorker,/alternativeQuantities:\{\.\.\.alternative\.quantit
 assert.match(optimizerWorker,/noSacrificeValidator[\s\S]*?!nonSiegeSacrifices\(result\)\.length/, 'A no-sacrifice alternative must require every non-siege squad to attack');
 assert.match(source,/Use best no-sacrifice alternative —/, 'The collapsed explanation must offer the verified constrained alternative');
 assert.match(source,/function restoreMaximumEldArmy\(\)/, 'A user selecting the constrained alternative must be able to restore the maximum-ELD army');
-assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?390000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
+assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?exploreTimeBudgetMs\(exploreTierDepth\)\+30000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
 assert.match(optimizerEntry,/COMBAT_MECHANICS_BUILD/, 'Optimizer diagnostics and cache identity must change with shared combat mechanics');

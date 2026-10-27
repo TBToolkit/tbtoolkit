@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_POLICY,analyzeCompositionCandidate,choosePracticalComposition,compositionSignature,
   adaptiveTierLatticeSearch,analyzeTierCompleteness,createCompositionNeighborhood,createReviewTierStructures,evaluateSelectionProposal,exhaustiveCompositionSearch,
-  inferReviewAvailability,createTierExclusionChallenges,
+  inferReviewAvailability,createTierExclusionChallenges,createTierReplacementChallenges,
   exhaustiveGroupCompositionSearch,boundedCompositionSearch
 } from '../js/epic-composition-search.mjs';
 
@@ -58,6 +58,30 @@ const challengeAvailability=inferReviewAvailability({units:challengeUnits,select
 const challenges=createTierExclusionChallenges({units:challengeUnits,currentIds:['g9','m9','merc-owned'],availableIds:challengeAvailability.availableIds,mandatoryIds:challengeAvailability.mandatoryIds,maxTierDepth:2});
 assert.ok(challenges.find(group=>group.key==='MONSTER')?.candidates.some(row=>compositionSignature(row.selectedIds)===compositionSignature(['g9','g8','m9','m8','m7-a','merc-owned'])),'A deliberate lowest-tier monster exclusion must survive coarse screening');
 assert.ok(challenges.every(group=>group.candidates.every(row=>row.selectedIds.includes('merc-owned')&&!row.selectedIds.includes('merc-other'))),'Exclusion challenges must preserve only selected mercenaries');
+const replacementUnits=[
+  {id:'g9',category:'troop',unitClass:'GUARDSMAN',tierNumber:9,combatType:'FLYING'},
+  ...['flying','mounted','ranged','melee'].map(type=>({id:`g7-${type}`,category:'troop',unitClass:'GUARDSMAN',tierNumber:7,combatType:type})),
+  ...['flying','mounted','ranged'].map(type=>({id:`s7-${type}`,category:'troop',unitClass:'SPECIALIST',tierNumber:7,combatType:type})),
+  {id:'e7',category:'troop',unitClass:'ENGINEER',tierNumber:7,combatType:'SIEGE'},
+  {id:'m9',category:'monster',tierNumber:9},
+  {id:'merc-owned',category:'mercenary',tierNumber:7},
+  {id:'merc-other',category:'mercenary',tierNumber:7}
+];
+const replacementCurrent=['g9','s7-flying','s7-mounted','s7-ranged','m9','merc-owned'];
+const replacementAvailability=inferReviewAvailability({units:replacementUnits,selectedIds:replacementCurrent,maxTierDepth:2});
+const replacementArgs={units:replacementUnits,currentIds:replacementCurrent,availableIds:replacementAvailability.availableIds,mandatoryIds:replacementAvailability.mandatoryIds};
+const replacementGroups=createTierReplacementChallenges(replacementArgs);
+assert.equal(replacementGroups.length,1);
+assert.equal(replacementGroups[0].candidates.length,4,'Every G7 peer must survive, including the flying unit with a weak quick seed');
+for(const row of replacementGroups[0].candidates){
+  assert.deepEqual(row.selectedIds.filter(id=>id.startsWith('s7')),[],'Replacing the bundle must remove all of its selected S7 units');
+  assert.equal(row.selectedIds.filter(id=>id.startsWith('g7')).length,1,'Each protected candidate must contain just one G7 peer');
+  assert.ok(['g9','m9','merc-owned'].every(id=>row.selectedIds.includes(id)),'Unrelated selections and selected mercenaries must remain unchanged');
+  assert.ok(!row.selectedIds.includes('merc-other')&&!row.selectedIds.includes('e7'));
+}
+const noLowerTiers=inferReviewAvailability({units:replacementUnits,selectedIds:replacementCurrent,maxTierDepth:0});
+assert.deepEqual(createTierReplacementChallenges({...replacementArgs,availableIds:noLowerTiers.availableIds}),[],'Protected checks must honor Explore tier depth');
+assert.deepEqual(createTierReplacementChallenges({...replacementArgs,mandatoryIds:['merc-owned','s7-ranged']}),[],'A protected source unit must not be removed');
 const grouped=await exhaustiveGroupCompositionSearch({groups:[{id:'tier-1',unitIds:['a','b']},{id:'tier-2',unitIds:['c']}],evaluateSelection:async ids=>({result:{expectedTotalLifetimeDamage:ids.length}})});
 assert.equal(grouped.evaluations,3,'Two tier groups must produce three non-empty group structures');
 assert.ok(grouped.results.some(row=>compositionSignature(row.selectedIds)==='a|b|c'),'Grouped search must include the complete tier structure');

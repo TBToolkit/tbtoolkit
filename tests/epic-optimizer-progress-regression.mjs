@@ -48,3 +48,6 @@ fresh=advanceExploreProgress(fresh,{phase:'baseline-ready',exploreStage:'baselin
 assert.equal(fresh.currentEld,60);
 assert.equal(fresh.verifiedBestEld,60);
 console.log('Explore optimizer progress regression passed.');
+
+state=advanceExploreProgress(state,{exploreStage:'user-army',expectedLifetimeDamage:80,healthLadder:[{id:'user',effectiveHealth:800}]});
+assert.equal(state.trialKey,'user-army');assert.equal(state.currentEld,80);assert.equal(state.rows[0].id,'user');assert.equal(state.verifiedBestEld,105);

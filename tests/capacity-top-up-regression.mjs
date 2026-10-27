@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { calculateCategory, calculateCustomCategory, calculateEpicStack } from '../js/epic-engine.mjs';
+import {topUpEpicCapacity} from '../js/epic-quantity-optimizer.mjs';
+import {scoreEpicArmy} from '../js/epic-combat-engine-v2.mjs';
 
 const canonical=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url),'utf8'));
 const legacy=canonical.map(unit=>{
@@ -14,6 +16,45 @@ const legacy=canonical.map(unit=>{
 });
 const troops=legacy.filter(unit=>unit.category==='troop');
 const monsters=legacy.filter(unit=>unit.category==='monster');
+const cleanBonuses={monsterHealthPct:100,monsterStrengthPct:100,strengthAgainstEpicPct:0,monsterDDPct:0,monsterSTPct:0,enemySquadTypes:['FLYING','MOUNTED','MELEE','RANGED']};
+const template=canonical.find(unit=>unit.name==='PURIFIER 2');
+const first={...template,id:'top-up-a',unitId:9001,name:'Top-up A',baseHealth:1,baseStrength:100,capacityCost:1,bonuses:{}};
+const second={...first,id:'top-up-b',unitId:9002,name:'Top-up B',baseHealth:2,baseStrength:1};
+const single=topUpEpicCapacity({units:[first],quantities:{[first.name]:10},bonuses:cleanBonuses,capacityLimits:{LEADERSHIP:17}});
+assert.equal(single.result.capacities.LEADERSHIP,17,'A profitable fill inside the same order must use the available capacity');
+assert.ok(single.result.expectedTotalLifetimeDamage>single.initialEld);
+const repeatFill=topUpEpicCapacity({units:[first],quantities:single.quantities,bonuses:cleanBonuses,capacityLimits:{LEADERSHIP:17}});
+assert.deepEqual(repeatFill.quantities,single.quantities,'Final top-up must be idempotent');
+const pairArgs={units:[first,second],quantities:{[first.name]:10,[second.name]:6},bonuses:cleanBonuses,capacityLimits:{LEADERSHIP:19}};
+const pairBefore=scoreEpicArmy(pairArgs),pairAfter=topUpEpicCapacity(pairArgs);
+assert.equal(pairAfter.quantities[first.name],11,'Safe top-up must stop before crossing a health-order boundary');
+assert.equal(pairAfter.result.capacities.LEADERSHIP,17,'Capacity can remain unused when no same-order addition improves ELD');
+assert.deepEqual(pairAfter.result.predictedDyingOrder,pairBefore.predictedDyingOrder);
+assert.deepEqual(pairAfter.result.nominalAttackOrder,pairBefore.nominalAttackOrder);
+assert.equal(pairAfter.result.strictHealthAdjustments,0,'Top-up must not rely on hidden quantity trimming at a health tie');
+const forcedFill=scoreEpicArmy({...pairArgs,quantities:{[first.name]:13,[second.name]:6}});
+assert.ok(forcedFill.expectedTotalLifetimeDamage<pairAfter.result.expectedTotalLifetimeDamage,'Forcing capacity full can reduce ELD');
+const stopped=topUpEpicCapacity({...pairArgs,bonuses:{...cleanBonuses,__shouldAbort:()=>true},initialResult:pairBefore});
+assert.equal(stopped.evaluations,0,'An expired budget must keep the existing winner without starting cleanup scoring');
+assert.equal(stopped.result.expectedTotalLifetimeDamage,pairBefore.expectedTotalLifetimeDamage);
+const mercenary={...first,category:'mercenary',capacityType:'AUTHORITY'};
+const preserved=topUpEpicCapacity({units:[mercenary],quantities:{[mercenary.name]:10},bonuses:{...cleanBonuses,preserveMercenaries:true},capacityLimits:{AUTHORITY:17}});
+assert.equal(preserved.result.mercenaryPreservation.valid,true,'Safe top-up must preserve the mercenary constraint');
+assert.equal(preserved.result.capacities.AUTHORITY,17);
+const monster=canonical.find(unit=>unit.tier==='M9');
+const granular=topUpEpicCapacity({units:[monster],quantities:{[monster.name]:2},bonuses:cleanBonuses,capacityLimits:{DOMINANCE:monster.capacityCost*2+7}});
+assert.equal(granular.result.capacities.DOMINANCE,monster.capacityCost*2,'An unusable Dominance remainder must not exceed the ceiling to add a monster');
+const costlyA={...first,baseHealth:100,baseStrength:10000,capacityCost:1000};
+const costlyB={...second,baseHealth:100,baseStrength:10,capacityCost:1000};
+const cheapC={...first,id:'top-up-c',unitId:9003,name:'Top-up C',baseHealth:.01,baseStrength:1};
+const crossingArgs={units:[costlyA,costlyB,cheapC],quantities:{[costlyA.name]:1,[costlyB.name]:10,[cheapC.name]:50},bonuses:cleanBonuses,capacityLimits:{LEADERSHIP:11150}};
+const crossingBefore=scoreEpicArmy(crossingArgs),crossing=topUpEpicCapacity(crossingArgs);
+assert.equal(crossing.quantities[cheapC.name],150,'A harmless nominal-strength rank crossing must not block a profitable fill');
+assert.notDeepEqual(crossing.result.nominalAttackOrder,crossingBefore.nominalAttackOrder);
+for(const squad of crossing.result.squads)for(const side of ['friendlyFirst','epicFirst']){
+  assert.equal(crossing.result.cases[side].attackOpportunities[squad.id],crossingBefore.cases[side].attackOpportunities[squad.id]);
+  assert.equal(crossing.result.cases[side].death[squad.id].cycle,crossingBefore.cases[side].death[squad.id].cycle);
+}
 const troopIds=troops.filter(unit=>['G9','G8','S9','S8','E9','E8'].includes(unit.level)).map(unit=>unit.id);
 const monsterIds=monsters.filter(unit=>['M9','M8','M7'].includes(unit.level)).map(unit=>unit.id);
 const inputs={

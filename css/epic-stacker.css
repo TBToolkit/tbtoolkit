@@ -4598,3 +4598,50 @@ body.battle-mode-active [data-section-panel]>.battle-only-column-title{position:
   body.battle-mode-active .player-battle-right .battle-encounter-fields{grid-template-columns:minmax(0,1fr)}
 }
 
+/* Persistent comparison of completed Explore armies. */
+.explore-results-panel{margin-top:18px;padding:16px;border:1px solid #3c5668;border-radius:10px;background:#0b1923;color:#d5e6ef}
+.explore-results-panel>summary{cursor:pointer;font-weight:800;color:#f3b529;font-size:1.05rem}
+.explore-results-panel>p{color:#9eb4c5;font-size:.85rem;max-width:85ch}
+.explore-results-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:14px 0;font-size:.85rem}
+.explore-results-toolbar select{padding:8px;background:#07131d;color:#d5e6ef;border:1px solid #486477;border-radius:6px}
+.explore-results-scroll{overflow-x:auto}
+.explore-results-table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:880px}
+.explore-results-table th,.explore-results-table td{padding:12px 9px;text-align:right;border-bottom:1px solid #2d4353;vertical-align:top}
+.explore-results-table th{color:#9eb4c5;font-size:.73rem}
+.explore-results-table th:first-child,.explore-results-table td:first-child{text-align:left;min-width:190px}
+.explore-results-table small{display:block;color:#a8c1d0;margin:5px 0;max-width:270px}
+.explore-results-table tr.is-current{background:#183445}
+.explore-result-badge{display:inline-block;margin:4px 4px 0 0;border:1px solid #6b6139;border-radius:4px;padding:2px 5px;font-size:.65rem;color:#f6d587;white-space:nowrap}
+.explore-results-table button{white-space:nowrap;background:#e7a51c;color:#07131d;padding:8px 10px;border:0;border-radius:6px;font-weight:700;cursor:pointer}
+.explore-results-table button:disabled{background:#254457;color:#c5dbe8;cursor:default}
+.explore-results-table details{text-align:left}
+.explore-results-table summary{cursor:pointer;color:#a9cde3;padding:3px 0}
+.explore-army-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;padding:14px 0}
+.explore-army-groups h4{margin:0 0 8px;color:#f3b529}
+.explore-army-groups ul{list-style:none;padding:0;margin:0}
+.explore-army-groups li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #203645}
+.explore-army-groups li strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+.explore-results-panel :focus-visible{outline:2px solid #f3b529;outline-offset:3px}
+.explore-results-table .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Compact finalist rows with inline disclosure and grouped army tiers. */
+.explore-results-table{min-width:1100px}
+.explore-results-table th:first-child,.explore-results-table td:first-child{min-width:0;width:24px;padding-right:0}
+.explore-results-table th:nth-child(2),.explore-results-table td:nth-child(2){text-align:left;min-width:145px}
+.explore-results-table th:nth-child(3),.explore-results-table td:nth-child(3){text-align:left}
+.explore-finalist-name{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.explore-finalist-name strong{white-space:nowrap}
+.explore-result-badge{margin:0;font-size:.6rem}
+.explore-composition{display:flex;gap:12px;min-width:220px}
+.explore-composition-group{display:flex;flex-direction:column;gap:4px;min-width:42px;font-weight:700;white-space:nowrap}
+.explore-tier-count{font-weight:400}
+.explore-results-table th button,.explore-results-table .explore-row-toggle{background:transparent;color:#9eb4c5;padding:0;border-radius:2px;font:inherit}
+.explore-results-table th button{white-space:normal;text-align:inherit;display:inline-flex;align-items:center;gap:5px}
+.explore-results-table th[aria-sort="ascending"] button,.explore-results-table th[aria-sort="descending"] button{color:#f3b529}
+.explore-results-table .explore-row-toggle{font-size:1.15rem;min-width:24px;min-height:24px;color:#f3b529}
+.explore-quantity-row[hidden]{display:none}
+.explore-quantity-row>td{background:#091620;text-align:left}
+.explore-results-toolbar{justify-content:flex-end;margin:8px 0}
+
+.explore-finalist-name{flex-wrap:nowrap}
+.explore-results-table th:nth-child(2),.explore-results-table td:nth-child(2){min-width:190px}

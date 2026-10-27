@@ -148,6 +148,62 @@ function candidateFeasible({ result, limits }) {
   return true;
 }
 
+/** Finish with profitable slack fills without changing attack counts or death cycles. */
+export function topUpEpicCapacity({units,quantities,bonuses,capacityLimits,initialResult=null}){
+  const limits=normalizedLimits(capacityLimits);
+  let result=initialResult??controlledScore({units,quantities,bonuses}),evaluations=initialResult?0:1,acceptedMoves=0;
+  let q=Object.fromEntries(result.squads.map(squad=>[squad.name,squad.quantity]));
+  const initialEld=result.expectedTotalLifetimeDamage;
+  const initialCapacities={...result.capacities};
+  const sameCombatOutcomes=trial=>result.squads.every(squad=>['friendlyFirst','epicFirst'].every(side=>
+    trial.cases[side].attackOpportunities[squad.id]===result.cases[side].attackOpportunities[squad.id]
+    &&trial.cases[side].death[squad.id]?.cycle===result.cases[side].death[squad.id]?.cycle));
+  // Saturate safe quantity ranges; do not start another composition/order search.
+  for(let round=0;round<result.squads.length*2;round++){
+    let best=null;
+    const byId=new Map(result.squads.map(squad=>[squad.id,squad]));
+    for(const squad of result.squads){
+      const remaining=limits[squad.capacityType]-result.capacities[squad.capacityType];
+      const maximumExtra=Math.floor(remaining/squad.capacityCost);
+      let high=maximumExtra,candidate=null;
+      const deathIndex=result.predictedDyingOrder.indexOf(squad.id),attackIndex=result.nominalAttackOrder.indexOf(squad.id);
+      if(deathIndex>0){
+        const previous=byId.get(result.predictedDyingOrder[deathIndex-1]);
+        const margin=Math.max(1e-6,Math.abs(previous.effectiveHealth)*1e-10);
+        const healthEach=squad.effectiveHealth/squad.quantity;
+        if(healthEach>0)high=Math.min(high,Math.ceil((previous.effectiveHealth-margin)/healthEach)-1-squad.quantity);
+      }
+      if(attackIndex>0&&squad.baseStrength>0){
+        const previous=byId.get(result.nominalAttackOrder[attackIndex-1]);
+        const boundary=previous.nominalSquadStrength/squad.baseStrength;
+        const maximum=previous.unitId<squad.unitId?Math.floor(boundary):Math.ceil(boundary)-1;
+        high=Math.min(high,maximum-squad.quantity);
+      }
+      // Full slack and the adjacent order boundary can be harmless when the
+      // same squads still receive the same attacks in their death cycles.
+      const additions=new Set([1,maximumExtra,maximumExtra-1,high,high+1]);
+      for(const extra of additions){
+        if(extra<1||extra>maximumExtra)continue;
+        if(bonuses?.__shouldAbort?.())return finish();
+        const trialQ={...q,[squad.name]:squad.quantity+extra};
+        let trial;
+        try{trial=controlledScore({units,quantities:trialQ,bonuses});}
+        catch(error){if(error?.code==='TIME_BUDGET')return finish();throw error;}
+        evaluations++;
+        const safe=candidateFeasible({result:trial,limits})&&trial.strictHealthAdjustments===0&&trial.strictHealthUnresolved===0
+          &&sameCombatOutcomes(trial);
+        if(safe&&(!candidate||trial.expectedTotalLifetimeDamage>candidate.result.expectedTotalLifetimeDamage+1e-3))candidate={quantities:trialQ,result:trial};
+      }
+      if(candidate&&candidate.result.expectedTotalLifetimeDamage>result.expectedTotalLifetimeDamage+1e-3
+        &&(!best||candidate.result.expectedTotalLifetimeDamage>best.result.expectedTotalLifetimeDamage+1e-3))best=candidate;
+    }
+    if(!best)break;
+    q=best.quantities;result=best.result;acceptedMoves++;
+  }
+  return finish();
+  function finish(){return{quantities:q,result,evaluations,acceptedMoves,initialEld,initialCapacities};}
+}
+
 function compareScore(a, b, epsilon = 1e-3) {
   return a > b + epsilon;
 }
@@ -1499,6 +1555,14 @@ export function optimizeEpicQuantities(args) {
       .sort((a,b)=>Number(a.predictedDeathPosition??999)-Number(b.predictedDeathPosition??999))
       .map(squad=>({id:squad.id,tier:squad.tier,death:squad.predictedDeathPosition,damagePerOpportunity:squad.expectedDamagePerOpportunity}))
   }));
+  const topUp=topUpEpicCapacity({units:args.units,quantities:out.quantities,bonuses:args.bonuses,capacityLimits:limits,initialResult:out.result});
+  out.quantities=topUp.quantities;
+  out.result=topUp.result;
+  totalEvaluations+=topUp.evaluations;
+  out.diagnostics.capacityTopUp={evaluations:topUp.evaluations,acceptedMoves:topUp.acceptedMoves,beforeEld:topUp.initialEld,afterEld:topUp.result.expectedTotalLifetimeDamage,beforeCapacities:topUp.initialCapacities,afterCapacities:{...topUp.result.capacities}};
+  out.diagnostics.maximumExpectedLifetimeDamage=topUp.result.expectedTotalLifetimeDamage;
+  out.diagnostics.practicalStructureScore=practicalStructureScore(topUp.result);
+  out.diagnostics.maximumPracticalStructureScore=out.diagnostics.practicalStructureScore;
   out.diagnostics.totalEvaluations=totalEvaluations;
   out.diagnostics.authorityUsed=Number(out.result?.capacities?.AUTHORITY||0);
   out.diagnostics.improvementPct=start.expectedTotalLifetimeDamage>0?(out.result.expectedTotalLifetimeDamage/start.expectedTotalLifetimeDamage-1)*100:null;
