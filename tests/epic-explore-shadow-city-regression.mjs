@@ -1,3 +1,4 @@
+import {exploreTimeBudgetMs} from '../js/epic-explore-policy.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {APP_BUILD} from '../js/build-info.mjs';
@@ -16,7 +17,7 @@ globalThis.self={postMessage:m=>{
 }};
 await import('../js/epic-optimizer-worker.mjs');
 const started=performance.now();
-await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,...fixture,exploreMode:true,exploreTierDepth:2,timeBudgetMs:Number(process.argv[2])||180000}});
+await self.onmessage({data:{type:'optimize',requestId:1,appBuild:APP_BUILD,selectedIds,...fixture,exploreMode:true,exploreTierDepth:2,timeBudgetMs:Number(process.argv[2])||exploreTimeBudgetMs(2)}});
 assert.equal(failure,undefined,failure?.message);
 assert.ok(output?.result.expectedTotalLifetimeDamage>=4353226487170.4395,'Explore must recover or exceed the known manual solution from the actual initial tiers');
 assert.ok(output.exploration.neighborhoodPasses>0,'Explore must revisit nearby selections after optimizing its broad finalists');

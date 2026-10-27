@@ -1,4 +1,4 @@
-export const APP_BUILD = '219';
+export const APP_BUILD = '220';
 export const ARMY_DATABASE_BUILD = 'ARMY9-v72';
 export const COMBAT_MECHANICS_BUILD = '197';
 export const EPIC_MECHANICS_BUILD = '197';
@@ -9,7 +9,7 @@ export const EPIC_COMBAT_ENGINE_BUILD = '2.5-deterministic-top-up';
 export const EPIC_OPTIMIZER_BUILD = '2.13-capacity-top-up';
 export const EPIC_REVIEW_BUILD = '0.5-tier-replacement-coverage';
 
-export const EPIC_EXPLORE_BUILD = '1.1-winner-neighborhood';
+export const EPIC_EXPLORE_BUILD = '1.2-canonical-origin';
 
 export const OPTIMIZER_CACHE_BUILD = [
   EPIC_OPTIMIZER_BUILD,

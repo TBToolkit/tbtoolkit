@@ -8,7 +8,7 @@ export function captureExploreArmy(payload,selectedIds,label){
   for(const key of ['unusualSacrifices','mercenaryOptimizationMode','fixedMercenaries','optimizerCoreExpectedLifetimeDamage','combinedExpectedLifetimeDamage','totalEvaluations']){
     if(payload.diagnostics?.[key]!==undefined)diagnostics[key]=payload.diagnostics[key];
   }
-  return {id:exploreArmyKey(payload),label,selectedIds:[...selectedIds],payload:{quantities:{...payload.quantities},result,diagnostics}};
+  return {id:exploreArmyKey(payload),label,selectedIds:[...selectedIds],payload:{quantities:Array.isArray(result.squads)?Object.fromEntries(result.squads.filter(s=>s.quantity>0).map(s=>[s.name,s.quantity])):{...payload.quantities},result,diagnostics}};
 }
 
 export function collectExploreArmies(rows,winner){

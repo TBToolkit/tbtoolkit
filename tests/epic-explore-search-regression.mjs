@@ -1,6 +1,7 @@
+import {exploreTimeBudgetMs,exploreTimePolicy} from '../js/epic-explore-policy.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {createExploreStructures,createExploreNeighbors,diverseExploreRows,runExploreSearch} from '../js/epic-explore-search.mjs';
+import {canonicalExploreSelection,createExploreStructures,createExploreNeighbors,diverseExploreRows,runExploreSearch} from '../js/epic-explore-search.mjs';
 import {compositionSignature} from '../js/epic-composition-search.mjs';
 const units=JSON.parse(fs.readFileSync(new URL('../data/army-v2.json',import.meta.url)));
 const currentIds=units.filter(u=>['G9','S8','E9','M9'].includes(u.tier)).map(u=>u.id);
@@ -34,3 +35,12 @@ assert.ok(diverseExploreRows([...crowd,different],units,3).includes(different),'
 const tiny=runExploreSearch({units,currentIds,maxTierDepth:2,bonuses:{monsterHealthPct:1600,monsterStrengthPct:2000,strengthAgainstEpicPct:2000,monsterDDPct:10,monsterSTPct:10},capacityLimits:{LEADERSHIP:10000,DOMINANCE:10000,AUTHORITY:0},timeBudgetMs:1});
 assert.ok(tiny.elapsedMs<2000,'A screening deadline must return completed work rather than throw');
 console.log('Explore structure coverage, diversity, ownership, depth, deduplication, and deadline checks passed.');
+
+assert.deepEqual(canonicalExploreSelection(units,base),canonicalExploreSelection(units,currentIds),'Lower-tier starting choices must not change the Explore origin');
+assert.deepEqual(canonicalExploreSelection(units,[...base,merc.id]).filter(id=>units.find(u=>u.id===id).category==='mercenary'),[merc.id]);
+const partial=[units.find(u=>u.tier==='G9').id];
+assert.deepEqual(canonicalExploreSelection(units,partial),units.filter(u=>u.tier==='G9').map(u=>u.id),'Fill the highest tier without adding unselected families');
+
+assert.deepEqual([0,1,2,3,4].map(exploreTimeBudgetMs),[360000,360000,360000,480000,600000]);
+
+assert.deepEqual(exploreTimePolicy(4),{totalMs:600000,screeningMs:120000,neighborhoodMs:25000});

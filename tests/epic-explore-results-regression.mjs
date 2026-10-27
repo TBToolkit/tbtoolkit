@@ -47,3 +47,6 @@ for(const [sort,first] of [['eld',simple.id],['points',simple.id],['loss',starti
  assert.equal(ascending[0].id,first,sort+' ascending');
  assert.equal(descending[1].id,first,sort+' descending');
 }
+
+const trimmed=payload(100,[{id:'a',name:'A',quantity:99}]);trimmed.quantities.A=100;
+assert.equal(captureExploreArmy(trimmed,['a'],'Trimmed').payload.quantities.A,99,'Saved finalist quantities must match the scored army, including strict-health trimming');

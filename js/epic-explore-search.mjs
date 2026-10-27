@@ -2,6 +2,15 @@ import {compositionSignature,createReviewTierStructures,inferReviewAvailability}
 import {createLegacyHealthLadderSeed,mercenaryPreservationStatus,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {prepareEpicScoringContext,scoreEpicArmy} from './epic-combat-engine-v2.mjs';
 
+// A canonical search origin depends only on the highest unlocked tier in each
+// family. Mercenary ownership is explicit and is never inferred.
+export function canonicalExploreSelection(units,selectedIds){
+  const selected=new Set(selectedIds),highest=new Map();
+  const family=u=>u.category==='monster'?'monster':u.category==='troop'?u.unitClass:null;
+  for(const u of units)if(selected.has(u.id)&&family(u))highest.set(family(u),Math.max(highest.get(family(u))||0,Number(u.tierNumber)));
+  return units.filter(u=>u.category==='mercenary'?selected.has(u.id):highest.has(family(u))&&Number(u.tierNumber)===highest.get(family(u))).map(u=>u.id);
+}
+
 const groupKey=u=>`${u.category}|${u.unitClass||''}|${u.tier}`;
 const eld=row=>Number(row.result.expectedTotalLifetimeDamage)||0;
 

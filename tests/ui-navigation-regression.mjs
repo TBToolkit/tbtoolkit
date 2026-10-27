@@ -110,7 +110,7 @@ assert.match(source,/encounterFormError\.classList\.add\(['"]show['"]/, 'Encount
 assert.doesNotMatch(html,/id="reviewSelection"/,'The separate preliminary-recommendation button must be removed.');
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection must expose the integrated Explore mode toggle.');
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"[\s\S]*?<\/label><button[^>]*data-stat-help="exploreUnitStructures"/,'Explore help must be a separate button that does not toggle the checkbox.');
-assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*can take up to six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
+assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*safety limit is six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations',eyebrow:'Unit selection guide'[^\n]*highest unlocked tier[^\n]*will not search that group[^\n]*winning army[^\n]*until you change them or run Explore again/,'Explore help must explain group selection, tier limits, and how the chosen units persist.');
 assert.match(html,/id="exploreTierDepth"[\s\S]*?<option value="2" selected>/,'Explore mode must default to a two-tier range.');
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');
@@ -265,7 +265,7 @@ assert.match(optimizerWorker,/alternativeQuantities:\{\.\.\.alternative\.quantit
 assert.match(optimizerWorker,/noSacrificeValidator[\s\S]*?!nonSiegeSacrifices\(result\)\.length/, 'A no-sacrifice alternative must require every non-siege squad to attack');
 assert.match(source,/Use best no-sacrifice alternative —/, 'The collapsed explanation must offer the verified constrained alternative');
 assert.match(source,/function restoreMaximumEldArmy\(\)/, 'A user selecting the constrained alternative must be able to restore the maximum-ELD army');
-assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?390000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
+assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?exploreTimeBudgetMs\(exploreTierDepth\)\+30000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
 assert.match(optimizerEntry,/COMBAT_MECHANICS_BUILD/, 'Optimizer diagnostics and cache identity must change with shared combat mechanics');

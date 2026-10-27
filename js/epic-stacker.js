@@ -1,3 +1,4 @@
+import {exploreTimeBudgetMs} from './epic-explore-policy.mjs';
 import {exploreArmyKey,exploreContextKey,exploreResultRows} from './epic-explore-results.mjs';
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs';
 import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs';
@@ -1362,7 +1363,7 @@ function openOptimizerModal(baselinePayload=null){
   optimizerExploreProgressState=optimizerExploreActive?createExploreProgressState(baselinePayload):null;
   els.optimizerProgressEldLabel=document.getElementById('optimizerProgressEldLabel');
   els.optimizerExploreProgress=document.getElementById('optimizerExploreProgress');
-  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Starting army / Best confirmed':preserving?'Eligible ELD / Best eligible ELD':'Current ELD / Best ELD';
+  if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=optimizerExploreActive?'Current army / Best confirmed':preserving?'Eligible ELD / Best eligible ELD':'Current ELD / Best ELD';
   if(els.optimizerExploreProgress){els.optimizerExploreProgress.hidden=!optimizerExploreActive;els.optimizerExploreProgress.textContent=optimizerExploreActive?'Checking your starting army before screening alternatives…':'';}
   const initial=optimizerExploreProgressState;
   renderOptimizerHealthLadder(initial?.rows||[]);
@@ -1423,9 +1424,10 @@ function closeOptimizerModal(){
 }
 function optimizationHeadline(progress){
   if(progress.phase==='loading')return 'Loading the validated army database…';
-  if(progress.exploreStage==='baseline-ready')return 'Your starting army is ready; screening alternatives…';
+  if(progress.exploreStage==='baseline-ready')return 'Explore starting point is ready; screening alternatives…';
   if(progress.phase==='explore-screen')return progress.exploreStage==='screen-complete'?'Screening complete; preparing full optimizations…':'Screening eligible unit combinations…';
-  if(progress.exploreStage==='baseline')return 'Fully optimizing your starting army…';
+  if(progress.exploreStage==='user-army')return 'Optimizing your selected army for the final comparison…';
+  if(progress.exploreStage==='baseline')return 'Optimizing the highest-tier Explore starting point…';
   if(progress.exploreStage==='finalist-complete')return `Finalist ${progress.candidateIndex} of ${progress.candidateCount} fully optimized`;
   if(progress.exploreStage==='finalist')return `Full optimization: finalist ${progress.candidateIndex} of ${progress.candidateCount}`;
   if(progress.phase==='seed'||progress.phase==='seed-screen')return 'Comparing independent starting army structures…';
@@ -1452,7 +1454,7 @@ function updateOptimizerProgress(progress={}){
   if(optimizerExploreActive&&els.optimizerExploreProgress){
     const screened=Number(progress.screeningEvaluations)||0,verified=Number(progress.verifiedBestEld)||optimizerExploreProgressState?.verifiedBestEld||0;
     const parts=[];
-    if(progress.exploreStage==='screen'||progress.exploreStage==='screen-complete')parts.push('Showing your starting army during screening');
+    if(progress.exploreStage==='screen'||progress.exploreStage==='screen-complete')parts.push('Showing the Explore starting point during screening');
     if(progress.exploreStage==='finalist'||progress.exploreStage==='finalist-complete')parts.push(`Showing the best army in finalist ${Number(progress.candidateIndex)||0} of ${Number(progress.candidateCount)||0}`);
     if(screened)parts.push(`${screened.toLocaleString('en-US')} combinations screened`);
     if(progress.exploreStage==='screen-complete'&&Number(progress.candidateCount)>0)parts.push(`${Number(progress.candidateCount)} finalists to optimize`);
@@ -1473,7 +1475,7 @@ function updateOptimizerProgress(progress={}){
     if(current.revision!==before.revision)renderOptimizerHealthLadder(current.rows);
     const chartTitle=document.getElementById('optimizerHealthLadderTitle');if(chartTitle)chartTitle.textContent=current.chartTitle;
     const chart=document.getElementById('optimizerHealthLadder');if(chart)chart.setAttribute('aria-label',`${current.chartTitle}; horizontal position is predicted death order`);
-    if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=current.trialKey.startsWith('finalist-')?'Current finalist / Best confirmed':'Starting army / Best confirmed';
+    if(els.optimizerProgressEldLabel)els.optimizerProgressEldLabel.textContent=current.trialKey.startsWith('finalist-')?'Current finalist / Best confirmed':'Current army / Best confirmed';
     if(els.optimizerProgressCurrentEld)els.optimizerProgressCurrentEld.textContent=current.currentEld?formatDamage(current.currentEld):'—';
     if(els.optimizerProgressBestEld)els.optimizerProgressBestEld.textContent=current.verifiedBestEld?formatDamage(current.verifiedBestEld):'—';
     return;
@@ -1993,11 +1995,11 @@ function startEpicOptimization(){
   els.resultStatus.textContent='Optimizing quantities…';
   els.resultStatus.classList.add('optimizing-status');
   optimizerExploreActive=exploring;
-  openOptimizerModal(reusableBaseline);
+  openOptimizerModal(exploring?null:reusableBaseline);
   startOptimizerElapsedTimer();
 
   try{
-    epicWorker=createOptimizerWorker({watchdogMs:exploring?390000:undefined});
+    epicWorker=createOptimizerWorker({watchdogMs:exploring?exploreTimeBudgetMs(exploreTierDepth)+30000:undefined});
   }catch(error){
     console.error(error);
     stopOptimizerElapsedTimer();
@@ -2052,7 +2054,7 @@ function startEpicOptimization(){
         renderEpicOptimizedResult(msg.payload);
         if(msg.payload?.exploration){
           const summary=msg.payload.exploration;
-          els.resultStatus.textContent+=summary.changedSelection
+          els.resultStatus.textContent+=!summary.userArmyCompleted?` · Explore retained its best completed army (${summary.fullyOptimizedCandidates} finalists fully tested)`:summary.finalEld>summary.baselineEld+Math.max(1e-6,summary.baselineEld*1e-9)
             ?` · Explore found +${((summary.finalEld/summary.baselineEld-1)*100).toFixed(2)}% ELD (${summary.fullyOptimizedCandidates} finalists fully tested)`
             :` · Explore kept your starting army (${summary.fullyOptimizedCandidates} finalists fully tested)`;
           if(summary.note)els.resultStatus.textContent+=` · ${summary.note}`;
@@ -2104,7 +2106,7 @@ function startEpicOptimization(){
     fixedAuthorityMaximum:Math.max(0,Math.floor(parseNumber(modeState().inputs.authority))),
     bonuses:epicBonusPayload(),
     capacityLimits:effectiveEpicCapacityLimits(),
-    exploreMode:exploring,exploreTierDepth,timeBudgetMs:exploring?360000:undefined,
+    exploreMode:exploring,exploreTierDepth,timeBudgetMs:exploring?exploreTimeBudgetMs(exploreTierDepth):undefined,
     baselineResult:reusableBaseline
   });
 }
@@ -2429,7 +2431,7 @@ function updateExploreControls(){
   if(summary)summary.textContent=preserving
     ?'Mercenary preservation works with the exact units you selected. Turn it off to Explore unit combinations first.'
     :exploreUnitStructures
-    ?`Checked units are your starting army. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
+    ?`Explore starts from the full highest selected tier in each family. Your selected army is optimized separately and retained as a finalist. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. Time limit: ${exploreTimeBudgetMs(exploreTierDepth)/60000} minutes. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
 }
 function updatePreservationControls(){
@@ -3625,7 +3627,7 @@ function switchMode(mode){
 function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {key,auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;for(const stat of PROFILE_EXTRA_BONUSES)i[profileExtraId(key,stat)]=defaults[stat];}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
-  exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. The optimizer compares troop and monster combinations within those limits. It uses only the mercenary types you select. This search can take up to six minutes. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
+  exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. Explore starts from the full highest selected tier in each group and compares troop and monster combinations within those limits. Your selected army is optimized separately and joins the final comparison without steering the search. It uses only the mercenary types you select. The safety limit is six minutes for zero to two tiers below, eight minutes for three, and ten minutes for four. Searches finish sooner when their scheduled work is complete. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
   raidPoints:{title:'Raid points are a rough estimate',text:'Jormungandr and Chimera are five-player raids. Treat this as a rough estimate assuming all five raid members have similar army strength and starting health. Combined raid damage determines the total chest payout, while each army’s share of the combined starting health determines its share of the chests—not its damage contribution. Your actual personal points and chests can differ when your clanmates bring different armies, so estimated attacks and net resources are approximate too. For Jormungandr, this tile shows scale points; Ragnarok medal norm points are 2.5× scale points.',images:[]},
   unitBonusProfiles:{title:'Unit bonus profiles',text:'Monsters and Humans provide simple shared rows. Expand Monsters only when Beasts, Dragons, Elementals, or Giants differ. Expand Humans only when Guardsmen, Specialists, or Engineers differ. Cursed, Demons, Elves, Undead, and Barbarians use Guardsman bonuses. Epic Hunters use their own row.',images:[]},
   bonusUnit:{title:'Choose the matching unit',text:'This Monster screenshot is an example. In a battle report, select a unit that matches the row you are editing. For example, select a Beast for the Beasts row, a Guardsman for the Guardsmen row, or an Epic Hunter for the Epic Hunters row. Then copy that unit’s bonuses into the matching fields.',images:[['monster-click.webp','Example: select a Monster in the battle report.']]},
