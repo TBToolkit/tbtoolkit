@@ -113,3 +113,10 @@ assert.equal(JSON.parse(restoredComparison.context).inputs.encounterNormSource,'
 assert.equal(restoredComparison.activeId,'second');
 assert.deepEqual(restoredComparison.armies,savedComparison.armies);
 console.log('Player export/import retains Explore finalists, chosen army, and remapped ownership.');
+
+withExplore.battle.workspaces.raid.methods.optimize.resultCache.payload.exploreResults={...savedComparison,context:JSON.stringify({scope:'section2',owner:'main|raid',inputs:{leadership:1000,monsterST:13.6}})};
+const section2Import=materializeImportedAccount(parseBiff(serializeAccountToBiff(withExplore)),{existingAccountIds:['main'],existingEncounterIds:['raid'],optimizerCacheBuild:'optimizer-current'});
+const section2Restored=section2Import.account.battle.workspaces['raid-2'].methods.optimize.resultCache.payload.exploreResults;
+assert.equal(section2Restored.owner,section2Import.account.id+'|raid-2');
+assert.equal(JSON.parse(section2Restored.context).owner,section2Restored.owner);
+assert.deepEqual(JSON.parse(section2Restored.context).inputs,{leadership:1000,monsterST:13.6});

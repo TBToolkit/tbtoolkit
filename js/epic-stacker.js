@@ -1,5 +1,5 @@
 import {exploreTimeBudgetMs} from './epic-explore-policy.mjs';
-import {exploreArmyKey,exploreContextKey,exploreResultRows} from './epic-explore-results.mjs';
+import {exploreArmyKey,exploreSection2Context,exploreComparisonMatches,exploreResultRows} from './epic-explore-results.mjs';
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs';
 import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs';
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs';
@@ -844,7 +844,7 @@ function loadSavedOptimizerResult(){
     const encounterId=state.modes.battle.activeEncounterId,shared=activeMode==='battle'&&currentBattleWorkspace().inputs.shareEpicArmy&&canReuseEpicOptimizerResult(encounterId);
     const candidates=shared?linkedEpicArmyWorkspaces(encounterId).filter(peer=>canReuseEpicOptimizerResult(peer.id)):[{id:encounterId,workspace:activeMode==='battle'?currentBattleWorkspace():null}];
     const signature=shared?currentEpicEffectiveSignature():null;
-    let saved=null;
+    let saved=null,comparisonCache=null;
     for(const candidate of candidates){
       const key=activeMode==='battle'?optimizerResultStorageKeyFor(candidate.id):optimizerResultStorageKey();
       const available=[candidate.workspace?.resultCache,optimizerResultBackups.get(key)];
@@ -853,12 +853,15 @@ function loadSavedOptimizerResult(){
       for(const cache of available){
         if(cache?.build!==OPTIMIZER_CACHE_BUILD||!cache.payload||!cache.signature)continue;
         const normalizedSignature=normalizeEpicOptimizerSignature(cache.signature);
+        if(candidate.id===encounterId&&cache.payload.exploreResults?.owner===String(state.activeAccountId)+'|'+String(encounterId)&&(!comparisonCache||Number(cache.savedAt)>Number(comparisonCache.savedAt)))comparisonCache=cache;
         if(shared&&normalizedSignature!==signature)continue;
         if(!saved||Number(cache.savedAt)>Number(saved.savedAt))saved={...cache,signature:normalizedSignature};
       }
     }
+    saved??=comparisonCache;
     if(!saved?.payload||!saved?.signature||saved.build!==OPTIMIZER_CACHE_BUILD)return;
-    lastOptimizedEpicPayload=saved.payload;
+    lastOptimizedEpicPayload=comparisonCache?{...saved.payload,exploreResults:comparisonCache.payload.exploreResults}:saved.payload;
+    saved={...saved,payload:lastOptimizedEpicPayload};
     lastOptimizedEpicSignature=saved.signature;
     lastEpicRunDiagnostics=saved.runDiagnostics??null;
     if(activeMode==='battle')currentBattleWorkspace().resultCache=saved;
@@ -1190,7 +1193,7 @@ function acceptReviewSelection(){
   const proposal=pendingReviewProposal?.proposal;if(!proposal)return;
   const proposed=new Set(proposal.selectedIds),mercenary=[...(modeState().selectedIds.mercenary||[])];
   modeState().selectedIds={troop:units.troop.filter(unit=>proposed.has(unit.id)).map(unit=>unit.id),monster:units.monster.filter(unit=>proposed.has(unit.id)).map(unit=>unit.id),mercenary};
-  pendingReviewProposal=null;els.reviewProposalDialog?.close();clearSavedOptimizerResult();epicResultCurrent=false;syncCustomOrders();saveState();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();setReviewSelectionState();
+  pendingReviewProposal=null;els.reviewProposalDialog?.close();epicResultCurrent=false;syncCustomOrders();saveState();renderAllSelections();if(isCustomOrderMode())renderOrderView();recalculate();setReviewSelectionState();
 }
 function startReviewSelection(){
   if(!isReviewSelectionAvailable()||reviewWorker||epicWorker)return;
@@ -1272,25 +1275,20 @@ function currentEpicEffectiveSignature(){
 
 function exploreComparisonOwner(){return String(state.activeAccountId)+'|'+String(state.modes.battle.activeEncounterId);}
 function exploreComparisonContext(){
-  return exploreContextKey({owner:exploreComparisonOwner(),effective:currentEpicEffectiveSignature(),inputs:modeState().inputs,selected:Object.fromEntries(Object.entries(modeState().selectedIds).map(([key,ids])=>[key,[...ids].sort()])),temple:templeLevel(),encounter:currentEncounter(),pointsRate:estimatedEpicPoints(currentEncounter()?.name,1e12)});
+  return exploreSection2Context(exploreComparisonOwner(),modeState().inputs);
 }
 function renderExploreResultsPanel(open=false){
   const panel=document.getElementById('exploreResultsPanel');if(!panel)return;
   const comparison=lastOptimizedEpicPayload?.exploreResults;
-  const visible=isBattleOptimizeMode()&&comparison?.version===1&&comparison.owner===exploreComparisonOwner()&&comparison.context===exploreComparisonContext();
+  const visible=isBattleOptimizeMode()&&exploreComparisonMatches(comparison,exploreComparisonOwner(),modeState().inputs);
   panel.hidden=!visible;
-  if(!visible){
-    if(comparison&&!applyingExploreChoice&&!epicWorker&&isBattleOptimizeMode()&&comparison.owner===exploreComparisonOwner()){
-      delete lastOptimizedEpicPayload.exploreResults;saveOptimizerResult();
-    }
-    return;
-  }
+  if(!visible)return;
   if(open)panel.open=true;
   const body=document.getElementById('exploreResultsRows');
   const sort=panel.dataset.sort||'eld',direction=panel.dataset.direction||'desc';
   const expanded=new Set([...body.querySelectorAll('[data-explore-toggle][aria-expanded="true"]')].map(el=>el.dataset.exploreToggle));
   const encounter=currentEncounter();
-  const rows=exploreResultRows(comparison,{sort,direction,goldForSquad:s=>actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold')),pointsForEld:eld=>encounter?.builtIn?estimatedEpicPoints(encounter.name,eld):null});
+  const rows=exploreResultRows({...comparison,activeId:epicResultCurrent?comparison.activeId:null},{sort,direction,goldForSquad:s=>actualRevivalCost(rawSquadRevival({id:s.id,quantity:s.quantity},'gold')),pointsForEld:eld=>encounter?.builtIn?estimatedEpicPoints(encounter.name,eld):null});
   panel.querySelectorAll('[data-explore-sort]').forEach(button=>{const active=button.dataset.exploreSort===sort;button.closest('th').setAttribute('aria-sort',active?(direction==='asc'?'ascending':'descending'):'none');button.querySelector('span').textContent=active?(direction==='asc'?'↑':'↓'):'↕';});
   document.getElementById('exploreResultsCount').textContent='· '+rows.length+' armies';
   document.getElementById('exploreResultsStatus').textContent=rows.some(row=>row.active)?'Selected: '+rows.find(row=>row.active).label:'Choose a saved finalist to use its exact quantities.';
@@ -1309,14 +1307,23 @@ function renderExploreResultsPanel(open=false){
   if(!panel.dataset.bound){
     panel.dataset.bound='true';
     panel.querySelectorAll('[data-explore-sort]').forEach(button=>button.addEventListener('click',()=>{const key=button.dataset.exploreSort;panel.dataset.direction=(panel.dataset.sort||'eld')===key?((panel.dataset.direction||'desc')==='asc'?'desc':'asc'):(['units','gold','loss','name'].includes(key)?'asc':'desc');panel.dataset.sort=key;renderExploreResultsPanel();}));
-    body.addEventListener('click',event=>{const button=event.target.closest('[data-explore-use]');if(button){useExploreArmy(Number(button.dataset.exploreUse));return;}const toggle=event.target.closest('[data-explore-toggle]');if(toggle){const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'▾':'▸';document.getElementById(toggle.getAttribute('aria-controls')).hidden=!open;}});
+    body.addEventListener('click',event=>{
+      const button=event.target.closest('[data-explore-use]');
+      if(button){useExploreArmy(Number(button.dataset.exploreUse));return;}
+      const toggle=event.target.closest('tr')?.querySelector('[data-explore-toggle]');
+      if(toggle){
+        const open=toggle.getAttribute('aria-expanded')!=='true';
+        toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'▾':'▸';
+        document.getElementById(toggle.getAttribute('aria-controls')).hidden=!open;
+      }
+    });
   }
 }
 function useExploreArmy(index){
   if(epicWorker)return;
   readInputs();
   const comparison=lastOptimizedEpicPayload?.exploreResults;
-  if(!comparison||comparison.context!==exploreComparisonContext()||comparison.owner!==exploreComparisonOwner()){renderExploreResultsPanel();return;}
+  if(!exploreComparisonMatches(comparison,exploreComparisonOwner(),modeState().inputs)){renderExploreResultsPanel();return;}
   const army=comparison.armies[index];if(!army)return;
   applyingExploreChoice=true;
   try{
@@ -1325,7 +1332,7 @@ function useExploreArmy(index){
     comparison.activeId=army.id;
     lastOptimizedEpicPayload={...army.payload,exploreResults:comparison};
     syncCustomOrders();renderAllSelections();renderEpicOptimizedResult(lastOptimizedEpicPayload);
-    epicResultCurrent=true;lastOptimizedEpicSignature=currentEpicEffectiveSignature();comparison.context=exploreComparisonContext();
+    epicResultCurrent=true;lastOptimizedEpicSignature=currentEpicEffectiveSignature();
     saveOptimizerResult();renderExploreResultsPanel(true);
     document.getElementById('exploreResultsStatus').textContent=army.label+' selected. You can choose another army here.';
   }finally{applyingExploreChoice=false;setOptimizeButtonState();document.querySelector('#exploreResultsRows [data-explore-toggle="'+index+'"]')?.focus();}
@@ -2043,7 +2050,7 @@ function startEpicOptimization(){
           quantities:msg.payload?.quantities
         });
         updateOptimizerProgress({phase:'finalizing',progressPct:100,evaluations:msg.payload?.diagnostics?.totalEvaluations??msg.payload?.diagnostics?.evaluations,expectedLifetimeDamage:msg.payload?.result?.expectedTotalLifetimeDamage,bestExpectedLifetimeDamage:msg.payload?.diagnostics?.maximumExpectedLifetimeDamage,practicalTieBreakApplied:!!msg.payload?.diagnostics?.practicalTieBreakApplied,practicalTieBreakLossPct:msg.payload?.diagnostics?.practicalTieBreakLossPct});
-        if(!exploring&&lastOptimizedEpicPayload?.exploreResults?.context===exploreComparisonContext()){msg.payload.exploreResults={...lastOptimizedEpicPayload.exploreResults,activeId:exploreArmyKey(msg.payload)};}
+        if(!exploring&&lastOptimizedEpicPayload?.exploreResults?.owner===exploreComparisonOwner()){msg.payload.exploreResults={...lastOptimizedEpicPayload.exploreResults,activeId:exploreArmyKey(msg.payload)};}
         if(msg.payload?.exploration?.changedSelection&&Array.isArray(msg.payload.exploredSelectedIds)){
           const chosen=new Set(msg.payload.exploredSelectedIds);
           const selected=modeState().selectedIds;
@@ -2062,7 +2069,7 @@ function startEpicOptimization(){
         lastOptimizedEpicPayload=msg.payload;
         epicResultCurrent=true;
         lastOptimizedEpicSignature=currentEpicEffectiveSignature();
-        if(msg.payload.exploreResults){msg.payload.exploreResults.context=exploreComparisonContext();msg.payload.exploreResults.owner=exploreComparisonOwner();}
+        if(exploring&&msg.payload.exploreResults){msg.payload.exploreResults.context=exploreComparisonContext();msg.payload.exploreResults.owner=exploreComparisonOwner();}
         saveOptimizerResult();
         // Explore is a one-time search. Subsequent input changes should use
         // the chosen unit types unless the player explicitly opts in again.

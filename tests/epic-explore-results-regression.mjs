@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {captureExploreArmy,collectExploreArmies,exploreArmyKey,exploreResultRows,exploreContextKey} from '../js/epic-explore-results.mjs';
+import {captureExploreArmy,collectExploreArmies,exploreArmyKey,exploreResultRows,exploreContextKey,exploreSection2Context,exploreComparisonMatches} from '../js/epic-explore-results.mjs';
 const payload=(eld,squads)=>({quantities:Object.fromEntries(squads.map(s=>[s.name,s.quantity])),result:{expectedTotalLifetimeDamage:eld,squads,cases:{largeTrace:true}},diagnostics:{unusualSacrifices:[],initialResult:{largeTrace:true}},exploreResults:{old:true}});
 const a=payload(1000,[{id:'a',name:'A',quantity:100},{id:'b',name:'B',quantity:1}]);
 const b=payload(999.999,[{id:'a',name:'A',quantity:101}]);
@@ -50,3 +50,48 @@ for(const [sort,first] of [['eld',simple.id],['points',simple.id],['loss',starti
 
 const trimmed=payload(100,[{id:'a',name:'A',quantity:99}]);trimmed.quantities.A=100;
 assert.equal(captureExploreArmy(trimmed,['a'],'Trimmed').payload.quantities.A,99,'Saved finalist quantities must match the scored army, including strict-health trimming');
+
+const owner='player|epic-shadow-city';
+const originalInputs={leadership:'1,000',authority:'200',dominance:'300',autoLeadership:true,monsterHealth:'2901.5',humanST:'13.6',autoHumanBonuses:true,guardsmanStrengthAgainstEpic:'2590',autoBeastBonuses:true,beastDD:'41.1',fenrirStrength:'0'};
+const scoped={...comparison,owner,context:exploreSection2Context(owner,originalInputs)};
+assert.equal(exploreComparisonMatches(scoped,owner,{...originalInputs,leadership:'1000.0',humanST:'13.6000'}),true,'Equivalent numeric formatting must match');
+for(const [key,value] of Object.entries({leadership:'1001',authority:'201',dominance:'301',autoLeadership:false,monsterHealth:'2902',humanST:'14',autoHumanBonuses:false,guardsmanStrengthAgainstEpic:'2591',autoBeastBonuses:false,beastDD:'42',fenrirStrength:'1'})){
+  assert.equal(exploreComparisonMatches(scoped,owner,{...originalInputs,[key]:value}),false,key+' must hide saved results');
+  assert.equal(exploreComparisonMatches(scoped,owner,originalInputs),true,key+' must allow restoring results');
+}
+for(const key of ['includeMercenariesInOptimization','preserveMercenaries','shareEpicArmy','encounterNorm','clanMembers','encounterPlanStrategy','enemySquadTypes']){
+  assert.equal(exploreComparisonMatches(scoped,owner,{...originalInputs,[key]:'changed'}),true,key+' is outside Section 2');
+}
+assert.equal(exploreComparisonMatches(scoped,'other|epic-shadow-city',originalInputs),false);
+assert.equal(exploreComparisonMatches(scoped,'player|epic-arachne',originalInputs),false);
+const legacy={...scoped,context:exploreContextKey({owner,inputs:originalInputs,selected:{troop:['old']},effective:'old',temple:45,encounter:{id:'epic-shadow-city'}})};
+assert.equal(exploreComparisonMatches(legacy,owner,originalInputs),true,'Existing saved panels must migrate without rerunning Explore');
+assert.equal(exploreComparisonMatches({...scoped,context:'broken'},owner,originalInputs),false);
+
+// Exercise the actual panel renderer: mismatch hides without deleting, restores
+// after reverting, and never marks a stale army as currently selected.
+let liveInputs={...originalInputs};
+const panel={hidden:false,dataset:{bound:'true'},querySelectorAll:()=>[]};
+const elements={exploreResultsPanel:panel,exploreResultsRows:{querySelectorAll:()=>[],innerHTML:''},exploreResultsCount:{},exploreResultsStatus:{}};
+const panelContext=vm.createContext({
+  document:{getElementById:id=>elements[id]},lastOptimizedEpicPayload:{...a,exploreResults:scoped},
+  epicResultCurrent:true,epicWorker:null,isBattleOptimizeMode:()=>true,
+  exploreComparisonOwner:()=>owner,modeState:()=>({inputs:liveInputs}),exploreComparisonMatches,exploreResultRows,
+  currentEncounter:()=>({builtIn:false}),actualRevivalCost:n=>n,rawSquadRevival:s=>s.quantity,
+  armyV2:[],escapeHtml:String,TIER_COLORS:{},tierNumber:()=>1,formatInteger:String,formatDamage:String
+});
+const renderer=source.slice(source.indexOf('function renderExploreResultsPanel('),source.indexOf('function useExploreArmy('));
+vm.runInContext(renderer,panelContext);
+const render=()=>vm.runInContext('renderExploreResultsPanel()',panelContext);
+render();assert.equal(panel.hidden,false);
+liveInputs.leadership='999';render();assert.equal(panel.hidden,true);
+assert.ok(panelContext.lastOptimizedEpicPayload.exploreResults,'Hiding must preserve the comparison');
+liveInputs={...originalInputs};render();assert.equal(panel.hidden,false);
+panelContext.epicResultCurrent=false;render();
+assert.equal(elements.exploreResultsRows.innerHTML.includes('Currently selected'),false,'Changing selections must leave every saved finalist available to choose again');
+assert.ok(elements.exploreResultsRows.innerHTML.includes('Use this army'));
+const retainLine=source.split('\n').find(line=>line.includes('if(!exploring&&lastOptimizedEpicPayload?.exploreResults'));
+panelContext.exploring=false;panelContext.msg={payload:{...b}};panelContext.exploreArmyKey=exploreArmyKey;
+vm.runInContext(retainLine,panelContext);
+assert.equal(panelContext.msg.payload.exploreResults.context,scoped.context,'Ordinary optimization must retain the original panel signature even while it is hidden');
+console.log('Section 2 visibility, reversible hiding, legacy comparisons, and non-Explore optimization retention passed.');
