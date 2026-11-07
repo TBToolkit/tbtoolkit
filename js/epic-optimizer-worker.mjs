@@ -1,4 +1,4 @@
-import {exploreTimeBudgetMs,exploreTimePolicy} from './epic-explore-policy.mjs';
+import {exploreTimeBudgetMs,exploreTimePolicy,normalizeExploreTierDepths} from './epic-explore-policy.mjs';
 import {captureExploreArmy,collectExploreArmies} from './epic-explore-results.mjs';
 import {mercenaryPreservationStatus,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {canonicalExploreSelection,runExploreSearch,runExploreNeighborhood} from './epic-explore-search.mjs';
@@ -65,8 +65,9 @@ self.onmessage=async event=>{
   }
   const startedAt=performance.now();
   const requestedBudget=Number(message.timeBudgetMs);
-  const timePolicy=exploreTimePolicy(message.exploreTierDepth);
-  const timeBudgetMs=Number.isFinite(requestedBudget)&&requestedBudget>0?Math.max(1000,requestedBudget):message.exploreMode?exploreTimeBudgetMs(message.exploreTierDepth):OPTIMIZER_TIME_BUDGET_MS;
+  const tierDepths=normalizeExploreTierDepths(message.exploreTierDepths??message.exploreTierDepth);
+  const timePolicy=exploreTimePolicy(tierDepths);
+  const timeBudgetMs=Number.isFinite(requestedBudget)&&requestedBudget>0?Math.max(1000,requestedBudget):message.exploreMode?exploreTimeBudgetMs(tierDepths):OPTIMIZER_TIME_BUDGET_MS;
   // Reserve the same user-army allowance for every search, even if reusable.
   // Otherwise cached/different user selections could change Explore's cutoff.
   const userArmyReserveMs=message.exploreMode?Math.min(90_000,timeBudgetMs*.25):0;
@@ -118,9 +119,8 @@ self.onmessage=async event=>{
       self.postMessage({type:'progress',requestId,payload:{phase:'baseline-ready',exploreStage:'baseline-ready',progressPct:40,expectedLifetimeDamage:baselineEld,verifiedBestEld,healthLadder:ladderRows(result?.result),evaluations:cumulativeEvaluations}});
       const originalIds=[...searchIds,...(message.fixedMercenaryIds||[])];
       const completedArmies=[captureExploreArmy(result,originalIds,sameStartingSelection&&!message.baselineResult?'Starting army':'Explore starting point')];
-      const maxTierDepth=Math.max(0,Math.min(4,Number(message.exploreTierDepth)||0));
       const remaining=phaseBudgetMs-(performance.now()-startedAt);
-      const review=remaining>25_000?runExploreSearch({units,currentIds:originalIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,maxTierDepth,timeBudgetMs:Math.min(timePolicy.screeningMs,remaining*.4),onProgress:progress=>{screeningEvaluations=progress.evaluations;self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen',progressPct:40+Math.round(progress.progressPct*.09),screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations}});}}):null;
+      const review=remaining>25_000?runExploreSearch({units,currentIds:originalIds,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,tierDepths,timeBudgetMs:Math.min(timePolicy.screeningMs,remaining*.4),onProgress:progress=>{screeningEvaluations=progress.evaluations;self.postMessage({type:'progress',requestId,payload:{phase:'explore-screen',exploreStage:'screen',progressPct:40+Math.round(progress.progressPct*.09),screeningEvaluations,verifiedBestEld,evaluations:cumulativeEvaluations}});}}):null;
       if(!review)explorationNote='The search reached its time limit before broad screening; completed armies were kept.';
       const byId=new Map(units.map(unit=>[unit.id,unit]));
       const fixedNames=new Set(Object.keys(fixedQuantities));
@@ -141,7 +141,7 @@ self.onmessage=async event=>{
           const remaining=phaseBudgetMs-(performance.now()-startedAt);
           if(remaining<30_000){explorationNote='The search reached its time limit; the best fully optimized army so far was kept.';break;}
           self.postMessage({type:'progress',requestId,payload:{phase:'explore-neighborhood',exploreStage:'screen',progressPct:50+Math.round(index*43/(broadCandidates+2)),verifiedBestEld,evaluations:cumulativeEvaluations}});
-          const neighborhood=runExploreNeighborhood({units,currentIds:result.exploredSelectedIds||originalIds,originalIds,quantities:result.quantities,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,maxTierDepth,timeBudgetMs:Math.min(timePolicy.neighborhoodMs,remaining-20_000),excludedSignatures:seen});
+          const neighborhood=runExploreNeighborhood({units,currentIds:result.exploredSelectedIds||originalIds,originalIds,quantities:result.quantities,bonuses:message.bonuses,capacityLimits:message.capacityLimits,fixedQuantities,tierDepths,timeBudgetMs:Math.min(timePolicy.neighborhoodMs,remaining-20_000),excludedSignatures:seen});
           neighborhoodPasses++;neighborhoodRefinements+=neighborhood.refinements;
           if(!neighborhood.candidate)break;
           candidates.push(neighborhood.candidate);seen.add(compositionSignature(neighborhood.candidate.selectedIds));
