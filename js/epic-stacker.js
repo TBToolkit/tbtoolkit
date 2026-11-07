@@ -2459,14 +2459,14 @@ function renderBonusAdjustments(){
   checkbox.checked=!!i.useEncounterBonusAdjustments;checkbox.disabled=!!epicWorker||activeMode!=='battle';
   document.getElementById('bonusAdjustmentScopeNote').textContent=i.useEncounterBonusAdjustments?'Saved for this encounter only. This army is independent of shared encounter armies.':'Saved as defaults for this player account. Other accounts and encounters with custom adjustments are unchanged.';
   const pvp=activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_');
-  const columns=bonusAdjustmentColumns({isPvp:pvp,isFenrir:activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'});
+  const columns=bonusAdjustmentColumns({isPvp:pvp});
   const columnKey=columns.map(([stat])=>stat).join('|');
   if(panel.dataset.columns!==columnKey){
     panel.dataset.columns=columnKey;
     document.getElementById('bonusAdjustmentHead').innerHTML='<tr><th>Unit family</th>'+columns.map(([,label])=>'<th>'+label+'</th>').join('')+'</tr>';
-    document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat])=>'<td data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'"></td>').join('')+'</tr>').join('');
+    document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat,statLabel])=>'<td><input type="text" readonly aria-label="'+label+' '+statLabel+' adjustment" data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'"/></td>').join('')+'</tr>').join('');
   }
-  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(cell=>{const value=adjustments[cell.dataset.bonusAdjustmentProfile][cell.dataset.bonusAdjustmentStat];cell.textContent=(value>0?'+':'')+value;});
+  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(cell=>{const value=adjustments[cell.dataset.bonusAdjustmentProfile][cell.dataset.bonusAdjustmentStat];cell.value=(value>0?'+':'')+value;});
   document.getElementById('captureBonusAdjustments').disabled=!!epicWorker;
   document.getElementById('resetBonusAdjustments').disabled=!!epicWorker;
   const status=document.getElementById('bonusAdjustmentStatus');

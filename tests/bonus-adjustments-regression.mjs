@@ -8,8 +8,8 @@ import {exploreSection2Context} from '../js/epic-explore-results.mjs';
 
 const base={monsterHealth:'1600',monsterStrength:'2000',monsterDD:'10',monsterST:'10',strengthAgainstEpic:'2000',fenrirStrength:'550',pvpHealth:'1600',pvpStrength:'2000',autoHumanBonuses:true,autoGuardsmanBonuses:true,autoSpecialistBonuses:true,autoEngineerBonuses:true,autoEpicHunterBonuses:true};
 const defaults=normalizeBonusAdjustments();
-assert.deepEqual(bonusAdjustmentColumns().map(([stat])=>stat),['DD','ST','Health','StrengthAgainstEpic','Strength']);
-assert.deepEqual(bonusAdjustmentColumns({isFenrir:true}).map(([stat])=>stat),['DD','ST','Health','FenrirStrength','StrengthAgainstEpic','Strength']);
+assert.deepEqual(bonusAdjustmentColumns().map(([stat])=>stat),['DD','ST','Health','Strength']);
+assert.deepEqual(bonusAdjustmentColumns({isFenrir:true}).map(([stat])=>stat),['DD','ST','Health','Strength']);
 assert.deepEqual(bonusAdjustmentColumns({isPvp:true}).map(([stat])=>stat),['DD','ST','PvpHealth','Health','PvpStrength','Strength']);
 const normal=applyAutomaticBonusAdjustments(base,defaults);
 assert.equal(normal.humanHealth,'1500');assert.equal(normal.guardsmanHealth,'1500');
