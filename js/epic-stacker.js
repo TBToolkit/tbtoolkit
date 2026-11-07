@@ -6,7 +6,7 @@ import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs';
 import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs';
-import { BIFF_MAX_BYTES, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
+import { BIFF_MAX_BYTES, biffSizeLimitMessage, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
 import {APP_BUILD,OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
 import {preferNewerSavedState,readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
@@ -752,7 +752,7 @@ function showBiffImportError(error){
 }
 async function prepareBiffImport(file){
   if(!file)return;
-  if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error('This account file is larger than 5 MB.'));return;}
+  if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error(biffSizeLimitMessage()));return;}
   try{
     const parsed=parseBiff(await file.text());
     const materialized=materializeImportedAccount(parsed,{
