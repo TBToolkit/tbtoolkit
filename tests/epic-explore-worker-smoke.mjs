@@ -66,3 +66,18 @@ await self.onmessage({data:{...common,requestId:6,selectedIds:canonicalIds,basel
 assert.equal(messages.find(m=>m.requestId===6&&m.type==='error'),undefined);
 const retained=messages.find(m=>m.requestId===6&&m.type==='result').payload;
 assert.equal(retained.result.expectedTotalLifetimeDamage,nearTie.result.expectedTotalLifetimeDamage,'Retain the user army even for a lead smaller than the search comparison tolerance');
+
+const mixedTopIds=army.filter(u=>['G9','S8','E9','M9'].includes(u.tier)).map(u=>u.id);
+const mixedDepths={guardsman:0,specialist:1,engineer:2,monster:1};
+await self.onmessage({data:{...common,requestId:7,selectedIds:mixedTopIds,exploreTierDepths:mixedDepths}});
+assert.equal(messages.find(m=>m.requestId===7&&m.type==='error'),undefined);
+const mixed=messages.find(m=>m.requestId===7&&m.type==='result').payload;
+assert.ok(mixed.exploration.fullyOptimizedCandidates>0);
+const topTiers={guardsman:9,specialist:8,engineer:9,monster:9};
+for(const finalist of mixed.exploreResults.armies){
+  for(const id of finalist.selectedIds){
+    const u=army.find(u=>u.id===id),family=u.category==='monster'?'monster':u.unitClass.toLowerCase();
+    assert.ok(u.tierNumber<=topTiers[family]&&u.tierNumber>=topTiers[family]-mixedDepths[family],`${finalist.label}: ${u.tier} must respect ${family}'s depth`);
+  }
+}
+console.log('Integrated Explore respects four independent tier ranges.');
