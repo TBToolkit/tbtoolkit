@@ -178,6 +178,7 @@
 <div class="unit-bonus-top-grid">
 <div class="unit-bonus-matrix-area">
 
+<p class="setting-note epic-v2-note">With Auto enabled, bonuses are calculated from your Monster bonuses using saved relationships.</p>
 <div class="bonus-matrix" role="group" aria-label="Unit bonuses by profile">
 <div class="bonus-matrix-header"><span>Unit <button aria-label="How to select the correct unit bonus profile" class="stat-help-button" data-stat-help="bonusUnit" type="button">?</button></span><span>Double Damage <button aria-label="Where to find Double Damage" class="stat-help-button" data-stat-help="bonusDD" type="button">?</button></span><span>Strike Twice <button aria-label="Where to find Strike Twice" class="stat-help-button" data-stat-help="bonusST" type="button">?</button></span><span>Health <button aria-label="Where to find Health" class="stat-help-button" data-stat-help="bonusHealth" type="button">?</button></span><span>Strength <button aria-label="Where to find Strength" class="stat-help-button" data-stat-help="bonusStrength" type="button">?</button></span><span>Mode</span></div>
 <div class="bonus-matrix-row bonus-summary-row" data-bonus-profile="monster"><div class="bonus-profile-name"><button aria-controls="monsterBonusDetails" aria-expanded="false" class="bonus-profile-disclosure" id="monsterBonusDisclosure" type="button"><span aria-hidden="true">›</span>Monsters</button><small hidden id="monsterProfileStatus">Mixed</small></div><div class="percent-field"><input aria-label="Monster Double Damage" class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Strike Twice" class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Health" class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Strength" class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div><span class="bonus-mode-base">Base</span></div>
@@ -195,7 +196,15 @@
 </div>
 <div class="bonus-matrix-row" data-bonus-profile="epicHunter"><strong>Epic Hunters</strong><div class="percent-field"><input aria-label="Epic Hunter Double Damage" class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strike Twice" class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Health" class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strength" class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div><label class="bonus-auto-toggle"><input id="autoEpicHunterBonuses" type="checkbox" checked/><span>Auto</span></label></div>
 </div>
-<p class="setting-note epic-v2-note">Monster species follow Monsters, and human troop classes follow Humans, by default. Expand either row to enter profile-specific bonuses.</p>
+<section class="bonus-relationship-controls" id="bonusRelationshipControls" aria-label="Automatic bonus relationships">
+<div class="bonus-relationship-toolbar"><div class="bonus-adjustment-actions"><button type="button" id="captureBonusAdjustments">Save Custom Bonus Relationships</button><button type="button" id="resetBonusAdjustments">Restore default relationships</button></div><button type="button" class="stat-help-button" data-stat-help="unitBonusProfiles" aria-label="About unit bonuses and custom relationships" aria-haspopup="dialog">i</button></div>
+<p class="setting-note" id="bonusAdjustmentStatus" role="status" hidden></p>
+<details class="bonus-adjustment-panel" id="bonusAdjustmentDetails">
+<summary>View saved adjustments</summary>
+
+<div class="bonus-adjustment-scroll"><table class="bonus-adjustment-table"><thead id="bonusAdjustmentHead"></thead><tbody id="bonusAdjustmentRows"></tbody></table></div>
+</details>
+</section>
 </div>
 <div class="global-bonus-area">
 <h3>Global Battle Bonuses</h3>
@@ -274,7 +283,19 @@
 <p>Use Max Fill for Authority or enter a fill percentage. Either value is a ceiling, not a target. The optimizer may use less Authority. It accepts only armies where every selected mercenary dies in the last half of the predicted battle, whether your army or the Epic attacks first. This constraint can reduce ELD and may take longer to optimize.</p>
 <p>To test other unit types, run Explore first. Then turn on Preserve and optimize the selected army.</p></div></details>
 <small class="optimizer-merc-guidance">Available after you include mercenaries. Keeps them alive until the last half of predicted battle cycles.</small></div>
-<div class="explore-controls" id="exploreControls" hidden><div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div><label class="explore-depth-label" id="exploreDepthLabel" hidden>Explore below highest selected tier <select id="exploreTierDepth"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label><small id="explorePoolSummary">Explore searches from the full highest selected tiers and retains your checked army as a separate finalist. It may add or remove troops and monsters within this tier range. Only checked mercenary types may be used; they are never added or removed.</small></div>
+<div class="explore-controls" id="exploreControls" hidden>
+<div class="explore-toggle-group"><label class="explore-toggle"><input id="exploreUnitStructures" type="checkbox"><span>Explore unit combinations</span></label><button aria-haspopup="dialog" aria-label="About Explore unit combinations" class="stat-help-button explore-info-button" data-stat-help="exploreUnitStructures" type="button">i</button></div>
+<fieldset class="explore-depth-controls" id="exploreDepthControls" hidden>
+<legend>Explore below highest selected tier</legend>
+<div class="explore-depth-grid">
+<label class="explore-depth-label" for="exploreGuardsmanDepth">Guardsmen<select id="exploreGuardsmanDepth" data-explore-family="guardsman"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreSpecialistDepth">Specialists<select id="exploreSpecialistDepth" data-explore-family="specialist"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreEngineerDepth">Engineers<select id="exploreEngineerDepth" data-explore-family="engineer"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreMonsterDepth">Monsters<select id="exploreMonsterDepth" data-explore-family="monster"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+</div>
+</fieldset>
+<small id="explorePoolSummary">Explore searches from the full highest selected tiers and retains your checked army as a separate finalist. Each family has its own tier range. Only checked mercenary types may be used; they are never added or removed.</small>
+</div>
 <div class="selection-optimize-row optimizer-only"><button class="epic-action optimize-army-button" id="optimizeArmy" type="button">Optimize Army</button><div class="selection-optimize-guidance"><div class="optimize-help" id="optimizeHelp">Choose your units and inputs, then optimize the army.</div><button class="optimizer-guide-link" data-battle-guide="optimizer" type="button">How optimization works</button></div></div>
 <details class="explore-results-panel" id="exploreResultsPanel" hidden>
 <summary>Explore Results <span id="exploreResultsCount"></span></summary>
@@ -316,6 +337,13 @@
 <div title="Expected lifetime damage divided by the full revival cost, multiplied by 1,000. Gold and Potion can both pay revival costs."><span>Damage per 1K Gold</span><strong id="damagePerThousandGold">—</strong></div>
 </div>
 <strong id="epicPointsPerFullGold" hidden>—</strong>
+<details class="battle-details troop-training-plan" id="troopTrainingPlan">
+<summary><span class="battle-details-title">Troop Training Plan</span><span class="battle-details-subtitle">Plan units for multiple attacks</span></summary>
+<div class="training-plan-controls"><label>Number of attacks<input id="trainingPlanAttacks" type="text" inputmode="numeric" pattern="[0-9]*" value="10" aria-describedby="trainingPlanError"/></label><label>Revival strategy<select id="trainingPlanStrategy"><option value="full">Revive All</option><option value="mercenary-monster">Revive Mercs + Monsters</option><option value="mercenary-only">Revive Mercs Only</option></select></label></div>
+<p class="setting-note">Total units to have ready before the first attack, including reserves. Assumes the Results army is sent each time and 90% of attacking losses can be revived. Mercenaries are excluded.</p>
+<p id="trainingPlanError" class="training-plan-error" role="status" hidden>Enter a positive whole number of attacks.</p>
+<div class="training-plan-grid" id="trainingPlanGroups"></div>
+</details>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
 <div class="prediction-meta" id="predictionMeta"></div>

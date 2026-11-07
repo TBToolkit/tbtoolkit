@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {serializeAccountToBiff,parseBiff,materializeImportedAccount,BIFF_FORMAT,BIFF_SCHEMA_VERSION} from '../js/biff-format.mjs';
+import {serializeAccountToBiff,parseBiff,materializeImportedAccount,BIFF_FORMAT,BIFF_SCHEMA_VERSION,BIFF_MAX_BYTES,biffSizeLimitMessage} from '../js/biff-format.mjs';
 import {persistentAccountSnapshot,validateAccountState} from '../js/browser-storage.mjs';
 
 const account={
@@ -78,7 +78,14 @@ assert.ok(imported.warnings.some(message=>message.includes('unknown unit')));
 
 assert.throws(()=>parseBiff('{}'),/not a TB Toolkit/);
 assert.throws(()=>parseBiff(JSON.stringify({format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION+1,kind:'account'})),/newer schema/);
-assert.throws(()=>parseBiff(text,{maxBytes:10}),/larger than 5 MB/);
+assert.throws(()=>parseBiff(text,{maxBytes:10}),/larger than 10 bytes/);
+assert.equal(BIFF_MAX_BYTES,25*1024*1024);
+assert.equal(biffSizeLimitMessage(),'This account file is larger than 25 MB.');
+assert.doesNotThrow(()=>parseBiff(text+' '.repeat(6*1024*1024)),'Player files above the former 5 MB limit must import');
+const exactBytes=new TextEncoder().encode(text).length;
+assert.doesNotThrow(()=>parseBiff(text,{maxBytes:exactBytes}));
+assert.throws(()=>parseBiff(text,{maxBytes:exactBytes-1}),/larger than/);
+assert.throws(()=>parseBiff(text+' '.repeat(BIFF_MAX_BYTES)),/larger than 25 MB/);
 const duplicate=structuredClone(raw);duplicate.account.customEncounters.push(structuredClone(duplicate.account.customEncounters[0]));
 assert.throws(()=>parseBiff(JSON.stringify(duplicate)),/duplicate encounter IDs/);
 const invalidFormation=structuredClone(raw);invalidFormation.account.customEncounters[0].enemyFormation={FLYING:9};

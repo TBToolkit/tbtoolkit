@@ -7,6 +7,10 @@ import {REBUILD_COST_UNIT_COUNT,unitRebuildCost} from '../js/unit-rebuild-costs.
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../css/epic-stacker.css',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../stacking.html',import.meta.url),'utf8');
+assert.match(html,/id="captureBonusAdjustments">Save Custom Bonus Relationships<\/button>/);
+assert.match(html,/id="resetBonusAdjustments">Restore default relationships<\/button>/);
+assert.match(html,/<details class="bonus-adjustment-panel" id="bonusAdjustmentDetails">\s*<summary>View saved adjustments<\/summary>/,'Saved adjustments must start collapsed');
+assert.match(source,/<input[^>]*readonly[^>]*data-bonus-adjustment-profile/,'Saved adjustments must use read-only input boxes');
 assert.match(html,/<h2>Selection<\/h2>[\s\S]*?<p>Select only the units you want to send into battle\./,'Selection must explain manual choices.');
 const optimizerWorker=fs.readFileSync(new URL('../js/epic-quantity-optimizer.mjs',import.meta.url),'utf8');
 const optimizerEntry=fs.readFileSync(new URL('../js/epic-optimizer-worker.mjs',import.meta.url),'utf8');
@@ -112,7 +116,9 @@ assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection mu
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"[\s\S]*?<\/label><button[^>]*data-stat-help="exploreUnitStructures"/,'Explore help must be a separate button that does not toggle the checkbox.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*safety limit is six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations',eyebrow:'Unit selection guide'[^\n]*highest unlocked tier[^\n]*will not search that group[^\n]*winning army[^\n]*until you change them or run Explore again/,'Explore help must explain group selection, tier limits, and how the chosen units persist.');
-assert.match(html,/id="exploreTierDepth"[\s\S]*?<option value="2" selected>/,'Explore mode must default to a two-tier range.');
+for(const [family,depth] of [['Guardsman',1],['Specialist',1],['Engineer',1],['Monster',2]]){
+  assert.match(html,new RegExp('id="explore'+family+'Depth"[^>]*>[\\s\\S]*?<option value="'+depth+'" selected>'),'Explore must default '+family+' to its own tier range.');
+}
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');
 assert.match(source,/saveOptimizerResult\(\);\s*\/\/ Explore is a one-time search\.[\s\S]*?if\(exploring\)exploreUnitStructures=false;/,'Successful Explore runs must return to selected-units-only optimization.');
 assert.match(optimizerEntry,/runExploreSearch[\s\S]*?optimizeOne\(selectedIds,'finalist'/,'Finalists must pass through the full optimizer before comparison.');
@@ -246,7 +252,7 @@ assert.match(source,/const pointColor=outputRowColors\(category,p\.row\)\.accent
 assert.match(source,/chartStyle\(\)==='separated'[\s\S]*?suffix[\s\S]*?return`\$\{roman\}-\$\{suffix\}`/, 'Separated Results mercenary labels must retain their subgroup suffix');
 assert.match(css,/\.chart-point-label\{font-size:12px;font-weight:900;/, 'Results health-ladder unit labels must remain legible without crowding the plot');
 assert.match(source,/const healthStep=niceHealthAxisStep\(rawMax\)/, 'The health axis must use rounded, even intervals');
-assert.match(source,/for\(let death=5;chartStyle\(\)==='combined'&&death<=horizontalCount;death\+=5\)/, 'Only the combined death-order axis should render numbered five-position increments');
+assert.match(source,/for\(let death=5;chartStyle\(\)==='combined'&&!cycleLayout&&death<=horizontalCount;death\+=5\)/, 'Five-position ticks are only a fallback when no Epic cycle axis exists');
 assert.equal((source.match(/class:'chart-axis-line'/g)||[]).length,2,'The results chart must draw explicit horizontal and vertical axes');
 assert.match(css,/\.layer-chart-wrap\{[\s\S]*?background:#04111b;/, 'Decorative gridlines must not extend outside the chart axes');
 assert.match(source,/const SHOW_BATTLE_DETAIL_SACRIFICE_FLAGS=false;/, 'Unusual-sacrifice flags must remain hidden in Battle Details');
@@ -265,7 +271,7 @@ assert.match(optimizerWorker,/alternativeQuantities:\{\.\.\.alternative\.quantit
 assert.match(optimizerWorker,/noSacrificeValidator[\s\S]*?!nonSiegeSacrifices\(result\)\.length/, 'A no-sacrifice alternative must require every non-siege squad to attack');
 assert.match(source,/Use best no-sacrifice alternative —/, 'The collapsed explanation must offer the verified constrained alternative');
 assert.match(source,/function restoreMaximumEldArmy\(\)/, 'A user selecting the constrained alternative must be able to restore the maximum-ELD army');
-assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?exploreTimeBudgetMs\(exploreTierDepth\)\+30000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
+assert.match(source,/createOptimizerWorker\(\{watchdogMs:exploring\?exploreTimeBudgetMs\(exploreTierDepths\)\+30000:undefined\}\)/, 'UI must obtain the shared module optimizer worker with an Explore-appropriate watchdog');
 assert.match(optimizerEntry,/from '\.\/epic-quantity-optimizer\.mjs'/, 'Browser worker must use the same optimizer module as offline tools');
 assert.match(source,/OPTIMIZER_CACHE_BUILD/, 'Saved optimizer results must be tied to a simulator and optimizer build');
 assert.match(optimizerEntry,/COMBAT_MECHANICS_BUILD/, 'Optimizer diagnostics and cache identity must change with shared combat mechanics');

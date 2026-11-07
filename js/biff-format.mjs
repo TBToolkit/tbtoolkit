@@ -1,7 +1,12 @@
 import {exploreContextKey} from './epic-explore-results.mjs';
+import {normalizeBonusAdjustments} from './bonus-adjustments.mjs';
 export const BIFF_FORMAT='tbtoolkit-biff';
-export const BIFF_SCHEMA_VERSION=2;
-export const BIFF_MAX_BYTES=5*1024*1024;
+export const BIFF_SCHEMA_VERSION=3;
+export const BIFF_MAX_BYTES=25*1024*1024;
+export function biffSizeLimitMessage(maxBytes=BIFF_MAX_BYTES){
+  const limit=maxBytes>=1024*1024?`${Number((maxBytes/(1024*1024)).toFixed(2))} MB`:`${maxBytes} bytes`;
+  return `This account file is larger than ${limit}.`;
+}
 
 const CATEGORIES=Object.freeze(['troop','monster','mercenary']);
 const BATTLE_CATEGORIES=new Set(['epic','pvp']);
@@ -20,7 +25,7 @@ const INPUT_KEYS=new Set([
   'autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses',
   'useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','preserveMercenaries','arachne',
   'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes',
-  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','shareEpicArmy'
+  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','trainingPlanAttacks','shareEpicArmy'
 ]);
 for(const profile of ['beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
   for(const bonus of ['PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'])INPUT_KEYS.add(`${profile}${bonus}`);
@@ -64,6 +69,8 @@ function cleanNestedOrders(value,{booleans=false}={}){
 function cleanInputs(value){
   const output={};
   for(const [key,raw] of ownEntries(value)){
+    if(key==='bonusAdjustments'){output[key]=normalizeBonusAdjustments(raw);continue;}
+    if(key==='useEncounterBonusAdjustments'){output[key]=!!raw;continue;}
     if(!INPUT_KEYS.has(key))continue;
     if(key==='enemySquadTypes')output[key]=cleanStringArray(raw).filter(type=>['FLYING','MOUNTED','MELEE','RANGED'].includes(type)).slice(0,8);
     else if(['autoLeadership','autoAuthority','autoDominance','autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses','useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','preserveMercenaries','arachne','minimumSeparation','shareEpicArmy'].includes(key))output[key]=!!raw;
@@ -134,6 +141,7 @@ function canonicalAccount(raw){
     name:cleanText(raw?.name,'Account name',{maximum:60}),
     templeLevel:Math.max(1,Math.min(45,Math.floor(Number(raw?.templeLevel)||45))),
     clanProfileId:String(raw?.clanProfileId||'').slice(0,100),
+    bonusAdjustments:normalizeBonusAdjustments(raw?.bonusAdjustments),
     activeBattleCategory:BATTLE_CATEGORIES.has(battle.activeBattleCategory)?battle.activeBattleCategory:'epic',
     activeBattleMethod:BATTLE_METHODS.has(battle.activeBattleMethod)?battle.activeBattleMethod:'basic',
     activeEncounterByType:{
@@ -155,7 +163,7 @@ export function serializeAccountToBiff(account,{appBuild='unknown',exportedAt=ne
 
 export function parseBiff(text,{maxBytes=BIFF_MAX_BYTES}={}){
   const source=String(text??'');
-  if(new TextEncoder().encode(source).length>maxBytes)fail('This account file is larger than 5 MB.');
+  if(new TextEncoder().encode(source).length>maxBytes)fail(biffSizeLimitMessage(maxBytes));
   let raw;try{raw=JSON.parse(source);}catch{fail('This file is not valid TB Toolkit account JSON.');}
   if(raw?.format!==BIFF_FORMAT)fail('This is not a TB Toolkit .player, legacy .stacks, or .biff file.');
   if(!Number.isInteger(raw?.schemaVersion)||raw.schemaVersion<1)fail('This account file has an invalid schema version.');
@@ -263,7 +271,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   }
   for(const encounterId of Object.keys(workspaces))if(!available.has(encounterId))warnings.push(`Saved workspace “${encounterId}” was retained but its encounter is unavailable in this version.`);
   return{
-    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:'',customEncounters,battle:{
+    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:'',bonusAdjustments:normalizeBonusAdjustments(source.bonusAdjustments),customEncounters,battle:{
       activeBattleCategory:source.activeBattleCategory,
       activeBattleMethod:source.activeBattleMethod,
       activeEncounterByType,
