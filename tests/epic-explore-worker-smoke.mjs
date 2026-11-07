@@ -81,3 +81,17 @@ for(const finalist of mixed.exploreResults.armies){
   }
 }
 console.log('Integrated Explore respects four independent tier ranges.');
+
+const keepIds=[army.find(u=>u.tier==='G9').id,army.find(u=>u.tier==='G7').id,...army.filter(u=>['S8','E9','M9'].includes(u.tier)).map(u=>u.id)];
+const keepDepths={guardsman:'selected',specialist:1,engineer:'selected',monster:0};
+await self.onmessage({data:{...common,requestId:8,selectedIds:keepIds,exploreTierDepths:keepDepths}});
+assert.equal(messages.find(m=>m.requestId===8&&m.type==='error'),undefined);
+const kept=messages.find(m=>m.requestId===8&&m.type==='result').payload;
+const familyIds=(ids,family)=>ids.filter(id=>army.find(u=>u.id===id).unitClass===family).sort();
+for(const finalist of kept.exploreResults.armies)for(const family of ['GUARDSMAN','ENGINEER'])assert.deepEqual(familyIds(finalist.selectedIds,family),familyIds(keepIds,family),finalist.label+' must keep locked types');
+const allKept=Object.fromEntries(['guardsman','specialist','engineer','monster'].map(f=>[f,'selected']));
+await self.onmessage({data:{...common,requestId:9,selectedIds,exploreTierDepths:allKept}});
+assert.equal(messages.find(m=>m.requestId===9&&m.type==='error'),undefined);
+const onlySelected=messages.find(m=>m.requestId===9&&m.type==='result').payload;
+for(const finalist of onlySelected.exploreResults.armies)assert.deepEqual([...finalist.selectedIds].sort(),[...selectedIds].sort());
+console.log('Integrated Explore keeps selected types for frozen families, including when all families are frozen.');

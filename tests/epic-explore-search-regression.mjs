@@ -74,3 +74,28 @@ for(const depths of [DEFAULT_EXPLORE_TIER_DEPTHS,mixedDepths]){
 }
 const withoutEngineers=createExploreStructures({units,currentIds:currentIds.filter(id=>units.find(u=>u.id===id).unitClass!=='ENGINEER'),tierDepths:DEFAULT_EXPLORE_TIER_DEPTHS});
 assert.ok(withoutEngineers.availableIds.every(id=>units.find(u=>u.id===id).unitClass!=='ENGINEER'),'Depth controls must not unlock an unselected family');
+
+// A frozen family's exact checked types (including partial/lower tiers) must
+// survive canonicalization, dense/sparse masks, and every neighborhood move.
+const familyOf=u=>u.category==='monster'?'monster':String(u.unitClass).toLowerCase();
+for(const family of Object.keys(DEFAULT_EXPLORE_TIER_DEPTHS)){
+  const chosen=units.filter(u=>familyOf(u)===family&&[9,7].includes(u.tierNumber)).filter((u,i,a)=>a.findIndex(v=>v.tierNumber===u.tierNumber)===i).map(u=>u.id);
+  const initial=[...currentIds.filter(id=>familyOf(units.find(u=>u.id===id))!==family),...chosen];
+  const depths={...DEFAULT_EXPLORE_TIER_DEPTHS,[family]:'selected'};
+  const origin=canonicalExploreSelection(units,initial,depths);
+  const familyIds=ids=>ids.filter(id=>familyOf(units.find(u=>u.id===id))===family).sort();
+  assert.deepEqual(familyIds(origin),[...chosen].sort());
+  const frozen=createExploreStructures({units,currentIds:origin,tierDepths:depths});
+  assert.deepEqual(familyIds(frozen.availableIds),[...chosen].sort());
+  assert.ok(frozen.structures.length>1,'Other families must remain explorable');
+  for(const row of frozen.structures)assert.deepEqual(familyIds(row.selectedIds),[...chosen].sort());
+  for(const row of createExploreNeighbors({units,selectedIds:origin,...frozen}))assert.deepEqual(familyIds(row.selectedIds),[...chosen].sort());
+}
+const allFrozen=Object.fromEntries(Object.keys(DEFAULT_EXPLORE_TIER_DEPTHS).map(f=>[f,'selected']));
+const frozenSpace=createExploreStructures({units,currentIds:base,tierDepths:allFrozen});
+assert.equal(frozenSpace.structures.length,1);
+assert.equal(compositionSignature(frozenSpace.structures[0].selectedIds),compositionSignature(base));
+assert.deepEqual(createExploreNeighbors({units,selectedIds:base,...frozenSpace}),[]);
+assert.equal(exploreTimeBudgetMs(allFrozen),360000);
+assert.equal(normalizeExploreTierDepths({guardsman:'selected'}).guardsman,'selected');
+console.log('Do not explore preserves exact family selections through every structural search phase.');

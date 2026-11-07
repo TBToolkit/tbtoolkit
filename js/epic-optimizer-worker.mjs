@@ -107,7 +107,7 @@ self.onmessage=async event=>{
       return result;
     };
     const userIds=[...message.selectedIds,...(message.fixedMercenaryIds||[])];
-    const searchIds=message.exploreMode?canonicalExploreSelection(units,message.selectedIds):message.selectedIds;
+    const searchIds=message.exploreMode?canonicalExploreSelection(units,message.selectedIds,tierDepths):message.selectedIds;
     const sameStartingSelection=compositionSignature(searchIds)===compositionSignature(message.selectedIds);
     let result=optimizeOne(searchIds,message.exploreMode?'baseline':'');
     delete result.exploredSelectedIds;delete result.exploration;delete result.exploreResults;
