@@ -288,10 +288,10 @@
 <fieldset class="explore-depth-controls" id="exploreDepthControls" hidden>
 <legend>Explore below highest selected tier</legend>
 <div class="explore-depth-grid">
-<label class="explore-depth-label" for="exploreGuardsmanDepth">Guardsmen<select id="exploreGuardsmanDepth" data-explore-family="guardsman"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
-<label class="explore-depth-label" for="exploreSpecialistDepth">Specialists<select id="exploreSpecialistDepth" data-explore-family="specialist"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
-<label class="explore-depth-label" for="exploreEngineerDepth">Engineers<select id="exploreEngineerDepth" data-explore-family="engineer"><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
-<label class="explore-depth-label" for="exploreMonsterDepth">Monsters<select id="exploreMonsterDepth" data-explore-family="monster"><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreGuardsmanDepth">Guardsmen<select id="exploreGuardsmanDepth" data-explore-family="guardsman"><option value="selected" selected>Do not explore</option><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreSpecialistDepth">Specialists<select id="exploreSpecialistDepth" data-explore-family="specialist"><option value="selected" selected>Do not explore</option><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreEngineerDepth">Engineers<select id="exploreEngineerDepth" data-explore-family="engineer"><option value="selected">Do not explore</option><option value="0">Top tier only</option><option value="1" selected>1 tier below</option><option value="2">2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
+<label class="explore-depth-label" for="exploreMonsterDepth">Monsters<select id="exploreMonsterDepth" data-explore-family="monster"><option value="selected">Do not explore</option><option value="0">Top tier only</option><option value="1">1 tier below</option><option value="2" selected>2 tiers below</option><option value="3">3 tiers below</option><option value="4">4 tiers below</option></select></label>
 </div>
 </fieldset>
 <small id="explorePoolSummary">Explore searches from the full highest selected tiers and retains your checked army as a separate finalist. Each family has its own tier range. Only checked mercenary types may be used; they are never added or removed.</small>
@@ -382,9 +382,9 @@
 </section>
 <div class="result-empty" id="resultEmpty">Quantities appear in Total Battle mobile-entry order.</div>
 <div class="result-groups" hidden id="resultGroups">
-<section class="result-group"><h3>Mercenaries</h3><div class="result-list" id="mercenaryResults"></div></section>
-<section class="result-group"><h3>Monsters</h3><div class="result-list" id="monsterResults"></div></section>
-<section class="result-group"><h3>Troops</h3><div class="result-list" id="troopResults"></div></section>
+<section class="result-group"><h3>Mercenaries</h3><div class="result-column-capacity result-column-capacity-top" data-result-capacity="authority"><span>Authority</span><strong>0 / 0</strong></div><div class="result-list" id="mercenaryResults"></div><div class="result-column-capacity result-column-capacity-bottom" data-result-capacity="authority"><span>Authority</span><strong>0 / 0</strong></div></section>
+<section class="result-group"><h3>Monsters</h3><div class="result-column-capacity result-column-capacity-top" data-result-capacity="dominance"><span>Dominance</span><strong>0 / 0</strong></div><div class="result-list" id="monsterResults"></div><div class="result-column-capacity result-column-capacity-bottom" data-result-capacity="dominance"><span>Dominance</span><strong>0 / 0</strong></div></section>
+<section class="result-group"><h3>Troops</h3><div class="result-column-capacity result-column-capacity-top" data-result-capacity="leadership"><span>Leadership</span><strong>0 / 0</strong></div><div class="result-list" id="troopResults"></div><div class="result-column-capacity result-column-capacity-bottom" data-result-capacity="leadership"><span>Leadership</span><strong>0 / 0</strong></div></section>
 </div>
 <div class="calculator-utility-row result-utility"><div></div><button class="epic-action danger compact-reset" id="resetCalculator" type="button">Reset Calculator</button></div>
 </section>

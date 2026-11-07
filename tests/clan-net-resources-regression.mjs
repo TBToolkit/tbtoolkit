@@ -100,11 +100,11 @@ const values=new Map([
 ]);
 const writes=[];
 const storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>{writes.push(key);values.set(key,value);}};
-assert.equal(saveRevivalStrategy(storage,'one','Doomsday','mercenary-only'),true);
+assert.equal(await saveRevivalStrategy(storage,'one','Doomsday','mercenary-only'),true);
 assert.deepEqual(writes,['tbtoolkit.stackingCalculator'],'Revival strategy must have one canonical write.');
 assert.equal(JSON.parse(values.get('tbtoolkit.stackingCalculator')).accounts.one.battle.workspaces['epic-doomsday'].inputs.encounterPlanStrategy,'mercenary-only');
 assert.equal(JSON.parse(values.get('tbtoolkit.epicEncounterResults.v1')).accounts.one.encounters['epic-doomsday'].plansByMethod.optimize.selectedStrategy,'full','A strategy change must not require updating the derived-plan cache.');
 assert.deepEqual(JSON.parse(values.get('tbtoolkit.encounterPlan.v1.one.epic-doomsday')),{strategy:'full',norm:500},'The player account is the sole strategy source.');
-assert.equal(saveRevivalStrategy(storage,'one','Doomsday','invalid'),false);
-assert.equal(saveRevivalStrategy(storage,'one','Missing','full'),false);
+assert.equal(await saveRevivalStrategy(storage,'one','Doomsday','invalid'),false);
+assert.equal(await saveRevivalStrategy(storage,'one','Missing','full'),false);
 console.log(JSON.stringify({ok:true,methods:2}));

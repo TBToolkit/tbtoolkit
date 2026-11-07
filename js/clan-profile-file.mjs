@@ -1,4 +1,13 @@
+import {compressProfileText,readProfileText} from './profile-file-compression.mjs';
 export const CLAN_FILE_FORMAT='tbtoolkit-clan';
+export const CLAN_MAX_BYTES=1_000_000;
+
+export async function serializeClanFile(profile,options){
+  return compressProfileText(serializeClanProfile(profile,options));
+}
+export async function parseClanFile(file){
+  return parseClanProfile(await readProfileText(file,{maxBytes:CLAN_MAX_BYTES,sizeLimitMessage:'The clan file is larger than 1 MB.'}));
+}
 
 export function serializeClanProfile(profile,{exportedAt=new Date().toISOString()}={}){
   const plan=structuredClone(profile.plan||{});

@@ -1,14 +1,16 @@
+import {normalizeExploreTierDepths} from './epic-explore-policy.mjs';
 import {compositionSignature,createReviewTierStructures,inferReviewAvailability} from './epic-composition-search.mjs';
 import {createLegacyHealthLadderSeed,mercenaryPreservationStatus,optimizeEpicQuantities} from './epic-quantity-optimizer.mjs';
 import {prepareEpicScoringContext,scoreEpicArmy} from './epic-combat-engine-v2.mjs';
 
 // A canonical search origin depends only on the highest unlocked tier in each
-// family. Mercenary ownership is explicit and is never inferred.
-export function canonicalExploreSelection(units,selectedIds){
+// explored family. Frozen families and mercenaries keep their explicit types.
+export function canonicalExploreSelection(units,selectedIds,tierDepths){
+  const depths=normalizeExploreTierDepths(tierDepths);
   const selected=new Set(selectedIds),highest=new Map();
-  const family=u=>u.category==='monster'?'monster':u.category==='troop'?u.unitClass:null;
+  const family=u=>u.category==='monster'?'monster':u.category==='troop'?String(u.unitClass).toLowerCase():null;
   for(const u of units)if(selected.has(u.id)&&family(u))highest.set(family(u),Math.max(highest.get(family(u))||0,Number(u.tierNumber)));
-  return units.filter(u=>u.category==='mercenary'?selected.has(u.id):highest.has(family(u))&&Number(u.tierNumber)===highest.get(family(u))).map(u=>u.id);
+  return units.filter(u=>u.category==='mercenary'||depths[family(u)]==='selected'?selected.has(u.id):highest.has(family(u))&&Number(u.tierNumber)===highest.get(family(u))).map(u=>u.id);
 }
 
 const groupKey=u=>`${u.category}|${u.unitClass||''}|${u.tier}`;
@@ -18,11 +20,11 @@ const eld=row=>Number(row.result.expectedTotalLifetimeDamage)||0;
 // No family, tier number, encounter, or unit is privileged by this expansion.
 export function createExploreStructures({units,currentIds,maxTierDepth,tierDepths}){
   const availability=inferReviewAvailability({units,selectedIds:currentIds,maxTierDepth,tierDepths});
-  const allowed=new Set(availability.availableIds),groups=new Map(),seen=new Map();
-  for(const u of units)if(allowed.has(u.id)&&u.category!=='mercenary'){
+  const allowed=new Set(availability.availableIds),trainable=new Set(units.filter(u=>u.category!=='mercenary').map(u=>u.id)),groups=new Map(),seen=new Map();
+  for(const u of units)if(allowed.has(u.id)&&!availability.mandatoryIds.includes(u.id)&&u.category!=='mercenary'){
     const key=groupKey(u);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u.id);
   }
-  const add=ids=>{if(ids.some(id=>!availability.mandatoryIds.includes(id)))seen.set(compositionSignature(ids),{selectedIds:[...ids]});};
+  const add=ids=>{if(availability.mandatoryIds.every(id=>ids.includes(id))&&ids.some(id=>trainable.has(id)))seen.set(compositionSignature(ids),{selectedIds:[...ids]});};
   add(currentIds);
   const dense=createReviewTierStructures({units,...availability});
   // First cover all dense structures, then all single-group sparse alternatives.
@@ -57,9 +59,9 @@ export function diverseExploreRows(rows,units,limit){
 
 export function createExploreNeighbors({units,selectedIds,availableIds,mandatoryIds=[]}){
   const selected=new Set(selectedIds),mandatory=new Set(mandatoryIds),allowed=new Set(availableIds);
-  const groups=new Map(),rows=new Map();
+  const groups=new Map(),rows=new Map(),trainable=new Set(units.filter(u=>u.category!=='mercenary').map(u=>u.id));
   const add=ids=>{
-    if(!ids.some(id=>!mandatory.has(id)))return;
+    if(!ids.some(id=>trainable.has(id))||!mandatoryIds.every(id=>ids.includes(id)))return;
     const key=compositionSignature(ids);
     if(key!==compositionSignature(selectedIds))rows.set(key,{selectedIds:ids});
   };

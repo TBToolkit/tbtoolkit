@@ -8,7 +8,7 @@ import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs
 import { calculateBattleStack, calculatePvpCpStack, calculatePvpCustomStack, calculatePvpUnknownStack, calculatePvpUnknownCustomStack, defaultPvpInternalOrder } from './battle-engine.mjs';
 import { actualRevivalCost as sharedActualRevivalCost, attackingRevivableQuantity as sharedAttackingRevivableQuantity } from './combat-mechanics.mjs';
 import { BUILT_IN_ENCOUNTERS, makeAccount, encountersForAccount, resolveEncounter, isBuiltInEncounter, createCustomEncounter, uniqueStableId, enemySquadTypes, engineBattleType, validateAccountCollection } from './workspace-model.mjs';
-import { BIFF_MAX_BYTES, biffSizeLimitMessage, serializeAccountToBiff, parseBiff, materializeImportedAccount } from './biff-format.mjs';
+import { BIFF_MAX_BYTES, biffSizeLimitMessage, serializeAccountFile, parseAccountFile, materializeImportedAccount } from './biff-format.mjs';
 import {APP_BUILD,OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 import {persistentAccountSnapshot,readSavedJson,writeSavedJson,validateAccountState} from './browser-storage.mjs';
 import {preferNewerSavedState,readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_SCHEMA_VERSION} from './saved-state-schema.mjs';
@@ -325,6 +325,7 @@ function propagateSharedEpicArmy(){
 function activateAccount(accountId){
   if(!state.accounts[accountId])return;
   state.activeAccountId=accountId;
+  exploreTierDepths=normalizeExploreTierDepths(state.accounts[accountId].exploreTierDepths);
   state.modes.battle=state.accounts[accountId].battle;
   const battle=state.modes.battle;
   battle.activeBattleCategory=battle.activeBattleCategory||'epic';
@@ -677,7 +678,7 @@ function safeBiffFileName(name){
   const stem=String(name||'tbtoolkit-account').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80)||'tbtoolkit-account';
   return `${stem}.player`;
 }
-function downloadActiveAccountBiff(){
+async function downloadActiveAccountBiff(){
   readInputs();saveState();
   const account=currentAccount();
   const workspaces=Object.fromEntries(Object.entries(account.battle.workspaces).map(([encounterId,workspace])=>{
@@ -688,9 +689,11 @@ function downloadActiveAccountBiff(){
     }
     return[encounterId,{...workspace,methods:{...workspace.methods,optimize:{...workspace.methods?.optimize,resultCache:cached?.build===OPTIMIZER_CACHE_BUILD?cached:null}}}];
   }));
-  const text=serializeAccountToBiff({...account,battle:{...account.battle,workspaces}},{appBuild:APP_BUILD});
-  const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'}));
-  const link=document.createElement('a');link.href=url;link.download=safeBiffFileName(currentAccount().name);
+  let blob;
+  try{blob=await serializeAccountFile({...account,battle:{...account.battle,workspaces}},{appBuild:APP_BUILD});}
+  catch(error){showValidation([error?.message||'The player file could not be exported.']);return;}
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');link.href=url;link.download=safeBiffFileName(account.name);
   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function allCustomEncounterIds(){return Object.values(state.accounts).flatMap(account=>Object.keys(account.customEncounters||{}));}
@@ -758,7 +761,7 @@ async function prepareBiffImport(file){
   if(!file)return;
   if(file.size>BIFF_MAX_BYTES){showBiffImportError(new Error(biffSizeLimitMessage()));return;}
   try{
-    const parsed=parseBiff(await file.text());
+    const parsed=await parseAccountFile(file);
     const materialized=materializeImportedAccount(parsed,{
       existingAccountIds:Object.keys(state.accounts),
       existingEncounterIds:allCustomEncounterIds(),
@@ -896,7 +899,7 @@ function clearSavedOptimizerResult(){
 function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
 function hydrateAccount(raw){
-  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel,clanProfileId:raw?.clanProfileId,bonusAdjustments:normalizeBonusAdjustments(raw?.bonusAdjustments)});
+  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel,clanProfileId:raw?.clanProfileId,bonusAdjustments:normalizeBonusAdjustments(raw?.bonusAdjustments),exploreTierDepths:raw?.exploreTierDepths});
   account.customEncounters={...(raw?.customEncounters||{})};
   const source=raw?.battle||{};
   account.battle.activeBattleCategory=source.activeBattleCategory||'epic';
@@ -2514,7 +2517,7 @@ function updateExploreControls(){
   if(summary)summary.textContent=preserving
     ?'Mercenary preservation works with the exact units you selected. Turn it off to Explore unit combinations first.'
     :exploreUnitStructures
-    ?`Explore starts from the full highest selected tier in each family and searches down by the range selected for that family. Your selected army is optimized separately and retained as a finalist. Only checked mercenary types are used. Time limit: ${exploreTimeBudgetMs(exploreTierDepths)/60000} minutes. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
+    ?`Explore searches each family’s selected tier range. Do not explore keeps that family’s exact checked units; their quantities are still optimized. Your selected army is optimized separately and retained as a finalist. Only checked mercenary types are used. Time limit: ${exploreTimeBudgetMs(exploreTierDepths)/60000} minutes. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
 }
 function commitBonusAdjustments(value){
@@ -3507,7 +3510,7 @@ function syncAutoFillDisplayToActual(result){
     if(Number.isFinite(pct)&&els[fieldId])els[fieldId].value=(pct*100).toFixed(2);
   }
 }
-function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(modeState().inputs.leadership)],['authority',result?.totals.authority,parseNumber(modeState().inputs.authority)],['dominance',result?.totals.dominance,parseNumber(modeState().inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
+function updateCapacity(result){for(const [name,actual,limit] of [['leadership',result?.totals.leadership,parseNumber(modeState().inputs.leadership)],['authority',result?.totals.authority,parseNumber(modeState().inputs.authority)],['dominance',result?.totals.dominance,parseNumber(modeState().inputs.dominance)]]){const bar=els[`${name}Bar`],fill=bar.querySelector('i'),pct=limit>0&&Number.isFinite(actual)?actual/limit:0;fill.style.width=`${Math.min(Math.max(pct*100,0),100)}%`;bar.classList.toggle('over',pct>1);document.querySelectorAll('[data-result-capacity="'+name+'"]').forEach(summary=>{summary.querySelector('strong').textContent=(actual==null?'—':formatInteger(actual))+' / '+formatInteger(limit);summary.classList.toggle('over-limit',pct>1);});els[`${name}Actual`].textContent=actual==null?'—':`${formatInteger(actual)} / ${limit?formatInteger(limit):'—'}${limit?` · ${(pct*100).toFixed(2)}%`:''}`;}}
 
 function clearPvpCpDetails(){
   if(els.pvpCpDetailsPanel)els.pvpCpDetailsPanel.hidden=true;
@@ -3747,7 +3750,7 @@ function switchMode(mode){
 function resetAdvancedSettings(){const defaults=defaultInputs(activeMode),i=modeState().inputs;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])i[id]=defaults[id];for(const {key,auto} of BONUS_INPUT_ROWS){i[auto]=true;if(els[auto])els[auto].checked=true;for(const stat of PROFILE_EXTRA_BONUSES)i[profileExtraId(key,stat)]=defaults[stat];}i.useCustomFamilyBonuses=false;for(const id of ['monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST'])if(els[id])els[id].value=i[id];if(!isAnyEpicOptimizeMode()){i.rankSeparation=defaults.rankSeparation;els.rankSeparation.value=i.rankSeparation;updateRankSeparationDisplay();}syncDerivedEpicBonuses();saveState();recalculate();}
 const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
-  exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below the selected top tier Explore may test separately for each group. Defaults are one tier below for Guardsmen, Specialists, and Engineers, and two tiers below for Monsters. Explore starts from the full highest selected tier in each group and compares troop and monster combinations within those limits. Your selected army is optimized separately and joins the final comparison without steering the search. It uses only the mercenary types you select. The safety limit is six minutes when every group is set to zero to two tiers below, eight minutes if the deepest range is three, and ten minutes if it is four. Searches finish sooner when their scheduled work is complete. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
+  exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below the selected top tier Explore may test separately for each group, or choose Do not explore to keep that group’s exact checked units. Quantities are still optimized for every group. New players start with Do not explore for Guardsmen and Specialists, one tier below for Engineers, and two tiers below for Monsters. Your choices are remembered for this player account and included in its exported player file. For groups being explored, Explore starts from the full highest selected tier and compares troop and monster combinations within those limits. Groups set to Do not explore keep all and only their initially selected unit types, including lower tiers. Your selected army is optimized separately and joins the final comparison. Apart from groups set to Do not explore, lower-tier starting choices do not steer the search. It uses only the mercenary types you select. The safety limit is six minutes, eight if any explored group includes three tiers below, and ten if any includes four. Searches finish sooner when their scheduled work is complete. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
   raidPoints:{title:'Raid points are a rough estimate',text:'Jormungandr and Chimera are five-player raids. Treat this as a rough estimate assuming all five raid members have similar army strength and starting health. Combined raid damage determines the total chest payout, while each army’s share of the combined starting health determines its share of the chests—not its damage contribution. Your actual personal points and chests can differ when your clanmates bring different armies, so estimated attacks and net resources are approximate too. For Jormungandr, this tile shows scale points; Ragnarok medal norm points are 2.5× scale points.',images:[]},
   unitBonusProfiles:{title:'Unit bonuses & custom relationships',eyebrow:'How to use unit bonuses',text:'Most T9 players can use the default relationships. Custom bonus relationships are mainly for developing players and Seasonal Kingdom accounts.\n\nEnter your Monster bonuses. Auto calculates the other families using saved adjustments. Expand Monsters or Humans for individual profiles. Turn off Auto or Linked to enter bonuses manually; Manual Humans values override linked troop rows.\n\nSave custom relationships: enter the in-game Monster and family bonuses, then click Save Custom Bonus Relationships. This saves each family’s difference from Monsters and turns Auto back on. Save again after upgrades change those differences.\n\nSaved relationships apply to this player account. Restore default relationships resets all four families to standard adjustments and turns Auto on.\n\nView saved adjustments shows the differences in percentage points: Monster bonus + adjustment = family bonus (minimum zero).',images:[]},
   bonusUnit:{title:'Choose the matching unit',text:'This Monster screenshot is an example. In a battle report, select a unit that matches the row you are editing. For example, select a Beast for the Beasts row, a Guardsman for the Guardsmen row, or an Epic Hunter for the Epic Hunters row. Then copy that unit’s bonuses into the matching fields.',images:[['monster-click.webp','Example: select a Monster in the battle report.']]},
@@ -4189,7 +4192,7 @@ function wireEvents(){
     exploreUnitStructures=!!event.target.checked;updateExploreControls();setOptimizeButtonState();
   });
   document.querySelectorAll('[data-explore-family]').forEach(depth=>depth.addEventListener('change',event=>{
-    exploreTierDepths=normalizeExploreTierDepths({...exploreTierDepths,[depth.dataset.exploreFamily]:event.target.value});updateExploreControls();setOptimizeButtonState();
+    exploreTierDepths=normalizeExploreTierDepths({...exploreTierDepths,[depth.dataset.exploreFamily]:event.target.value});currentAccount().exploreTierDepths={...exploreTierDepths};saveState();updateExploreControls();setOptimizeButtonState();
   }));
   els.cancelOptimization.addEventListener('click',()=>{
     if(epicWorker){epicWorker.terminate();epicWorker=null;}

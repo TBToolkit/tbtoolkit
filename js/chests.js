@@ -1,5 +1,6 @@
+import {savePlayerClanLink} from './clan-profile-link.mjs';
 import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts,normPointsPerChest} from './clan-net-resources.mjs';
-import {serializeClanProfile,parseClanProfile} from './clan-profile-file.mjs';
+import {serializeClanFile,parseClanFile} from './clan-profile-file.mjs';
 import {REVIVAL_STRATEGIES,saveRevivalStrategy} from './clan-strategy-sync.mjs';
 import {OPTIMIZER_CACHE_BUILD} from './build-info.mjs';
 import {CLAN_PROFILE_STORE_KEY,hydrateCanonicalStorage,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
@@ -94,12 +95,14 @@ function renderPlanPlayerAccount(){
   $('planPlayerAccountStatus').textContent=!accounts.length?'Create a player account in the Battle Calculator first.':!account?'Choose a player account for this overview.':account.clanProfileId===activeProfileId?`${account.name} is linked to this clan. Select Custom or Optimize for each Epic below.`:account.clanProfileId?'This account is linked to another clan. Moving it here requires confirmation.':'This account is not linked yet. Link it to use its saved Epic plans.';
   return account;
 }
-function updatePlayerClanLink(){
+async function updatePlayerClanLink(){
   const saved=calculatorAccounts(),account=saved.accounts?.[netPlayerAccountId];if(!account)return;
   const target=account.clanProfileId===activeProfileId?'':activeProfileId;
   if(account.clanProfileId&&target&&account.clanProfileId!==target&&!confirm(`Move “${account.name}” to this clan profile?`))return;
-  account.clanProfileId=target;
-  try{const snapshot=stampCanonicalSnapshot(saved);localStorage.setItem('tbtoolkit.stackingCalculator',JSON.stringify(snapshot));mirrorCanonicalSnapshot('tbtoolkit.stackingCalculator',snapshot);}catch{alert('The player account link could not be saved.');return;}
+  const button=$('linkPlayerAccount');button.disabled=true;
+  try{if(!await savePlayerClanLink(localStorage,account.id,target))throw new Error('The selected player account is no longer available.');}
+  catch(error){console.warn('Could not save the player account link.',error);alert('The player account link could not be saved. Browser storage may be full or unavailable. Your saved armies have been kept.');return;}
+  finally{button.disabled=false;}
   const bridge=calculatorBridge();if(bridge.accounts?.[account.id]){bridge.accounts[account.id].clanProfileId=target;try{localStorage.setItem(encounterResultStoreKey,JSON.stringify(bridge));}catch{}}
   calculatePlanner();
 }
@@ -241,8 +244,8 @@ function restorePlanner(saved=blankPlan()){$('normPeriod').value=saved.period||'
 function openProfile(id){const profile=profiles.find(x=>x.id===id)||profiles[0],plan=profile.plan||blankPlan();if(!plan.defaultHiddenEpicsApplied){plan.visibleEpics=(plan.visibleEpics||sortedEpics().map(x=>x.monster)).filter(x=>!defaultHiddenEpics.has(x));plan.defaultHiddenEpicsApplied=true;}activeProfileId=profile.id;try{sessionStorage.setItem(activeProfileSessionKey,activeProfileId);}catch{}renderEpicRows(plan.epics);renderEpicVisibility(plan.visibleEpics);const migratedChestNorms=plan.chestNorms||(plan.crypt?[{chestId:`CRYPT|${plan.crypt.chest||'EPIC 35'}`,count:plan.crypt.count??300,cadence:plan.crypt.cadence||6}]:null);renderChestNorms(migratedChestNorms);renderTinman(plan.tinman);restorePlanner(plan);addEpicPlanningControls(plan.epics);renderPlannerResources();renderProfileSelect();wireValueNavigation();calculatePlanner();}
 function profileAction(kind){const current=profiles.find(x=>x.id===activeProfileId);if(kind==='new'){const name=prompt('New clan profile name:','New Clan');if(!name)return;const profile={id:makeId(),name:uniqueProfileName(name),plan:blankPlan()};profiles.push(profile);openProfile(profile.id);}else if(kind==='duplicate'){const profile={id:makeId(),name:uniqueProfileName(`${current.name} Copy`),plan:structuredClone(plannerState())};profiles.push(profile);openProfile(profile.id);}else if(kind==='rename'){const name=prompt('Rename clan profile:',current.name)?.trim();if(name){current.name=uniqueProfileName(name,current.id);renderProfileSelect();saveProfiles();}}else if(kind==='remove'&&profiles.length>1&&confirm(`Remove “${current.name}” from this browser?`)){profiles=profiles.filter(x=>x.id!==activeProfileId);openProfile(profiles[0].id);}saveProfiles();}
 function safeFileName(name){return `${String(name||'clan-profile').trim().replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'')||'clan-profile'}.clan`;}
-function exportProfile(){savePlanner();const profile=profiles.find(x=>x.id===activeProfileId),blob=new Blob([serializeClanProfile(profile)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safeFileName(profile.name);a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}
-async function importProfile(file){if(!file)return;try{if(file.size>1_000_000)throw new Error('The file is larger than 1 MB.');const imported=parseClanProfile(await file.text()),importedId=String(imported.id||'');const id=/^norm-[a-z0-9-]+$/i.test(importedId)&&!profiles.some(item=>item.id===importedId)?importedId:makeId();const profile={id,name:uniqueProfileName(imported.name||'Imported Clan'),plan:imported.plan};profiles.push(profile);activeProfileId=profile.id;saveProfiles();openProfile(profile.id);}catch(error){alert(error.message||'The clan file could not be imported.');}finally{$('normsFileInput').value='';}}
+async function exportProfile(){try{savePlanner();const profile=profiles.find(x=>x.id===activeProfileId),blob=await serializeClanFile(profile),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safeFileName(profile.name);a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(error){alert(error.message||'The clan file could not be exported.');}}
+async function importProfile(file){if(!file)return;try{const imported=await parseClanFile(file),importedId=String(imported.id||'');const id=/^norm-[a-z0-9-]+$/i.test(importedId)&&!profiles.some(item=>item.id===importedId)?importedId:makeId();const profile={id,name:uniqueProfileName(imported.name||'Imported Clan'),plan:imported.plan};profiles.push(profile);activeProfileId=profile.id;saveProfiles();openProfile(profile.id);}catch(error){alert(error.message||'The clan file could not be imported.');}finally{$('normsFileInput').value='';}}
 function wireValueNavigation(){document.querySelectorAll('.epic-value').forEach(input=>input.addEventListener('keydown',event=>{if(event.key!=='Enter'&&event.key!=='Tab')return;const list=[...document.querySelectorAll('.epic-norm-row:not([hidden]) .epic-value')],index=list.indexOf(input),next=list[(index+(event.shiftKey?-1:1)+list.length)%list.length];event.preventDefault();next.focus();next.select();}));}
 function normalizeEpicValue(input){const row=input.closest('.epic-norm-row'),unit=row?.querySelector('.epic-unit');if(!row||!row.querySelector('.epic-basis').checked)return;let value=positive(input.value);if(value>0&&value<1&&unit.value==='B'){value*=1000;unit.value='M';}else if(value>0&&value<1&&unit.value==='M'){value*=1000;unit.value='K';}else if(value>=1000&&unit.value==='K'){value/=1000;unit.value='M';}else if(value>=1000&&unit.value==='M'){value/=1000;unit.value='B';}input.value=String(Number(value.toFixed(6)));}
 function clearBasisPoints(row){delete row.dataset.basisPointsValue;delete row.dataset.basisPointsUnit;delete row.dataset.basisPointsChests;}
@@ -270,7 +273,7 @@ function initPlanner(){
   $('tinmanBonus').addEventListener('change',event=>{event.target.value=String(Math.min(100,positive(event.target.value)));syncTinmanInputSuffixes();calculatePlanner();});
   $('tinmanNorm').addEventListener('change',()=>{normalizeTinmanNorm();calculatePlanner();});
   $('tinmanNormUnit').addEventListener('change',()=>{syncTinmanInputSuffixes();calculatePlanner();});
-  const changeRevivalStrategy=(encounter,strategy)=>{try{if(!saveRevivalStrategy(localStorage,netPlayerAccountId,encounter,strategy))throw new Error('No saved battle plan was found for this encounter.');calculatePlanner();}catch(error){alert(error.message||'The revival strategy could not be saved.');calculatePlanner();}};
+  const changeRevivalStrategy=async(encounter,strategy)=>{try{if(!await saveRevivalStrategy(localStorage,netPlayerAccountId,encounter,strategy))throw new Error('No saved battle plan was found for this encounter.');calculatePlanner();}catch(error){alert(error.message||'The revival strategy could not be saved.');calculatePlanner();}};
   $('tinmanRevivalStrategy').addEventListener('change',event=>changeRevivalStrategy('Tinman',event.target.value));
   $('linkPlayerAccount').addEventListener('click',updatePlayerClanLink);
   $('epicNormRows').addEventListener('change',event=>{if(!event.target.matches('.epic-plan-method'))return;netMethodByEpic[event.target.closest('.epic-norm-row').dataset.monster]=event.target.value;calculatePlanner();});

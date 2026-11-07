@@ -95,6 +95,29 @@ export function mirrorOptimizerResult(key,value){
   return current;
 }
 
+// Free only a redundant localStorage copy, and only after its complete result
+// has been committed to IndexedDB. Saved Explore armies remain recoverable.
+export async function makeRoomForAccountMetadata(storage,persistBackup=mirrorOptimizerResult){
+  const candidates=[];
+  for(let index=0;index<storage.length;index++){
+    const key=storage.key(index);
+    if(!key?.startsWith(OPTIMIZER_RESULT_PREFIX))continue;
+    const raw=storage.getItem(key);if(raw)candidates.push({key,raw});
+  }
+  candidates.sort((a,b)=>b.raw.length-a.raw.length);
+  for(const {key,raw} of candidates){
+    try{
+      const result=JSON.parse(raw);
+      if(!result?.payload?.result||!await persistBackup(key,result))continue;
+      // Another tab may have saved a newer result while the backup was written.
+      if(storage.getItem(key)!==raw)continue;
+      storage.removeItem(key);
+      return true;
+    }catch(error){console.warn('Could not move a saved optimizer result to browser storage.',error);}
+  }
+  return false;
+}
+
 export async function hydrateOptimizerResultBackups(storage){
   const results=new Map();
   try{

@@ -4693,3 +4693,13 @@ body.battle-mode-active [data-section-panel]>.battle-only-column-title{position:
 .chart-cycle-line{stroke:var(--cycle-accent);stroke-width:1;stroke-dasharray:4 5;opacity:.32;pointer-events:none}
 .chart-cycle-badge{fill:var(--cycle-background);fill-opacity:.8;stroke:var(--cycle-accent);stroke-width:.7;stroke-opacity:.55}
 .chart-cycle-label{fill:var(--cycle-accent);font-size:10px;font-weight:800;pointer-events:none}
+
+.explore-depth-grid select{width:100%;min-width:0}
+
+.result-group{display:flex;flex-direction:column}
+.result-column-capacity{padding:8px 10px;color:#b8cbd8;font-variant-numeric:tabular-nums}
+.result-column-capacity span{display:block;font-size:.55rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#8fa6b6}
+.result-column-capacity strong{display:block;margin-top:3px;font-size:.72rem;line-height:1.3;overflow-wrap:anywhere}
+.result-column-capacity-top{border-bottom:1px solid #293e50}
+.result-column-capacity-bottom{margin-top:auto;border-top:1px solid #293e50}
+.result-column-capacity.over-limit strong{color:#ff8277}

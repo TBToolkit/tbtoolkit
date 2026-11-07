@@ -30,7 +30,7 @@ export function inferReviewAvailability({units,selectedIds,maxTierDepth=Infinity
   for(const unitClass of unlockFamilies){
     const familyDepth=depths?.[unitClass.toLowerCase()]??depth;
     const selectedFamily=selected.map(id=>byId.get(id)).filter(unit=>unit?.category==='troop'&&String(unit.unitClass).toUpperCase()===unitClass);
-    if(!selectedFamily.length)continue;
+    if(!selectedFamily.length||familyDepth==='selected')continue;
     const highestTier=Math.max(...selectedFamily.map(unit=>finite(unit.tierNumber)));
     for(const unit of rows){
       if(unit.category!=='troop'||String(unit.unitClass).toUpperCase()!==unitClass)continue;
@@ -42,12 +42,12 @@ export function inferReviewAvailability({units,selectedIds,maxTierDepth=Infinity
   if(selectedMonsters.length){
     const monsterDepth=depths?.monster??depth;
     const highestTier=Math.max(...selectedMonsters.map(unit=>finite(unit.tierNumber)));
-    for(const unit of rows)if(unit.category==='monster'&&finite(unit.tierNumber)<=highestTier&&finite(unit.tierNumber)>=highestTier-monsterDepth)available.add(unit.id);
+    for(const unit of rows)if(monsterDepth!=='selected'&&unit.category==='monster'&&finite(unit.tierNumber)<=highestTier&&finite(unit.tierNumber)>=highestTier-monsterDepth)available.add(unit.id);
   }
   // Mercenary ownership cannot be inferred. Explicitly selected mercenaries are
   // mandatory army members during Review Selection; optimization may adjust their
   // quantities, but the review must never add or remove mercenary types.
-  const mandatoryIds=selected.filter(id=>byId.get(id)?.category==='mercenary');
+  const mandatoryIds=selected.filter(id=>{const unit=byId.get(id),family=unit.category==='monster'?'monster':String(unit.unitClass).toLowerCase();return unit.category==='mercenary'||depths?.[family]==='selected';});
   return{selectedIds:selected,availableIds:sortedUnique([...available]),mandatoryIds};
 }
 
@@ -132,7 +132,7 @@ export function createReviewTierStructures({units,availableIds,mandatoryIds=[]})
     {id:'MONSTER',match:unit=>unit.category==='monster'}
   ];
   const options=families.map(family=>{
-    const rows=(units??[]).filter(unit=>available.has(unit.id)&&family.match(unit));
+    const rows=(units??[]).filter(unit=>available.has(unit.id)&&!mandatory.includes(unit.id)&&family.match(unit));
     const tiers=[...new Set(rows.map(unit=>finite(unit.tierNumber)).filter(tier=>tier>0))].sort((a,b)=>b-a);
     return[
       {family:family.id,floor:null,unitIds:[]},
