@@ -195,18 +195,13 @@
 </div>
 <div class="bonus-matrix-row" data-bonus-profile="epicHunter"><strong>Epic Hunters</strong><div class="percent-field"><input aria-label="Epic Hunter Double Damage" class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strike Twice" class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Health" class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strength" class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div><label class="bonus-auto-toggle"><input id="autoEpicHunterBonuses" type="checkbox" checked/><span>Auto</span></label></div>
 </div>
-<p class="setting-note epic-v2-note">Monster species follow Monsters. Human troop classes use their automatic adjustments, or the shared Humans manual override. Expand either row to enter profile-specific bonuses.</p>
 <section class="bonus-relationship-controls" id="bonusRelationshipControls" aria-label="Automatic bonus relationships">
-<h4>Automatic bonus relationships</h4>
-<p class="setting-note">Switch the relevant bonus rows above to Manual and enter their in-game values, then save. Those families will update automatically when Monster bonuses change. Save again after upgrades that change the relationships.</p>
+<div class="bonus-relationship-toolbar"><div class="bonus-adjustment-actions"><button type="button" id="captureBonusAdjustments">Save Custom Bonus Relationships</button><button type="button" id="resetBonusAdjustments">Restore default relationships</button></div><button type="button" class="stat-help-button" data-stat-help="unitBonusProfiles" aria-label="About unit bonuses and custom relationships" aria-haspopup="dialog">i</button></div>
 <label class="bonus-adjustment-scope"><input id="useEncounterBonusAdjustments" type="checkbox"/> This encounter only</label>
-<p class="setting-note" id="bonusAdjustmentScopeNote"></p>
-<div class="bonus-adjustment-actions"><button type="button" id="captureBonusAdjustments">Save bonus relationships</button><button type="button" id="resetBonusAdjustments">Restore default relationships</button></div>
-<p class="setting-note">Restore defaults returns all four families to the standard relationships. Both buttons turn automatic calculation back on.</p>
-<p class="setting-note" id="bonusAdjustmentStatus" role="status"></p>
+<p class="setting-note" id="bonusAdjustmentStatus" role="status" hidden></p>
 <details class="bonus-adjustment-panel" id="bonusAdjustmentDetails">
 <summary>View saved adjustments</summary>
-<p class="setting-note">Calculated bonus = Monster bonus + adjustment, in percentage points. Negative values subtract; positive values add. This table is read only.</p>
+
 <div class="bonus-adjustment-scroll"><table class="bonus-adjustment-table"><thead id="bonusAdjustmentHead"></thead><tbody id="bonusAdjustmentRows"></tbody></table></div>
 </details>
 </section>

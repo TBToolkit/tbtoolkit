@@ -1472,7 +1472,7 @@ body.stat-help-modal-open{overflow:hidden}
 .stat-help-dialog h2{margin:3px 0 0;font-size:1.15rem;color:#f5f7f9}
 .stat-help-close{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #40566a;border-radius:9px;background:#111f2b;color:#dbe4eb;font-size:1.5rem;line-height:1;cursor:pointer}
 .stat-help-close:hover,.stat-help-close:focus-visible{background:#f0a51a;color:#10161b;border-color:#f0a51a;outline:none}
-.stat-help-text{margin:13px 0;color:#b8c5d0;font-size:.87rem;line-height:1.5}
+.stat-help-text{white-space:pre-line;margin:13px 0;color:#b8c5d0;font-size:.87rem;line-height:1.5}
 .stat-help-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;align-items:start}
 .stat-help-figure{margin:0;min-width:0;border:1px solid #31485b;border-radius:10px;overflow:hidden;background:#07121b}
 .stat-help-figure img{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;background:#050b10}
@@ -3259,7 +3259,9 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .selection-heading-actions{display:flex;align-items:center;gap:12px}.live-damage-order{justify-content:flex-end;padding:0 12px 7px}
 .explore-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;margin:14px 12px 8px;padding:10px 14px;border:1px solid #2b4050;border-radius:8px;background:#0c1c28;color:#dae8ee;font-size:.74rem}.explore-controls[hidden],.explore-depth-label[hidden]{display:none!important}.explore-toggle,.explore-depth-label{display:inline-flex;align-items:center;gap:8px;font-weight:850}.explore-toggle input{accent-color:#eda72b;width:17px;height:17px}.explore-depth-label select{min-height:32px;border:1px solid #526d7e;border-radius:6px;background:#071522;color:#f5f7f8;padding:0 8px;font:inherit}.explore-controls small{flex-basis:100%;color:#a9bdc9;font-size:.68rem;line-height:1.45}
 .explore-toggle-group{display:inline-flex;align-items:center;gap:8px}.explore-info-button{flex:0 0 22px}
-.bonus-relationship-controls{margin-top:14px;padding:12px;border:1px solid #2e4657;border-radius:8px;background:#0a1823}
+.bonus-relationship-controls{margin-top:12px}
+.bonus-relationship-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.bonus-relationship-controls .bonus-adjustment-scope{margin:10px 0}
 .bonus-relationship-controls h4{margin:0;color:#e9b54d;font-size:.76rem}
 .bonus-adjustment-panel{margin-top:12px;padding-top:10px;border-top:1px solid #2e4657}
 .bonus-adjustment-panel summary{color:#e9b54d;cursor:pointer;font-size:.74rem;font-weight:800}
@@ -3271,8 +3273,8 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .bonus-adjustment-table th{padding:7px 5px;text-align:center;color:#adc5d6;white-space:nowrap}
 .bonus-adjustment-table th:first-child{text-align:left}
 .bonus-adjustment-table td{padding:5px;min-width:90px;text-align:center}
-.bonus-adjustment-table input[readonly]{box-sizing:border-box;width:100%;min-width:80px;padding:9px 6px;border:1px solid #385367;border-radius:6px;background:#071722;color:#f4d28a;text-align:center;font:inherit;font-variant-numeric:tabular-nums;cursor:default}
-.bonus-adjustment-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.bonus-adjustment-table input[readonly]{box-sizing:border-box;width:100%;min-width:80px;padding:9px 6px;border:1px solid #385367;border-radius:6px;background:#071722;color:#f4d28a;text-align:center;font:inherit;font-variant-numeric:tabular-nums;cursor:default;pointer-events:none;opacity:1;-webkit-text-fill-color:#f4d28a}
+.bonus-adjustment-actions{display:flex;flex-wrap:wrap;gap:8px}
 .bonus-adjustment-actions button{padding:8px 10px;border:1px solid #456075;border-radius:6px;background:#142b3b;color:#e1ebf2;font-size:.66rem}
 .bonus-adjustment-actions #captureBonusAdjustments{background:#e3a420;border-color:#e3a420;color:#071522;font-weight:800}
 .review-selection-button{border-color:#d79b2c;color:#ffd276;background:#17212a}.review-selection-button:hover:not(:disabled){border-color:#ffbd45;background:#242b2f}.review-selection-button:disabled{opacity:.48;cursor:not-allowed}
