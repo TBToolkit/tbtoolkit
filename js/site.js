@@ -113,3 +113,6 @@ if (!hashTarget && Number.isFinite(savedPageView?.scrollY)) {
   document.documentElement.classList.remove('is-restoring-page');
   document.documentElement.style.removeProperty('visibility');
 }
+
+// Shared announcement and menu entry on every page using the site shell.
+import('./whats-new.mjs').then(({initWhatsNew})=>initWhatsNew()).catch(error=>console.warn('Could not load What’s New.',error));
