@@ -16,8 +16,8 @@ const eld=row=>Number(row.result.expectedTotalLifetimeDamage)||0;
 
 // Every permitted tier lattice point gets partial-tier neighbors before ranking.
 // No family, tier number, encounter, or unit is privileged by this expansion.
-export function createExploreStructures({units,currentIds,maxTierDepth}){
-  const availability=inferReviewAvailability({units,selectedIds:currentIds,maxTierDepth});
+export function createExploreStructures({units,currentIds,maxTierDepth,tierDepths}){
+  const availability=inferReviewAvailability({units,selectedIds:currentIds,maxTierDepth,tierDepths});
   const allowed=new Set(availability.availableIds),groups=new Map(),seen=new Map();
   for(const u of units)if(allowed.has(u.id)&&u.category!=='mercenary'){
     const key=groupKey(u);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(u.id);
@@ -80,9 +80,9 @@ export function createExploreNeighbors({units,selectedIds,availableIds,mandatory
 
 // Reallocate the winner's quantities after a composition change. A cold ladder
 // alone can hide useful deletions by discarding the optimized battle structure.
-export function runExploreNeighborhood({units,currentIds,originalIds,quantities={},bonuses,capacityLimits,fixedQuantities={},maxTierDepth,timeBudgetMs=15_000,excludedSignatures=new Set()}){
+export function runExploreNeighborhood({units,currentIds,originalIds,quantities={},bonuses,capacityLimits,fixedQuantities={},maxTierDepth,tierDepths,timeBudgetMs=15_000,excludedSignatures=new Set()}){
   const deadline=performance.now()+timeBudgetMs;
-  const availability=inferReviewAvailability({units,selectedIds:originalIds,maxTierDepth});
+  const availability=inferReviewAvailability({units,selectedIds:originalIds,maxTierDepth,tierDepths});
   const neighbors=createExploreNeighbors({units,...availability,selectedIds:currentIds});
   const fixed=new Set(Object.keys(fixedQuantities));
   const rows=[];let refinements=0;
@@ -116,9 +116,9 @@ export function runExploreNeighborhood({units,currentIds,originalIds,quantities=
   return{candidate:rows[0]?{selectedIds:rows[0].selectedIds,quantities:rows[0].quantities,screenedEld:eld(rows[0])}:null,refinements,neighbors:rows.length};
 }
 
-export function runExploreSearch({units,currentIds,bonuses,capacityLimits,fixedQuantities={},maxTierDepth,timeBudgetMs=60_000,onProgress=()=>{}}){
+export function runExploreSearch({units,currentIds,bonuses,capacityLimits,fixedQuantities={},maxTierDepth,tierDepths,timeBudgetMs=60_000,onProgress=()=>{}}){
   const started=performance.now(),deadline=started+timeBudgetMs;
-  const space=createExploreStructures({units,currentIds,maxTierDepth});
+  const space=createExploreStructures({units,currentIds,maxTierDepth,tierDepths});
   const fixedNames=new Set(Object.keys(fixedQuantities)),byId=new Map(units.map(u=>[u.id,u]));
   const core=ids=>ids.filter(id=>!fixedNames.has(id)&&!fixedNames.has(byId.get(id)?.name));
   const scoringContext=prepareEpicScoringContext({units,bonuses});
