@@ -25,7 +25,7 @@ const INPUT_KEYS=new Set([
   'autoBeastBonuses','autoDragonBonuses','autoElementalBonuses','autoGiantBonuses','autoHumanBonuses','autoGuardsmanBonuses','autoSpecialistBonuses','autoEngineerBonuses','autoEpicHunterBonuses',
   'useCustomFamilyBonuses','useCustomHealthInputs','includeMercenariesInOptimization','preserveMercenaries','arachne',
   'battleType','battleMethod','enemyUnitId','minimumSeparation','rankSeparation','enemySquadTypes',
-  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','shareEpicArmy'
+  'clanMembers','encounterNorm','encounterNormUnit','encounterNormBasis','encounterNormSource','encounterPlanStrategy','trainingPlanAttacks','shareEpicArmy'
 ]);
 for(const profile of ['beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
   for(const bonus of ['PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'])INPUT_KEYS.add(`${profile}${bonus}`);

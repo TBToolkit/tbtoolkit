@@ -13,6 +13,7 @@ import {preferNewerSavedState,readLatestSavedState,SAVED_STATE_KEY,SAVED_STATE_S
 import {createOptimizerWorker,createReviewWorker} from './calculator-workers.mjs';
 import {escapeHtml,formatDamage,formatElapsed,formatInteger,mixHex,parseNumber,tierNumber} from './ui-utils.mjs';
 import {estimatedEpicPoints as estimateBaseEpicPoints} from './epic-points-estimates.mjs';
+import {TRAINING_FAMILIES,parseTrainingAttacks,troopTrainingPlan} from './troop-training-plan.mjs';
 import {calculateEncounterPlan} from './encounter-plan.mjs';
 import {readClanProfiles,linkedClanProfile,clanEncounterNorm,saveClanEncounterNorm} from './clan-profile-link.mjs';
 import {hydrateCanonicalStorage,hydrateOptimizerResultBackups,mirrorOptimizerResult,removeOptimizerResultBackup,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
@@ -52,6 +53,7 @@ let tinmanChestRewards=new Map(),tinmanLevelData=[];
 let pendingBiffImport=null;
 let optimizerStartedAt=0;let optimizerElapsedTimer=null;let lastOptimizationElapsedMs=null;
 let encounterPlanContext=null;
+let trainingPlanSquads=null;
 const HUMAN_BONUS_ROW=Object.freeze({key:'human',auto:'autoHumanBonuses',healthOffset:100,strengthOffset:100});
 const MONSTER_CHILD_BONUS_ROWS=Object.freeze([
   {key:'beast',auto:'autoBeastBonuses'},
@@ -1508,6 +1510,7 @@ function clearPrediction(){
   }
   if(els.epicPredictionPanel)els.epicPredictionPanel.hidden=true;
   encounterPlanContext=null;
+  trainingPlanSquads=null;
   if(els.encounterPlanEntry)els.encounterPlanEntry.hidden=true;
   if(els.predictionRows)els.predictionRows.innerHTML='';
   const note=document.getElementById('openingSacrificeNote');
@@ -1686,13 +1689,50 @@ function updateEncounterPlan(){
   }
   els.encounterPlanHits.textContent=sharedHits?sharedHits.toLocaleString('en-US'):'—';
   els.encounterPlanNote.textContent=monster==='TINMAN'?received?`Rewards are the chests every member receives from this clan's selected Tinman summons; battle costs cover this player's point norm. Gold and Potion combine 1:1 as revival currency. Point estimates use an inferred 51,016 base ELD/point, calibrated from 25,508 ELD/point at 100% bonus. ${REBUILD_COST_ASSUMPTION}`:`Link a clan and select Tinman summons in Clan Overview to include rewards and net change. Battle costs cover this player's point norm. Point estimates use an inferred 51,016 base ELD/point. ${REBUILD_COST_ASSUMPTION}`:received?`Estimated rewards use ${members.toLocaleString('en-US')} clan members meeting the norm (${chestsPerMember.toLocaleString('en-US')} chests each). Gold and Potion rewards are combined 1:1 as revival currency. ${REBUILD_COST_ASSUMPTION}`:`Enter a clan norm to include resource rewards and net change. ${REBUILD_COST_ASSUMPTION}`;
+  renderTrainingPlan();
   saveEncounterCostModel();
   try{writeSavedJson(localStorage,encounterPlanStorageKey(),settings);}catch{}
   saveState();
 }
+function renderTrainingPlan(){
+  const attacks=document.getElementById('trainingPlanAttacks'),strategy=document.getElementById('trainingPlanStrategy');
+  if(!trainingPlanSquads)return;
+  if(document.activeElement!==attacks)attacks.value=modeState().inputs.trainingPlanAttacks??'10';
+  strategy.value=modeState().inputs.encounterPlanStrategy||'full';
+  const groups=troopTrainingPlan({squads:trainingPlanSquads,units:armyV2,attacks:attacks.value,strategy:strategy.value});
+  document.getElementById('trainingPlanError').hidden=!!groups;
+  attacks.setAttribute('aria-invalid',String(!groups));
+  const target=document.getElementById('trainingPlanGroups');target.replaceChildren();
+  if(!groups)return;
+  for(const [family,label] of Object.entries(TRAINING_FAMILIES)){
+    const column=document.createElement('section');column.className='training-plan-family';
+    column.innerHTML='<h4>'+label+'</h4>';
+    if(!groups[family].length)column.innerHTML+='<p class="result-empty">None in this army.</p>';
+    for(const unit of groups[family]){
+      const row={id:unit.id,level:unit.tier},category=unit.category,colors=outputRowColors(category,row);
+      const tile=document.createElement('div');tile.className='result-row compact-result-row training-plan-unit';
+      tile.style.setProperty('--result-text',resultTextColor(category,row));tile.style.setProperty('--result-bg',colors.rowColor);tile.style.setProperty('--result-bg-soft',colors.soft);tile.style.setProperty('--result-accent',colors.accent);
+      tile.innerHTML='<div class="result-label"><strong>'+escapeHtml(unit.name)+'</strong><span>'+escapeHtml(unit.tier)+' · '+escapeHtml(unit.combatType)+'</span></div><img class="result-unit-icon" src="'+escapeHtml(unit.icon||'assets/unit-icons/missing-icon.svg')+'" alt="" loading="lazy"/><div class="result-qty" aria-label="Total units needed">'+unit.required.toLocaleString('en-US')+'</div>';
+      iconFallback(tile.querySelector('img'));column.appendChild(tile);
+    }
+    target.appendChild(column);
+  }
+}
+function wireTrainingPlan(){
+  const attacks=document.getElementById('trainingPlanAttacks'),strategy=document.getElementById('trainingPlanStrategy');
+  attacks.addEventListener('input',()=>{
+    if(parseTrainingAttacks(attacks.value)!==null){modeState().inputs.trainingPlanAttacks=attacks.value.trim();saveState();}
+    renderTrainingPlan();
+  });
+  strategy.addEventListener('change',()=>{
+    modeState().inputs.encounterPlanStrategy=strategy.value;
+    const radio=els.encounterPlanStrategies?.querySelector('input[value="'+strategy.value+'"]');if(radio)radio.checked=true;
+    if(encounterPlanContext)updateEncounterPlan();else {renderTrainingPlan();saveState();}
+  });
+}
 function renderPrediction(opt){
   document.getElementById('raidPointsHelp').hidden=!currentEncounter()?.builtIn||!['JORMUNGANDR','CHIMERA'].includes(String(currentEncounter()?.name||'').toUpperCase());
-  if(!opt?.result){clearPrediction();return;}const r=opt.result;els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const damagePerThousandGold=actualGold>0?Number(r.expectedTotalLifetimeDamage)/actualGold*1000:null;els.damagePerThousandGold.textContent=damagePerThousandGold===null?'—':formatDamage(damagePerThousandGold);const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const pointsPerFullGold=pointsEstimate!==null&&actualGold>0?pointsEstimate/actualGold:null;els.epicPointsPerFullGold.textContent=pointsPerFullGold===null?'—':pointsPerFullGold.toFixed(pointsPerFullGold>=100?0:2);if(pointsPerFullGold!==null)saveEncounterResultSnapshot({encounter,method:state.modes.battle.activeBattleMethod,estimatedPoints:pointsEstimate,fullGold:actualGold,eld:r.expectedTotalLifetimeDamage,ratio:pointsPerFullGold});const goldByCategory={mercenary:0,monster:0,troop:0},rebuildRows=[];for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));const cost=unitRebuildCost(squad.id);rebuildRows.push({category:squad.category,quantity:squad.quantity,revivableQuantity:attackingRevivableQuantity(squad),silverEach:cost?.silverEach,dragonCoinsEach:cost?.dragonCoinsEach});}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory,rebuildRows};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} strategy`;loadEncounterPlanSettings();updateEncounterPlan();}updateVisibleStepNumbers();const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
+  if(!opt?.result){clearPrediction();return;}const r=opt.result;trainingPlanSquads=r.squads??[];els.epicPredictionPanel.hidden=false;els.expectedLifetimeDamage.textContent=formatDamage(r.expectedTotalLifetimeDamage);const revivalRaw=(r.squads??[]).reduce((sum,s)=>sum+rawSquadRevival({id:s.id,quantity:s.quantity},'gold'),0);const actualGold=actualRevivalCost(revivalRaw);els.rawGoldRevival.textContent=Math.round(actualGold).toLocaleString('en-US');const damagePerThousandGold=actualGold>0?Number(r.expectedTotalLifetimeDamage)/actualGold*1000:null;els.damagePerThousandGold.textContent=damagePerThousandGold===null?'—':formatDamage(damagePerThousandGold);const encounter=currentEncounter();const pointsEstimate=encounter?.builtIn?estimatedEpicPoints(encounter.name,r.expectedTotalLifetimeDamage):null;els.estimatedEpicPoints.textContent=pointsEstimate===null?'—':formatDamage(pointsEstimate);const pointsPerFullGold=pointsEstimate!==null&&actualGold>0?pointsEstimate/actualGold:null;els.epicPointsPerFullGold.textContent=pointsPerFullGold===null?'—':pointsPerFullGold.toFixed(pointsPerFullGold>=100?0:2);if(pointsPerFullGold!==null)saveEncounterResultSnapshot({encounter,method:state.modes.battle.activeBattleMethod,estimatedPoints:pointsEstimate,fullGold:actualGold,eld:r.expectedTotalLifetimeDamage,ratio:pointsPerFullGold});const goldByCategory={mercenary:0,monster:0,troop:0},rebuildRows=[];for(const squad of r.squads??[]){if(Object.hasOwn(goldByCategory,squad.category))goldByCategory[squad.category]+=actualRevivalCost(rawSquadRevival({id:squad.id,quantity:squad.quantity},'gold'));const cost=unitRebuildCost(squad.id);rebuildRows.push({category:squad.category,quantity:squad.quantity,revivableQuantity:attackingRevivableQuantity(squad),silverEach:cost?.silverEach,dragonCoinsEach:cost?.dragonCoinsEach});}encounterPlanContext=pointsEstimate===null?null:{pointsPerAttack:pointsEstimate,goldByCategory,rebuildRows};els.encounterPlanEntry.hidden=!encounterPlanContext;if(encounterPlanContext){els.encounterPlanTitle.textContent=`${encounter.name} strategy`;loadEncounterPlanSettings();updateEncounterPlan();}renderTrainingPlan();updateVisibleStepNumbers();const minSep=r.separationSummary?.minPct;const templeText=` · 90% attacking losses revivable · Temple ${templeLevel()} (${templeRevivalDivisor().toFixed(2)}× revival divisor)`;
   const optimizerContext=isAnyEpicOptimizeMode();
   const isArachneBattle=activeMode==='battle'
     ? !!modeState().inputs.arachne
@@ -3889,6 +3929,7 @@ function wireEvents(){
   document.getElementById('encounterPlanMembers')?.addEventListener('input',event=>{if(event.target.readOnly)return;saveManualEncounterNorm();updateEncounterPlan();});
   document.getElementById('encounterPlanMembers')?.addEventListener('change',event=>{if(event.target.readOnly)return;event.target.value=String(Math.min(100,Math.max(1,Math.floor(Number(event.target.value)||100))));saveManualEncounterNorm();updateEncounterPlan();});
   els.encounterPlanNorm?.addEventListener('blur',()=>{normalizeEncounterNorm();saveManualEncounterNorm();updateEncounterPlan();});
+  wireTrainingPlan();
   els.encounterPlanStrategies?.addEventListener('change',event=>{if(event.target.matches('input[name="encounterPlanStrategy"]'))updateEncounterPlan();});
   els.encounterPlanStrategies?.addEventListener('click',event=>{if(event.target.closest('label'))return;const row=event.target.closest('tr[data-strategy]');if(!row)return;row.querySelector('input').checked=true;updateEncounterPlan();});
   document.querySelectorAll('.mode-button').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));

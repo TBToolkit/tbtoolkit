@@ -8,7 +8,7 @@ export const EPIC_ARMY_GROUPS=Object.freeze({
 const ENCOUNTER_ONLY_INPUTS=new Set([
   'battleType','battleMethod','arachne','enemySquadTypes','enemyUnitId',
   'pvpHealth','pvpStrength','fenrirStrength','clanMembers','encounterNorm','encounterNormUnit',
-  'encounterNormBasis','encounterPlanStrategy','shareEpicArmy','bonusAdjustments','useEncounterBonusAdjustments'
+  'encounterNormBasis','encounterPlanStrategy','trainingPlanAttacks','shareEpicArmy','bonusAdjustments','useEncounterBonusAdjustments'
 ]);
 
 export function epicArmyGroup(encounterId){

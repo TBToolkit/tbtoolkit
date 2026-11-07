@@ -325,6 +325,13 @@
 <div title="Expected lifetime damage divided by the full revival cost, multiplied by 1,000. Gold and Potion can both pay revival costs."><span>Damage per 1K Gold</span><strong id="damagePerThousandGold">—</strong></div>
 </div>
 <strong id="epicPointsPerFullGold" hidden>—</strong>
+<details class="battle-details troop-training-plan" id="troopTrainingPlan">
+<summary><span class="battle-details-title">Troop Training Plan</span><span class="battle-details-subtitle">Plan units for multiple attacks</span></summary>
+<div class="training-plan-controls"><label>Number of attacks<input id="trainingPlanAttacks" type="text" inputmode="numeric" pattern="[0-9]*" value="10" aria-describedby="trainingPlanError"/></label><label>Revival strategy<select id="trainingPlanStrategy"><option value="full">Revive All</option><option value="mercenary-monster">Revive Mercs + Monsters</option><option value="mercenary-only">Revive Mercs Only</option></select></label></div>
+<p class="setting-note">Total units to have ready before the first attack, including reserves. Assumes the Results army is sent each time and 90% of attacking losses can be revived. Mercenaries are excluded.</p>
+<p id="trainingPlanError" class="training-plan-error" role="status" hidden>Enter a positive whole number of attacks.</p>
+<div class="training-plan-grid" id="trainingPlanGroups"></div>
+</details>
 <details class="battle-details">
 <summary><span class="battle-details-title">Battle Details</span><span class="battle-details-subtitle">View predicted death order, attacks, and lifetime damage</span></summary>
 <div class="prediction-meta" id="predictionMeta"></div>
