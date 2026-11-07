@@ -178,6 +178,7 @@
 <div class="unit-bonus-top-grid">
 <div class="unit-bonus-matrix-area">
 
+<p class="setting-note epic-v2-note">With Auto enabled, bonuses are calculated from your Monster bonuses using saved relationships.</p>
 <div class="bonus-matrix" role="group" aria-label="Unit bonuses by profile">
 <div class="bonus-matrix-header"><span>Unit <button aria-label="How to select the correct unit bonus profile" class="stat-help-button" data-stat-help="bonusUnit" type="button">?</button></span><span>Double Damage <button aria-label="Where to find Double Damage" class="stat-help-button" data-stat-help="bonusDD" type="button">?</button></span><span>Strike Twice <button aria-label="Where to find Strike Twice" class="stat-help-button" data-stat-help="bonusST" type="button">?</button></span><span>Health <button aria-label="Where to find Health" class="stat-help-button" data-stat-help="bonusHealth" type="button">?</button></span><span>Strength <button aria-label="Where to find Strength" class="stat-help-button" data-stat-help="bonusStrength" type="button">?</button></span><span>Mode</span></div>
 <div class="bonus-matrix-row bonus-summary-row" data-bonus-profile="monster"><div class="bonus-profile-name"><button aria-controls="monsterBonusDetails" aria-expanded="false" class="bonus-profile-disclosure" id="monsterBonusDisclosure" type="button"><span aria-hidden="true">›</span>Monsters</button><small hidden id="monsterProfileStatus">Mixed</small></div><div class="percent-field"><input aria-label="Monster Double Damage" class="epic-input" id="monsterDD" inputmode="decimal" type="text" value="12"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Strike Twice" class="epic-input" id="monsterST" inputmode="decimal" type="text" value="12"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Health" class="epic-input formatted-number" id="monsterHealth" inputmode="decimal" type="text" value="1600"/><span>%</span></div><div class="percent-field"><input aria-label="Monster Strength" class="epic-input" id="monsterStrength" inputmode="decimal" type="text" value="2299.5"/><span>%</span></div><span class="bonus-mode-base">Base</span></div>
@@ -197,7 +198,6 @@
 </div>
 <section class="bonus-relationship-controls" id="bonusRelationshipControls" aria-label="Automatic bonus relationships">
 <div class="bonus-relationship-toolbar"><div class="bonus-adjustment-actions"><button type="button" id="captureBonusAdjustments">Save Custom Bonus Relationships</button><button type="button" id="resetBonusAdjustments">Restore default relationships</button></div><button type="button" class="stat-help-button" data-stat-help="unitBonusProfiles" aria-label="About unit bonuses and custom relationships" aria-haspopup="dialog">i</button></div>
-<label class="bonus-adjustment-scope"><input id="useEncounterBonusAdjustments" type="checkbox"/> This encounter only</label>
 <p class="setting-note" id="bonusAdjustmentStatus" role="status" hidden></p>
 <details class="bonus-adjustment-panel" id="bonusAdjustmentDetails">
 <summary>View saved adjustments</summary>

@@ -3261,13 +3261,10 @@ body.battle-mode-active .selection-optimize-row .optimize-help{
 .explore-toggle-group{display:inline-flex;align-items:center;gap:8px}.explore-info-button{flex:0 0 22px}
 .bonus-relationship-controls{margin-top:12px}
 .bonus-relationship-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
-.bonus-relationship-controls .bonus-adjustment-scope{margin:10px 0}
 .bonus-relationship-controls h4{margin:0;color:#e9b54d;font-size:.76rem}
 .bonus-adjustment-panel{margin-top:12px;padding-top:10px;border-top:1px solid #2e4657}
 .bonus-adjustment-panel summary{color:#e9b54d;cursor:pointer;font-size:.74rem;font-weight:800}
 .bonus-relationship-controls .setting-note{margin:10px 0;font-size:.68rem;line-height:1.5}
-.bonus-adjustment-scope{display:flex;align-items:center;gap:8px;font-size:.72rem;color:#d4e1ea}
-.bonus-adjustment-scope input{accent-color:#eda72b}
 .bonus-adjustment-scroll{overflow-x:auto;max-width:100%}
 .bonus-adjustment-table{width:100%;border-collapse:collapse;font-size:.64rem}
 .bonus-adjustment-table th{padding:7px 5px;text-align:center;color:#adc5d6;white-space:nowrap}

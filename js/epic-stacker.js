@@ -2448,15 +2448,14 @@ function updateExploreControls(){
 }
 function commitBonusAdjustments(value){
   const i=modeState().inputs,adjustments=normalizeBonusAdjustments(value);
-  if(i.useEncounterBonusAdjustments){i.bonusAdjustments=adjustments;i.shareEpicArmy=false;}
-  else updateAccountBonusAdjustments(currentAccount(),adjustments);
+  i.useEncounterBonusAdjustments=false;
+  for(const workspace of Object.values(currentAccount().battle?.workspaces||{}))if(workspace.inputs)workspace.inputs.useEncounterBonusAdjustments=false;
+  updateAccountBonusAdjustments(currentAccount(),adjustments);
   syncDerivedEpicBonuses();readInputs();recalculate();renderBonusAdjustments();
 }
 function renderBonusAdjustments(){
   const panel=document.getElementById('bonusRelationshipControls');if(!panel)return;
   const i=modeState().inputs,adjustments=currentBonusAdjustments();
-  const checkbox=document.getElementById('useEncounterBonusAdjustments');
-  checkbox.checked=!!i.useEncounterBonusAdjustments;checkbox.disabled=!!epicWorker||activeMode!=='battle';
   const pvp=activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_');
   const columns=bonusAdjustmentColumns({isPvp:pvp});
   const columnKey=columns.map(([stat])=>stat).join('|');
@@ -2472,14 +2471,6 @@ function renderBonusAdjustments(){
   status.textContent=i.autoHumanBonuses===false?'Humans is in Manual mode: its values override adjustments for linked Guardsmen, Specialists, and Engineers. Turn Humans Auto on to apply those adjustments.':'';
   status.hidden=!status.textContent;
   if(panel.dataset.bound)return;panel.dataset.bound='true';
-  panel.addEventListener('change',event=>{
-    if(event.target===checkbox){
-      readInputs();const inputs=modeState().inputs;
-      if(checkbox.checked){inputs.bonusAdjustments=currentBonusAdjustments();inputs.useEncounterBonusAdjustments=true;inputs.shareEpicArmy=false;}
-      else inputs.useEncounterBonusAdjustments=false;
-      syncDerivedEpicBonuses();readInputs();recalculate();refreshWorkspaceSelectors();renderBonusAdjustments();return;
-    }
-  });
   const enableAutomaticRows=()=>{
     for(const {auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]){els[auto].checked=true;modeState().inputs[auto]=true;}
   };
@@ -3685,7 +3676,7 @@ const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. Explore starts from the full highest selected tier in each group and compares troop and monster combinations within those limits. Your selected army is optimized separately and joins the final comparison without steering the search. It uses only the mercenary types you select. The safety limit is six minutes for zero to two tiers below, eight minutes for three, and ten minutes for four. Searches finish sooner when their scheduled work is complete. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
   raidPoints:{title:'Raid points are a rough estimate',text:'Jormungandr and Chimera are five-player raids. Treat this as a rough estimate assuming all five raid members have similar army strength and starting health. Combined raid damage determines the total chest payout, while each army’s share of the combined starting health determines its share of the chests—not its damage contribution. Your actual personal points and chests can differ when your clanmates bring different armies, so estimated attacks and net resources are approximate too. For Jormungandr, this tile shows scale points; Ragnarok medal norm points are 2.5× scale points.',images:[]},
-  unitBonusProfiles:{title:'Unit bonuses & custom relationships',eyebrow:'How to use unit bonuses',text:'Enter your Monster bonuses. Auto calculates the other families using saved adjustments. Expand Monsters or Humans for individual profiles. Turn off Auto or Linked to enter bonuses manually; Manual Humans values override linked troop rows.\n\nSave custom relationships: enter the in-game Monster and family bonuses, then click Save Custom Bonus Relationships. This saves each family’s difference from Monsters and turns Auto back on. Save again after upgrades change those differences.\n\nThis encounter only keeps separate relationships for the current encounter; otherwise, they apply to this player account. Restore default relationships resets all four families to standard adjustments and turns Auto on.\n\nView saved adjustments shows the differences in percentage points: Monster bonus + adjustment = family bonus (minimum zero).',images:[]},
+  unitBonusProfiles:{title:'Unit bonuses & custom relationships',eyebrow:'How to use unit bonuses',text:'Enter your Monster bonuses. Auto calculates the other families using saved adjustments. Expand Monsters or Humans for individual profiles. Turn off Auto or Linked to enter bonuses manually; Manual Humans values override linked troop rows.\n\nSave custom relationships: enter the in-game Monster and family bonuses, then click Save Custom Bonus Relationships. This saves each family’s difference from Monsters and turns Auto back on. Save again after upgrades change those differences.\n\nSaved relationships apply to this player account. Restore default relationships resets all four families to standard adjustments and turns Auto on.\n\nView saved adjustments shows the differences in percentage points: Monster bonus + adjustment = family bonus (minimum zero).',images:[]},
   bonusUnit:{title:'Choose the matching unit',text:'This Monster screenshot is an example. In a battle report, select a unit that matches the row you are editing. For example, select a Beast for the Beasts row, a Guardsman for the Guardsmen row, or an Epic Hunter for the Epic Hunters row. Then copy that unit’s bonuses into the matching fields.',images:[['monster-click.webp','Example: select a Monster in the battle report.']]},
   bonusDD:{title:'Double Damage',text:'Use a battle report for this encounter with the same captain(s) and/or Hero, armor, gems, enchantments, and artifacts. The screenshots show a Monster example: first select the unit that matches the row you are editing, then copy its Double Damage from the Bonuses section. Intrinsic unit Double Damage is added separately.',images:[['monster-click.webp','1. Select the matching unit (Monster example).'],['monster-dd.webp','2. Copy Double Damage.']]},
   bonusST:{title:'Strike Twice',text:'Use a battle report for this encounter with the same captain(s) and/or Hero, armor, gems, enchantments, and artifacts. The screenshots show a Monster example: first select the unit that matches the row you are editing, then copy its Strike Twice from the Bonuses section.',images:[['monster-click.webp','1. Select the matching unit (Monster example).'],['monster-st.webp','2. Copy Strike Twice.']]},
