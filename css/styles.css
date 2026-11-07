@@ -195,6 +195,8 @@ button { font: inherit; }
 .content-card { padding: 28px; }
 .content-card h2, .content-card h3 { margin-top: 0; }
 .content-card p, .content-card li { color: var(--muted); line-height: 1.7; }
+.about-biff-card { position: relative; isolation: isolate; }
+.about-biff-drawing { position: absolute; top: 7.5%; right: 4%; width: 20%; height: auto; z-index: 1; pointer-events: none; user-select: none; }
 .eyebrow { color: var(--orange-bright); font-size: .77rem; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; margin-bottom: 8px; }
 .notice { padding: 16px 18px; border-radius: 8px; border: 1px solid rgba(255,122,0,.28); background: rgba(255,122,0,.07); color: #f4d8b9; line-height: 1.55; }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px; border-radius: 6px; font-weight: 900; }
