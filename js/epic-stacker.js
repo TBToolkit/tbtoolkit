@@ -1,3 +1,4 @@
+import {battleCycleGuides} from './battle-cycle-chart.mjs';
 import {exploreTimeBudgetMs} from './epic-explore-policy.mjs';
 import {ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusAdjustmentColumns,bonusFieldId,normalizeBonusAdjustments,applyAutomaticBonusAdjustments,captureBonusAdjustments,effectiveBonusAdjustments,updateAccountBonusAdjustments} from './bonus-adjustments.mjs';
 import {exploreArmyKey,exploreSection2Context,exploreComparisonMatches,exploreResultRows} from './epic-explore-results.mjs';
@@ -1397,6 +1398,23 @@ function setChartStyle(style,{persist=true}={}){
   if(lastLayerChartResult)renderLayerHealthChart(lastLayerChartResult);
   if(persist)saveState();
 }
+function appendBattleCycleGuides(svg,rows,{left,width,top,bottom}){
+  if(activeMode==='battle'&&state.modes.battle.activeBattleType!=='epic')return;
+  const separated=chartStyle()==='separated',count=modeState().inputs.enemySquadTypes?.length||0;
+  const guides=battleCycleGuides(rows,{separated,enemySquadCount:count});
+  const labels={troop:'T',monster:'M',mercenary:'Merc'},names={troop:'Troops',monster:'Monsters',mercenary:'Mercenaries'};
+  for(const guide of guides){
+    const x=left+guide.fraction*width,lane=separated?['troop','monster','mercenary'].indexOf(guide.category):0;
+    const label=separated?labels[guide.category]+' · '+guide.cycle:'Cycle '+guide.cycle;
+    const badgeWidth=Math.max(38,label.length*6+10),badgeX=Math.max(left,Math.min(left+width-badgeWidth,x+2)),badgeY=top-(separated?62:28)+lane*18;
+    const group=svgEl('g',{class:'chart-cycle-guide prediction-cycle-'+(((guide.cycle-1)%6)+1),'data-cycle':guide.cycle,'data-category':guide.category||'combined'});
+    const title=svgEl('title');title.textContent=(guide.category?names[guide.category]+': ':'')+'Cycle '+guide.cycle+' begins (your army attacks first)';group.appendChild(title);
+    group.appendChild(svgEl('line',{x1:x,x2:x,y1:top,y2:bottom,class:'chart-cycle-line'}));
+    group.appendChild(svgEl('rect',{x:badgeX,y:badgeY,width:badgeWidth,height:16,rx:4,class:'chart-cycle-badge'}));
+    const text=svgEl('text',{x:badgeX+badgeWidth/2,y:badgeY+11,'text-anchor':'middle',class:'chart-cycle-label'});text.textContent=label;group.appendChild(text);
+    svg.appendChild(group);
+  }
+}
 function renderOptimizerHealthLadder(rows=[]){
   lastOptimizerHealthLadderRows=Array.isArray(rows)?rows:[];
   const svg=document.getElementById('optimizerHealthLadder');
@@ -1409,17 +1427,19 @@ function renderOptimizerHealthLadder(rows=[]){
   if(!data.length){const label=make('text',{x:300,y:148,'text-anchor':'middle',fill:'#718594','font-size':11});label.textContent=optimizerExploreProgressState?.emptyMessage||(modeState().inputs.preserveMercenaries?'Searching for an eligible army…':'Waiting for the first best army…');svg.append(label);return;}
   const ordered=data.slice().sort((a,b)=>Number(a.deathPosition)-Number(b.deathPosition));
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
-  for(const y of [20,145,270])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
+  const plotTop=chartStyle()==='separated'?72:42;
+  for(const y of [plotTop,(plotTop+270)/2,270])svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
+  appendBattleCycleGuides(svg,ordered,{left:32,width:532,top:plotTop,bottom:270});
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
   for(const category of ['troop','monster','mercenary']){
     const categoryRows=ordered.filter(row=>row.category===category);
-    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(Number(row.deathPosition)-1)/(count-1))*532,y:18+(high-Number(row.effectiveHealth))/range*248}));
+    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?(categoryRows.length===1?.5:index/(categoryRows.length-1)):(ordered.length===1?.5:(Number(row.deathPosition)-1)/(count-1)))*532,y:plotTop+(high-Number(row.effectiveHealth))/range*(266-plotTop)}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
       const pointColor=outputRowColors(category,{id:point.row.id,level:point.row.tier}).accent;
       svg.append(make('circle',{cx:point.x,cy:point.y,r:3.2,fill:pointColor,stroke:'#07131c','stroke-width':1.3}));
-      const label=make('text',{x:point.x,y:Math.max(11,point.y-7),'text-anchor':'middle',fill:pointColor,'font-size':8.5,'font-weight':900});
+      const label=make('text',{x:point.x,y:Math.max(plotTop-8,point.y-7),'text-anchor':'middle',fill:pointColor,'font-size':8.5,'font-weight':900});
       if(category==='mercenary'){
         const roman=mercTierRoman[tierNumber(point.row.tier)]||String(point.row.tier||''),suffix=String(point.row.tier||'').split('-')[1];
         label.textContent=chartStyle()==='separated'&&suffix?`${roman}-${suffix}`:roman;
@@ -1712,7 +1732,8 @@ function renderTrainingPlan(){
       const row={id:unit.id,level:unit.tier},category=unit.category,colors=outputRowColors(category,row);
       const tile=document.createElement('div');tile.className='result-row compact-result-row training-plan-unit';
       tile.style.setProperty('--result-text',resultTextColor(category,row));tile.style.setProperty('--result-bg',colors.rowColor);tile.style.setProperty('--result-bg-soft',colors.soft);tile.style.setProperty('--result-accent',colors.accent);
-      tile.innerHTML='<div class="result-label"><strong>'+escapeHtml(unit.name)+'</strong><span>'+escapeHtml(unit.tier)+' · '+escapeHtml(unit.combatType)+'</span></div><img class="result-unit-icon" src="'+escapeHtml(unit.icon||'assets/unit-icons/missing-icon.svg')+'" alt="" loading="lazy"/><div class="result-qty" aria-label="Total units needed">'+unit.required.toLocaleString('en-US')+'</div>';
+      tile.title=unit.tier+' · '+unit.name;
+      tile.innerHTML='<img class="result-unit-icon" src="'+escapeHtml(unit.icon||'assets/unit-icons/missing-icon.svg')+'" alt="'+escapeHtml(unit.tier+' '+unit.name)+'" loading="lazy"/><div class="result-qty" aria-label="'+escapeHtml(unit.name)+' total units needed">'+unit.required.toLocaleString('en-US')+'</div>';
       iconFallback(tile.querySelector('img'));column.appendChild(tile);
     }
     target.appendChild(column);
@@ -1945,7 +1966,8 @@ function convertEpicV2Result(opt){
       expectedDamagePerOpportunity:s.expectedDamagePerOpportunity,
       expectedLifetimeDamage:s.expectedLifetimeDamage,
       averageAttackOpportunities:s.averageAttackOpportunities,
-      predictedDeathPosition:s.predictedDeathPosition
+      predictedDeathPosition:s.predictedDeathPosition,
+      predictedDeathCycle:s.predictedDeathCycle
     };
     if(cats[s.category])cats[s.category].results.push(row);
   }
@@ -3326,7 +3348,7 @@ function renderLayerHealthChart(result){
   svg.innerHTML='';
   const width=900;
   const height=480;
-  const margin={top:38,right:24,bottom:58,left:70};
+  const margin={top:chartStyle()==='separated'?90:60,right:24,bottom:58,left:70};
   const plotW=width-margin.left-margin.right;
   const plotH=height-margin.top-margin.bottom;
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
@@ -3369,6 +3391,7 @@ function renderLayerHealthChart(result){
     label.textContent=String(death);
     svg.appendChild(label);
   }
+  appendBattleCycleGuides(svg,combinedOrder.map(row=>({category:row.category,deathPosition:deathValue(row),cycle:row.predictedDeathCycle})),{left:margin.left,width:plotW,top:margin.top,bottom:baselineY});
   svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left,y1:margin.top,y2:baselineY,class:'chart-axis-line'}));
   svg.appendChild(svgEl('line',{x1:margin.left,x2:margin.left+plotW,y1:baselineY,y2:baselineY,class:'chart-axis-line'}));
   const yTitle=svgEl('text',{x:15,y:height/2,transform:`rotate(-90 15 ${height/2})`,'text-anchor':'middle',class:'chart-y-title'});
