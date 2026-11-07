@@ -1434,12 +1434,13 @@ function renderOptimizerHealthLadder(rows=[]){
   const health=ordered.map(row=>Number(row.effectiveHealth)),high=Math.max(...health),low=Math.min(...health),range=Math.max(1,high-low),count=Math.max(2,ordered.length);
   const plotTop=chartStyle()==='separated'?18:42;
   const cycleLayout=currentBattleCycleLayout(ordered);
+  const dataTop=plotTop+(cycleLayout?24:0);
   for(const y of (chartStyle()==='separated'?[20,145,270]:[plotTop,(plotTop+270)/2,270]))svg.append(make('line',{x1:28,y1:y,x2:572,y2:y,stroke:'#203543','stroke-width':1}));
   appendBattleCycleGuides(svg,cycleLayout,{left:32,width:532,top:plotTop,bottom:270});
   const colors={troop:'#dce6ec',monster:'#64a5ff',mercenary:'#e86b59'},mercTierRoman=['','I','II','III','IV','V','VI','VII','VIII','IX'];
   for(const category of ['troop','monster','mercenary']){
     const categoryRows=ordered.filter(row=>row.category===category);
-    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(cycleLayout?.pointFractions.get(Number(row.deathPosition))??(ordered.length===1?.5:(Number(row.deathPosition)-1)/(count-1))))*532,y:plotTop+(high-Number(row.effectiveHealth))/range*(266-plotTop)}));
+    const points=categoryRows.map((row,index)=>({row,x:32+(chartStyle()==='separated'?index/Math.max(1,categoryRows.length-1):(cycleLayout?.pointFractions.get(Number(row.deathPosition))??(ordered.length===1?.5:(Number(row.deathPosition)-1)/(count-1))))*532,y:dataTop+(high-Number(row.effectiveHealth))/range*(266-dataTop)}));
     if(!points.length)continue;
     if(points.length>1)svg.append(make('polyline',{points:points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),fill:'none',stroke:colors[category],'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'}));
     for(const point of points){
