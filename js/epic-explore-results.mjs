@@ -1,10 +1,11 @@
 import {parseNumber} from './ui-utils.mjs';
+import {normalizeBonusAdjustments} from './bonus-adjustments.mjs';
 
 // Keep this scope limited to Army Limits & Unit Bonuses (Section 2).
 // Selections, Explore settings, clan planning, and account settings are separate.
 export function exploreSection2Context(owner,inputs){
   const numeric=['leadership','authority','dominance','leadershipFill','authorityFill','dominanceFill','strengthAgainstEpic','fenrirStrength','pvpHealth','pvpStrength','rankSeparation'];
-  const flags=['autoLeadership','autoAuthority','autoDominance','arachne','minimumSeparation'];
+  const flags=['autoLeadership','autoAuthority','autoDominance','arachne','minimumSeparation','useEncounterBonusAdjustments'];
   for(const profile of ['monster','beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){
     numeric.push(...['Health','Strength','DD','ST','PvpHealth','FenrirStrength','StrengthAgainstEpic','PvpStrength'].map(stat=>profile+stat));
     if(profile!=='monster')flags.push('auto'+profile[0].toUpperCase()+profile.slice(1)+'Bonuses');
@@ -12,6 +13,7 @@ export function exploreSection2Context(owner,inputs){
   const values={};
   for(const key of numeric)values[key]=parseNumber(inputs?.[key]);
   for(const key of flags)values[key]=!!inputs?.[key];
+  values.bonusAdjustments=normalizeBonusAdjustments(inputs?.bonusAdjustments);
   return exploreContextKey({scope:'section2',owner,inputs:values});
 }
 

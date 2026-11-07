@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusFieldId,normalizeBonusAdjustments,applyAutomaticBonusAdjustments} from '../js/bonus-adjustments.mjs';
 
 const source=fs.readFileSync(new URL('../js/epic-stacker.js',import.meta.url),'utf8');
 function functionSource(start,end){
@@ -41,7 +42,7 @@ assert.equal(engine.beastStrengthPct,3700,'PvP Strength must use the Beast row o
 const bonusRows=source.slice(source.indexOf('const HUMAN_BONUS_ROW='),source.indexOf('function updateOptimizerElapsed()'));
 const fields={};
 const documentStub={activeElement:null,querySelector:()=>null};
-const editContext=vm.createContext({els:fields,document:documentStub,parseNumber:value=>Number(String(value).replaceAll(',',''))||0});
+const editContext=vm.createContext({els:fields,document:documentStub,parseNumber:value=>Number(String(value).replaceAll(',',''))||0,ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusFieldId,applyAutomaticBonusAdjustments,currentBonusAdjustments:()=>normalizeBonusAdjustments()});
 vm.runInContext(`${bonusRows}${functionSource('setDerivedField','epicBonusPayload')}`,editContext);
 function field(value='0'){return{value,checked:true,setAttribute(){}};}
 for(const key of ['monster','beast','dragon','elemental','giant','human','guardsman','specialist','engineer','epicHunter']){

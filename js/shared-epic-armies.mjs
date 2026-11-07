@@ -8,7 +8,7 @@ export const EPIC_ARMY_GROUPS=Object.freeze({
 const ENCOUNTER_ONLY_INPUTS=new Set([
   'battleType','battleMethod','arachne','enemySquadTypes','enemyUnitId',
   'pvpHealth','pvpStrength','fenrirStrength','clanMembers','encounterNorm','encounterNormUnit',
-  'encounterNormBasis','encounterPlanStrategy','shareEpicArmy'
+  'encounterNormBasis','encounterPlanStrategy','shareEpicArmy','bonusAdjustments','useEncounterBonusAdjustments'
 ]);
 
 export function epicArmyGroup(encounterId){
@@ -21,6 +21,7 @@ export function canReuseEpicOptimizerResult(encounterId){
 
 export function copySharedEpicArmy(source,target){
   if(!source?.inputs||!target?.inputs)return;
+  if(source.inputs.useEncounterBonusAdjustments||target.inputs.useEncounterBonusAdjustments)return;
   for(const [key,value] of Object.entries(source.inputs)){
     if(!ENCOUNTER_ONLY_INPUTS.has(key))target.inputs[key]=structuredClone(value);
   }

@@ -1,4 +1,5 @@
 import {exploreTimeBudgetMs} from './epic-explore-policy.mjs';
+import {ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusFieldId,normalizeBonusAdjustments,applyAutomaticBonusAdjustments,captureBonusAdjustments,effectiveBonusAdjustments,updateAccountBonusAdjustments} from './bonus-adjustments.mjs';
 import {exploreArmyKey,exploreSection2Context,exploreComparisonMatches,exploreResultRows} from './epic-explore-results.mjs';
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs';
 import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs';
@@ -114,6 +115,7 @@ arachne:false,battleType:'epic_standard',battleMethod:'optimize',enemyUnitId:'tr
 
 function normalizeBonusProfileInputs(inputs){
   const i=inputs??{},mh=parseNumber(i.monsterHealth??1600),ms=parseNumber(i.monsterStrength??2000),dd=parseNumber(i.monsterDD??10),st=parseNumber(i.monsterST??10);
+  if(i.useEncounterBonusAdjustments)i.shareEpicArmy=false;
   const legacyManual=!!i.useCustomFamilyBonuses;
   for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){
     for(const stat of ['Health','Strength','DD','ST']){
@@ -237,6 +239,7 @@ const TEMPLE_REVIVAL_DIVISORS=Object.freeze({
   40:5.02,41:5.17,42:5.34,43:5.52,44:5.71,45:5.91
 });
 function currentAccount(){return state.accounts[state.activeAccountId]||Object.values(state.accounts)[0];}
+function currentBonusAdjustments(){return effectiveBonusAdjustments(currentAccount(),modeState().inputs);}
 function currentEncounter(){return resolveEncounter(currentAccount(),state.modes.battle.activeEncounterId);}
 function currentEngineBattleType(){return engineBattleType(currentEncounter());}
 function templeLevel(){return Math.max(1,Math.min(45,Number(currentAccount()?.templeLevel)||45));}
@@ -307,7 +310,7 @@ function linkedEpicArmyWorkspaces(encounterId=state.modes.battle.activeEncounter
   if(!groupId)return[];
   return EPIC_ARMY_GROUPS[groupId].encounters.flatMap(id=>{
     const workspace=state.modes.battle.workspaces[id];
-    return workspace?.inputs?.shareEpicArmy?[{id,workspace}]:[];
+    return workspace?.inputs?.shareEpicArmy&&!workspace.inputs.useEncounterBonusAdjustments?[{id,workspace}]:[];
   });
 }
 function propagateSharedEpicArmy(){
@@ -889,7 +892,7 @@ function clearSavedOptimizerResult(){
 function updateRankSeparationDisplay(){const max=1;const v=Math.min(max,Math.max(0,parseNumber(els.rankSeparation?.value)));if(els.rankSeparationValue)els.rankSeparationValue.value=`${v.toFixed(2)}%`;}
 
 function hydrateAccount(raw){
-  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel,clanProfileId:raw?.clanProfileId});
+  const account=makeAccount({id:raw?.id,name:raw?.name,templeLevel:raw?.templeLevel,clanProfileId:raw?.clanProfileId,bonusAdjustments:normalizeBonusAdjustments(raw?.bonusAdjustments)});
   account.customEncounters={...(raw?.customEncounters||{})};
   const source=raw?.battle||{};
   account.battle.activeBattleCategory=source.activeBattleCategory||'epic';
@@ -1016,13 +1019,15 @@ function renderEpicArmySharing(){
   if(panel.hidden)return;
   const linked=!!currentBattleWorkspace().inputs.shareEpicArmy,peers=linkedEpicArmyWorkspaces(),other=peers.filter(peer=>peer.id!==state.modes.battle.activeEncounterId);
   const group=EPIC_ARMY_GROUPS[groupId];
+  const customized=!!currentBattleWorkspace().inputs.useEncounterBonusAdjustments;
   els.epicArmySharingTitle.textContent=`${group.label} army`;
   const names=other.map(peer=>resolveEncounter(currentAccount(),peer.id)?.name||peer.id);
-  els.epicArmySharingStatus.textContent=linked
+  els.epicArmySharingStatus.textContent=customized?'Independent custom adjustments. Turn off encounter-specific adjustments to share this army.':linked
     ?`Linked with ${names.length?names.join(', '):'no other encounters yet'}. Stats and selected units stay in sync.${state.modes.battle.activeEncounterId==='epic-arachne'?' Arachne keeps its own optimizer result.':''}`
     :`Independent. ${other.length?`Shared army available from ${names.join(', ')}.`:'Start a shared army for this group.'}`;
   els.toggleEpicArmySharing.textContent=linked?'Edit independently':other.length?'Use shared army':'Share this army';
-  els.replaceSharedEpicArmy.hidden=linked||!other.length;
+  els.toggleEpicArmySharing.disabled=customized;
+  els.replaceSharedEpicArmy.hidden=customized||linked||!other.length;
   panel.classList.toggle('is-linked',linked);
 }
 function openEncounterEditor(encounter=null,duplicate=false){
@@ -1057,23 +1062,19 @@ function copyBonusRow(targetKey,sourceKey,readonly){
   for(const stat of PROFILE_EXTRA_BONUSES)setDerivedField(profileExtraId(targetKey,stat),parseNumber(els[profileExtraId(sourceKey,stat)]?.value),readonly);
 }
 function updateBonusGroupStatus(rows,statusId,profile){
-  const mixed=rows.some(({auto})=>!els[auto]?.checked);
+  const mixed=rows.some(({auto,key})=>!els[auto]?.checked||ADJUSTMENT_STATS.some(stat=>parseNumber(els[bonusFieldId(key,stat)]?.value)!==parseNumber(els[bonusFieldId(profile,stat)]?.value)));
   if(els[statusId]){els[statusId].hidden=!mixed;els[statusId].textContent='Mixed';}
   document.querySelector(`[data-bonus-profile="${profile}"]`)?.classList.toggle('has-mixed-profiles',mixed);
 }
 function syncDerivedEpicBonuses(){
   const allStats=['Health','Strength','DD','ST'];
   const extraStats=PROFILE_EXTRA_BONUSES;
-  const mh=parseNumber(els.monsterHealth?.value),ms=parseNumber(els.monsterStrength?.value),dd=parseNumber(els.monsterDD?.value),st=parseNumber(els.monsterST?.value);
   for(const {key,auto} of MONSTER_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'monster',true);else {for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(key,stat)]?.value),false);}}
-  if(els.autoHumanBonuses?.checked){setDerivedField('humanHealth',Math.max(0,mh-100),true);setDerivedField('humanStrength',Math.max(0,ms-100),true);setDerivedField('humanDD',dd,true);setDerivedField('humanST',Math.max(0,st-5),true);}
-  else for(const stat of allStats)setDerivedField(`human${stat}`,parseNumber(els[`human${stat}`]?.value),false);
-  for(const stat of extraStats)setDerivedField(profileExtraId('human',stat),parseNumber(els[profileExtraId(els.autoHumanBonuses?.checked?'monster':'human',stat)]?.value),!!els.autoHumanBonuses?.checked);
-  for(const {key,auto} of HUMAN_CHILD_BONUS_ROWS){if(els[auto]?.checked)copyBonusRow(key,'human',true);else {for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(key,stat)]?.value),false);}}
-  const {key,auto,healthOffset,strengthOffset}=EPIC_HUNTER_BONUS_ROW;
-  if(els[auto]?.checked){setDerivedField(`${key}Health`,Math.max(0,mh-healthOffset),true);setDerivedField(`${key}Strength`,Math.max(0,ms-strengthOffset),true);setDerivedField(`${key}DD`,dd,true);setDerivedField(`${key}ST`,Math.max(0,st-5),true);}
-  else for(const stat of allStats)setDerivedField(`${key}${stat}`,parseNumber(els[`${key}${stat}`]?.value),false);
-  for(const stat of extraStats)setDerivedField(profileExtraId(key,stat),parseNumber(els[profileExtraId(els[auto]?.checked?'monster':key,stat)]?.value),!!els[auto]?.checked);
+  const source={};
+  for(const profile of ['monster','human',...Object.keys(ADJUSTMENT_PROFILES)])for(const stat of ADJUSTMENT_STATS){const id=bonusFieldId(profile,stat);source[id]=parseNumber(els[id]?.value);}
+  for(const {auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW])source[auto]=!!els[auto]?.checked;
+  const adjusted=applyAutomaticBonusAdjustments(source,currentBonusAdjustments());
+  for(const {key,auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW])for(const stat of ADJUSTMENT_STATS){const id=bonusFieldId(key,stat);setDerivedField(id,parseNumber(adjusted[id]),!!els[auto]?.checked);}
   for(const row of BONUS_INPUT_ROWS){const label=els[row.auto]?.nextElementSibling;if(label)label.textContent=els[row.auto].checked?(LINKED_BONUS_ROWS.includes(row)?'Linked':'Auto'):'Manual';}
   updateBonusGroupStatus(MONSTER_CHILD_BONUS_ROWS,'monsterProfileStatus','monster');
   updateBonusGroupStatus(HUMAN_CHILD_BONUS_ROWS,'humanProfileStatus','human');
@@ -1339,6 +1340,7 @@ function useExploreArmy(index){
 }
 function setOptimizeButtonState(){
   renderExploreResultsPanel();
+  renderBonusAdjustments();
   if(!els.optimizeArmy||!isAnyEpicOptimizeMode())return;
   if(!appInitialized){
     els.optimizeArmy.disabled=true;
@@ -2347,6 +2349,7 @@ function configureModeUI(){
 }
 function applyStateToInputs(){
   const i=normalizeBonusProfileInputs(modeState().inputs);
+  i.bonusAdjustments=currentBonusAdjustments();
   for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS,...PROFILE_EXTRA_FIELD_IDS]){
     if(!els[id])continue;
     els[id].value=i[id]??defaultInputs(activeMode)[id]??'';
@@ -2374,9 +2377,11 @@ function applyStateToInputs(){
   updateRankSeparationDisplay();
   updateSeparationModeUI();
   updateFillFieldStates();
+  renderBonusAdjustments();
 }
 function readInputs(){
   const i=modeState().inputs;
+  i.bonusAdjustments=currentBonusAdjustments();
   for(const id of ['leadership','authority','dominance','monsterHealth','pvpHealth','monsterStrength','strengthAgainstEpic','fenrirStrength','pvpStrength','monsterDD','monsterST',...BONUS_PROFILE_FIELD_IDS,...PROFILE_EXTRA_FIELD_IDS]){
     if(els[id])i[id]=String(parseNumber(els[id].value));
   }
@@ -2440,6 +2445,58 @@ function updateExploreControls(){
     :exploreUnitStructures
     ?`Explore starts from the full highest selected tier in each family. Your selected army is optimized separately and retained as a finalist. The optimizer may change troop and monster types from each family's highest checked tier through ${exploreTierDepth} tier${exploreTierDepth===1?'':'s'} below it. Only checked mercenary types are used. Time limit: ${exploreTimeBudgetMs(exploreTierDepth)/60000} minutes. An alternative replaces your army only if its fully optimized ELD is higher. Explore turns off after a successful run.`
     :'Checked units are the exact army types sent to Optimize Army. Turn on Explore to let it test other troop and monster combinations.';
+}
+function commitBonusAdjustments(value){
+  const i=modeState().inputs,adjustments=normalizeBonusAdjustments(value);
+  if(i.useEncounterBonusAdjustments){i.bonusAdjustments=adjustments;i.shareEpicArmy=false;}
+  else updateAccountBonusAdjustments(currentAccount(),adjustments);
+  syncDerivedEpicBonuses();readInputs();recalculate();renderBonusAdjustments();
+}
+function renderBonusAdjustments(){
+  const panel=document.getElementById('bonusAdjustmentPanel');if(!panel)return;
+  const i=modeState().inputs,adjustments=currentBonusAdjustments();
+  const checkbox=document.getElementById('useEncounterBonusAdjustments');
+  checkbox.checked=!!i.useEncounterBonusAdjustments;checkbox.disabled=!!epicWorker||activeMode!=='battle';
+  document.getElementById('bonusAdjustmentScopeNote').textContent=i.useEncounterBonusAdjustments?'Saved for this encounter only. This army is independent of shared encounter armies.':'Saved as defaults for this player account. Other accounts and encounters with custom adjustments are unchanged.';
+  const pvp=activeMode==='battle'&&state.modes.battle.activeBattleCategory==='pvp';
+  const columns=[['DD','Double Damage'],['ST','Strike Twice'],['Health','Health'],...(pvp?[['PvpHealth','Health PvP']]:[['StrengthAgainstEpic','Strength PvE']]),...(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?[['FenrirStrength','Fenrir Strength']]:[]),['Strength','Strength'],...(pvp?[['PvpStrength','Strength PvP']]:[])];
+  const columnKey=columns.map(([stat])=>stat).join('|');
+  if(panel.dataset.columns!==columnKey){
+    panel.dataset.columns=columnKey;
+    document.getElementById('bonusAdjustmentHead').innerHTML='<tr><th>Unit family</th>'+columns.map(([,label])=>'<th>'+label+'</th>').join('')+'</tr>';
+    document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat,heading])=>'<td><input type="text" inputmode="decimal" aria-label="'+label+' '+heading+' adjustment" data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'" value="'+adjustments[profile][stat]+'"/></td>').join('')+'</tr>').join('');
+  }
+  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(field=>{if(document.activeElement!==field)field.value=String(adjustments[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]);field.disabled=!!epicWorker;});
+  document.getElementById('captureBonusAdjustments').disabled=!!epicWorker;
+  document.getElementById('resetBonusAdjustments').disabled=!!epicWorker;
+  const status=document.getElementById('bonusAdjustmentStatus');
+  status.textContent=i.autoHumanBonuses===false?'Humans is in Manual mode: its values override adjustments for linked Guardsmen, Specialists, and Engineers. Turn Humans Auto on to apply those adjustments.':'';
+  if(panel.dataset.bound)return;panel.dataset.bound='true';
+  const editAdjustment=event=>{
+    const field=event.target.closest('[data-bonus-adjustment-profile]');if(!field)return;
+    const text=field.value.replaceAll(',','').trim();if(!text||text==='-'||text==='.'||text==='-.')return;
+    const value=Number(text);if(!Number.isFinite(value))return;
+    readInputs();const values=currentBonusAdjustments();
+    if(values[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]===value)return;
+    values[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]=value;commitBonusAdjustments(values);
+  };
+  panel.addEventListener('input',editAdjustment);
+  panel.addEventListener('blur',event=>{if(event.target.matches('[data-bonus-adjustment-profile]'))renderBonusAdjustments();},true);
+  panel.addEventListener('change',event=>{
+    if(event.target===checkbox){
+      readInputs();const inputs=modeState().inputs;
+      if(checkbox.checked){inputs.bonusAdjustments=currentBonusAdjustments();inputs.useEncounterBonusAdjustments=true;inputs.shareEpicArmy=false;}
+      else inputs.useEncounterBonusAdjustments=false;
+      syncDerivedEpicBonuses();readInputs();recalculate();refreshWorkspaceSelectors();renderBonusAdjustments();return;
+    }
+    editAdjustment(event);
+  });
+  document.getElementById('captureBonusAdjustments').addEventListener('click',()=>{
+    readInputs();const values=captureBonusAdjustments(modeState().inputs);
+    for(const {auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]){els[auto].checked=true;modeState().inputs[auto]=true;}
+    commitBonusAdjustments(values);status.textContent='Adjustments calculated from the current bonuses. Automatic calculation is now enabled for all four families.';
+  });
+  document.getElementById('resetBonusAdjustments').addEventListener('click',()=>{readInputs();commitBonusAdjustments();status.textContent='Standard adjustments restored for the selected scope. Manual bonus rows were kept.';});
 }
 function updatePreservationControls(){
   if(!els.preserveMercenaries)return;
@@ -3636,7 +3693,7 @@ const STAT_HELP_BASE='assets/images/stat-help/';
 const STAT_HELP={
   exploreUnitStructures:{title:'Explore unit combinations',eyebrow:'Unit selection guide',text:'Use Explore when you want help choosing units for an Epic battle. In each group you want Explore to search—Guardsmen, Specialists, Engineers, or Monsters—select at least one unit at your highest unlocked tier. If you select no units in a group, Explore will not search that group. Choose how many tiers below your selected top tier Explore may test. Explore starts from the full highest selected tier in each group and compares troop and monster combinations within those limits. Your selected army is optimized separately and joins the final comparison without steering the search. It uses only the mercenary types you select. The safety limit is six minutes for zero to two tiers below, eight minutes for three, and ten minutes for four. Searches finish sooner when their scheduled work is complete. Your starting army stays selected unless another army has higher fully optimized ELD. After a successful run, Explore turns off and the winning army’s units are selected automatically. They stay selected until you change them or run Explore again. You can use Explore whenever you want.',images:[]},
   raidPoints:{title:'Raid points are a rough estimate',text:'Jormungandr and Chimera are five-player raids. Treat this as a rough estimate assuming all five raid members have similar army strength and starting health. Combined raid damage determines the total chest payout, while each army’s share of the combined starting health determines its share of the chests—not its damage contribution. Your actual personal points and chests can differ when your clanmates bring different armies, so estimated attacks and net resources are approximate too. For Jormungandr, this tile shows scale points; Ragnarok medal norm points are 2.5× scale points.',images:[]},
-  unitBonusProfiles:{title:'Unit bonus profiles',text:'Monsters and Humans provide simple shared rows. Expand Monsters only when Beasts, Dragons, Elementals, or Giants differ. Expand Humans only when Guardsmen, Specialists, or Engineers differ. Cursed, Demons, Elves, Undead, and Barbarians use Guardsman bonuses. Epic Hunters use their own row.',images:[]},
+  unitBonusProfiles:{title:'Unit bonus profiles',text:'Monsters and Humans provide simple shared rows. Expand Monsters when Beasts, Dragons, Elementals, or Giants differ. Expand Humans to see Guardsmen, Specialists, and Engineers; its collapsed values show the Guardsmen baseline, and Mixed indicates differences between the troop rows. Automatic bonus adjustments below the table let a developing city customize each family’s difference from Monsters. Adjustments are saved per player, with optional encounter-specific settings. Manual rows keep entered bonuses; a Manual Humans row remains a shared override for linked troop classes. Cursed, Demons, Elves, Undead, and Barbarians use Guardsman bonuses. Epic Hunters use their own row.',images:[]},
   bonusUnit:{title:'Choose the matching unit',text:'This Monster screenshot is an example. In a battle report, select a unit that matches the row you are editing. For example, select a Beast for the Beasts row, a Guardsman for the Guardsmen row, or an Epic Hunter for the Epic Hunters row. Then copy that unit’s bonuses into the matching fields.',images:[['monster-click.webp','Example: select a Monster in the battle report.']]},
   bonusDD:{title:'Double Damage',text:'Use a battle report for this encounter with the same captain(s) and/or Hero, armor, gems, enchantments, and artifacts. The screenshots show a Monster example: first select the unit that matches the row you are editing, then copy its Double Damage from the Bonuses section. Intrinsic unit Double Damage is added separately.',images:[['monster-click.webp','1. Select the matching unit (Monster example).'],['monster-dd.webp','2. Copy Double Damage.']]},
   bonusST:{title:'Strike Twice',text:'Use a battle report for this encounter with the same captain(s) and/or Hero, armor, gems, enchantments, and artifacts. The screenshots show a Monster example: first select the unit that matches the row you are editing, then copy its Strike Twice from the Bonuses section.',images:[['monster-click.webp','1. Select the matching unit (Monster example).'],['monster-st.webp','2. Copy Strike Twice.']]},
@@ -3933,7 +3990,7 @@ function wireEvents(){
   });
   els.toggleEpicArmySharing?.addEventListener('click',()=>{
     const id=state.modes.battle.activeEncounterId,workspace=currentBattleWorkspace(),groupId=epicArmyGroup(id);
-    if(!groupId)return;
+    if(!groupId||workspace.inputs.useEncounterBonusAdjustments)return;
     readInputs();
     if(workspace.inputs.shareEpicArmy){
       if(lastOptimizedEpicPayload&&lastOptimizedEpicSignature===currentEpicEffectiveSignature()){
@@ -3955,7 +4012,7 @@ function wireEvents(){
   });
   els.replaceSharedEpicArmy?.addEventListener('click',()=>{
     const id=state.modes.battle.activeEncounterId,workspace=currentBattleWorkspace(),groupId=epicArmyGroup(id);
-    if(!groupId||workspace.inputs.shareEpicArmy)return;
+    if(!groupId||workspace.inputs.shareEpicArmy||workspace.inputs.useEncounterBonusAdjustments)return;
     readInputs();
     if(!confirm(`Replace the shared ${EPIC_ARMY_GROUPS[groupId].label} army with this encounter’s army limits, unit bonuses, selected units, and custom order? Linked encounters will update. Their clan norms and revival strategies stay unchanged.`))return;
     workspace.inputs.shareEpicArmy=true;
@@ -4029,6 +4086,7 @@ function wireEvents(){
       const before=currentEpicEffectiveSignature();
       modeState().inputs[auto]=els[auto].checked;
       syncDerivedEpicBonuses();readInputs();saveState();
+      renderBonusAdjustments();
       const after=currentEpicEffectiveSignature();
       if(before===after){if(lastOptimizedEpicSignature&&after===lastOptimizedEpicSignature)epicResultCurrent=true;setOptimizeButtonState();return;}
       recalculate();

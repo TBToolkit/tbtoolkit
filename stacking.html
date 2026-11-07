@@ -195,7 +195,17 @@
 </div>
 <div class="bonus-matrix-row" data-bonus-profile="epicHunter"><strong>Epic Hunters</strong><div class="percent-field"><input aria-label="Epic Hunter Double Damage" class="epic-input family-derived-field" id="epicHunterDD" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strike Twice" class="epic-input family-derived-field" id="epicHunterST" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Health" class="epic-input formatted-number family-derived-field" id="epicHunterHealth" inputmode="decimal" type="text"/><span>%</span></div><div class="percent-field"><input aria-label="Epic Hunter Strength" class="epic-input family-derived-field" id="epicHunterStrength" inputmode="decimal" type="text"/><span>%</span></div><label class="bonus-auto-toggle"><input id="autoEpicHunterBonuses" type="checkbox" checked/><span>Auto</span></label></div>
 </div>
-<p class="setting-note epic-v2-note">Monster species follow Monsters, and human troop classes follow Humans, by default. Expand either row to enter profile-specific bonuses.</p>
+<p class="setting-note epic-v2-note">Monster species follow Monsters. Human troop classes use their automatic adjustments, or the shared Humans manual override. Expand either row to enter profile-specific bonuses.</p>
+<details class="bonus-adjustment-panel" id="bonusAdjustmentPanel">
+<summary>Automatic bonus adjustments</summary>
+<p class="setting-note">Calculated bonus = Monster bonus + adjustment, in percentage points. Use negative values to subtract. The Humans row shows the Guardsmen baseline; expand it to see differences between troop classes. Manual rows keep their entered bonuses.</p>
+<label class="bonus-adjustment-scope"><input id="useEncounterBonusAdjustments" type="checkbox"/> Customize adjustments for this encounter</label>
+<p class="setting-note" id="bonusAdjustmentScopeNote"></p>
+<div class="bonus-adjustment-scroll"><table class="bonus-adjustment-table"><thead id="bonusAdjustmentHead"></thead><tbody id="bonusAdjustmentRows"></tbody></table></div>
+<div class="bonus-adjustment-actions"><button type="button" id="captureBonusAdjustments">Calculate adjustments from current bonuses</button><button type="button" id="resetBonusAdjustments">Restore standard adjustments</button></div>
+<p class="setting-note">To calculate adjustments, switch the bonus rows you want to change to Manual, enter their actual in-game bonuses above, then choose “Calculate adjustments from current bonuses.” This returns the four families to automatic calculation. Update adjustments after upgrades that affect families differently.</p>
+<p class="setting-note" id="bonusAdjustmentStatus" role="status"></p>
+</details>
 </div>
 <div class="global-bonus-area">
 <h3>Global Battle Bonuses</h3>
