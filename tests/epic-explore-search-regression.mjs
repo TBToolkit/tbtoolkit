@@ -36,16 +36,16 @@ const tiny=runExploreSearch({units,currentIds,maxTierDepth:2,bonuses:{monsterHea
 assert.ok(tiny.elapsedMs<2000,'A screening deadline must return completed work rather than throw');
 console.log('Explore structure coverage, diversity, ownership, depth, deduplication, and deadline checks passed.');
 
-assert.deepEqual(canonicalExploreSelection(units,base),canonicalExploreSelection(units,currentIds),'Lower-tier starting choices must not change the Explore origin');
+assert.deepEqual(canonicalExploreSelection(units,base,2),canonicalExploreSelection(units,currentIds,2),'Lower-tier starting choices must not change the Explore origin');
 assert.deepEqual(canonicalExploreSelection(units,[...base,merc.id]).filter(id=>units.find(u=>u.id===id).category==='mercenary'),[merc.id]);
 const partial=[units.find(u=>u.tier==='G9').id];
-assert.deepEqual(canonicalExploreSelection(units,partial),units.filter(u=>u.tier==='G9').map(u=>u.id),'Fill the highest tier without adding unselected families');
+assert.deepEqual(canonicalExploreSelection(units,partial,2),units.filter(u=>u.tier==='G9').map(u=>u.id),'Fill the highest tier without adding unselected families');
 
 assert.deepEqual([0,1,2,3,4].map(exploreTimeBudgetMs),[360000,360000,360000,480000,600000]);
 
 assert.deepEqual(exploreTimePolicy(4),{totalMs:600000,screeningMs:120000,neighborhoodMs:25000});
 
-assert.deepEqual(normalizeExploreTierDepths(),{guardsman:1,specialist:1,engineer:1,monster:2});
+assert.deepEqual(normalizeExploreTierDepths(),{guardsman:'selected',specialist:'selected',engineer:1,monster:2});
 assert.deepEqual(normalizeExploreTierDepths(0),{guardsman:0,specialist:0,engineer:0,monster:0},'Legacy scalar depths must still work');
 assert.deepEqual(normalizeExploreTierDepths({guardsman:-1,specialist:9,engineer:'2.9',monster:'bad'}),{guardsman:0,specialist:4,engineer:2,monster:2});
 assert.equal(exploreTimeBudgetMs(DEFAULT_EXPLORE_TIER_DEPTHS),360000);
@@ -60,13 +60,13 @@ for(const depths of [DEFAULT_EXPLORE_TIER_DEPTHS,mixedDepths]){
   const top={guardsman:9,specialist:8,engineer:9,monster:9};
   const permitted=new Set(units.filter(u=>{
     const family=u.category==='monster'?'monster':u.category==='troop'?u.unitClass.toLowerCase():null;
-    return family&&u.tierNumber<=top[family]&&u.tierNumber>=top[family]-depths[family];
+    return family&&(depths[family]==='selected'?currentIds.includes(u.id):u.tierNumber<=top[family]&&u.tierNumber>=top[family]-depths[family]);
   }).map(u=>u.id));
   assert.deepEqual(new Set(mixed.availableIds),permitted,'Each family must have exactly its permitted tier range');
   assert.ok(mixed.structures.every(row=>row.selectedIds.every(id=>permitted.has(id))));
-  const mixedNeighbors=createExploreNeighbors({units,selectedIds:currentIds,availableIds:mixed.availableIds});
+  const mixedNeighbors=createExploreNeighbors({units,selectedIds:currentIds,availableIds:mixed.availableIds,mandatoryIds:mixed.mandatoryIds});
   assert.ok(mixedNeighbors.every(row=>row.selectedIds.every(id=>permitted.has(id))));
-  const expanded=createExploreStructures({units,currentIds,tierDepths:{...depths,guardsman:Math.min(4,depths.guardsman+1)}});
+  const expanded=createExploreStructures({units,currentIds,tierDepths:{...depths,guardsman:depths.guardsman==='selected'?1:Math.min(4,depths.guardsman+1)}});
   for(const family of ['SPECIALIST','ENGINEER','MONSTER']){
     const familyIds=ids=>ids.filter(id=>{const u=units.find(u=>u.id===id);return family==='MONSTER'?u.category==='monster':u.unitClass===family;});
     assert.deepEqual(familyIds(expanded.availableIds),familyIds(mixed.availableIds),'Changing Guardsmen depth must not change '+family+' availability');

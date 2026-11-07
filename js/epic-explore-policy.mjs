@@ -1,4 +1,4 @@
-export const DEFAULT_EXPLORE_TIER_DEPTHS=Object.freeze({guardsman:1,specialist:1,engineer:1,monster:2});
+export const DEFAULT_EXPLORE_TIER_DEPTHS=Object.freeze({guardsman:'selected',specialist:'selected',engineer:1,monster:2});
 
 export function normalizeExploreTierDepths(value){
   const object=value&&typeof value==='object';

@@ -116,7 +116,7 @@ assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"/,'Selection mu
 assert.match(html,/id="exploreUnitStructures"[^>]*type="checkbox"[\s\S]*?<\/label><button[^>]*data-stat-help="exploreUnitStructures"/,'Explore help must be a separate button that does not toggle the checkbox.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations'[^\n]*safety limit is six minutes[^\n]*Explore turns off/,'Explore help must explain its purpose, longer run time, and automatic reset.');
 assert.match(source,/exploreUnitStructures:\{title:'Explore unit combinations',eyebrow:'Unit selection guide'[^\n]*highest unlocked tier[^\n]*will not search that group[^\n]*winning army[^\n]*until you change them or run Explore again/,'Explore help must explain group selection, tier limits, and how the chosen units persist.');
-for(const [family,depth] of [['Guardsman',1],['Specialist',1],['Engineer',1],['Monster',2]]){
+for(const [family,depth] of [['Guardsman','selected'],['Specialist','selected'],['Engineer',1],['Monster',2]]){
   assert.match(html,new RegExp('id="explore'+family+'Depth"[^>]*>[\\s\\S]*?<option value="'+depth+'" selected>'),'Explore must default '+family+' to its own tier range.');
 }
 assert.match(source,/const exploring=isBattleOptimizeMode\(\)&&exploreUnitStructures/,'Explore mode must be limited to Epic optimization.');

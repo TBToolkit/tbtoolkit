@@ -1,5 +1,7 @@
 import {exploreContextKey} from './epic-explore-results.mjs';
 import {normalizeBonusAdjustments} from './bonus-adjustments.mjs';
+import {normalizeExploreTierDepths} from './epic-explore-policy.mjs';
+import {compressProfileText,readProfileText} from './profile-file-compression.mjs';
 export const BIFF_FORMAT='tbtoolkit-biff';
 export const BIFF_SCHEMA_VERSION=3;
 export const BIFF_MAX_BYTES=25*1024*1024;
@@ -142,6 +144,7 @@ function canonicalAccount(raw){
     templeLevel:Math.max(1,Math.min(45,Math.floor(Number(raw?.templeLevel)||45))),
     clanProfileId:String(raw?.clanProfileId||'').slice(0,100),
     bonusAdjustments:normalizeBonusAdjustments(raw?.bonusAdjustments),
+    exploreTierDepths:normalizeExploreTierDepths(raw?.exploreTierDepths),
     activeBattleCategory:BATTLE_CATEGORIES.has(battle.activeBattleCategory)?battle.activeBattleCategory:'epic',
     activeBattleMethod:BATTLE_METHODS.has(battle.activeBattleMethod)?battle.activeBattleMethod:'basic',
     activeEncounterByType:{
@@ -159,6 +162,14 @@ export function serializeAccountToBiff(account,{appBuild='unknown',exportedAt=ne
   for(const workspace of portable.workspaces)if(workspace.inputs.encounterNormSource==='clan')workspace.inputs.encounterNormSource='default';
   const envelope={format:BIFF_FORMAT,schemaVersion:BIFF_SCHEMA_VERSION,exportedAt:String(exportedAt),appBuild:String(appBuild),kind:'account',account:portable};
   return `${JSON.stringify(envelope,null,2)}\n`;
+}
+
+export async function serializeAccountFile(account,options){
+  return compressProfileText(serializeAccountToBiff(account,options));
+}
+export async function parseAccountFile(file,options={}){
+  const maxBytes=options.maxBytes??BIFF_MAX_BYTES;
+  return parseBiff(await readProfileText(file,{maxBytes,sizeLimitMessage:biffSizeLimitMessage(maxBytes)}),options);
 }
 
 export function parseBiff(text,{maxBytes=BIFF_MAX_BYTES}={}){
@@ -271,7 +282,7 @@ export function materializeImportedAccount(parsed,{existingAccountIds=[],existin
   }
   for(const encounterId of Object.keys(workspaces))if(!available.has(encounterId))warnings.push(`Saved workspace “${encounterId}” was retained but its encounter is unavailable in this version.`);
   return{
-    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:'',bonusAdjustments:normalizeBonusAdjustments(source.bonusAdjustments),customEncounters,battle:{
+    account:{id:accountId,name:source.name,templeLevel:source.templeLevel,clanProfileId:'',bonusAdjustments:normalizeBonusAdjustments(source.bonusAdjustments),exploreTierDepths:normalizeExploreTierDepths(source.exploreTierDepths),customEncounters,battle:{
       activeBattleCategory:source.activeBattleCategory,
       activeBattleMethod:source.activeBattleMethod,
       activeEncounterByType,
