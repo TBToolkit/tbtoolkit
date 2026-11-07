@@ -2464,7 +2464,7 @@ function renderBonusAdjustments(){
     document.getElementById('bonusAdjustmentHead').innerHTML='<tr><th>Unit family</th>'+columns.map(([,label])=>'<th>'+label+'</th>').join('')+'</tr>';
     document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat,statLabel])=>'<td><input type="text" readonly disabled tabindex="-1" aria-label="'+label+' '+statLabel+' adjustment" data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'"/></td>').join('')+'</tr>').join('');
   }
-  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(cell=>{const value=adjustments[cell.dataset.bonusAdjustmentProfile][cell.dataset.bonusAdjustmentStat];cell.value=(value>0?'+':'')+value;});
+  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(cell=>{const value=adjustments[cell.dataset.bonusAdjustmentProfile][cell.dataset.bonusAdjustmentStat];cell.value=(value>0?'+':'')+value+'%';});
   document.getElementById('captureBonusAdjustments').disabled=!!epicWorker;
   document.getElementById('resetBonusAdjustments').disabled=!!epicWorker;
   const status=document.getElementById('bonusAdjustmentStatus');
