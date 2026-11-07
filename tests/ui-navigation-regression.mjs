@@ -10,7 +10,7 @@ const html=fs.readFileSync(new URL('../stacking.html',import.meta.url),'utf8');
 assert.match(html,/id="captureBonusAdjustments">Save bonus relationships<\/button>/);
 assert.match(html,/id="resetBonusAdjustments">Restore default relationships<\/button>/);
 assert.match(html,/<details class="bonus-adjustment-panel" id="bonusAdjustmentDetails">\s*<summary>View saved adjustments<\/summary>/,'Saved adjustments must start collapsed');
-assert.doesNotMatch(source,/<input[^>]*data-bonus-adjustment-profile/,'Saved adjustments must be read only');
+assert.match(source,/<input[^>]*readonly[^>]*data-bonus-adjustment-profile/,'Saved adjustments must use read-only input boxes');
 assert.match(html,/<h2>Selection<\/h2>[\s\S]*?<p>Select only the units you want to send into battle\./,'Selection must explain manual choices.');
 const optimizerWorker=fs.readFileSync(new URL('../js/epic-quantity-optimizer.mjs',import.meta.url),'utf8');
 const optimizerEntry=fs.readFileSync(new URL('../js/epic-optimizer-worker.mjs',import.meta.url),'utf8');
