@@ -1,5 +1,5 @@
 import {exploreTimeBudgetMs} from './epic-explore-policy.mjs';
-import {ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusFieldId,normalizeBonusAdjustments,applyAutomaticBonusAdjustments,captureBonusAdjustments,effectiveBonusAdjustments,updateAccountBonusAdjustments} from './bonus-adjustments.mjs';
+import {ADJUSTMENT_PROFILES,ADJUSTMENT_STATS,bonusAdjustmentColumns,bonusFieldId,normalizeBonusAdjustments,applyAutomaticBonusAdjustments,captureBonusAdjustments,effectiveBonusAdjustments,updateAccountBonusAdjustments} from './bonus-adjustments.mjs';
 import {exploreArmyKey,exploreSection2Context,exploreComparisonMatches,exploreResultRows} from './epic-explore-results.mjs';
 import { calculateEpicStack, calculateCategory, calculateCustomStack, calculateCustomCategory, customInternalRank } from './epic-engine.mjs';
 import { scoreEpicArmy, validateArmyDatabase } from './epic-combat-engine-v2.mjs';
@@ -2453,35 +2453,25 @@ function commitBonusAdjustments(value){
   syncDerivedEpicBonuses();readInputs();recalculate();renderBonusAdjustments();
 }
 function renderBonusAdjustments(){
-  const panel=document.getElementById('bonusAdjustmentPanel');if(!panel)return;
+  const panel=document.getElementById('bonusRelationshipControls');if(!panel)return;
   const i=modeState().inputs,adjustments=currentBonusAdjustments();
   const checkbox=document.getElementById('useEncounterBonusAdjustments');
   checkbox.checked=!!i.useEncounterBonusAdjustments;checkbox.disabled=!!epicWorker||activeMode!=='battle';
   document.getElementById('bonusAdjustmentScopeNote').textContent=i.useEncounterBonusAdjustments?'Saved for this encounter only. This army is independent of shared encounter armies.':'Saved as defaults for this player account. Other accounts and encounters with custom adjustments are unchanged.';
-  const pvp=activeMode==='battle'&&state.modes.battle.activeBattleCategory==='pvp';
-  const columns=[['DD','Double Damage'],['ST','Strike Twice'],['Health','Health'],...(pvp?[['PvpHealth','Health PvP']]:[['StrengthAgainstEpic','Strength PvE']]),...(activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'?[['FenrirStrength','Fenrir Strength']]:[]),['Strength','Strength'],...(pvp?[['PvpStrength','Strength PvP']]:[])];
+  const pvp=activeMode==='battle'&&String(state.modes.battle.activeBattleType||'').startsWith('pvp_');
+  const columns=bonusAdjustmentColumns({isPvp:pvp,isFenrir:activeMode==='battle'&&state.modes.battle.activeEncounterId==='epic-fenrir'});
   const columnKey=columns.map(([stat])=>stat).join('|');
   if(panel.dataset.columns!==columnKey){
     panel.dataset.columns=columnKey;
     document.getElementById('bonusAdjustmentHead').innerHTML='<tr><th>Unit family</th>'+columns.map(([,label])=>'<th>'+label+'</th>').join('')+'</tr>';
-    document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat,heading])=>'<td><input type="text" inputmode="decimal" aria-label="'+label+' '+heading+' adjustment" data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'" value="'+adjustments[profile][stat]+'"/></td>').join('')+'</tr>').join('');
+    document.getElementById('bonusAdjustmentRows').innerHTML=Object.entries(ADJUSTMENT_PROFILES).map(([profile,label])=>'<tr><th scope="row">'+label+'</th>'+columns.map(([stat])=>'<td data-bonus-adjustment-profile="'+profile+'" data-bonus-adjustment-stat="'+stat+'"></td>').join('')+'</tr>').join('');
   }
-  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(field=>{if(document.activeElement!==field)field.value=String(adjustments[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]);field.disabled=!!epicWorker;});
+  panel.querySelectorAll('[data-bonus-adjustment-profile]').forEach(cell=>{const value=adjustments[cell.dataset.bonusAdjustmentProfile][cell.dataset.bonusAdjustmentStat];cell.textContent=(value>0?'+':'')+value;});
   document.getElementById('captureBonusAdjustments').disabled=!!epicWorker;
   document.getElementById('resetBonusAdjustments').disabled=!!epicWorker;
   const status=document.getElementById('bonusAdjustmentStatus');
   status.textContent=i.autoHumanBonuses===false?'Humans is in Manual mode: its values override adjustments for linked Guardsmen, Specialists, and Engineers. Turn Humans Auto on to apply those adjustments.':'';
   if(panel.dataset.bound)return;panel.dataset.bound='true';
-  const editAdjustment=event=>{
-    const field=event.target.closest('[data-bonus-adjustment-profile]');if(!field)return;
-    const text=field.value.replaceAll(',','').trim();if(!text||text==='-'||text==='.'||text==='-.')return;
-    const value=Number(text);if(!Number.isFinite(value))return;
-    readInputs();const values=currentBonusAdjustments();
-    if(values[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]===value)return;
-    values[field.dataset.bonusAdjustmentProfile][field.dataset.bonusAdjustmentStat]=value;commitBonusAdjustments(values);
-  };
-  panel.addEventListener('input',editAdjustment);
-  panel.addEventListener('blur',event=>{if(event.target.matches('[data-bonus-adjustment-profile]'))renderBonusAdjustments();},true);
   panel.addEventListener('change',event=>{
     if(event.target===checkbox){
       readInputs();const inputs=modeState().inputs;
@@ -2489,14 +2479,16 @@ function renderBonusAdjustments(){
       else inputs.useEncounterBonusAdjustments=false;
       syncDerivedEpicBonuses();readInputs();recalculate();refreshWorkspaceSelectors();renderBonusAdjustments();return;
     }
-    editAdjustment(event);
   });
+  const enableAutomaticRows=()=>{
+    for(const {auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]){els[auto].checked=true;modeState().inputs[auto]=true;}
+  };
   document.getElementById('captureBonusAdjustments').addEventListener('click',()=>{
     readInputs();const values=captureBonusAdjustments(modeState().inputs);
-    for(const {auto} of [HUMAN_BONUS_ROW,...HUMAN_CHILD_BONUS_ROWS,EPIC_HUNTER_BONUS_ROW]){els[auto].checked=true;modeState().inputs[auto]=true;}
-    commitBonusAdjustments(values);status.textContent='Adjustments calculated from the current bonuses. Automatic calculation is now enabled for all four families.';
+    enableAutomaticRows();
+    commitBonusAdjustments(values);status.textContent='Bonus relationships saved. Automatic calculation is now enabled for all four families.';
   });
-  document.getElementById('resetBonusAdjustments').addEventListener('click',()=>{readInputs();commitBonusAdjustments();status.textContent='Standard adjustments restored for the selected scope. Manual bonus rows were kept.';});
+  document.getElementById('resetBonusAdjustments').addEventListener('click',()=>{readInputs();enableAutomaticRows();commitBonusAdjustments();status.textContent='Default relationships restored. Automatic calculation is now enabled for all four families.';});
 }
 function updatePreservationControls(){
   if(!els.preserveMercenaries)return;

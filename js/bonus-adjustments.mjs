@@ -2,6 +2,9 @@ import {parseNumber} from './ui-utils.mjs';
 
 export const ADJUSTMENT_PROFILES=Object.freeze({guardsman:'Guardsmen',specialist:'Specialists',engineer:'Engineers',epicHunter:'Epic Hunters'});
 export const ADJUSTMENT_STATS=Object.freeze(['DD','ST','Health','StrengthAgainstEpic','FenrirStrength','Strength','PvpHealth','PvpStrength']);
+export function bonusAdjustmentColumns({isPvp=false,isFenrir=false}={}){
+  return [['DD','Double Damage'],['ST','Strike Twice'],...(isPvp?[['PvpHealth','Health PvP']]:[]),['Health','Health'],...(isFenrir&&!isPvp?[['FenrirStrength','Fenrir Strength']]:[]),...(isPvp?[['PvpStrength','Strength PvP']]:[['StrengthAgainstEpic','Strength PvE']]),['Strength','Strength']];
+}
 export function bonusFieldId(profile,stat){
   return profile==='monster'&&['StrengthAgainstEpic','FenrirStrength','PvpHealth','PvpStrength'].includes(stat)?stat[0].toLowerCase()+stat.slice(1):profile+stat;
 }
