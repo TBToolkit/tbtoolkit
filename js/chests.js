@@ -1,3 +1,4 @@
+import {savePlayerClanLink} from './clan-profile-link.mjs';
 import {linkedPlayerAccounts,planFromSavedCosts,planMatchesRequirement,convertEpicNormBasis,netResourcesForPeriod,tinmanPlanFromSavedCosts,normPointsPerChest} from './clan-net-resources.mjs';
 import {serializeClanProfile,parseClanProfile} from './clan-profile-file.mjs';
 import {REVIVAL_STRATEGIES,saveRevivalStrategy} from './clan-strategy-sync.mjs';
@@ -94,12 +95,14 @@ function renderPlanPlayerAccount(){
   $('planPlayerAccountStatus').textContent=!accounts.length?'Create a player account in the Battle Calculator first.':!account?'Choose a player account for this overview.':account.clanProfileId===activeProfileId?`${account.name} is linked to this clan. Select Custom or Optimize for each Epic below.`:account.clanProfileId?'This account is linked to another clan. Moving it here requires confirmation.':'This account is not linked yet. Link it to use its saved Epic plans.';
   return account;
 }
-function updatePlayerClanLink(){
+async function updatePlayerClanLink(){
   const saved=calculatorAccounts(),account=saved.accounts?.[netPlayerAccountId];if(!account)return;
   const target=account.clanProfileId===activeProfileId?'':activeProfileId;
   if(account.clanProfileId&&target&&account.clanProfileId!==target&&!confirm(`Move “${account.name}” to this clan profile?`))return;
-  account.clanProfileId=target;
-  try{const snapshot=stampCanonicalSnapshot(saved);localStorage.setItem('tbtoolkit.stackingCalculator',JSON.stringify(snapshot));mirrorCanonicalSnapshot('tbtoolkit.stackingCalculator',snapshot);}catch{alert('The player account link could not be saved.');return;}
+  const button=$('linkPlayerAccount');button.disabled=true;
+  try{if(!await savePlayerClanLink(localStorage,account.id,target))throw new Error('The selected player account is no longer available.');}
+  catch(error){console.warn('Could not save the player account link.',error);alert('The player account link could not be saved. Browser storage may be full or unavailable. Your saved armies have been kept.');return;}
+  finally{button.disabled=false;}
   const bridge=calculatorBridge();if(bridge.accounts?.[account.id]){bridge.accounts[account.id].clanProfileId=target;try{localStorage.setItem(encounterResultStoreKey,JSON.stringify(bridge));}catch{}}
   calculatePlanner();
 }
@@ -270,7 +273,7 @@ function initPlanner(){
   $('tinmanBonus').addEventListener('change',event=>{event.target.value=String(Math.min(100,positive(event.target.value)));syncTinmanInputSuffixes();calculatePlanner();});
   $('tinmanNorm').addEventListener('change',()=>{normalizeTinmanNorm();calculatePlanner();});
   $('tinmanNormUnit').addEventListener('change',()=>{syncTinmanInputSuffixes();calculatePlanner();});
-  const changeRevivalStrategy=(encounter,strategy)=>{try{if(!saveRevivalStrategy(localStorage,netPlayerAccountId,encounter,strategy))throw new Error('No saved battle plan was found for this encounter.');calculatePlanner();}catch(error){alert(error.message||'The revival strategy could not be saved.');calculatePlanner();}};
+  const changeRevivalStrategy=async(encounter,strategy)=>{try{if(!await saveRevivalStrategy(localStorage,netPlayerAccountId,encounter,strategy))throw new Error('No saved battle plan was found for this encounter.');calculatePlanner();}catch(error){alert(error.message||'The revival strategy could not be saved.');calculatePlanner();}};
   $('tinmanRevivalStrategy').addEventListener('change',event=>changeRevivalStrategy('Tinman',event.target.value));
   $('linkPlayerAccount').addEventListener('click',updatePlayerClanLink);
   $('epicNormRows').addEventListener('change',event=>{if(!event.target.matches('.epic-plan-method'))return;netMethodByEpic[event.target.closest('.epic-norm-row').dataset.monster]=event.target.value;calculatePlanner();});

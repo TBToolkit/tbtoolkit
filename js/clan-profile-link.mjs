@@ -1,5 +1,13 @@
 import {CLAN_PROFILE_STORE_KEY,stampCanonicalSnapshot,mirrorCanonicalSnapshot} from './durable-user-data.mjs';
+import {saveAccountMetadataChange} from './account-metadata-storage.mjs';
 export {CLAN_PROFILE_STORE_KEY};
+
+export function savePlayerClanLink(storage,accountId,profileId,options){
+  return saveAccountMetadataChange(storage,saved=>{
+    const account=saved.accounts?.[accountId];if(!account)return false;
+    account.clanProfileId=profileId;
+  },options);
+}
 
 export function readClanProfiles(storage){
   try{
